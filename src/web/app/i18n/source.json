@@ -1,0 +1,7792 @@
+{
+  "\"C\" or \"F\"": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "\"G\" for SG or \"P\" for Plato (Brewfather/Brewer's Friend style)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "\"SG\" or \"°P\"": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "(done)": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "(empty)": {
+    "files": [
+      "pages/webhooks/DeliveryLog.tsx"
+    ]
+  },
+  "(looks wrong: is the pill floating?)": {
+    "files": [
+      "pages/dashboard/PillRow.tsx"
+    ]
+  },
+  "(off)": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "(optional)": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "{abv} ABV": {
+    "files": [
+      "pages/brews/BrewsPage.tsx",
+      "pages/brews/Compare.tsx"
+    ]
+  },
+  "{abv} ABV so far": {
+    "files": [
+      "pages/brews/Compare.tsx"
+    ]
+  },
+  "{abv}% ABV": {
+    "files": [
+      "components/Ferment.tsx"
+    ]
+  },
+  "{add} to send readings to Brewfather, Grainfather, Home Assistant and more.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "{ago}: Bluetooth seemed stuck, so the hub switched it off and on": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "{auto} for Cloudflare R2.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "{count} advert|{count} adverts": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ],
+    "plural": true
+  },
+  "{count} brew on the go|{count} brews on the go": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ],
+    "plural": true
+  },
+  "{count} brew|{count} brews": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ],
+    "plural": true
+  },
+  "{count} day {h} h|{count} days {h} h": {
+    "files": [
+      "format.ts"
+    ],
+    "plural": true
+  },
+  "{count} day ago|{count} days ago": {
+    "files": [
+      "format.ts"
+    ],
+    "plural": true
+  },
+  "{count} earlier event on the brew's page.|{count} earlier events on the brew's page.": {
+    "files": [
+      "pages/brews/events.tsx"
+    ],
+    "plural": true
+  },
+  "{count} failed|{count} failed": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ],
+    "plural": true
+  },
+  "{count} h": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "{count} min": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "{count} new since you opened this|{count} new since you opened this": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ],
+    "plural": true
+  },
+  "{count} of up to {max} brews picked. Tap a brew to add or remove it.|{count} of up to {max} brews picked. Tap a brew to add or remove it.": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ],
+    "plural": true
+  },
+  "{count} pill in one request|{count} pills in one request": {
+    "files": [
+      "pages/webhooks/Preview.tsx"
+    ],
+    "plural": true
+  },
+  "{count} pill recording|{count} pills recording": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ],
+    "plural": true
+  },
+  "{count} pill|{count} pills": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ],
+    "plural": true
+  },
+  "{count} point: good. 3–6 points spread from water to your highest OG work best.|{count} points: good. 3–6 points spread from water to your highest OG work best.": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ],
+    "plural": true
+  },
+  "{count} point: plenty.|{count} points: plenty.": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ],
+    "plural": true
+  },
+  "{count} reading of {expected}|{count} readings of {expected}": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ],
+    "plural": true
+  },
+  "{count} reading.|{count} readings.": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ],
+    "plural": true
+  },
+  "{count} reading|{count} readings": {
+    "files": [
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/StatusSection.tsx"
+    ],
+    "plural": true
+  },
+  "{count} sent in 24 h|{count} sent in 24 h": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ],
+    "plural": true
+  },
+  "{date} (in {time})": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "{days} d": {
+    "files": [
+      "pages/brews/SummaryChart.tsx"
+    ]
+  },
+  "{days} so far": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "{device} · format v{version}": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "{done} of {total} done. Each step ticks itself off.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "{false} when the pill doesn't look like it's floating.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "{field} ({problem})": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "{found}: give it a name and press {button} below.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "{found}: sign in with the owner PIN to add it.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "{free} free of {total}": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "{from} to {to}": {
+    "files": [
+      "components/OverviewStrip.tsx"
+    ]
+  },
+  "{gravity} and {temperature}": {
+    "files": [
+      "units.tsx"
+    ]
+  },
+  "{h} h {m} min": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "{kind}: {text}": {
+    "files": [
+      "components/annotations.ts"
+    ]
+  },
+  "{min} to {max}": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "{mqtt} (usually port 1883), {mqtts} with TLS (8883), or {ws} / {wss} for MQTT over WebSockets.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "{n} d": {
+    "files": [
+      "components/CompareChart.tsx"
+    ]
+  },
+  "{n} days": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "{n} days in": {
+    "files": [
+      "components/CompareChart.tsx"
+    ]
+  },
+  "{n} h": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "{n} h ago": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "{n} min": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "{n} min ago": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "{n} of {total}": {
+    "files": [
+      "pages/dashboard/ArrangeList.tsx"
+    ]
+  },
+  "{n} pts/day": {
+    "files": [
+      "components/Chart.tsx",
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "{n} s": {
+    "files": [
+      "format.ts",
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "{n} s ago": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "{n}% att.": {
+    "files": [
+      "components/Ferment.tsx"
+    ]
+  },
+  "{name} added": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "{name} documentation": {
+    "files": [
+      "pages/webhooks/PresetGrid.tsx"
+    ]
+  },
+  "{name} has been saved.": {
+    "files": [
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "{name} ignores anything sent more often than every {minutes} minutes.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "{name} moved to position {n} of {total}.": {
+    "files": [
+      "pages/dashboard/ArrangeList.tsx"
+    ]
+  },
+  "{name} removed": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "{name} started": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "{name} temperature": {
+    "files": [
+      "components/CompareChart.tsx"
+    ]
+  },
+  "{name}: home": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "{offline} ({ago}), saved in this browser.": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "{online} while the hub is connected, {offline} when it isn't.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "{pct}% there": {
+    "files": [
+      "components/Ferment.tsx"
+    ]
+  },
+  "{percent}% used": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "{received} of the {count} reading expected since {date}|{received} of the {count} readings expected since {date}": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ],
+    "plural": true
+  },
+  "{rssi} dBm at the hub": {
+    "files": [
+      "pages/Dashboard.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "{rules} will stop sending here.": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "{service} added": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "{setUp} for a warm brew, a finished fermentation or a flat battery.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "{signIn} to make changes.": {
+    "files": [
+      "components/ui.tsx"
+    ]
+  },
+  "{start} to follow its gravity, ABV and when it's finished.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "{unit} avg": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "{untested} presets are built from each service's documentation and other open-source projects, but haven't been tried against the real service yet.": {
+    "files": [
+      "pages/webhooks/PresetGrid.tsx"
+    ]
+  },
+  "{value} /day": {
+    "files": [
+      "pages/pill/DataSources.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "{value} points": {
+    "files": [
+      "pages/pill/Tiles.tsx",
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "{value} pts": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "°C, Celsius": {
+    "files": [
+      "pages/settings/HubSection.tsx",
+      "units.tsx"
+    ]
+  },
+  "°F, Fahrenheit": {
+    "files": [
+      "pages/settings/HubSection.tsx",
+      "units.tsx"
+    ]
+  },
+  "°P, degrees Plato": {
+    "files": [
+      "pages/settings/HubSection.tsx",
+      "units.tsx"
+    ]
+  },
+  "~FG {gravity}": {
+    "files": [
+      "components/Ferment.tsx"
+    ]
+  },
+  "0 points": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "0.0 pts": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "1 point is 0.001 SG (1.050 → 1.049). Leave a box empty to ignore it.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "100 g Citra": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "14D": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "24H": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "30 letters and numbers": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "30D": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "3D": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "6 to 72. Shorter follows changes faster; longer is steadier.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "6H": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "7D": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "A backup on the hub": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "A broker address like mqtt://homeassistant.local:1883": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "A colour like #a78bfa": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "A file from \"Download a copy now\", the backups list, the USB stick or your S3 bucket.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "A file to attach to a {link}: the hub's status and settings, Bluetooth details, the last 500 log lines and the last 200 Bluetooth broadcasts heard.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "A number (group chats start with -), or @name for a public channel.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "A number from the last 3 bytes of the Bluetooth address (like an iSpindel ID)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "A retained message: anything that subscribes later (like Home Assistant after a restart) gets it straight away.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "A rough guess: the curve hasn't turned yet, or the readings are noisy.": {
+    "files": [
+      "pages/brews/Prediction.tsx"
+    ]
+  },
+  "A straight line through the last {count} hour of readings, leaving out any where the pill wasn't floating.|A straight line through the last {count} hours of readings, leaving out any where the pill wasn't floating.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ],
+    "plural": true
+  },
+  "A switched-off copy of the saved webhook. You are editing the copy now.": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "A URL like https://s3.eu-west-1.amazonaws.com": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "A whole number of hours from 6 to 72": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "ABV": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/brews/BrewsPage.tsx",
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "ABV –": {
+    "files": [
+      "components/Ferment.tsx"
+    ]
+  },
+  "ABV by the {formula}: {math}.": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "ABV formula": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "ABV so far": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/brews/BrewsPage.tsx",
+      "pages/brews/SummaryPage.tsx",
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "ABV so far, %": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "ABV so far: {abv}% ({formula}: {math})": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "ABV: {abv}% ({formula}: {math})": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Accelerometer": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Accelerometer X": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Accelerometer Y": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Accelerometer Z": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Access key ID": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Access token": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Access, the hub, units and theme, and how the hub is doing.": {
+    "files": [
+      "pages/settings/SettingsPage.tsx"
+    ]
+  },
+  "active": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Active": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Adapters": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Add": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/alerts/ChannelsPanel.tsx",
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Add {service}": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "Add a pill on the dashboard and its readings show up here.": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Add a service to get alerts even when this app is closed.": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Add a webhook": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Add an event": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Add at least one more point, at a different gravity, so RaptHooker can draw a line.": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "Add event": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Add header": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Add it when it appears under “Nearby”": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Add one to get notified.": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "Add pill": {
+    "files": [
+      "pages/Dashboard.tsx",
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Add pills to Home Assistant": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Add point": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Added": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. Calibrate the pill in the RAPT app first; this is for fine-tuning.": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Adding pills, brews, webhooks and alerts needs the owner (you, through Tailscale).": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Adding pills, brews, webhooks and alerts needs the owner.": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Addition": {
+    "files": [
+      "components/annotations.ts",
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Address copied": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "After 12 hours of readings and a start to the drop, RaptHooker predicts the FG and finish.": {
+    "files": [
+      "pages/brews/Prediction.tsx"
+    ]
+  },
+  "After the first reading arrives, the pill appears under Devices in Brewfather: link it to your batch.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "After the first reading, activate the pill on your Bricks page and assign it to a fermenter.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "After the first reading, pick the device in your brew session under Fermentation.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Aim for 3–6 points spread from water to the highest OG you brew. RaptHooker draws a straight line through 2 points and a curve through 3 or more, then works the gravity out from how the pill tilts.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Alert": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "Alerts": {
+    "files": [
+      "App.tsx",
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "Alerts always show in this app too.": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Alerts are pushed to phones and computers where you switch this on, even when the app is closed.": {
+    "files": [
+      "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "Alerts won't be sent here any more.": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "All": {
+    "files": [
+      "components/chartMath.ts",
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "All brews": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "all of its readings and brews": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "All of its readings and brews are deleted for good.": {
+    "files": [
+      "pages/settings/PillsSection.tsx"
+    ]
+  },
+  "all pills": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "All pills": {
+    "files": [
+      "pages/alerts/RuleModal.tsx",
+      "pages/pill/PillPage.tsx",
+      "pages/webhooks/ScheduleFields.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "All releases": {
+    "files": [
+      "components/WhatsNew.tsx",
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "All that fit": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "All webhooks": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Allow the webhook to be called from your local network in the trigger settings.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Already set": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Alternative (better for strong beers)": {
+    "files": [
+      "pages/brews/strings.ts",
+      "pages/settings/strings.ts"
+    ]
+  },
+  "alternative formula": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Amazon S3, Cloudflare R2, Backblaze B2, Wasabi, MinIO or anything else with an S3-compatible API.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Angle from vertical, degrees": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "any moment": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "Any time now": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Anyone on your network can look at your readings. The PIN keeps adding pills, brews and webhooks to you when you use another device.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Anyone on your network can look at your readings. The PIN keeps adding pills, brews and webhooks to you.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Anyone who can reach this hub can look.": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Anyone with it can read your data.": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Anyone with it can send readings to this hub.": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Anyone with this URL can post to the channel, so keep it to yourself.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Anything this build has that the release doesn't goes away. If the release doesn't start, the hub goes back to this build by itself. Your brews and settings stay.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Anything using this token stops working straight away.": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "API guide": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "API token": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "API token should be 30 letters and numbers": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "API tokens": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "App password": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "apparent": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Apparent attenuation so far, %": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Apparent attenuation: {value}%": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Archive": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Archive {name}?": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Archived": {
+    "files": [
+      "pages/pill/PillPage.tsx",
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Archived and ignored pills": {
+    "files": [
+      "pages/settings/PillsSection.tsx"
+    ]
+  },
+  "Archived: not recording. History and brews are kept.": {
+    "files": [
+      "pages/settings/PillsSection.tsx"
+    ]
+  },
+  "Arrange": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Arrow keys move along the chart, plus and minus zoom, 0 shows it all.": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Asks GitHub once a day whether there's a newer RaptHooker. Nothing about your brews is sent.": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "At the hub": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Attenuation": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/brews/SummaryPage.tsx",
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "auto": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "Auto": {
+    "files": [
+      "pages/brews/EditBrewModal.tsx",
+      "theme.ts"
+    ]
+  },
+  "Auto follows your device's light or dark setting.": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Auto from the pill": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Auto-refresh": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Automatic (browser)": {
+    "files": [
+      "components/DisplayMenu.tsx",
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Averages out wobbles from bubbles and knocks. Used for what's shown, sent and alerted.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Back to the brew": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Back to the dashboard": {
+    "files": [
+      "pages/pill/PillPage.tsx"
+    ]
+  },
+  "Back to the pill's own values": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Back up now": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Backed up": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Backed up, with problems": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Backing up…": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Backup": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Backup file ({name})": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Backups": {
+    "files": [
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Base topic": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Batch body": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Battery": {
+    "files": [
+      "components/Chart.tsx",
+      "pages/Dashboard.tsx",
+      "pages/dashboard/PillRow.tsx",
+      "pages/kiosk/Kiosk.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Battery below": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Battery, %": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Beer style": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Before the start": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Big readings for a spare screen": {
+    "files": [
+      "components/DisplayMenu.tsx",
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Bluetooth": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx",
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Bluetooth address": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Bluetooth and IP addresses, names, web addresses, tokens and passwords are taken out, so it's safe to share, but have a quick look through it first.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Bluetooth is starting…": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Bluetooth is unavailable": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Bluetooth isn't working on the hub yet: see {settings}.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Bluetooth isn't working.": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Bluetooth mode": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Bluetooth problem": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Bluetooth signal at the hub, dBm": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Bluetooth signal strength: the closer to 0 dBm, the stronger. Anything better than −85 dBm is fine.": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Body": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Body template": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Body template (for each pill)": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Bot token": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Bot token should look like 123456789:AAE…": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Brew": {
+    "files": [
+      "App.tsx",
+      "components/chartMath.ts",
+      "pages/pill/BrewPanel.tsx",
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Brew ended": {
+    "files": [
+      "components/annotations.ts",
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "Brew name": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Brew not found": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Brew started": {
+    "files": [
+      "components/annotations.ts"
+    ]
+  },
+  "Brew summary": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Brewer's Friend allows one post every 15 minutes per API key and brew session (more gets HTTP 429).": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Brewfather identifies the device by its name, so renaming the pill creates a new device there.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Brewfather ignores anything sent more often than every 15 minutes per device name.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Brewfather's battery field is in volts, so the pill's battery % goes in the comment instead.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Brewing": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Brewing only": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Brews": {
+    "files": [
+      "App.tsx",
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "Broker address": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "browser notifications": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Browser notifications": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Browser notifications and every service under \"Where alerts go\" that is switched on.": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Bucket": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Build": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Built {time}": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Built from the service's documentation and other open-source projects, but not yet tried against the real service. Use \"Send a test now\" and check the delivery log; please report back on GitHub whether it works or not.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "But send at least every": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "By default every number is the pill's own. You can let RaptHooker work some of them out instead, and switch back any time.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "By name": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Calibrate": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Calibrate {name}": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Calibrated": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Calibration saved": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Calibration steps": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Calibration wizard": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Can": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Can't reach the hub right now.": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Can't reach the hub. Check the connection and try again.": {
+    "files": [
+      "api.ts"
+    ]
+  },
+  "Can't tell yet": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Cancel": {
+    "files": [
+      "components/RangePicker.tsx",
+      "components/ui.tsx",
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/alerts/RuleModal.tsx",
+      "pages/brews/EditBrewModal.tsx",
+      "pages/brews/events.tsx",
+      "pages/pill/StartBrewModal.tsx",
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/OwnerSection.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Cards": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Catch up after an outage": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Catches up": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Caught": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Change PIN": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Changed less than": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Chart": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Charts in a ThingSpeak channel": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Chat ID": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Chat ID should be a number (or @name for a public channel)": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Check {fields}.": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "Check {service} for a message from RaptHooker.": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Check for updates daily": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Check now": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Checking it's a good RaptHooker backup": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Cheers! 🍻": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Choose a PIN (4+ characters)": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Choose where your readings should go. Everything can be changed afterwards.": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Clear": {
+    "files": [
+      "pages/brews/BrewsPage.tsx",
+      "pages/brews/Compare.tsx"
+    ]
+  },
+  "Clear the offset": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Clock": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Close": {
+    "files": [
+      "components/Chart.tsx",
+      "components/ui.tsx",
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Cloud": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Cloud backups saved": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Cloud backups switched off": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Cloud storage (S3)": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Cold crash": {
+    "files": [
+      "components/annotations.ts",
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Colour": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Commit {commit} with uncommitted changes, built {time}": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Commit {commit}, built {time}": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Compact": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Compare": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "Comparing {count} brew|Comparing {count} brews": {
+    "files": [
+      "pages/brews/Compare.tsx"
+    ],
+    "plural": true
+  },
+  "Connect → Setup → Telemetry via Bluetooth": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Connected": {
+    "files": [
+      "pages/settings/MqttSection.tsx",
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Connected fine": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Connecting": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Connecting to the broker…": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Connecting…": {
+    "files": [
+      "pages/settings/MqttSection.tsx",
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Copied": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Copy": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Copy {url}": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Copy a token from your Ubidots account (API Credentials) into the X-Auth-Token header.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Copy backups to a USB stick": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Copy it now: it won't be shown again.": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Copy summary": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Copy the channel's Write API Key into the body.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Copy the logging URL it shows and paste it into the URL above (it ends in ?id=…).": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Copy them off the Pi too (a USB stick or cloud storage), in case its SD card fails.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Copy to a USB stick": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Copy token": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Copy your API key from Bricks and replace <BRICKS_API_KEY> in the body.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Copying backups to a USB stick": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Couldn't add the pill": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Couldn't back up": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Couldn't change it": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Couldn't check for updates": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Couldn't compare those brews": {
+    "files": [
+      "pages/brews/Compare.tsx"
+    ]
+  },
+  "Couldn't copy": {
+    "files": [
+      "pages/settings/SystemSection.tsx",
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Couldn't copy the log": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Couldn't copy the summary": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Couldn't create the token": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Couldn't delete": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/settings/TokensSection.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Couldn't delete it": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Couldn't delete the event": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Couldn't duplicate": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Couldn't end the brew": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "Couldn't import": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Couldn't keep the screen on. Tap the screen to try again, or turn off screen sleep in the device's settings.": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Couldn't load alerts": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "Couldn't load API tokens": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Couldn't load brews": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "Couldn't load the backup settings": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Couldn't load the history: {error}": {
+    "files": [
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "Couldn't load the webhook": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Couldn't load webhooks": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Couldn't load where alerts go": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "Couldn't make the image": {
+    "files": [
+      "components/pngExport.ts"
+    ]
+  },
+  "Couldn't pause": {
+    "files": [
+      "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "Couldn't remove it": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Couldn't restart": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Couldn't resume": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "Couldn't save": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/alerts/RuleModal.tsx",
+      "pages/brews/EditBrewModal.tsx",
+      "pages/brews/events.tsx",
+      "pages/pill/DataSources.tsx",
+      "pages/pill/PillSettings.tsx",
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/MqttSection.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Couldn't save the event": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Couldn't save the hub settings": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Couldn't save the image": {
+    "files": [
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "Couldn't save the order": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Couldn't send a test": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "Couldn't send the test": {
+    "files": [
+      "pages/webhooks/Preview.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Couldn't set the OG": {
+    "files": [
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "Couldn't start the brew": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Couldn't start the update": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Couldn't switch off": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Couldn't switch on": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Couldn't switch to the release": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Couldn't test": {
+    "files": [
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Couldn't turn on notifications": {
+    "files": [
+      "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "Create a Pushover application": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Create an application (call it RaptHooker) and copy its API token.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Create an automation with a Webhook trigger and copy its webhook id.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Create an owner PIN so only you can add pills, brews and webhooks.": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Create PIN": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Create token": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Create UNLIMITED FREE webhooks": {
+    "files": [
+      "pages/webhooks/SparkleLine.tsx"
+    ]
+  },
+  "Create webhook": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Create your owner PIN": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "created {date}": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Current gravity": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "Current PIN": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Custom": {
+    "files": [
+      "components/RangePicker.tsx"
+    ]
+  },
+  "Custom range": {
+    "files": [
+      "components/RangePicker.tsx"
+    ]
+  },
+  "Custom Stream logging to your batches": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Dark": {
+    "files": [
+      "theme.ts"
+    ]
+  },
+  "Database": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Day {day}": {
+    "files": [
+      "pages/brews/BrewsPage.tsx",
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Day {n}": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Days since the brew started": {
+    "files": [
+      "pages/brews/SummaryChart.tsx",
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Default gravity unit": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Default temperature unit": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Default units": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Degrees Plato": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Delete": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx",
+      "pages/alerts/ChannelsPanel.tsx",
+      "pages/brews/BrewPage.tsx",
+      "pages/brews/events.tsx",
+      "pages/pill/CalibrationWizard.tsx",
+      "pages/settings/PillsSection.tsx",
+      "pages/settings/TokensSection.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Delete \"{name}\"?": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx",
+      "pages/alerts/ChannelsPanel.tsx",
+      "pages/brews/BrewPage.tsx",
+      "pages/settings/TokensSection.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Delete {name}": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx",
+      "pages/settings/PillsSection.tsx",
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Delete {name}?": {
+    "files": [
+      "pages/settings/PillsSection.tsx"
+    ]
+  },
+  "Delete brew": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "Delete everything": {
+    "files": [
+      "pages/pill/PillSettings.tsx",
+      "pages/settings/PillsSection.tsx"
+    ]
+  },
+  "Delete the point at {tilt}°": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Deleting a brew keeps the pill's readings; only the brew record (and its events) goes.": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "Details": {
+    "files": [
+      "pages/brews/events.tsx",
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "Details (optional)": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Development build": {
+    "files": [
+      "components/UpdateBanner.tsx",
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Device": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Device should be a device name from Pushover": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Device stream for your brew sessions": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Device type, e.g. PillG1": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Discovery prefix": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Dismiss": {
+    "files": [
+      "App.tsx",
+      "components/HubWarnings.tsx",
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Dismiss this warning": {
+    "files": [
+      "components/HubWarnings.tsx"
+    ]
+  },
+  "Display options": {
+    "files": [
+      "components/DisplayMenu.tsx"
+    ]
+  },
+  "Don't publish a reading when the pill doesn't look like it's floating (lying on its side, or a gravity no beer could have). Home Assistant still hears that it has fallen over.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Don't repeat for": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Don't repeat for (min)": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Don't send readings that look wrong": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Done": {
+    "files": [
+      "components/UpdateBanner.tsx",
+      "pages/Dashboard.tsx",
+      "pages/brews/brewText.ts",
+      "pages/dashboard/FirstRunGuide.tsx",
+      "pages/pill/CalibrationWizard.tsx",
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "done {ago}": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Done: {pill} is recording.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Done: the hub can hear a pill.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Done: the hub can hear your pill.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Done. Anyone on your network can look, but only you can change things.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Dotted lines: the pill's own values, to compare with RaptHooker's. Tap them in the legend to hide them.": {
+    "files": [
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "Down to 2 °C": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Download": {
+    "files": [
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/SystemSection.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Download a copy now": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Download diagnostics": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Drag across the chart or pinch to zoom; double-tap to see it all. Gaps are times nothing was recorded.": {
+    "files": [
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "Drag the pills, or use the arrows, to set their order. It's saved for everyone.": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Drag to move": {
+    "files": [
+      "pages/dashboard/ArrangeList.tsx"
+    ]
+  },
+  "Dry hop": {
+    "files": [
+      "components/annotations.ts",
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Dry hops, temperature changes, cold crashes, additions and notes show up here and on the chart.": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Duplicate": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "e.g. Grafana, Garage relay": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "each new reading as JSON: {gravity} (SG), {gravity_plato}, {temperature} (°C), {velocity} (points/day), {battery} (%), {rssi} (dBm), {tilt} (°), {plausible}, {timestamp}, and the running brew's {brew_name}, {og}, {abv}, {attenuation} and {stage} (empty when there's no brew).": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Each night's backup is copied onto it and the last 30 are kept, so you can take it away and keep a copy safe.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Each night's backup is uploaded to the folder below and the newest 30 are kept: older ones are deleted, so the key needs permission to list and delete as well as upload (or set a lifecycle rule on the bucket instead).": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Each pill appears as a device with gravity, temperature, battery and brew sensors (MQTT discovery). Archived and removed pills are taken away again.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Each pill becomes an Ubidots device named after it.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Each pill is sent separately.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Each step stands on its own: do the ones you need. Values update as the pill sends readings, so keep this open while it floats.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Easy to remember. Most computers and iPhones find .local names; some Android phones can't.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Edit": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx",
+      "pages/alerts/ChannelsPanel.tsx",
+      "pages/brews/BrewPage.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Edit {event}": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Edit {name}": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "Edit alert": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Edit brew": {
+    "files": [
+      "pages/brews/EditBrewModal.tsx"
+    ]
+  },
+  "Edit event": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Edit webhook": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Email": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Empty values become {null} in JSON; give a fallback with {fallback}.": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Enabled": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "End \"{name}\"?": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "End brew": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "Ended": {
+    "files": [
+      "pages/brews/EditBrewModal.tsx"
+    ]
+  },
+  "Ended: {date} ({days})": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Endpoint": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "endpoint {endpoint}, region {region} (both as shown on your bucket's page).": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "endpoint {endpoint}, region {region}, path-style on.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "endpoint {endpoint}, region {region}.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "endpoint empty (or {endpoint}), region {region} (your bucket's).": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "endpoint like {endpoint}, region {region}, path-style on.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "endpoint/bucket rather than bucket.endpoint. MinIO, most NAS boxes and Cloudflare R2 want this; Amazon S3 works either way.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Enter a full URL": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "Enter a number": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "Enter picks a reading to {action}.": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Enter the access key ID": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Enter the broker address first.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Enter the broker address, or switch MQTT off": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Enter the bucket name": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Enter the endpoint (or a region for AWS)": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Enter the secret access key": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "error": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Error": {
+    "files": [
+      "pages/webhooks/DeliveryLog.tsx"
+    ]
+  },
+  "Errors": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "every {interval}": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Every batch, from pitch to packaging. Pills record all the time; a brew just marks out a batch.": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "Every night at {time} the hub saves a copy of everything it has recorded and keeps the last {keep}.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Every night the hub saves a copy of everything it has recorded.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Every pill's rendered body, separated by commas (JSON) or new lines (text)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Every reading as it comes.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Every Sunday, each brew from the last 60 days and every pill's last 7 days are also saved as CSV files (they open in any spreadsheet), next to the backups and on the USB stick and in the cloud when those are on.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Every value, for your own server or automation": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Everything recorded": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "Everything that uses the numbers follows: the tiles, the charts (worked out again from the stored readings), brew stats, alerts, webhooks and MQTT. What the pill sent is kept, so you can switch back any time.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "everywhere": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Everywhere": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Example": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Exit TV mode": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Expected finish": {
+    "files": [
+      "pages/brews/Prediction.tsx"
+    ]
+  },
+  "Export": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Export all webhooks?": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "failed": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Failed": {
+    "files": [
+      "pages/Dashboard.tsx",
+      "pages/alerts/AlertsPage.tsx",
+      "pages/alerts/ChannelsPanel.tsx",
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/PillsSection.tsx"
+    ]
+  },
+  "failed ({error})": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Failing": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Fermentation": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "Fermentation progress": {
+    "files": [
+      "components/Ferment.tsx"
+    ]
+  },
+  "Fermentation stable": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Fermentation tracking via the iSpindel endpoint": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Fermentation updates posted to a channel": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Fermenting": {
+    "files": [
+      "pages/brews/Prediction.tsx",
+      "pages/brews/brewText.ts",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "FG": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "FG {gravity}": {
+    "files": [
+      "components/Ferment.tsx"
+    ]
+  },
+  "FG: {gravity}": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Fields: 1 gravity, 2 temperature, 3 battery, 4 velocity, 5 tilt, 6 signal.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Fill a jug with plain tap water at about 20 °C (68 °F).": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Fill in {field}": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Fill in Password to go with the username": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Fill in Username to go with the password": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Fill them in and send a test.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Final ABV": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "Final gravity": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/brews/Prediction.tsx"
+    ]
+  },
+  "Find your API key in Brewer's Friend under Profile → Integrations.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Finished": {
+    "files": [
+      "pages/brews/BrewsPage.tsx",
+      "pages/brews/Prediction.tsx",
+      "pages/brews/SummaryPage.tsx",
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Finished brews will be kept here with their charts and stats.": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "Finishing": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Firing: {pills}": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "Firmware": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Firmware version": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Fit": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Float the pill in it at about 20 °C (68 °F) and wait for a reading or two.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Float the pill in it, knock off any bubbles and wait for 2–3 readings (about {time}).": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Float the pill in it, knock off any bubbles and wait for 2–3 readings.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Folder": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Folder in the bucket": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Following the hub's default ({units}).": {
+    "files": [
+      "units.tsx"
+    ]
+  },
+  "For 1 day": {
+    "files": [
+      "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "For 1 hour": {
+    "files": [
+      "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "For a Bluetooth relay (e.g. an ESP32) that passes on what it hears; it can read nothing.": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "For scripts and dashboards: can read pills, readings and brews, but change nothing.": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "For when something seems stuck, or you'd like help with a problem.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Form (urlencoded)": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Format a USB stick as {fat32} or {exfat}, name it {label} and plug it into the Pi.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Found a pill nearby|Found {count} pills nearby": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ],
+    "plural": true
+  },
+  "Found a RAPT Pill nearby": {
+    "files": [
+      "pages/Dashboard.tsx",
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Free push notifications through the ntfy app, no account needed": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "From": {
+    "files": [
+      "components/RangePicker.tsx"
+    ]
+  },
+  "From @BotFather.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "from before a restore": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "From before a restore": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "From should be an email address": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "from the pill": {
+    "files": [
+      "pages/brews/SummaryPage.tsx",
+      "pages/pill/Tiles.tsx",
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "From the pill (default)": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "From the pill: the middle reading from its first to third hour in the wort": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "From the reading at {date}": {
+    "files": [
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "from the tilt {gravity}": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "from tilt": {
+    "files": [
+      "pages/pill/PillPage.tsx"
+    ]
+  },
+  "From vertical": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "From your application's page on pushover.net.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Full screen": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Get alerts on your phone through ntfy, Pushover, Telegram, Discord or email, wherever you are.": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Get the ntfy app": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Get told when a brew gets too warm, reaches its target, finishes fermenting or a pill goes quiet.": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "GitHub issue": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Give it a minute, then reload the page.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Give it a name": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "Give them a few minutes to settle, wait for a new reading, then type what the thermometer says.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Gmail app passwords": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Gmail, Outlook and most others want an app password here, not your normal password.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Got it": {
+    "files": [
+      "components/WhatsNew.tsx"
+    ]
+  },
+  "Grainfather expects gravity in °P (it converts to SG itself) and accepts one reading every 15 minutes.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Gravity": {
+    "files": [
+      "components/Chart.tsx",
+      "pages/Dashboard.tsx",
+      "pages/brews/BrewPage.tsx",
+      "pages/dashboard/PillRow.tsx",
+      "pages/pill/CalibrationWizard.tsx",
+      "pages/pill/DataSources.tsx",
+      "pages/pill/PillPage.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Gravity ({unit})": {
+    "files": [
+      "components/Chart.tsx",
+      "pages/brews/SummaryChart.tsx"
+    ]
+  },
+  "Gravity and temperature over the brew": {
+    "files": [
+      "pages/brews/SummaryChart.tsx"
+    ]
+  },
+  "Gravity averaged over the last 4 hours.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Gravity averaged over the last hour.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Gravity by days since each brew started.": {
+    "files": [
+      "pages/brews/Compare.tsx"
+    ]
+  },
+  "Gravity change": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Gravity change, points per day (null until there is enough data)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Gravity drops to a target": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Gravity has changed less than this many points over the window": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Gravity in the webhook's unit (SG or °P)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Gravity is now worked out from the tilt": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Gravity is worked out by RaptHooker from the tilt.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Gravity is worked out from the tilt, so the offset is added to that. Usually the tilt points are enough on their own.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Gravity looks wrong: is the pill floating?": {
+    "files": [
+      "pages/Dashboard.tsx",
+      "pages/dashboard/PillRow.tsx",
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Gravity moved at least": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Gravity now": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Gravity now: {gravity}": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Gravity offset (points)": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Gravity offset cleared": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Gravity offset set to {offset}": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Gravity points, e.g. 46.5": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Gravity reaches": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Gravity unit": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx",
+      "units.tsx"
+    ]
+  },
+  "Gravity: {from} → {to}": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "Grey dots: readings where the pill didn't look like it was floating. They're left out of the line, brew stats and gravity alerts.": {
+    "files": [
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "Header": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Header names can only use letters, digits and -": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "Headers": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "heard {ago}": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Help": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Hide": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "Hide for a week": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Hide guide": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Hide this warning for a week": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Hide until the next version": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Hide until the next version after {version}": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "high confidence": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "History": {
+    "files": [
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "History of {name}": {
+    "files": [
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "Hold a reading back unless the gravity or the temperature has moved this much since the last one sent. The interval above still applies.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Home Assistant discovery, when it's on.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Hours of readings RaptHooker uses": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "How alcohol by volume is worked out from the original gravity (OG) and the current or final gravity (FG).": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "How many pills are in this request": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "How old the reading is when sent": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "How the hub listens for your pills, and how many of their readings it catches.": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "How to set one up": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "How to update": {
+    "files": [
+      "components/UpdateBanner.tsx",
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Hub": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Hub name": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Hub settings saved": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Hub status": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Hub warnings": {
+    "files": [
+      "components/HubWarnings.tsx"
+    ]
+  },
+  "I understand the hub's current data will be replaced": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Icon licence": {
+    "files": [
+      "pages/settings/SettingsPage.tsx"
+    ]
+  },
+  "Id of the brew running on the pill (\"\" when none)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Idle": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "If BrewSpy shows odd gravity values, switch the gravity unit to °P.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "If the new version doesn't start, the hub goes back to {version} by itself. Your brews and settings stay.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Ignore": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Ignore pills sitting idle.": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Ignored: not shown when heard nearby.": {
+    "files": [
+      "pages/settings/PillsSection.tsx"
+    ]
+  },
+  "Import": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Imported {count} webhook|Imported {count} webhooks": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ],
+    "plural": true
+  },
+  "Imported webhooks start switched off.": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "in {n} h": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "in {n} min": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "in {n} s": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "In a browser, open api.telegram.org/bot<your token>/getUpdates and copy the number after \"chat\":{\"id\":": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "In Brewfather open Settings → Power-ups → Custom Stream and switch it on.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "In BrewSpy, add a hydrometer and open its setup tab to find its token.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "In Discord: channel settings → Integrations → Webhooks → New Webhook → Copy Webhook URL, then paste it above.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "In Discord: Server Settings → Integrations → Webhooks → New Webhook.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "In Fermentrack add a gravity sensor of type iSpindel, named exactly like the pill.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "In Telegram, talk to @BotFather: send /newbot and follow the steps. Copy the bot token it gives you.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "In the Grainfather app, add equipment: Fermentation Tracking Equipment → iSpindel DIY electronic Hydrometer.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "In the RAPT app (or the RAPT portal), open your pill and choose {path}. The interval you set there is how often it sends a reading: every few minutes is plenty.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Include readings already recorded since then.": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Including any you add later.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "including API keys and tokens": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Info": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Install the ntfy app on your phone, or open ntfy.sh in a browser.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Interval": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Intro to Discord webhooks": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "IoT dashboards and charts": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "iSpindel-format services expect the battery in volts; RAPT Pills report a percentage, which is sent as it is.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "iSpindel-style logging with a token": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "It doesn't restart by itself here: start it again.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "It is switched off.": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "It isn't used for brew stats, gravity alerts or (by default) webhooks.": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "It may have been removed.": {
+    "files": [
+      "pages/pill/PillPage.tsx"
+    ]
+  },
+  "It sends on its schedule again.": {
+    "files": [
+      "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "It sends on its schedule from now on.": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "It shows up below as “{heading}” after its next reading. Pills only send every few minutes, so give it a little while.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "It started earlier": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "It stops being recorded and is hidden from the dashboard. Its history and brews are kept, and you can start recording again from here.": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "It stops sending straight away and its delivery log is deleted.": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "It was built from source and copied to the hub by hand, not installed from a release, so its version number doesn't say exactly what it runs and it doesn't update itself.": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "It's switched off for now.": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "It's switched off until you've changed what you need.": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Its final stats are saved. The pill keeps recording.": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "just now": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "Keep it somewhere private.": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Keep the latest reading on the broker": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Keep the pill within Bluetooth range of this hub. The same room is best; thick walls and steel fermenters cut the range.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Kept in {folder} on the Pi.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Keys for your own scripts and for Bluetooth relays.": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Keys, topics and addresses are only shown to the owner.": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Kind of event": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Known gravity ({unit})": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Krausen has dropped": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Lag phase": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Language": {
+    "files": [
+      "components/DisplayMenu.tsx",
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Last {date}": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Last 14 days": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "last 24 hours": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Last 24 hours": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "Last 3 days": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "Last 30 days": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "Last 6 hours": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "Last 7 days": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "Last backup {ago}": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Last checked": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Last heard": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Last heard {ago}": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "last hour|last {count} hours": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ],
+    "plural": true
+  },
+  "Last pill heard": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "last pill heard {ago}": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Last reading": {
+    "files": [
+      "pages/dashboard/PillRow.tsx"
+    ]
+  },
+  "Last reading {time}": {
+    "files": [
+      "pages/pill/PillPage.tsx"
+    ]
+  },
+  "Last reading sent {ago}.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Last reset": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Last saved {ago} in {folder}.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Last saved {ago}.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Last seen": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "last sent {ago}": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Last sent {ago}": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Last sent {ago} (HTTP {status})": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "last used {ago}": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Latest reading": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Latest release": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Latest values": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Layout": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Learned from its readings": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Learning…": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Leave empty if the server needs no login.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Leave empty to send to all your devices.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Leave full screen": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Leave it as {prefix} unless you changed it in Home Assistant's MQTT options.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Leave it empty for Amazon S3 (the region picks the address).": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Leave the OG empty to take it from the pill: the middle reading from its first to third hour in the wort, once it has settled.": {
+    "files": [
+      "pages/brews/EditBrewModal.tsx"
+    ]
+  },
+  "Less than {count} point change in {hours} h|Less than {count} points change in {hours} h": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ],
+    "plural": true
+  },
+  "Let's get your first pill recording": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Letters, numbers, - and _. Anyone who knows it can read your alerts, so make it hard to guess.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Light": {
+    "files": [
+      "theme.ts"
+    ]
+  },
+  "light (1-hour average)": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "Lines on the chart": {
+    "files": [
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "Listening": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Listening for pills": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Listening for RAPT Pills…": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Live": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Live readings from your RAPT Pills, recorded around the clock.": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Live updates: closed": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Live updates: connecting": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Live updates: open": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Loading pills": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Log copied": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Logs": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Look up your mail provider's SMTP settings: server, port and security.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "low confidence": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Made \"{name}\"": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Main": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Make one up": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "Make up a liquid of known gravity (sugar or malt extract in water works) and measure it with a hydrometer or refractometer. Plain water is {gravity}.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "medium confidence": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Messages from your own Telegram bot": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Method": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "MinIO or a NAS:": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "minutes": {
+    "files": [
+      "pages/alerts/RuleModal.tsx",
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Missing quite a few: try the hub (or a relay) closer to the pill.": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Missing readings. Move the hub closer to the fermenter, plug in a USB Bluetooth dongle away from the Pi, or set up a relay nearby.": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "mock": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Most of the drop is in: a fair guess.": {
+    "files": [
+      "pages/brews/Prediction.tsx"
+    ]
+  },
+  "Most providers only accept your own address here.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Move {name} down": {
+    "files": [
+      "pages/dashboard/ArrangeList.tsx"
+    ]
+  },
+  "Move {name} up": {
+    "files": [
+      "pages/dashboard/ArrangeList.tsx"
+    ]
+  },
+  "Move down": {
+    "files": [
+      "pages/dashboard/ArrangeList.tsx"
+    ]
+  },
+  "Move up": {
+    "files": [
+      "pages/dashboard/ArrangeList.tsx"
+    ]
+  },
+  "MQTT and Home Assistant": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "MQTT is switched off.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "MQTT only sends a password along with a username": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "MQTT settings saved": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Must be at least {min}": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "Must be at most {max}": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "Must be less than {max}": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "Must be more than {min}": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "My webhook": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Name": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/alerts/RuleModal.tsx",
+      "pages/brews/EditBrewModal.tsx",
+      "pages/pill/PillSettings.tsx",
+      "pages/pill/StartBrewModal.tsx",
+      "pages/settings/TokensSection.tsx",
+      "pages/webhooks/RequestFields.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Name for the pill {id} (optional)": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Name it (optional)": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Needs a tilt calibration first: at least 2 points.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "never": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "Never": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "never used": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "New {name} webhook": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "New alert": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx",
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "New offset": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "New owner PIN": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "New PIN": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "New versions of RaptHooker, and what changed.": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "New webhook": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Next": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Next {time}": {
+    "files": [
+      "pages/pill/PillPage.tsx"
+    ]
+  },
+  "next {when}": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Next reading": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Next screen every": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "No alerts yet.": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "No backup yet": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "No Bluetooth": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "No body": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "No brew": {
+    "files": [
+      "pages/dashboard/PillRow.tsx"
+    ]
+  },
+  "No brew running": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "No brews on the go": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "No brews running. Start one from a pill's page or with the menu above.": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "No brews running. Start one from a pill's page.": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "No more than {max}": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "No notes yet.": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "No pills": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "No pills yet": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "No pills yet.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "No readings in this range yet": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "No readings yet.": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "No spaces, # or +": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "No stick": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "No style": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "No style given": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "No tokens yet.": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Node {version} on {platform}": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Nodemailer SMTP options": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "None (only on your own network)": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "None published yet": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "none yet": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx",
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "None yet": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "None yet: the first one is made tonight, or press Back up now.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "None. An ESP32 near your fermenters can pass on what it hears to the hub.": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Not checked yet": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Not connected": {
+    "files": [
+      "pages/settings/MqttSection.tsx",
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Not enough readings for a chart.": {
+    "files": [
+      "pages/brews/SummaryChart.tsx"
+    ]
+  },
+  "Not enough readings yet to tell.": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Not floating?": {
+    "files": [
+      "pages/pill/PillPage.tsx"
+    ]
+  },
+  "not known yet": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Not listening: {error}": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Not plugged in": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Not sent yet": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Not this time": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Not used yet": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Not used: is the pill floating?": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Not yet": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Not yours? Hide it": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Note": {
+    "files": [
+      "components/annotations.ts",
+      "pages/brews/SummaryPage.tsx",
+      "pages/brews/brewText.ts",
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Notes": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/brews/EditBrewModal.tsx",
+      "pages/brews/SummaryPage.tsx",
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Notes:": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Nothing added yet.": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Nothing heard for {minutes} min": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "Nothing heard from the pill for a while": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Nothing is sent until then; your pills are still recorded.": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Nothing is sent while it's paused; your pills are still recorded. It carries on by itself when the pause is over.": {
+    "files": [
+      "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "Nothing logged at this level yet.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Nothing sent yet.": {
+    "files": [
+      "pages/webhooks/DeliveryLog.tsx"
+    ]
+  },
+  "Nothing yet.": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "Notifications are blocked for this site in your browser settings": {
+    "files": [
+      "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "Notifications on": {
+    "files": [
+      "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "Notifications on this device": {
+    "files": [
+      "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "now": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "Now": {
+    "files": [
+      "pages/brews/BrewsPage.tsx",
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "ntfy publishing docs": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "of readings since {time}": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "of readings today": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "off": {
+    "files": [
+      "pages/pill/calibration.ts",
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Off": {
+    "files": [
+      "pages/settings/MqttSection.tsx",
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Off (default)": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Off by": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Offline": {
+    "files": [
+      "App.tsx",
+      "pages/dashboard/PillRow.tsx",
+      "pages/kiosk/Kiosk.tsx",
+      "pages/pill/PillPage.tsx"
+    ]
+  },
+  "Offline: data from {ago}": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Offline: showing data from {date}": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Offset now": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "OG": {
+    "files": [
+      "pages/brews/SummaryPage.tsx",
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "OG {gravity}": {
+    "files": [
+      "components/Chart.tsx",
+      "components/Ferment.tsx"
+    ]
+  },
+  "OG set to {gravity}": {
+    "files": [
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "OG: {gravity}": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "OG: {gravity} (from the pill)": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "OK": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx",
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "On": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "on {pill}": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "On {pill}. Readings are already being recorded, so you can start a brew any time, even after pitching.": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "On average the points are {rms} points from the curve: re-measure any that are far out, or delete them.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "On average the points are {rms} points from the curve.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "On change": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "On GitHub": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "On the go": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "On the hub": {
+    "files": [
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "On your network": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "On your Pushover dashboard (or a group key).": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Once it gets going": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "One at a time": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "One request for all": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Online": {
+    "files": [
+      "pages/dashboard/PillRow.tsx",
+      "pages/pill/PillPage.tsx"
+    ]
+  },
+  "Only change it if you run your own ntfy server.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Only for protected topics. Or use a username and password instead.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Only for this browser on this device. Nothing here changes the hub.": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "only in this app": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "only listens, so Wi-Fi keeps more of the radio it shares with Bluetooth": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Only send new readings": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Only send when something changes": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Only shown in this app.": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Only these:": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Only while a brew is running": {
+    "files": [
+      "pages/alerts/RuleModal.tsx",
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Open a chat with your new bot and send it any message (or add the bot to a group).": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Open it, choose View instructions and note the Server URL, e.g. /iot/abc123/ispindel.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Open on another device": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Optional": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Optional: brews, webhooks and alerts": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "or the temperature": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "ordinary scanning, which keeps the shared radio busier and can slow a Pi 3’s Wi-Fi": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Original gravity": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/brews/EditBrewModal.tsx",
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Original gravity ({unit})": {
+    "files": [
+      "pages/brews/EditBrewModal.tsx",
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Original gravity, in the webhook's gravity unit": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Other": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Other services": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "Out of liquid a pill reports a gravity worked out from however it's lying": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Over (hours)": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Owner access": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Owner only": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Owner PIN": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Part of the range shown on the chart": {
+    "files": [
+      "components/OverviewStrip.tsx"
+    ]
+  },
+  "passive": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Passive": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Passive: only listens for RAPT broadcasts, which is kinder to the Wi-Fi": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Password": {
+    "files": [
+      "pages/alerts/strings.ts",
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Paste both here and send a test.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Paste it here and send a test.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Paste it wherever you like.": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Paste the token and chat ID here and send a test.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Path-style addresses": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Pause": {
+    "files": [
+      "pages/webhooks/PauseButton.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Pause \"{name}\"?": {
+    "files": [
+      "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "Paused": {
+    "files": [
+      "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "Paused until {date} {time}": {
+    "files": [
+      "pages/webhooks/webhookApi.ts"
+    ]
+  },
+  "Paused until {time}": {
+    "files": [
+      "pages/webhooks/webhookApi.ts"
+    ]
+  },
+  "Paused until you resume it": {
+    "files": [
+      "pages/webhooks/webhookApi.ts"
+    ]
+  },
+  "Pick a date and time": {
+    "files": [
+      "pages/brews/EditBrewModal.tsx",
+      "pages/brews/events.tsx",
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Pick a Security option": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Pick a service: the URL, payload and timing are filled in for you.": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Pick a service. You can add as many as you like and choose which alerts use each one.": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "Pick a start and an end": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "Pick a topic name that is hard to guess (anyone who knows it can read your alerts) and subscribe to it in the app.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Pick at least 15 minutes": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "Pick at least one more brew below to overlay their curves.": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "Pick one of the options": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "Pick the channel it posts to, then Copy Webhook URL.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Pick the start and end": {
+    "files": [
+      "components/RangePicker.tsx"
+    ]
+  },
+  "Pick two to eight brews below to overlay their curves.": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "Picked in this browser.": {
+    "files": [
+      "units.tsx"
+    ]
+  },
+  "Picking the backup": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Pill": {
+    "files": [
+      "pages/dashboard/ArrangeList.tsx",
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Pill and reading variables only work in the per-pill body template; the URL, headers and batch body get these.": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Pill goes quiet": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Pill ids: {list}.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Pill not floating?": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Pill not floating? (left out)": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Pill not found": {
+    "files": [
+      "pages/pill/PillPage.tsx"
+    ]
+  },
+  "Pill order": {
+    "files": [
+      "pages/dashboard/ArrangeList.tsx"
+    ]
+  },
+  "Pill reads now": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "pill removed": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "Pill says {gravity}": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Pill says {pill} · RaptHooker {ours}": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Pill settings": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Pill tilted {angle}°": {
+    "files": [
+      "components/PillFigure.tsx"
+    ]
+  },
+  "Pill: {name}": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Pill's own gravity": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Pill's own velocity": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Pills": {
+    "files": [
+      "App.tsx",
+      "pages/Dashboard.tsx",
+      "pages/alerts/RuleModal.tsx",
+      "pages/webhooks/ScheduleFields.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Pills nearby": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Pills only send every few minutes, so it can take a little while to appear.": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Pills per screen": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Pills, brews, readings, webhooks, alerts and settings (including the owner PIN) all come from the backup. Readings recorded after it was made won't be there.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "PIN changed": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "PIN created: you are signed in": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Plain text": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Plain water should read {gravity}. If it doesn't, set the offset here.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Point added: {tilt}° = {gravity}": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Point deleted": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Point deleted. Too few left, so it's back to the pill's gravity": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Point the URL at your own endpoint.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Point your phone's camera at a code, or copy an address.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "points": {
+    "files": [
+      "pages/alerts/RuleModal.tsx",
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Points": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Port": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Port should be a number like 587 or 465": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Posts in a channel on your Discord server": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Predicted FG": {
+    "files": [
+      "pages/brews/Prediction.tsx",
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Predicted FG: {gravity} ({confidence}), finish: {finish}": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Prediction": {
+    "files": [
+      "pages/brews/Prediction.tsx"
+    ]
+  },
+  "Preview": {
+    "files": [
+      "pages/webhooks/Preview.tsx"
+    ]
+  },
+  "Previous reading": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Print / Save as PDF": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Problem": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "pts/day": {
+    "files": [
+      "pages/dashboard/PillRow.tsx",
+      "pages/kiosk/Kiosk.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Publish every reading to an MQTT broker, and add your pills to Home Assistant as devices automatically.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Publish over MQTT": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Publish readings over MQTT": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Push notifications need the app opened over {https} (for example through Tailscale), and on iPhone it must be added to the Home Screen first. Alerts still show here while the app is open, and the services under \"Where alerts go\" work without it.": {
+    "files": [
+      "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "Pushover API docs": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Put {{items}} in the batch body where the readings go": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Put a username or password in an Authorization header rather than in the URL": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Put the pill and a thermometer you trust in the same liquid (a jug of water, or the fermenter).": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Put your pill in {mode} (RAPT app → your pill → Connect → Setup → Telemetry via Bluetooth) and keep it within range of this hub. It'll pop up here so you can add it.": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Put your pill in Bluetooth mode": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "QR code for {url}": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Quiet for": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Range": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "RaptHooker {version} is available.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "RaptHooker has been updated to {version}.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "RaptHooker has stopped": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "RaptHooker is back": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "RaptHooker is free software under the GPL-3.0. Not affiliated with KegLand or RAPT.": {
+    "files": [
+      "pages/settings/SettingsPage.tsx"
+    ]
+  },
+  "RaptHooker needs a few hours of readings": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "RaptHooker turns the pill's tilt into gravity using your tilt calibration points.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "RaptHooker version": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "RaptHooker's data {size}": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "RaptHooker's id for the pill": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "RaptHooker's velocity: over {from} → {to} hours": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "Read": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Reading": {
+    "files": [
+      "components/Chart.tsx",
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Reading now": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Readings": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "Readings are held until the clock is set from the network": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Readings are sent as they arrive.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Readings caught": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Readings will be missing until it's back; the hub keeps trying.": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Ready.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Really delete": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Recent": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "Recent deliveries": {
+    "files": [
+      "pages/webhooks/DeliveryLog.tsx"
+    ]
+  },
+  "Record again": {
+    "files": [
+      "pages/settings/PillsSection.tsx"
+    ]
+  },
+  "recorded by {name}": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Recorded with RaptHooker": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Recorded with RaptHooker.": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Recording again": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Recording carries on at the hub; this page reconnects by itself.": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Recording has started.": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Recording pauses for a few seconds while RaptHooker starts again (a reading sent just then may be missed). Your data and running brews are kept.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Recording since": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Refresh": {
+    "files": [
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/StatusSection.tsx",
+      "pages/settings/SystemSection.tsx",
+      "pages/webhooks/DeliveryLog.tsx"
+    ]
+  },
+  "Refresh every 5 seconds": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Region": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Relay": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "relay guide": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Relays": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Reliable alerts on iPhone, Android and desktop (one-off app purchase)": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Reload": {
+    "files": [
+      "App.tsx",
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Reload to use the new version.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Remove {name}?": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Remove header": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Remove pill": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "removed pill": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx",
+      "pages/brews/BrewsPage.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Removed pill": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "Renamed": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Replace <API_KEY> in the URL above.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Replace <BREWSPY_TOKEN> in the body with it. Each pill needs its own token, so make one webhook per pill.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Replace <DEVICE_ID> above with the part between /iot/ and /ispindel.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Replace <FERMENTRACK_HOST> with the address of your Fermentrack server.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Replace <HOME_ASSISTANT> and <WEBHOOK_ID> above. Use trigger.json.gravity etc. in the automation.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Replace and restart": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Replace the <PLACEHOLDERS> from the preset with your own details": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Report on GitHub": {
+    "files": [
+      "pages/webhooks/PresetGrid.tsx"
+    ]
+  },
+  "Required": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "Reset zoom": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "Response": {
+    "files": [
+      "pages/webhooks/DeliveryLog.tsx"
+    ]
+  },
+  "Restart": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Restart and diagnostics": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Restart RaptHooker to finish.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Restart the hub": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Restart the hub?": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Restarting the hub": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Restarting…": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Restarting… this page reconnects by itself.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Restore": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Restore a backup": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Restore…": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Restored from a backup {ago}.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Restored. Reloading…": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Resume": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "Resumed": {
+    "files": [
+      "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "Right now that would read {tilt} (the pill says {pill}).": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Right now: pill {gravity}": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Right now: pill {pill} · RaptHooker {ours}": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Rising": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Rules": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "Running for": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Runtime": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Sample reading": {
+    "files": [
+      "pages/webhooks/Preview.tsx"
+    ]
+  },
+  "Save": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/brews/EditBrewModal.tsx",
+      "pages/brews/events.tsx",
+      "pages/pill/DataSources.tsx",
+      "pages/pill/PillSettings.tsx",
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/HubSection.tsx",
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Save alert": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Save calibration": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Save changes": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Saved": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Saved on the hub": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Saving…": {
+    "files": [
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "scanning": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Screen {n} of {total}": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Secret access key": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Security": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "See the {api} and the {relay}.": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "See the relay guide for setting up an ESP32 with this token.": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Select the token and copy it yourself.": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Send a test now": {
+    "files": [
+      "pages/webhooks/PresetGrid.tsx",
+      "pages/webhooks/Preview.tsx"
+    ]
+  },
+  "Send all pills in one request": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Send at least every": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Send every": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Send test": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "Send to": {
+    "files": [
+      "pages/alerts/RuleModal.tsx",
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Send your pills' readings to Brewfather, Grainfather, Brewer's Friend, Home Assistant or anything with a URL.": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Sender": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Sending all pills in one request needs a JSON or plain-text body (and not GET)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Sending all pills in one request needs a JSON or plain-text body (and not GET).": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Sending…": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/webhooks/Preview.tsx"
+    ]
+  },
+  "Sends every chosen pill's latest reading.": {
+    "files": [
+      "pages/webhooks/Preview.tsx"
+    ]
+  },
+  "Sent": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Separate several addresses with commas.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Server": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Server must be a web address starting with https://": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Set the offset": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Set the offset to {offset}": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Set up a tilt calibration": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Set up alerts": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Setting up {name}": {
+    "files": [
+      "pages/webhooks/PresetGrid.tsx"
+    ]
+  },
+  "Setting up {service}": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "Setting up Home Assistant": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Settings": {
+    "files": [
+      "App.tsx",
+      "components/HubWarnings.tsx",
+      "pages/dashboard/FirstRunGuide.tsx",
+      "pages/settings/SettingsPage.tsx"
+    ]
+  },
+  "Settings for everyone who uses this hub.": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Settings for popular services": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Setup progress": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "SG, specific gravity": {
+    "files": [
+      "pages/settings/HubSection.tsx",
+      "units.tsx"
+    ]
+  },
+  "Show": {
+    "files": [
+      "components/RangePicker.tsx",
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Show {count} hidden warning|Show {count} hidden warnings": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ],
+    "plural": true
+  },
+  "Show all pills": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Show it all": {
+    "files": [
+      "components/Chart.tsx",
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "Show it all (0)": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Shown in the top bar and the browser tab.": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Sign in": {
+    "files": [
+      "pages/settings/OwnerSection.tsx",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Sign in to add it": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Sign in with the owner PIN": {
+    "files": [
+      "components/ui.tsx"
+    ]
+  },
+  "Sign in with the owner PIN to check for updates or update.": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Sign in with the owner PIN to create webhooks.": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Sign out": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Sign up at pushover.net and install the Pushover app. Your user key is on the Pushover dashboard.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Signal": {
+    "files": [
+      "components/Chart.tsx",
+      "pages/Dashboard.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Signal unknown": {
+    "files": [
+      "components/ui.tsx",
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Signal: {quality}": {
+    "files": [
+      "components/ui.tsx"
+    ]
+  },
+  "Signal: {quality} ({rssi} dBm)": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "signal::Excellent": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "signal::Good": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "signal::OK": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "signal::Very weak": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "signal::Weak": {
+    "files": [
+      "format.ts"
+    ]
+  },
+  "Signed in": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Signed out": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Simulated pills": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Simulated pills (development mode)": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Since {date}": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Since the brew started": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "Skip a send if the pill hasn't reported since the last one (e.g. it's out of range).": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Skip readings that look wrong": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Skip to content": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Slowing down: under a quarter of its fastest rate.": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "smoothed": {
+    "files": [
+      "pages/pill/PillPage.tsx"
+    ]
+  },
+  "Smoothed: 1-hour average": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Smoothed: 4-hour average": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Smoothing": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Smoothing: {from} → {to}": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "smoothing::Light": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "smoothing::Strong": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "SMTP server": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Some readings may be missed: try the hub (or a relay) closer to the pill.": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Something went wrong on this page": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Specific gravity, e.g. 1.0465": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Stage": {
+    "files": [
+      "pages/brews/Prediction.tsx"
+    ]
+  },
+  "Stage: {stage}": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Standard": {
+    "files": [
+      "pages/brews/strings.ts",
+      "pages/settings/strings.ts"
+    ]
+  },
+  "standard formula": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Start a brew": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx",
+      "pages/pill/BrewPanel.tsx",
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Start a brew from a pill's page to track it here.": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Start a brew on": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "Start a brew on…": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "Start brew": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Start from a blank webhook": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Start recording again": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Start with a preset": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Start with plain water (1.000), then add liquids of higher gravity.": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "Started": {
+    "files": [
+      "pages/brews/EditBrewModal.tsx"
+    ]
+  },
+  "started {date} ({days} ago)": {
+    "files": [
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "Started at": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Started: {date}": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "starting": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Starting Bluetooth": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Starting…": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Starts RaptHooker again. Recording pauses for a few seconds; your data and brews carry on.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "STARTTLS (usually port 587)": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Stay quiet when a pill is just sitting in a cupboard.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Steady": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Stick plugged in": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "still fermenting": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Still fermenting ({days} so far)": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Still learning the interval": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Stop comparing": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ]
+  },
+  "Stop ignoring": {
+    "files": [
+      "pages/settings/PillsSection.tsx"
+    ]
+  },
+  "Stopped. Start it again, then reload this page.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Storage": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Stored readings against how many each pill should have sent, going by its interval.": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "strong (4-hour average)": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "Style": {
+    "files": [
+      "pages/brews/EditBrewModal.tsx",
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Summary": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "Summary copied": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "Switch off": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Switch on": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Switch to gravity worked out from the tilt?": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Switch to RaptHooker {version}?": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Switch to release {version}": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Switch to the release": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Switched off": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Switched on": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Synced": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Tailscale (HTTPS)": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Talk to @BotFather": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Tap or click a reading (or focus the chart and press Enter) to use it as the brew's OG.": {
+    "files": [
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "target {gravity}": {
+    "files": [
+      "pages/brews/Prediction.tsx",
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "target FG": {
+    "files": [
+      "components/Chart.tsx",
+      "pages/brews/SummaryChart.tsx"
+    ]
+  },
+  "Target FG": {
+    "files": [
+      "pages/brews/BrewPage.tsx",
+      "pages/brews/EditBrewModal.tsx",
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "Target FG ({unit})": {
+    "files": [
+      "pages/brews/EditBrewModal.tsx"
+    ]
+  },
+  "Target FG: {gravity}": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Target final gravity": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Target final gravity ({unit})": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Target final gravity, in the webhook's gravity unit": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Telegram bot tutorial": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "tell us on GitHub": {
+    "files": [
+      "pages/webhooks/PresetGrid.tsx"
+    ]
+  },
+  "Temp": {
+    "files": [
+      "pages/dashboard/PillRow.tsx"
+    ]
+  },
+  "Temp change": {
+    "files": [
+      "components/annotations.ts"
+    ]
+  },
+  "Temp range": {
+    "files": [
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "Temperature": {
+    "files": [
+      "components/Chart.tsx",
+      "pages/Dashboard.tsx",
+      "pages/brews/BrewPage.tsx",
+      "pages/brews/Compare.tsx",
+      "pages/brews/SummaryPage.tsx",
+      "pages/pill/PillPage.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Temperature ({unit})": {
+    "files": [
+      "pages/brews/SummaryChart.tsx"
+    ]
+  },
+  "Temperature above": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Temperature below": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Temperature change": {
+    "files": [
+      "pages/brews/brewText.ts",
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Temperature in the webhook's unit": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Temperature offset ({unit})": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Temperature offset cleared": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Temperature offset set to {offset}": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Temperature unit": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx",
+      "units.tsx"
+    ]
+  },
+  "Temperature, °C": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Temperature, °F": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Temperature: {min} to {max}, average {avg}": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "test": {
+    "files": [
+      "pages/webhooks/DeliveryLog.tsx"
+    ]
+  },
+  "Test": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx",
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Test connection": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Test failed": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/alerts/ChannelsPanel.tsx",
+      "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "Test sent": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/alerts/ChannelsPanel.tsx",
+      "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "Testing…": {
+    "files": [
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "That didn't work.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "That file is bigger than 500 MB, which is more than a RaptHooker backup should ever be": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "That file isn't a RaptHooker webhooks export (it isn't JSON).": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "That's more than 10 °C out: check the number and that both are in the same liquid.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "That's more than 10 points out. Make sure it's plain water and the pill is floating freely.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "That's more than an offset can fix (50 points). Is the pill floating in plain water?": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "That's outside {min} to {max}.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "That's the most ({max}). Delete one to add another.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "The backup has {pills}, {brews} and {readings}.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "The backups guide": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "The beer gets too cold": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "The beer gets too warm": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "The body isn't valid JSON: {error}": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "The body template above is filled in for each pill, and the results go where {items} is below (separated by commas in JSON, by new lines in plain text). Only for JSON and plain-text bodies.": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "The brew is saved with its final stats. The pill carries on recording either way.": {
+    "files": [
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "The brew record and its events go; the pill's readings stay.": {
+    "files": [
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "The browser wouldn't copy it": {
+    "files": [
+      "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "The chart is still loading": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "The current data isn't deleted: it's kept on the hub as a \"before restore\" copy you can download or restore. The hub then restarts, which takes about half a minute; recording carries on after that.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "the daily check is off": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "The data from before is kept as {file} (in the list below).": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "The file has everything needed to set them up on another hub, {secrets} in URLs, headers and bodies.": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "The gravity has stopped moving (less than a point in 48 hours).": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "The gravity is dropping fast.": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "The gravity the pill itself sent (SG), even when RaptHooker works it out from the tilt": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "The gravity velocity (points per day) the pill works out itself.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "The hub downloads release {version}, installs it in place of this development build and restarts. From then on it updates from releases like any other hub.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "The hub downloads the new version, installs it and restarts. That takes a few minutes; recording carries on straight after (a reading or two may be missed while it restarts).": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "The hub hasn't come back yet": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "The hub hasn't come back yet. Give it another minute, then reload this page.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "The hub is listening now.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "The hub is restarting. This page reconnects by itself.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "The hub keeps trying in the background. Recording carries on either way.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "the hub name": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "The hub restarts by itself when the new version is in; this page reconnects when it is back.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "The hub sent an answer this page can't read": {
+    "files": [
+      "api.ts"
+    ]
+  },
+  "The last 8 weeks are kept.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "The last update didn't work.": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "The latest reading doesn't look like the pill is floating": {
+    "files": [
+      "pages/pill/PillPage.tsx"
+    ]
+  },
+  "The MAC address the RAPT app shows": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "The name in lower case with dashes (for URLs and device labels)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "The name of this hub": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "The name you gave the pill": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "The owner also sees the hub's Tailscale address here, if it has one.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "The pill needs charging": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "The pill needs more data first": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "The pill's own gravity": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "The pill's own velocity": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "The readings follow the curve closely and it's nearly there.": {
+    "files": [
+      "pages/brews/Prediction.tsx"
+    ]
+  },
+  "The same payload as the RAPT portal integration": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "The start has to be before the end": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "The start is in the future": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "The test didn't connect.": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "The test didn't work.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "The update didn't work.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "The update to RaptHooker {version} didn't work.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "The upload didn't get through. Check the connection and try again.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "The URL must start with http:// or https://": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "The velocity the pill itself sent, points per day": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "The yeast is getting going: the gravity hasn't started dropping yet.": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Theme": {
+    "files": [
+      "components/ThemeSwitch.tsx",
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Theme in this browser": {
+    "files": [
+      "components/DisplayMenu.tsx"
+    ]
+  },
+  "Thermometer": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "They all go in one request.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "They are switched off: check each one, then switch it on.": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "This browser": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "This browser can't draw images": {
+    "files": [
+      "components/pngExport.ts"
+    ]
+  },
+  "This browser can't keep the screen on from here (it needs a secure https:// address, such as through Tailscale). Turn off screen sleep in the device's settings instead.": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "This deletes {what}. This can't be undone. (To keep them, archive the pill instead.)": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "This device will get alerts.": {
+    "files": [
+      "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "This hub": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "This hub isn't running as a service (development mode), so it can't restart itself. The backup is swapped in when it next starts.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "This hub runs a development build.": {
+    "files": [
+      "components/UpdateBanner.tsx",
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "This hub wasn't set up with the one-line installer, so it can't update itself from here.": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "This pill has been removed.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "This pill is recording, but no brew is running. Start one to track a batch from pitch to packaging.": {
+    "files": [
+      "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "This reading doesn't look like the pill is floating. Check it's upright in the liquid.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "This reading is old (expected one every {interval}). Is the pill awake and in range?": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "This reading is old (expected one every few minutes). Is the pill awake and in range?": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "This reading looks wrong: is the pill floating?": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "This release came without notes.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "This replaces everything on the hub with the backup.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "This webhook's interval, seconds": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Threshold": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Through your mail provider's SMTP server": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Tilt": {
+    "files": [
+      "components/Chart.tsx",
+      "pages/Dashboard.tsx",
+      "pages/pill/CalibrationWizard.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "tilt {value}": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Tilt calibration ({count} point)|Tilt calibration ({count} points)": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ],
+    "plural": true
+  },
+  "Tilt calibration: {count} point and the line fitted through it|Tilt calibration: {count} points and the line fitted through them": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ],
+    "plural": true
+  },
+  "Tilt now": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Tilt points": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Time": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Time of the reading, ISO 8601 (UTC)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Time of the reading, milliseconds since 1970": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Time of the reading, seconds since 1970": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Time range": {
+    "files": [
+      "components/RangePicker.tsx"
+    ]
+  },
+  "Timeline": {
+    "files": [
+      "pages/brews/SummaryPage.tsx",
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Timeline:": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Timeout": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Timeout (s)": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "TLS (usually port 465)": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "To": {
+    "files": [
+      "components/RangePicker.tsx"
+    ]
+  },
+  "To go back to releases, run the one-line installer on the hub.": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "To should be email addresses separated by commas": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Too warm": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Topic": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Topic can only use letters, numbers, - and _ (up to 64)": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Tried against the real service and working.": {
+    "files": [
+      "pages/webhooks/PresetGrid.tsx"
+    ]
+  },
+  "true when the pill looks like it is floating, false when the reading looks wrong": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Try again": {
+    "files": [
+      "components/UpdateBanner.tsx",
+      "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "Turn off": {
+    "files": [
+      "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "Turn on": {
+    "files": [
+      "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "TV mode": {
+    "files": [
+      "App.tsx",
+      "components/DisplayMenu.tsx",
+      "pages/Dashboard.tsx",
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "TV mode controls": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Two points give a straight line. Add a third (or more) so RaptHooker can follow the curve.": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "Type the gravity you measured and press Add point.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Type the gravity you measured.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Type the same topic here and send a test.": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "unavailable": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Undo": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Undo changes": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Units": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Units in this browser": {
+    "files": [
+      "components/DisplayMenu.tsx"
+    ]
+  },
+  "Unknown": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Unknown variable {name}": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Untested": {
+    "files": [
+      "pages/webhooks/PresetGrid.tsx"
+    ]
+  },
+  "Until I resume it": {
+    "files": [
+      "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "Up to {count} brew at a time|Up to {count} brews at a time": {
+    "files": [
+      "pages/brews/BrewsPage.tsx"
+    ],
+    "plural": true
+  },
+  "Up to 21 °C for a diacetyl rest": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Up to date": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Update available": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Update now": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Update to RaptHooker {version}?": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Updates": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Updating RaptHooker to the latest version…": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Updating to RaptHooker {version}…": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Updating…": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Upload a file": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Upload backups to cloud storage": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Upload to cloud storage (S3)": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Uploaded and deleted a test file": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Uploading": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Uploading ({percent}%)": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "USB copies switched off": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "USB stick": {
+    "files": [
+      "pages/settings/BackupSection.tsx",
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Use {send} and check the delivery log, and please {link} whether it works.": {
+    "files": [
+      "pages/webhooks/PresetGrid.tsx"
+    ]
+  },
+  "Use a gravity between {min} and {max}": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "Use a whole number": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "Use as OG": {
+    "files": [
+      "components/Chart.tsx",
+      "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "Use at least {count} character|Use at least {count} characters": {
+    "files": [
+      "validation.tsx"
+    ],
+    "plural": true
+  },
+  "Use at most {count} character|Use at most {count} characters": {
+    "files": [
+      "validation.tsx"
+    ],
+    "plural": true
+  },
+  "Use it": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Use one channel (and one webhook) per pill.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Use the hub's ({units})": {
+    "files": [
+      "units.tsx"
+    ]
+  },
+  "Use the pill's gravity": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Use the pill's values for everything": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Used in notifications, and by every browser that hasn't picked its own units. A browser's own choice (below, or in the top bar) stays with that browser.": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "User key": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "User key should be 30 letters and numbers": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Username": {
+    "files": [
+      "pages/alerts/strings.ts",
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Uses the preview pill's latest reading.": {
+    "files": [
+      "pages/webhooks/Preview.tsx"
+    ]
+  },
+  "Using the pill's gravity": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Value": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Variables: click to insert": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Velocity": {
+    "files": [
+      "components/Chart.tsx",
+      "pages/brews/BrewPage.tsx",
+      "pages/dashboard/PillRow.tsx",
+      "pages/kiosk/Kiosk.tsx",
+      "pages/pill/DataSources.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Velocity (RaptHooker)": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Velocity not ready yet": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Velocity: {from} → {to}": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "Verified": {
+    "files": [
+      "pages/webhooks/PresetGrid.tsx"
+    ]
+  },
+  "Version": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Viewing": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Wait a minute after a backup before pulling it out.": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Wait for a reading with a tilt first.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Waiting": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Waiting for a reading": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Waiting for network time (readings are held until then)": {
+    "files": [
+      "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Waiting for readings": {
+    "files": [
+      "components/Ferment.tsx"
+    ]
+  },
+  "Waiting for the clock": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Waiting for the hub to come back…": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Waiting for the pill to send a reading.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Warnings": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Water check": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Water will read": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Webhook": {
+    "files": [
+      "App.tsx"
+    ]
+  },
+  "Webhook created": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Webhook not found": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Webhook saved": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Webhook trigger for your automations": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Webhook URL": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Webhook URL should start with https://discord.com/api/webhooks/": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Webhooks": {
+    "files": [
+      "App.tsx",
+      "pages/webhooks/WebhookEditor.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Webhooks can hold API keys, so only the owner can see and edit them.": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Webhooks send this name, and services like Brewfather use it to tell devices apart.": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Weekly CSV export": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Weekly CSV export switched off": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Weekly CSV export switched on": {
+    "files": [
+      "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Welcome to RaptHooker!": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "What": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "What changes": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "What gets published": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "What happened": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "What the hub has been doing lately, newest first. Click a line with more detail to open it.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "What the pill sends, using its own calibration from the RAPT app.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "What's in {version} (this version)": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "What's new": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "What's new in {version}": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "What's new in RaptHooker {version}": {
+    "files": [
+      "components/UpdateBanner.tsx",
+      "components/WhatsNew.tsx"
+    ]
+  },
+  "When": {
+    "files": [
+      "pages/alerts/RuleModal.tsx",
+      "pages/brews/events.tsx"
+    ]
+  },
+  "When a pill doesn't look like it's floating (lying on its side, or a gravity no beer could have), its reading is held back. It isn't counted as a failure.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "When and what": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "When the brew started, ISO 8601": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "When the destination couldn't be reached (or the hub lost its internet), send the readings it missed once it works again: oldest first, one per interval, up to 10 a minute and 7 days back. Many services (Brewfather, Brewer's Friend, Grainfather…) ignore or reject old readings or more than one every 15 minutes, so leave this off for them unless you know they cope.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "When the request is sent, ISO 8601 (UTC)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "When the request is sent, milliseconds since 1970": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "When the request is sent, seconds since 1970": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Where alerts go": {
+    "files": [
+      "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Where should alerts go?": {
+    "files": [
+      "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "Where the numbers come from": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "while brewing": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "While brewing": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Why: {reason}": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "With no OG, RaptHooker takes it from the pill once it has settled: the middle reading from its first to third hour in the wort.": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "worked out by RaptHooker": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "Worked out by RaptHooker": {
+    "files": [
+      "pages/pill/DataSources.tsx"
+    ]
+  },
+  "worked out by RaptHooker from the tilt": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "Worked out by RaptHooker from the tilt": {
+    "files": [
+      "pages/pill/DataSources.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Worked out by RaptHooker over the last {count} hour|Worked out by RaptHooker over the last {count} hours": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ],
+    "plural": true
+  },
+  "Working": {
+    "files": [
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Works anywhere your device is signed in to Tailscale, and is needed for notifications and installing the app.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Works on any device on the same network. It can change unless your router always gives the hub the same address.": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Write {text} for text and {number} for numbers.": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Write something for the note.": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Yeast nutrient, fruit, finings…": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Yeast, hops, dry hop schedule…": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "You have {version}.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "You won't be notified for it any more.": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "You're all set": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "You're here": {
+    "files": [
+      "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "You're on the latest version": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "You're the owner": {
+    "files": [
+      "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "You've added a point from this reading. Wait for the next one (or delete it below).": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Your gravity offset ({offset}) is added on top.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Your gravity offset ({offset}) will still be added on top; you may want to clear it.": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Your new token \"{name}\"": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Your own Fermentrack server (iSpindel endpoint)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "your pill": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Your pill is recording around the clock. A few extras you might like:": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Your pills": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Your points are close together: add one with a higher gravity, up to the highest OG you brew.": {
+    "files": [
+      "pages/pill/calibration.ts"
+    ]
+  },
+  "Your thermometer reads ({unit})": {
+    "files": [
+      "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Zoom": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Zoom in": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Zoom in (+)": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Zoom out": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Zoom out (−)": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  }
+}

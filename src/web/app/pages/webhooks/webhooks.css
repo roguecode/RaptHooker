@@ -1,0 +1,80 @@
+/* Webhooks: preset trust badges, paused state, newer options. */
+
+.preset .preset-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.preset .preset-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: inherit;
+  color: var(--text);
+}
+
+.preset .preset-trust,
+.preset-trust {
+  font-size: 0.68rem;
+  padding: 0.1rem 0.45rem;
+  vertical-align: middle;
+}
+
+.hook-card.paused .badge {
+  filter: grayscale(0.8);
+}
+
+.wh-notice > svg {
+  flex-shrink: 0;
+}
+
+.hook-notes {
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+  color: var(--warning);
+}
+
+.hook-notes li + li {
+  margin-top: 0.15rem;
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.option-group .row .input.num {
+  width: 6.5rem;
+}
+
+.inline-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.2rem;
+  padding-left: 1.6rem;
+}
+
+.inline-fields .field {
+  min-width: 9rem;
+}
+
+.textarea.code.batch {
+  min-height: 7rem;
+}

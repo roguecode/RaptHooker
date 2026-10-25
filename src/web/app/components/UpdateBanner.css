@@ -1,0 +1,52 @@
+.update-banner {
+  margin-bottom: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.update-banner > svg {
+  flex: none;
+}
+
+.update-banner .grow {
+  min-width: min(100%, 15rem);
+}
+
+.update-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.update-spin {
+  animation: update-spin 1.4s linear infinite;
+}
+
+.markdown.release-notes {
+  margin-top: 0.8rem;
+}
+
+/* In the top bar while the hub runs a development build */
+.dev-build-badge {
+  text-decoration: none;
+}
+
+@media (max-width: 480px) {
+  .dev-build-badge {
+    padding-inline: 0.5rem;
+    font-size: 0.7rem;
+  }
+}
+
+@keyframes update-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .update-spin {
+    animation: none;
+  }
+}

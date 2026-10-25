@@ -1,0 +1,3 @@
+# Downloaded by .github/workflows/pi-image.yml while building the image.
+stage-rapthooker/00-rapthooker/files/*.tar.gz
+stage-rapthooker/00-rapthooker/files/SHA256SUMS

@@ -1,0 +1,67 @@
+name: Release
+
+# Push a tag like v0.2.0 (matching package.json's version, with a CHANGELOG.md section) to publish a release.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Check the tag matches package.json
+        id: version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::The tag $GITHUB_REF_NAME doesn't match package.json's version ($version). Tag v$version instead."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$version" == *-* ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Package
+        run: node deploy/package.mjs --notes release/notes.md
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: RaptHooker ${{ steps.version.outputs.version }}
+          body_path: release/notes.md
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
+          fail_on_unmatched_files: true
+          files: |
+            release/rapthooker-${{ steps.version.outputs.version }}.tar.gz
+            release/SHA256SUMS
+            release/install.sh
+
+  # A release made with the workflow's token doesn't start other workflows, so the image is built from here.
+  image:
+    name: Raspberry Pi image (experimental)
+    needs: release
+    if: needs.release.outputs.prerelease != 'true'
+    uses: ./.github/workflows/pi-image.yml
+    with:
+      version: ${{ needs.release.outputs.version }}
+      attach: true
+    permissions:
+      contents: write

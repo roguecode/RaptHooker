@@ -1,0 +1,11 @@
+[Unit]
+Description=Watch for RaptHooker update requests from the app
+Documentation=https://github.com/roguecode/RaptHooker/blob/main/docs/updating.md
+
+[Path]
+# The app (which can't write outside its data folder) asks for an update by creating this file.
+PathExists=/var/lib/rapthooker/update-request
+Unit=rapthooker-update.service
+
+[Install]
+WantedBy=multi-user.target

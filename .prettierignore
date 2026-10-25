@@ -1,0 +1,13 @@
+node_modules
+dist
+release
+data
+docker-data
+coverage
+package-lock.json
+*.png
+LICENSE
+src/web/public
+src/web/app/i18n/source.json
+test-results
+playwright-report

@@ -1,0 +1,180 @@
+/* Settings → Open on another device, Logs, Restart and diagnostics. */
+
+.sys-addresses {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+}
+
+.sys-address {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  min-width: 0;
+}
+
+.sys-address .hint {
+  margin: 0;
+}
+
+.sys-qr {
+  align-self: center;
+  width: min(100%, 10.5rem);
+  aspect-ratio: 1;
+  padding: 0.35rem;
+  border-radius: var(--radius-sm);
+  /* QR codes scan best dark on light, whatever the theme. */
+  background: #ffffff;
+}
+
+.sys-qr img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sys-url-row {
+  flex-wrap: nowrap;
+}
+
+.sys-url {
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.sys-log-tools {
+  margin-bottom: 0.7rem;
+}
+
+.sys-logs {
+  max-height: 30rem;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+
+.sys-log-empty {
+  margin: 0;
+  padding: 0.8rem;
+  font-family: inherit;
+}
+
+.sys-log {
+  border-bottom: 1px solid var(--border);
+}
+
+.sys-log:last-child {
+  border-bottom: 0;
+}
+
+.sys-log-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.6rem;
+  width: 100%;
+  padding: 0.4rem 0.7rem;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+button.sys-log-line {
+  cursor: pointer;
+}
+
+.sys-log.has-detail:hover,
+.sys-log.open {
+  background: var(--surface-3);
+}
+
+.sys-log .t {
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.sys-log .chip {
+  padding: 0.05rem 0.45rem;
+  font-size: 0.68rem;
+}
+
+.sys-log .svc {
+  color: var(--muted);
+}
+
+.sys-log .msg {
+  flex: 1 1 16rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sys-log.has-detail .msg::after {
+  content: ' …';
+  color: var(--faint);
+}
+
+.sys-log.open .msg::after {
+  content: '';
+}
+
+.sys-log pre {
+  margin: 0;
+  padding: 0 0.7rem 0.5rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}
+
+.sys-action {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.sys-action:first-of-type {
+  padding-top: 0;
+}
+
+.sys-action:last-of-type {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.sys-action .grow {
+  flex: 1;
+  min-width: min(100%, 16rem);
+}
+
+.sys-action h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.sys-action p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.sys-action a:not(.btn) {
+  text-decoration: underline;
+}
+
+.sys-action .sys-status {
+  color: var(--warning);
+  font-weight: 600;
+}

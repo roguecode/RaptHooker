@@ -1,0 +1,66 @@
+import { ensurePill, expect, SIMULATED, test } from './helpers';
+
+test('the pill page draws its history and changes the range', async ({ page, request }) => {
+  const pill = await ensurePill(request, SIMULATED.water, 'Water test');
+  await page.goto(`/#/pill/${pill.id}`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Water test' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Latest values' }).getByText('from the pill').first()).toBeVisible();
+
+  const chart = page.getByRole('group', { name: 'History of Water test' });
+  await expect(chart.locator('canvas').first()).toBeVisible();
+  await expect(chart.getByText('No readings in this range yet')).toHaveCount(0);
+
+  const range = page.getByRole('group', { name: 'Time range' });
+  await expect(range.getByRole('button', { name: 'Last 24 hours' })).toHaveAttribute('aria-pressed', 'true');
+  const reload = page.waitForResponse((r) => r.url().includes(`/api/pills/${pill.id}/history`) && r.ok());
+  await range.getByRole('button', { name: 'Last 7 days' }).click();
+  await reload;
+  await expect(range.getByRole('button', { name: 'Last 7 days' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(range.getByRole('button', { name: 'Last 24 hours' })).toHaveAttribute('aria-pressed', 'false');
+
+  await range.getByRole('button', { name: 'Custom' }).click();
+  const custom = page.getByRole('form', { name: 'Custom range' });
+  await custom.getByLabel('From').fill('2026-01-01T08:00');
+  await custom.getByLabel('To').fill('2026-01-01T07:00');
+  await custom.getByRole('button', { name: 'Show' }).click();
+  await expect(custom.getByRole('alert')).toHaveText('The start has to be before the end');
+  await custom.getByLabel('To').fill('2026-01-02T08:00');
+  await custom.getByRole('button', { name: 'Show' }).click();
+  await expect(custom).toHaveCount(0);
+  await expect(range.getByRole('button', { name: 'Custom' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(chart.locator('canvas').first()).toBeVisible();
+});
+
+test('a brew starts on a pill, shows on the Brews page and ends', async ({ page, request }) => {
+  const pill = await ensurePill(request, SIMULATED.lager, 'Czech Pils');
+  const name = `Pils ${test.info().project.name}`;
+  await page.goto(`/#/pill/${pill.id}`);
+
+  await page.getByRole('button', { name: 'Start a brew' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Start a brew' });
+  await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill(name);
+  await dialog.getByRole('textbox', { name: 'Style', exact: true }).fill('Czech Premium Pale Lager');
+  await dialog.getByRole('spinbutton', { name: /Original gravity/ }).fill('1.048');
+  await dialog.getByRole('button', { name: 'Start brew' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('heading', { level: 2, name })).toBeVisible();
+  await expect(page.getByText(/^Czech Premium Pale Lager · started /)).toBeVisible();
+
+  await page.goto('/#/brews');
+  const running = page.getByRole('link').filter({ has: page.getByRole('heading', { level: 3, name }) });
+  await expect(running).toBeVisible();
+  await expect(running).toContainText('Czech Pils');
+  await expect(running).toContainText('Day 1');
+
+  await page.goto(`/#/pill/${pill.id}`);
+  await page.getByRole('button', { name: 'End brew' }).click();
+  const confirm = page.getByRole('dialog', { name: `End "${name}"?` });
+  await confirm.getByRole('button', { name: 'End brew' }).click();
+  await expect(confirm).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Start a brew' })).toBeVisible();
+
+  await page.goto('/#/brews');
+  const finished = page.locator('section.panel').filter({ has: page.getByRole('heading', { name: 'Finished' }) });
+  await expect(finished.getByRole('heading', { level: 4, name })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 3, name })).toHaveCount(0);
+});

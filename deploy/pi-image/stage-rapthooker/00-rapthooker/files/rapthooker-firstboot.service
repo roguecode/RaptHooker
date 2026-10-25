@@ -1,0 +1,21 @@
+[Unit]
+Description=Finish setting up RaptHooker on the first boot of the image
+Documentation=https://github.com/roguecode/RaptHooker/blob/main/README.md
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=!/var/lib/rapthooker/.image-setup-done
+
+[Service]
+Type=oneshot
+# The image was set up without a running system. Running setup again finishes anything that needs one. Until that has
+# worked (it needs the network) it tries again every few minutes, and at the next boot.
+ExecStart=/bin/bash /opt/rapthooker/deploy/pi/setup.sh --keep-hostname
+ExecStartPost=/usr/bin/touch /var/lib/rapthooker/.image-setup-done
+ExecStartPost=-/bin/systemctl try-restart --no-block rapthooker.service
+Restart=on-failure
+RestartSec=5min
+TimeoutStartSec=30min
+StandardInput=null
+
+[Install]
+WantedBy=multi-user.target

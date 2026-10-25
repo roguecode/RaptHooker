@@ -1,0 +1,1074 @@
+{
+  "description": "A RAPT Pill in Bluetooth mode, transmitting every ~124 s, as the hub hears it: each transmission re-sends the previous reading, then the new one, each several times; every 10th also carries the firmware and device type. Transmission 6 is missed entirely and only the re-sent reading of transmission 9 is heard. Other devices add noise. Built from real captured payloads (the first two readings, firmware and device type) and readings made with encodeRaptV2. Addresses are made up.",
+  "pill": "08:B6:1F:00:00:66",
+  "intervalMs": 124000,
+  "firstTransmissionDelaysMs": [0, 140, 60, 310, 20, 250, 90, 180, 30, 270, 110, 200],
+  "readings": [
+    "5054020001bc09485c929b4483d4ae291b3203f79e6400",
+    "50540200013e7ddf07929b4483d26d291d31f6f7b36400",
+    "5054020001beb851ec929c4483d031291d31f6f7b46400",
+    "5054020001bebd70a4929a4483cdf4291f31f6f7b36400",
+    "5054020001bec28f5c929e4483cbb6291d31f6f7b46400",
+    "5054020001bec7ae14929e4483c979291d31f6f7b36400",
+    "5054020001becccccd929c4483c73b291f31f6f7b46400",
+    "5054020001bed1eb85929f4483c4fe291d31f6f7b36400",
+    "5054020001bed70a3d929b4483c2c1291d31f6f7b46400",
+    "5054020001bedc28f6929c4483c083291f31f6f7b36400",
+    "5054020001bee147ae929c4483be46291d31f6f7b46400",
+    "5054020001bee66666929a4483bc08291d31f6f7b36400",
+    "5054020001beeb851f929b4483b9cb291f31f6f7b46400"
+  ],
+  "events": [
+    {
+      "t": 0,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bc09485c929b4483d4ae291b3203f79e6400"
+      }
+    },
+    {
+      "t": 100,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bc09485c929b4483d4ae291b3203f79e6400"
+      }
+    },
+    {
+      "t": 200,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bc09485c929b4483d4ae291b3203f79e6400"
+      }
+    },
+    {
+      "t": 400,
+      "source": "hci0",
+      "address": "02:00:00:00:00:01",
+      "rssi": -64,
+      "manufacturerData": {
+        "76": "1005031c0e5b2a"
+      }
+    },
+    {
+      "t": 900,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "50540200013e7ddf07929b4483d26d291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 1000,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "50540200013e7ddf07929b4483d26d291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 1100,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "50540200013e7ddf07929b4483d26d291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 1200,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "50540200013e7ddf07929b4483d26d291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 1500,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "17739": "4732303235303331395f3035353534325f62333738386261"
+      }
+    },
+    {
+      "t": 1600,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "50546450696c6c4731"
+      }
+    },
+    {
+      "t": 2600,
+      "source": "hci0",
+      "address": "02:00:00:00:00:02",
+      "rssi": -80,
+      "manufacturerData": {
+        "6": "0109200236b5e8c0a3a5d4"
+      }
+    },
+    {
+      "t": 5100,
+      "source": "hci0",
+      "address": "02:00:00:00:00:03",
+      "rssi": -88,
+      "manufacturerData": {
+        "16722": "1234abcd"
+      }
+    },
+    {
+      "t": 124140,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "50540200013e7ddf07929b4483d26d291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 124240,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "50540200013e7ddf07929b4483d26d291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 124340,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "50540200013e7ddf07929b4483d26d291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 124540,
+      "source": "hci0",
+      "address": "02:00:00:00:00:01",
+      "rssi": -64,
+      "manufacturerData": {
+        "76": "1005031c0e5b2a"
+      }
+    },
+    {
+      "t": 125040,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001beb851ec929c4483d031291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 125140,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001beb851ec929c4483d031291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 125240,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001beb851ec929c4483d031291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 125340,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001beb851ec929c4483d031291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 126740,
+      "source": "hci0",
+      "address": "02:00:00:00:00:02",
+      "rssi": -80,
+      "manufacturerData": {
+        "6": "0109200236b5e8c0a3a5d4"
+      }
+    },
+    {
+      "t": 129240,
+      "source": "hci0",
+      "address": "02:00:00:00:00:03",
+      "rssi": -88,
+      "manufacturerData": {
+        "16722": "1234abcd"
+      }
+    },
+    {
+      "t": 248060,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001beb851ec929c4483d031291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 248160,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001beb851ec929c4483d031291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 248260,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001beb851ec929c4483d031291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 248460,
+      "source": "hci0",
+      "address": "02:00:00:00:00:01",
+      "rssi": -64,
+      "manufacturerData": {
+        "76": "1005031c0e5b2a"
+      }
+    },
+    {
+      "t": 248960,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001bebd70a4929a4483cdf4291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 249060,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001bebd70a4929a4483cdf4291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 249160,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001bebd70a4929a4483cdf4291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 249260,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001bebd70a4929a4483cdf4291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 250660,
+      "source": "hci0",
+      "address": "02:00:00:00:00:02",
+      "rssi": -80,
+      "manufacturerData": {
+        "6": "0109200236b5e8c0a3a5d4"
+      }
+    },
+    {
+      "t": 253160,
+      "source": "hci0",
+      "address": "02:00:00:00:00:03",
+      "rssi": -88,
+      "manufacturerData": {
+        "16722": "1234abcd"
+      }
+    },
+    {
+      "t": 372310,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bebd70a4929a4483cdf4291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 372410,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bebd70a4929a4483cdf4291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 372510,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bebd70a4929a4483cdf4291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 372710,
+      "source": "hci0",
+      "address": "02:00:00:00:00:01",
+      "rssi": -64,
+      "manufacturerData": {
+        "76": "1005031c0e5b2a"
+      }
+    },
+    {
+      "t": 373210,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bec28f5c929e4483cbb6291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 373260,
+      "source": "hci1",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -58,
+      "manufacturerData": {
+        "16722": "5054020001bec28f5c929e4483cbb6291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 373310,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bec28f5c929e4483cbb6291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 373410,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bec28f5c929e4483cbb6291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 373510,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bec28f5c929e4483cbb6291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 374410,
+      "source": "relay:shed",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -49,
+      "manufacturerData": {
+        "16722": "5054020001bebd70a4929a4483cdf4291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 374410,
+      "source": "relay:shed",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -49,
+      "manufacturerData": {
+        "16722": "5054020001bec28f5c929e4483cbb6291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 374910,
+      "source": "hci0",
+      "address": "02:00:00:00:00:02",
+      "rssi": -80,
+      "manufacturerData": {
+        "6": "0109200236b5e8c0a3a5d4"
+      }
+    },
+    {
+      "t": 377410,
+      "source": "hci0",
+      "address": "02:00:00:00:00:03",
+      "rssi": -88,
+      "manufacturerData": {
+        "16722": "1234abcd"
+      }
+    },
+    {
+      "t": 496020,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bec28f5c929e4483cbb6291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 496120,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bec28f5c929e4483cbb6291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 496220,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bec28f5c929e4483cbb6291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 496420,
+      "source": "hci0",
+      "address": "02:00:00:00:00:01",
+      "rssi": -64,
+      "manufacturerData": {
+        "76": "1005031c0e5b2a"
+      }
+    },
+    {
+      "t": 496920,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bec7ae14929e4483c979291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 497020,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bec7ae14929e4483c979291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 497120,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bec7ae14929e4483c979291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 497220,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bec7ae14929e4483c979291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 498620,
+      "source": "hci0",
+      "address": "02:00:00:00:00:02",
+      "rssi": -80,
+      "manufacturerData": {
+        "6": "0109200236b5e8c0a3a5d4"
+      }
+    },
+    {
+      "t": 501120,
+      "source": "hci0",
+      "address": "02:00:00:00:00:03",
+      "rssi": -88,
+      "manufacturerData": {
+        "16722": "1234abcd"
+      }
+    },
+    {
+      "t": 504020,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -66,
+      "manufacturerData": {}
+    },
+    {
+      "t": 620250,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001bec7ae14929e4483c979291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 620350,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001bec7ae14929e4483c979291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 620450,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001bec7ae14929e4483c979291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 620650,
+      "source": "hci0",
+      "address": "02:00:00:00:00:01",
+      "rssi": -64,
+      "manufacturerData": {
+        "76": "1005031c0e5b2a"
+      }
+    },
+    {
+      "t": 621150,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001becccccd929c4483c73b291f31f6f7b46400"
+      }
+    },
+    {
+      "t": 621250,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001becccccd929c4483c73b291f31f6f7b46400"
+      }
+    },
+    {
+      "t": 621350,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001becccccd929c4483c73b291f31f6f7b46400"
+      }
+    },
+    {
+      "t": 621450,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001becccccd929c4483c73b291f31f6f7b46400"
+      }
+    },
+    {
+      "t": 622850,
+      "source": "hci0",
+      "address": "02:00:00:00:00:02",
+      "rssi": -80,
+      "manufacturerData": {
+        "6": "0109200236b5e8c0a3a5d4"
+      }
+    },
+    {
+      "t": 625350,
+      "source": "hci0",
+      "address": "02:00:00:00:00:03",
+      "rssi": -88,
+      "manufacturerData": {
+        "16722": "1234abcd"
+      }
+    },
+    {
+      "t": 744490,
+      "source": "hci0",
+      "address": "02:00:00:00:00:01",
+      "rssi": -64,
+      "manufacturerData": {
+        "76": "1005031c0e5b2a"
+      }
+    },
+    {
+      "t": 746690,
+      "source": "hci0",
+      "address": "02:00:00:00:00:02",
+      "rssi": -80,
+      "manufacturerData": {
+        "6": "0109200236b5e8c0a3a5d4"
+      }
+    },
+    {
+      "t": 749190,
+      "source": "hci0",
+      "address": "02:00:00:00:00:03",
+      "rssi": -88,
+      "manufacturerData": {
+        "16722": "1234abcd"
+      }
+    },
+    {
+      "t": 868180,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bed1eb85929f4483c4fe291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 868280,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bed1eb85929f4483c4fe291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 868380,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bed1eb85929f4483c4fe291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 868580,
+      "source": "hci0",
+      "address": "02:00:00:00:00:01",
+      "rssi": -64,
+      "manufacturerData": {
+        "76": "1005031c0e5b2a"
+      }
+    },
+    {
+      "t": 869080,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bed70a3d929b4483c2c1291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 869180,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bed70a3d929b4483c2c1291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 869280,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bed70a3d929b4483c2c1291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 869380,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bed70a3d929b4483c2c1291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 870780,
+      "source": "hci0",
+      "address": "02:00:00:00:00:02",
+      "rssi": -80,
+      "manufacturerData": {
+        "6": "0109200236b5e8c0a3a5d4"
+      }
+    },
+    {
+      "t": 873280,
+      "source": "hci0",
+      "address": "02:00:00:00:00:03",
+      "rssi": -88,
+      "manufacturerData": {
+        "16722": "1234abcd"
+      }
+    },
+    {
+      "t": 992030,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bed70a3d929b4483c2c1291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 992130,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bed70a3d929b4483c2c1291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 992230,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bed70a3d929b4483c2c1291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 992430,
+      "source": "hci0",
+      "address": "02:00:00:00:00:01",
+      "rssi": -64,
+      "manufacturerData": {
+        "76": "1005031c0e5b2a"
+      }
+    },
+    {
+      "t": 992930,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bedc28f6929c4483c083291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 993030,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bedc28f6929c4483c083291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 993130,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bedc28f6929c4483c083291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 993230,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -71,
+      "manufacturerData": {
+        "16722": "5054020001bedc28f6929c4483c083291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 994630,
+      "source": "hci0",
+      "address": "02:00:00:00:00:02",
+      "rssi": -80,
+      "manufacturerData": {
+        "6": "0109200236b5e8c0a3a5d4"
+      }
+    },
+    {
+      "t": 997130,
+      "source": "hci0",
+      "address": "02:00:00:00:00:03",
+      "rssi": -88,
+      "manufacturerData": {
+        "16722": "1234abcd"
+      }
+    },
+    {
+      "t": 1116270,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001bedc28f6929c4483c083291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 1116370,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001bedc28f6929c4483c083291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 1116470,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -72,
+      "manufacturerData": {
+        "16722": "5054020001bedc28f6929c4483c083291f31f6f7b36400"
+      }
+    },
+    {
+      "t": 1116670,
+      "source": "hci0",
+      "address": "02:00:00:00:00:01",
+      "rssi": -64,
+      "manufacturerData": {
+        "76": "1005031c0e5b2a"
+      }
+    },
+    {
+      "t": 1118870,
+      "source": "hci0",
+      "address": "02:00:00:00:00:02",
+      "rssi": -80,
+      "manufacturerData": {
+        "6": "0109200236b5e8c0a3a5d4"
+      }
+    },
+    {
+      "t": 1121370,
+      "source": "hci0",
+      "address": "02:00:00:00:00:03",
+      "rssi": -88,
+      "manufacturerData": {
+        "16722": "1234abcd"
+      }
+    },
+    {
+      "t": 1240110,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001bee147ae929c4483be46291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 1240210,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001bee147ae929c4483be46291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 1240310,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001bee147ae929c4483be46291d31f6f7b46400"
+      }
+    },
+    {
+      "t": 1240510,
+      "source": "hci0",
+      "address": "02:00:00:00:00:01",
+      "rssi": -64,
+      "manufacturerData": {
+        "76": "1005031c0e5b2a"
+      }
+    },
+    {
+      "t": 1241010,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001bee66666929a4483bc08291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 1241110,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001bee66666929a4483bc08291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 1241210,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001bee66666929a4483bc08291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 1241310,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "5054020001bee66666929a4483bc08291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 1241610,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "17739": "4732303235303331395f3035353534325f62333738386261"
+      }
+    },
+    {
+      "t": 1241710,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -73,
+      "manufacturerData": {
+        "16722": "50546450696c6c4731"
+      }
+    },
+    {
+      "t": 1242710,
+      "source": "hci0",
+      "address": "02:00:00:00:00:02",
+      "rssi": -80,
+      "manufacturerData": {
+        "6": "0109200236b5e8c0a3a5d4"
+      }
+    },
+    {
+      "t": 1245210,
+      "source": "hci0",
+      "address": "02:00:00:00:00:03",
+      "rssi": -88,
+      "manufacturerData": {
+        "16722": "1234abcd"
+      }
+    },
+    {
+      "t": 1364200,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bee66666929a4483bc08291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 1364300,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bee66666929a4483bc08291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 1364400,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001bee66666929a4483bc08291d31f6f7b36400"
+      }
+    },
+    {
+      "t": 1364600,
+      "source": "hci0",
+      "address": "02:00:00:00:00:01",
+      "rssi": -64,
+      "manufacturerData": {
+        "76": "1005031c0e5b2a"
+      }
+    },
+    {
+      "t": 1365100,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001beeb851f929b4483b9cb291f31f6f7b46400"
+      }
+    },
+    {
+      "t": 1365200,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001beeb851f929b4483b9cb291f31f6f7b46400"
+      }
+    },
+    {
+      "t": 1365300,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001beeb851f929b4483b9cb291f31f6f7b46400"
+      }
+    },
+    {
+      "t": 1365400,
+      "source": "hci0",
+      "address": "08:B6:1F:00:00:66",
+      "rssi": -74,
+      "manufacturerData": {
+        "16722": "5054020001beeb851f929b4483b9cb291f31f6f7b46400"
+      }
+    },
+    {
+      "t": 1366800,
+      "source": "hci0",
+      "address": "02:00:00:00:00:02",
+      "rssi": -80,
+      "manufacturerData": {
+        "6": "0109200236b5e8c0a3a5d4"
+      }
+    },
+    {
+      "t": 1369300,
+      "source": "hci0",
+      "address": "02:00:00:00:00:03",
+      "rssi": -88,
+      "manufacturerData": {
+        "16722": "1234abcd"
+      }
+    }
+  ]
+}

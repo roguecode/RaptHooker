@@ -1,0 +1,15 @@
+.token-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.8rem;
+}
+
+.token-form .field:first-child {
+  flex: 1 1 14rem;
+}
+
+.token-value {
+  font-size: 0.85rem;
+  user-select: all;
+}

@@ -1,0 +1,29 @@
+.bt-section .bt-heading {
+  margin: 1.4rem 0 0.35rem;
+  font-size: 0.98rem;
+}
+
+.bt-section .bt-heading + .hint {
+  margin: 0 0 0.3rem;
+}
+
+.bt-reason {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.bt-caught .bt-bar {
+  max-width: 22rem;
+  margin: 0.4rem 0 0.3rem;
+}
+
+.bt-bar.low > i {
+  background: var(--warning);
+  box-shadow: none;
+}
+
+.bt-caught p.bt-low {
+  color: var(--warning);
+}

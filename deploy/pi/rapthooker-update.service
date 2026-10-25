@@ -1,0 +1,13 @@
+[Unit]
+Description=Update RaptHooker to a new release (asked for in the app)
+Documentation=https://github.com/roguecode/RaptHooker/blob/main/docs/updating.md
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Runs as root: it replaces /opt/rapthooker, runs setup.sh and restarts rapthooker.service. update.sh reads the
+# request, deletes it and leaves its result in /var/lib/rapthooker/update-status.json for the app.
+ExecStart=/bin/bash /opt/rapthooker/deploy/pi/update.sh
+TimeoutStartSec=30min
+SyslogIdentifier=rapthooker-update

@@ -1,0 +1,16 @@
+node_modules/
+dist/
+release/
+data/
+docker-data/
+*.db
+*.db-wal
+*.db-shm
+rapthooker.config.json
+!deploy/**/rapthooker.config.example.json
+.env
+*.log
+coverage/
+*.tsbuildinfo
+test-results/
+playwright-report/

@@ -1,0 +1,11 @@
+[Unit]
+Description=Reset the Bluetooth adapter (asked for by RaptHooker when it looks stuck)
+Documentation=https://github.com/roguecode/RaptHooker/blob/main/docs/pi-setup.md
+
+[Service]
+Type=oneshot
+# Runs as root: switching the radio off and on (rfkill) needs it. bt-reset.sh deletes the request first and leaves its
+# result in /var/lib/rapthooker/bt-reset-status.json for the app.
+ExecStart=/bin/bash /opt/rapthooker/deploy/pi/bt-reset.sh
+TimeoutStartSec=2min
+SyslogIdentifier=rapthooker-bt-reset

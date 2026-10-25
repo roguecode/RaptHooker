@@ -1,0 +1,133 @@
+.backup-section .mono,
+.backup-section .input.mono {
+  font-family: var(--mono);
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+.backup-targets {
+  margin-bottom: 1rem;
+}
+
+.backup-targets .list-item h4,
+.backup-files .list-item h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.backup-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  flex-shrink: 0;
+  border-radius: 0.7rem;
+  background: var(--accent-soft);
+  color: var(--violet);
+}
+
+.backup-error {
+  color: var(--danger);
+  font-size: 0.86rem;
+  margin: 0.2rem 0 0;
+}
+
+.backup-note {
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin: 0.2rem 0 0;
+}
+
+.backup-actions {
+  margin-bottom: 0.4rem;
+}
+
+.backup-section .btn.danger-text {
+  color: var(--danger);
+}
+
+.backup-restored {
+  margin-bottom: 1rem;
+}
+
+.backup-subhead {
+  margin: 1.2rem 0 0.2rem;
+  font-size: 0.95rem;
+}
+
+.backup-files {
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.backup-files .list-item {
+  flex-wrap: wrap;
+}
+
+.backup-options {
+  margin-top: 0.4rem;
+}
+
+.backup-option .hint {
+  margin: 0.4rem 0 0;
+}
+
+.backup-option > .stack {
+  margin-top: 1rem;
+}
+
+.backup-section .backup-wide {
+  grid-column: 1 / -1;
+}
+
+.backup-help summary {
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.backup-help ul {
+  margin: 0.7rem 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.backup-help code {
+  overflow-wrap: anywhere;
+}
+
+.backup-help a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  text-decoration: underline;
+}
+
+.backup-warning p {
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+}
+
+.backup-steps {
+  margin: 0;
+  padding-left: 1.4rem;
+  display: grid;
+  gap: 0.4rem;
+  color: var(--muted);
+}
+
+.backup-steps li.now {
+  color: inherit;
+  font-weight: 650;
+}
+
+.backup-steps li.done {
+  color: var(--success);
+}

@@ -1,0 +1,45 @@
+{
+  "name": "rapthooker",
+  "private": true,
+  "version": "0.3.0",
+  "description": "Local-first RAPT Pill hydrometer dashboard, brew recorder and webhook forwarder for the Raspberry Pi",
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "workspaces": [
+    "src/shared",
+    "src/server",
+    "src/web"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev:server": "npm run dev -w src/server",
+    "dev:web": "npm run dev -w src/web",
+    "seed": "npm run seed -w src/server",
+    "build": "npm run build -w src/web && npm run build -w src/server",
+    "typecheck": "npm run typecheck -w src/shared && npm run typecheck -w src/server && npm run typecheck -w src/web",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "i18n": "node scripts/i18n.mjs",
+    "i18n:check": "node scripts/i18n.mjs --check",
+    "package": "npm run build && node deploy/package.mjs",
+    "start": "node src/server/dist/rapthooker.cjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^5.0.3"
+  }
+}

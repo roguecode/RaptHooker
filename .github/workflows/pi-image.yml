@@ -1,0 +1,117 @@
+name: Raspberry Pi image
+
+# EXPERIMENTAL: a Raspberry Pi OS Lite (64-bit) image with RaptHooker already installed, built with pi-gen.
+# Runs after each release (from release.yml), for releases published by hand, or on demand from the Actions tab.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release to put in the image, e.g. 0.3.0 (blank for the latest)
+        required: false
+        default: ''
+      attach:
+        description: Attach the image to that release
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+      attach:
+        type: boolean
+        default: false
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  image:
+    name: Build the image
+    # An Arm runner builds the arm64 image natively (no emulation), which is much faster.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Pick the release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_ATTACH: ${{ inputs.attach }}
+        run: |
+          tag=""
+          attach=false
+          if [[ "$GITHUB_EVENT_NAME" == "release" ]]; then
+            tag="$RELEASE_TAG"
+            attach=true
+          elif [[ -n "$INPUT_VERSION" ]]; then
+            tag="v${INPUT_VERSION#v}"
+            attach="$INPUT_ATTACH"
+          else
+            tag="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)"
+            attach="$INPUT_ATTACH"
+          fi
+          {
+            echo "tag=$tag"
+            echo "version=${tag#v}"
+            echo "attach=$attach"
+          } >> "$GITHUB_OUTPUT"
+          echo "Building an image with RaptHooker $tag"
+
+      - name: Download the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          files=deploy/pi-image/stage-rapthooker/00-rapthooker/files
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir "$files" \
+            --pattern "rapthooker-$VERSION.tar.gz" --pattern SHA256SUMS
+          (cd "$files" && sha256sum --check --ignore-missing SHA256SUMS)
+          mv "$files/rapthooker-$VERSION.tar.gz" "$files/rapthooker.tar.gz"
+          # pi-gen only runs stage scripts that are executable.
+          chmod +x deploy/pi-image/stage-rapthooker/prerun.sh deploy/pi-image/stage-rapthooker/*/*.sh
+
+      - name: Build with pi-gen
+        id: build
+        uses: usimd/pi-gen-action@v1
+        with:
+          image-name: rapthooker-${{ steps.release.outputs.version }}
+          stage-list: stage0 stage1 stage2 ./deploy/pi-image/stage-rapthooker
+          pi-gen-version: arm64
+          hostname: rapthooker
+          enable-ssh: 1
+          # No password: the account is locked until you set one up with Raspberry Pi Imager's OS customisation (or
+          # the first-boot wizard, with a screen and keyboard). There's never a shared default login.
+          username: pi
+          password: ''
+          disable-first-boot-user-rename: 0
+          locale: en_GB.UTF-8
+          timezone: Europe/London
+          keyboard-keymap: gb
+          keyboard-layout: English (UK)
+          compression: xz
+          compression-level: 6
+          verbose-output: true
+
+      - name: Keep the image
+        uses: actions/upload-artifact@v5
+        with:
+          name: rapthooker-${{ steps.release.outputs.version }}-raspberry-pi-image
+          path: ${{ steps.build.outputs.image-path }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Attach to the release
+        if: steps.release.outputs.attach == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          IMAGE: ${{ steps.build.outputs.image-path }}
+        run: gh release upload "$TAG" "$IMAGE" --repo "$GITHUB_REPOSITORY" --clobber

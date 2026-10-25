@@ -1,0 +1,11 @@
+[Unit]
+Description=Watch for requests from RaptHooker to reset a stuck Bluetooth adapter
+Documentation=https://github.com/roguecode/RaptHooker/blob/main/docs/pi-setup.md
+
+[Path]
+# The app (which can't write outside its data folder) asks for a reset by creating this file.
+PathExists=/var/lib/rapthooker/bt-reset-request
+Unit=rapthooker-bt-reset.service
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Checks (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run i18n:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Package (as a release would be)
+        run: node deploy/package.mjs
+
+  shellcheck:
+    name: Shell scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: ShellCheck
+        run: |
+          shellcheck --version
+          shellcheck deploy/*.sh deploy/pi/*.sh deploy/pi-image/stage-rapthooker/*.sh deploy/pi-image/stage-rapthooker/*/*.sh
+          # Parts sourced by setup.sh use its `step` and $HERE.
+          shellcheck --shell=bash --exclude=SC2154 deploy/pi/setup.d/*.sh
+
+  e2e:
+    name: End-to-end tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: No end-to-end tests yet
+        if: hashFiles('playwright.config.ts') == ''
+        run: echo "No playwright.config.ts yet, so there's nothing to run."
+      - uses: actions/setup-node@v5
+        if: hashFiles('playwright.config.ts') != ''
+        with:
+          node-version: 24
+          cache: npm
+      - if: hashFiles('playwright.config.ts') != ''
+        run: npm ci
+      - if: hashFiles('playwright.config.ts') != ''
+        run: npx playwright install --with-deps chromium
+      - if: hashFiles('playwright.config.ts') != ''
+        run: npm run build
+      - if: hashFiles('playwright.config.ts') != ''
+        run: npm run test:e2e
+      - name: Keep the Playwright report
+        if: failure() && hashFiles('playwright.config.ts') != ''
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14

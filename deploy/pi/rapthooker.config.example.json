@@ -1,0 +1,9 @@
+{
+  "port": 8080,
+  "dataDir": "/var/lib/rapthooker",
+  "webDir": "/opt/rapthooker/web/dist",
+  "bluetooth": { "adapters": [], "scanMode": "auto" },
+  "auth": { "allowedTailscaleUsers": [] },
+  "backup": { "dir": "", "time": "03:15", "keep": 14 },
+  "push": { "subject": "mailto:you@example.com" }
+}

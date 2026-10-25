@@ -1,0 +1,200 @@
+/* Brew pages: events timeline, prediction, picking brews to compare. */
+
+.hero.brew-hero {
+  grid-template-columns: 1fr auto;
+}
+
+@media (max-width: 760px) {
+  .hero.brew-hero {
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+  }
+}
+
+.ev-icon {
+  --ev: var(--violet-2);
+  display: inline-grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: var(--ev);
+  background: color-mix(in srgb, var(--ev) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ev) 40%, transparent);
+}
+
+.ev-head {
+  margin: 0;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.brew-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.brew-timeline li {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.45rem 0;
+}
+
+/* The line joining the event icons. */
+.brew-timeline li + li::before {
+  content: '';
+  position: absolute;
+  left: calc(0.95rem - 1px);
+  top: -0.45rem;
+  height: 0.9rem;
+  width: 2px;
+  background: var(--border-strong);
+}
+
+.brew-timeline .grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.brew-timeline .ev-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.45rem;
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.brew-timeline .ev-when {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.brew-timeline.compact li {
+  padding: 0.3rem 0;
+}
+
+.brew-timeline.compact li + li::before {
+  top: -0.3rem;
+  height: 0.6rem;
+}
+
+.kind-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr));
+  gap: 0.45rem;
+}
+
+.kind-picker button {
+  --ev: var(--violet-2);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.6rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kind-picker button svg {
+  color: var(--ev);
+  flex-shrink: 0;
+}
+
+.kind-picker button:hover {
+  border-color: var(--ev);
+  color: var(--text);
+}
+
+.kind-picker button.on {
+  color: var(--text);
+  border-color: var(--ev);
+  background: color-mix(in srgb, var(--ev) 16%, transparent);
+  box-shadow: 0 0 0 1px var(--ev) inset;
+}
+
+.stat .v.small-v {
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.prediction-wait {
+  grid-column: span 2;
+}
+
+.stage-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  margin-right: 0.45rem;
+  vertical-align: middle;
+  background: var(--faint);
+}
+
+.stage-dot.active {
+  background: var(--violet-2);
+  box-shadow: 0 0 10px var(--violet-2);
+}
+
+.stage-dot.finishing {
+  background: var(--warning);
+}
+
+.stage-dot.done {
+  background: var(--success);
+}
+
+/* Picking brews to compare */
+
+.compare-bar {
+  align-items: center;
+}
+
+.compare-check {
+  display: inline-grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  flex-shrink: 0;
+  border-radius: 0.4rem;
+  border: 2px solid var(--border-strong);
+  color: transparent;
+  background: var(--surface-2);
+}
+
+.compare-check.on {
+  border-color: var(--violet);
+  background: var(--violet);
+  color: #fff;
+}
+
+.pill-card.picking,
+.list-item.picking {
+  cursor: pointer;
+}
+
+.pill-card.picked {
+  border-color: var(--violet-2);
+  box-shadow:
+    0 0 0 1px var(--violet-2) inset,
+    var(--shadow);
+}
+
+.list-item.picked h4 {
+  color: var(--violet-2);
+}

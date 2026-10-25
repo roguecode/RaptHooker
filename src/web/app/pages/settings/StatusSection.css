@@ -1,0 +1,48 @@
+/* Settings → Hub status: warnings and the storage bar. */
+
+.status-warnings {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.status-warnings .notice {
+  align-items: center;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.88rem;
+}
+
+.status-warnings .notice > svg {
+  flex-shrink: 0;
+}
+
+.status-warnings code {
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.status-show-hidden {
+  align-self: flex-start;
+}
+
+.status-disk {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.status-disk .bar {
+  max-width: 22rem;
+}
+
+.status-disk .bar.warn > i {
+  background: var(--warning);
+  box-shadow: none;
+}
+
+.status-disk .bar.danger > i {
+  background: var(--danger);
+  box-shadow: none;
+}

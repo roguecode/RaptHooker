@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "schedule:weekly", ":separateMajorReleases", "helpers:pinGitHubActionDigests"],
+  "timezone": "Europe/London",
+  "rangeStrategy": "bump",
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Development tools: one pull request a week for everything that isn't a major update",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "dev dependencies (non-major)",
+      "groupSlug": "dev-dependencies-non-major"
+    },
+    {
+      "description": "GitHub Actions together, apart from major updates",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "GitHub Actions",
+      "addLabels": ["github-actions"]
+    },
+    {
+      "description": "Major updates each get their own pull request, to be read and tested on a Pi",
+      "matchUpdateTypes": ["major"],
+      "addLabels": ["major"]
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  }
+}

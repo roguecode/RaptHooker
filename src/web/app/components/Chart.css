@@ -1,0 +1,274 @@
+/* Chart extras: zoom controls, the reading picker, the overview strip and the range picker. */
+
+.chart-wrap.interactive {
+  border-radius: var(--radius-sm);
+}
+
+.chart-wrap.interactive:focus-visible {
+  outline: 2px solid var(--violet-2);
+  outline-offset: 4px;
+}
+
+/* Up and down still scroll the page; sideways drags and pinches go to the chart. */
+.chart-wrap .u-over {
+  touch-action: pan-y;
+}
+
+.chart-wrap.interactive .u-over {
+  cursor: crosshair;
+}
+
+/* "Pill not floating?" already ends in punctuation. */
+.chart-wrap .u-legend .u-implausible th::after {
+  content: '';
+}
+
+.chart-wrap .u-legend .u-implausible td {
+  color: var(--muted);
+}
+
+.chart-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Zoom buttons sit at the right of the legend row; phones pinch instead. */
+.chart-zoom {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.chart-wrap.zoomable .u-legend {
+  padding-right: 6.8rem;
+}
+
+@media (pointer: coarse) {
+  .chart-zoom {
+    display: none;
+  }
+
+  .chart-wrap.zoomable .u-legend {
+    padding-right: 0;
+  }
+}
+
+.chart-zoom .icon-btn {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+.chart-zoom .icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  background: transparent;
+}
+
+.chart-pick {
+  position: absolute;
+  z-index: 6;
+  min-width: 12.5rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: var(--radius);
+  background: var(--surface-solid);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, calc(-100% - 14px));
+  animation: chart-pop 0.18s var(--ease);
+}
+
+.chart-pick.below {
+  transform: translate(-50%, 14px);
+}
+
+@keyframes chart-pop {
+  from {
+    opacity: 0;
+  }
+}
+
+.chart-pick-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.chart-pick-head strong {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.chart-pick-head .icon-btn {
+  margin-left: auto;
+}
+
+.chart-pick-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.chart-pick-actions .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Overview strip */
+
+.overview {
+  position: relative;
+  margin-top: 0.6rem;
+  height: 3rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+
+.overview .sparkline {
+  height: 100%;
+}
+
+.overview-shade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  pointer-events: none;
+}
+
+.overview-window {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border: 1.5px solid var(--violet-2);
+  border-radius: var(--radius-sm);
+  background: rgba(139, 92, 246, 0.08);
+  cursor: grab;
+}
+
+.overview-window:active {
+  cursor: grabbing;
+}
+
+.overview-window:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+.overview-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -10px;
+  width: 20px;
+  cursor: ew-resize;
+}
+
+.overview-handle.end {
+  left: auto;
+  right: -10px;
+}
+
+.overview:not(.zoomed) .overview-handle {
+  left: 0;
+}
+
+.overview:not(.zoomed) .overview-handle.end {
+  left: auto;
+  right: 0;
+}
+
+.overview-handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 1.3rem;
+  transform: translate(-50%, -50%);
+  border-radius: 2px;
+  background: var(--violet-2);
+  pointer-events: none;
+}
+
+/* Range picker */
+
+.range-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.range-presets {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.range-presets::-webkit-scrollbar {
+  display: none;
+}
+
+.range-presets button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.range-presets button:focus-visible {
+  outline: 2px solid var(--violet-2);
+  outline-offset: 1px;
+}
+
+.range-custom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: flex-end;
+  padding: 0.7rem;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.range-custom .field {
+  flex: 1 1 12rem;
+}
+
+.range-custom .field-error {
+  flex-basis: 100%;
+}
+
+.range-custom-actions {
+  min-height: 2.6rem;
+}

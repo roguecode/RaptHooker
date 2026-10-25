@@ -1,0 +1,59 @@
+.mqtt-section .input.mono {
+  font-family: var(--mono);
+  font-size: 0.88rem;
+}
+
+.mqtt-section .mqtt-wide {
+  grid-column: 1 / -1;
+}
+
+.mqtt-section .mqtt-indent {
+  max-width: 22rem;
+  padding-left: 1.6rem;
+}
+
+.mqtt-status {
+  margin: 0 0 1rem;
+}
+
+.mqtt-status strong {
+  display: block;
+}
+
+.mqtt-help {
+  margin-top: 1.2rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.9rem;
+}
+
+.mqtt-help summary {
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.mqtt-help[open] summary {
+  margin-bottom: 0.7rem;
+}
+
+.mqtt-topics {
+  margin: 0 0 0.8rem;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.mqtt-topics code,
+.mqtt-help p {
+  overflow-wrap: anywhere;
+}
+
+.mqtt-help a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  text-decoration: underline;
+}

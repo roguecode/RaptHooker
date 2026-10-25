@@ -1,0 +1,121 @@
+# RaptHooker Bluetooth relay: an ESP32 running ESPHome that passes on the RAPT Pill adverts it hears.
+# UNTESTED on real hardware so far: see docs/relay.md for the set-up, and please report how it goes.
+#
+# It listens (passively) for adverts with RAPT manufacturer data, company id 0x4152 ("RA", the readings) or 0x454B
+# ("KE", the firmware version), and posts them to RaptHooker's /api/relay every couple of seconds. Everything else it
+# hears is ignored.
+#
+# secrets.yaml, next to this file:
+#   wifi_ssid: "YourWiFi"
+#   wifi_password: "your-wifi-password"
+#   rapthooker_relay_auth: "Bearer rh_relay_..."   # "Bearer " and then the relay token from Settings > API tokens
+
+substitutions:
+  # Shown in RaptHooker under Settings > Bluetooth > Relays (letters, digits and dashes).
+  name: rapt-relay
+  # Where RaptHooker is. If the ESP32 can't find rapthooker.local, use the Pi's IP address, e.g. http://192.0.2.10:8080/api/relay
+  rapthooker_url: http://rapthooker.local:8080/api/relay
+
+esphome:
+  name: ${name}
+
+esp32:
+  # A plain ESP32 dev board (ESP32-WROOM). For another board, put its name here (see esphome.io).
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+# Lets you update it over Wi-Fi later; the first flash has to be over USB.
+ota:
+  - platform: esphome
+
+globals:
+  # Adverts waiting to be posted: JSON objects separated by commas.
+  - id: rapt_queue
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+  - id: rapt_queued
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+esp32_ble_tracker:
+  scan_parameters:
+    # Only listen: a RAPT Pill puts its readings in the advert itself, so there's nothing to ask it for.
+    active: false
+  on_ble_advertise:
+    - then:
+        - lambda: |-
+            // Keep only RAPT manufacturer data: "16722" (0x4152) and "17739" (0x454B) are the company ids in decimal.
+            std::string entries;
+            for (auto &md : x.get_manufacturer_datas()) {
+              const bool rapt = md.uuid == decltype(md.uuid)::from_uint16(0x4152);
+              const bool keg = md.uuid == decltype(md.uuid)::from_uint16(0x454B);
+              if (!rapt && !keg) continue;
+              std::string hex;
+              char byte[3];
+              for (uint8_t b : md.data) {
+                snprintf(byte, sizeof(byte), "%02x", b);
+                hex += byte;
+              }
+              if (!entries.empty()) entries += ",";
+              entries += std::string("\"") + (rapt ? "16722" : "17739") + "\":\"" + hex + "\"";
+            }
+            if (entries.empty()) return;
+
+            const uint8_t *a = x.address();
+            char addr[18];
+            snprintf(addr, sizeof(addr), "%02X:%02X:%02X:%02X:%02X:%02X", a[0], a[1], a[2], a[3], a[4], a[5]);
+
+            // A pill repeats each advert several times a second: pass each one on once (and again after 30 s).
+            static std::map<std::string, std::pair<std::string, uint32_t>> last;
+            auto &seen = last[std::string(addr) + entries.substr(0, 8)];
+            if (seen.first == entries && millis() - seen.second < 30000) return;
+            seen = {entries, millis()};
+
+            // RaptHooker takes up to 50 adverts per post.
+            if (id(rapt_queued) >= 40) return;
+            if (id(rapt_queued) > 0) id(rapt_queue) += ",";
+            id(rapt_queue) += std::string("{\"address\":\"") + addr + "\",\"rssi\":" + std::to_string(x.get_rssi()) +
+                              ",\"manufacturerData\":{" + entries + "}}";
+            id(rapt_queued) += 1;
+
+http_request:
+  timeout: 3s
+  # Plain http on your own network, so no certificate bundle is needed.
+  verify_ssl: false
+
+interval:
+  - interval: 2s
+    then:
+      - if:
+          condition:
+            lambda: 'return id(rapt_queued) > 0;'
+          then:
+            - http_request.post:
+                url: ${rapthooker_url}
+                request_headers:
+                  Content-Type: application/json
+                  Authorization: !secret rapthooker_relay_auth
+                body: !lambda |-
+                  std::string body = "{\"relay\":\"${name}\",\"adverts\":[" + id(rapt_queue) + "]}";
+                  id(rapt_queue).clear();
+                  id(rapt_queued) = 0;
+                  return body;
+                on_response:
+                  - if:
+                      condition:
+                        lambda: 'return response->status_code != 200;'
+                      then:
+                        - logger.log:
+                            format: 'RaptHooker answered %d (401: check the token in secrets.yaml)'
+                            args: ['response->status_code']
+                on_error:
+                  - logger.log: "Couldn't reach RaptHooker: check rapthooker_url"

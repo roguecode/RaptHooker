@@ -1,0 +1,19 @@
+.whats-new-title svg {
+  vertical-align: -0.12em;
+  margin-right: 0.2rem;
+  color: var(--violet-2);
+}
+
+.whats-new-section {
+  margin-top: 0.8rem;
+}
+
+.whats-new-section + .whats-new-section {
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+.whats-new-section > h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1.05rem;
+}

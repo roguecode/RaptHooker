@@ -1,0 +1,37 @@
+[Unit]
+Description=RaptHooker (RAPT Pill dashboard, brews and webhooks)
+After=network-online.target bluetooth.target
+Wants=network-online.target bluetooth.target
+# Recording must carry on whatever happens: never stop restarting it.
+StartLimitIntervalSec=0
+
+[Service]
+# The hub tells systemd when it's listening, then pings the watchdog every 20 s from its main loop (through
+# systemd-notify, which is a child process: hence NotifyAccess=all). If it hangs, the pings stop and systemd restarts it.
+Type=notify
+NotifyAccess=all
+WatchdogSec=60
+# Generous, so a slow first start (a database upgrade on a big database, a Pi Zero 2 W) is never cut short.
+TimeoutStartSec=300
+User=rapthooker
+Group=rapthooker
+SupplementaryGroups=bluetooth
+WorkingDirectory=/opt/rapthooker
+Environment=RAPTHOOKER_CONFIG=/etc/rapthooker/rapthooker.config.json
+Environment=NODE_ENV=production
+Environment=NODE_OPTIONS=--max-old-space-size=192
+# SQLite's temporary files (compacting the database) go on the data disk, not in RAM.
+Environment=SQLITE_TMPDIR=/var/lib/rapthooker
+ExecStart=/usr/bin/node /opt/rapthooker/server/rapthooker.cjs
+Restart=always
+RestartSec=3
+TimeoutStopSec=20
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/rapthooker
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

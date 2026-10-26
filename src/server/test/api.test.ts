@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { DEFAULT_BACKUP_SETTINGS, DEFAULT_HUB_SETTINGS } from '@rapthooker/shared';
 import { parseConfig } from '../config.js';
 import { ClockGuard } from '../clock.js';
 import { PillService } from '../pills.js';
@@ -186,5 +187,32 @@ describe('API', () => {
     expect(JSON.stringify(asViewer)).not.toContain('secret123');
     const asOwner = (await app.inject({ url: '/api/webhooks', headers: owner })).json();
     expect(JSON.stringify(asOwner)).toContain('secret123');
+  });
+
+  it('keeps settings a newer version saved when saving the hub and backup settings', async () => {
+    const { app, store } = await setup();
+    // As a newer version (since put back) left them.
+    store.setMeta(
+      'hub',
+      JSON.stringify({
+        ...DEFAULT_HUB_SETTINGS,
+        units: { ...DEFAULT_HUB_SETTINGS.units, pressure: 'bar' },
+        theme: 'dark',
+      }),
+    );
+    store.setMeta(
+      'backups',
+      JSON.stringify({
+        ...DEFAULT_BACKUP_SETTINGS,
+        s3: { ...DEFAULT_BACKUP_SETTINGS.s3, storageClass: 'STANDARD_IA' },
+        keepMonthly: 6,
+      }),
+    );
+    const hub = { ...DEFAULT_HUB_SETTINGS, name: 'Shed', units: { temperature: 'F', gravity: 'sg' } };
+    expect((await app.inject({ method: 'PUT', url: '/api/settings/hub', headers: owner, payload: hub })).statusCode).toBe(200);
+    expect(JSON.parse(store.getMeta('hub')!)).toEqual({ ...hub, units: { ...hub.units, pressure: 'bar' }, theme: 'dark' });
+    const b = { ...DEFAULT_BACKUP_SETTINGS, usb: true };
+    expect((await app.inject({ method: 'PUT', url: '/api/settings/backups', headers: owner, payload: b })).statusCode).toBe(200);
+    expect(JSON.parse(store.getMeta('backups')!)).toEqual({ ...b, s3: { ...b.s3, storageClass: 'STANDARD_IA' }, keepMonthly: 6 });
   });
 });

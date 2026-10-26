@@ -2,7 +2,7 @@ import { useMemo, type CSSProperties } from 'react';
 import type { Pill } from '@rapthooker/shared';
 import { useLive } from '../../live';
 import { useUnits } from '../../units';
-import { useHistory, useRecentRange } from '../../hooks';
+import { historyGapMs, useHistory, useRecentRange } from '../../hooks';
 import { href } from '../../router';
 import { fixed, signalQuality, timeAgo, timeUntil, useNow } from '../../format';
 import { t } from '../../i18n';
@@ -45,7 +45,7 @@ export function ThermometerCard({ pill }: { pill: Pill }) {
   const { cachedAt } = useLive();
   const now = useNow(15_000);
   const range = useRecentRange(DAY);
-  const { history } = useHistory(pill.id, range, 160);
+  const { history } = useHistory(pill.id, range, 160, historyGapMs(pill.live.intervalSec));
   const r = pill.live.latest;
   const signal = signalQuality(pill.live.rssi);
   const next = pill.live.lastReadingAt && pill.live.intervalSec ? pill.live.lastReadingAt + pill.live.intervalSec * 1000 : null;

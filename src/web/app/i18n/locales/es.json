@@ -412,6 +412,7 @@
   "Couldn't load brews": "No se pudieron cargar los lotes",
   "Couldn't load the backup settings": "No se pudieron cargar los ajustes de copia",
   "Couldn't load the history: {error}": "No se pudo cargar el historial: {error}",
+  "Couldn't load the MQTT settings": "No se pudieron cargar los ajustes de MQTT",
   "Couldn't load the webhook": "No se pudo cargar el webhook",
   "Couldn't load webhooks": "No se pudieron cargar los webhooks",
   "Couldn't load where alerts go": "No se pudo cargar adónde van las alertas",

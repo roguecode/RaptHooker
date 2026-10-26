@@ -513,6 +513,39 @@ describe('weekly CSV', () => {
     await m.runDaily();
     expect(existsSync(join(m.dir, 'csv'))).toBe(false);
   });
+
+  it('makes up for a missed Sunday the next day', async () => {
+    const t = temp();
+    // The last export was a little after the backup time the Sunday before; this Sunday the hub was off.
+    t.store.setMeta('lastCsv', JSON.stringify({ at: new Date(2026, 9, 4, 3, 20).getTime(), folder: null, error: null }));
+    const m = maintenance(t.store, {
+      now: () => new Date(2026, 9, 12, 3, 16),
+      settings: backups({ weeklyCsv: true }),
+      pills: { list: () => [] },
+      brews: { list: () => [] },
+    });
+    await m.runDaily();
+    expect(existsSync(join(m.dir, 'csv', '2026-10-12'))).toBe(true);
+  });
+});
+
+describe('leftovers', () => {
+  it('tidies up copies cut short by a restart', () => {
+    const t = temp();
+    const backupsDir = join(t.dir, 'backups');
+    mkdirSync(backupsDir);
+    const left = [
+      join(t.dir, 'pre-update-2026-10-24T02-49-15.db.partial'),
+      join(t.dir, 'pre-update-2026-10-24T02-49-15.db.partial-wal'),
+      join(t.dir, 'download-abc123.partial'),
+      join(backupsDir, 'rapthooker-2026-10-20.db.partial'),
+    ];
+    const kept = [join(t.dir, 'pre-update-2026-10-23T02-49-15.db'), join(backupsDir, 'rapthooker-2026-10-21.db')];
+    for (const f of [...left, ...kept]) writeFileSync(f, 'x');
+    maintenance(t.store);
+    expect(left.filter((f) => existsSync(f))).toEqual([]);
+    expect(kept.filter((f) => existsSync(f))).toEqual(kept);
+  });
 });
 
 describe('S3 signing (AWS Signature Version 4)', () => {

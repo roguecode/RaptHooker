@@ -20,7 +20,7 @@ pick a preset, fill in your key or ID, and switch it on.
 - **Restarts don't cause floods or repeats.** When each pill was last sent is stored, so after the hub has been off it
   sends the latest reading once rather than everything it missed (unless you ask it to
   [catch up](#catch-up-after-an-outage)).
-- **Failures** are retried after 1, 2, 5, 10, 30 and 60 minutes (never more often than the webhook's own interval).
+- **Failures** are retried after 1, 2, 5, 10, 30 and 60 minutes (never waiting longer than the webhook's own interval).
   The delivery log keeps the last 200 attempts with the request and response.
 - **Send a test now** sends the preview straight away (it doesn't count as a scheduled send).
 - URLs, headers and bodies often contain API keys, so only the owner can see them.
@@ -73,9 +73,9 @@ What's sent:
 - One request per interval, with every pill that has something to send. Each pill's own rules still apply: a pill
   without a new reading, one that looks wrong or one that hasn't changed enough is left out; if none has anything, no
   request is sent.
-- The batch body, URL and headers can use `{{items}}`, `{{count}}`, `{{timestamp}}`, `{{timestamp_unix}}`,
-  `{{timestamp_ms}}` (when the request is sent), `{{interval}}`, `{{hub_name}}`, `{{app}}` and `{{app_version}}`.
-  Pill and reading variables only work in the body template.
+- The batch body, URL and headers can use `{{count}}`, `{{timestamp}}`, `{{timestamp_unix}}`,
+  `{{timestamp_ms}}` (when the request is sent), `{{interval}}`, `{{hub_name}}`, `{{app}}` and `{{app_version}}`, and
+  the batch body `{{items}}`. Pill and reading variables only work in the body template.
 
 ### Catch up after an outage
 

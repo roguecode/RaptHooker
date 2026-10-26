@@ -1910,6 +1910,11 @@
       "pages/pill/HistoryPanel.tsx"
     ]
   },
+  "Couldn't load the MQTT settings": {
+    "files": [
+      "pages/settings/MqttSection.tsx"
+    ]
+  },
   "Couldn't load the webhook": {
     "files": [
       "pages/webhooks/WebhookEditor.tsx"

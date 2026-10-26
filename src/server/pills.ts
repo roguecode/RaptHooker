@@ -38,7 +38,7 @@ interface PillConfig {
 }
 
 /** Values RaptHooker works out from the stored readings, refreshed with each new reading. */
-interface Derived {
+export interface Derived {
   /** RaptHooker's velocity over the model's window. */
   velocity: number | null;
   /** Average plausible gravity over the smoothing window. */
@@ -62,6 +62,8 @@ interface PillState {
   createdAt: number;
   config: PillConfig;
   lastHeardAt: number | null;
+  /** When (performance.now()) it was last heard, to put `lastHeardAt` right once the clock is set. */
+  lastHeardMono: number | null;
   lastReadingAt: number | null;
   firstReadingAt: number | null;
   rssi: number | null;
@@ -86,6 +88,7 @@ interface NearbyState {
   kind: DeviceKind;
   firstHeardAt: number;
   lastHeardAt: number;
+  lastHeardMono: number | null;
   rssi: number | null;
   latest: RawReading | null;
   info: PillInfo;
@@ -190,6 +193,40 @@ export function modelGravity(
 }
 
 /**
+ * RaptHooker's own values at a reading's time `ts`: velocity from a straight line through the plausible readings over
+ * the model's window, and the gravity averaged over its smoothing window.
+ */
+export function deriveAt(
+  store: Store,
+  pillId: string,
+  ts: number,
+  offsets: Offsets,
+  model: PillModel,
+): Pick<Derived, 'velocity' | 'smoothed'> {
+  const velocityMs = model.velocityHours * 3_600_000;
+  const smoothMs = SMOOTHING_MS[model.smoothing];
+  const times: number[] = [];
+  const gravity: number[] = [];
+  let sum = 0;
+  let n = 0;
+  for (const r of store.iterateReadings(pillId, ts - Math.max(velocityMs, smoothMs), ts)) {
+    if (r.flags & FLAG_IMPLAUSIBLE) continue;
+    const g = modelGravity(r, offsets, model);
+    if (g === null || !plausibleGravity(g)) continue;
+    if (r.ts >= ts - velocityMs) {
+      times.push(r.ts);
+      gravity.push(g);
+    }
+    if (smoothMs > 0 && r.ts >= ts - smoothMs) {
+      sum += g;
+      n++;
+    }
+  }
+  const velocity = slopePerDay(times, gravity);
+  return { velocity: velocity === null ? null : Math.round(velocity * 100) / 100, smoothed: n > 0 ? sum / n : null };
+}
+
+/**
  * A stored reading as shown and sent: offsets applied, gravity and velocity from wherever the pill's model says
  * (with `derived` holding RaptHooker's own values for the latest reading). What the device doesn't measure is null.
  */
@@ -273,6 +310,7 @@ export class PillService extends EventEmitter {
         createdAt: row.created_at,
         config,
         lastHeardAt: latest?.ts ?? null,
+        lastHeardMono: null,
         lastReadingAt: latest?.ts ?? null,
         firstReadingAt: latest ? this.store.firstReadingTs(row.id) : null,
         rssi: latest?.rssi ?? null,
@@ -407,8 +445,7 @@ export class PillService extends EventEmitter {
   }
 
   /**
-   * Works out RaptHooker's own values for the latest reading: velocity from a straight line through the plausible
-   * readings over the model's window, the smoothed gravity, and how many readings were caught.
+   * Works out RaptHooker's own values for the latest reading (see deriveAt()), and how many readings were caught.
    */
   private refreshDerived(s: PillState): void {
     const latest = s.latest;
@@ -420,32 +457,16 @@ export class PillService extends EventEmitter {
       s.derived = { ...NO_DERIVED, caught: this.catchRate(s) };
       return;
     }
+    s.derived = { ...deriveAt(this.store, s.id, latest.ts, s.config.offsets, s.config.model), caught: this.catchRate(s) };
+  }
+
+  /** RaptHooker's own values at an earlier reading's time, for sending it later (webhook catch-up). */
+  derivedAt(id: string, ts: number): Derived {
+    const s = this.pills.get(id);
+    if (!s || s.config.kind === 'thermometer') return NO_DERIVED;
     const { model, offsets } = s.config;
-    const velocityMs = model.velocityHours * 3_600_000;
-    const smoothMs = SMOOTHING_MS[model.smoothing];
-    const ts: number[] = [];
-    const gravity: number[] = [];
-    let sum = 0;
-    let n = 0;
-    for (const r of this.store.iterateReadings(s.id, latest.ts - Math.max(velocityMs, smoothMs), latest.ts)) {
-      if (r.flags & FLAG_IMPLAUSIBLE) continue;
-      const g = modelGravity(r, offsets, model);
-      if (g === null || !plausibleGravity(g)) continue;
-      if (r.ts >= latest.ts - velocityMs) {
-        ts.push(r.ts);
-        gravity.push(g);
-      }
-      if (smoothMs > 0 && r.ts >= latest.ts - smoothMs) {
-        sum += g;
-        n++;
-      }
-    }
-    const velocity = slopePerDay(ts, gravity);
-    s.derived = {
-      velocity: velocity === null ? null : Math.round(velocity * 100) / 100,
-      smoothed: n > 0 ? sum / n : null,
-      caught: this.catchRate(s),
-    };
+    if (model.velocitySource !== 'computed' && model.smoothing === 'off') return NO_DERIVED;
+    return { ...deriveAt(this.store, id, ts, offsets, model), caught: null };
   }
 
   /** Readings stored vs transmissions expected from the learned interval, over the last day this hub has been running. */
@@ -512,6 +533,7 @@ export class PillService extends EventEmitter {
       createdAt: this.now(),
       config,
       lastHeardAt: near?.lastHeardAt ?? null,
+      lastHeardMono: near?.lastHeardMono ?? null,
       lastReadingAt: null,
       firstReadingAt: null,
       rssi: near?.rssi ?? null,
@@ -552,19 +574,21 @@ export class PillService extends EventEmitter {
   update(id: string, patch: PillPatch): Pill {
     const s = this.pills.get(id);
     if (!s) throw new PillError('Unknown pill', 404);
+    // Checked before anything changes, so a rejected patch leaves the pill as it was.
+    let model: PillModel | undefined;
+    if (patch.model !== undefined) {
+      model = { ...s.config.model, ...patch.model };
+      model.tiltPoly = fitTilt(model.tiltPoints);
+      if (model.gravitySource === 'tilt' && !model.tiltPoly) {
+        throw new PillError('Working out gravity from the tilt needs at least two calibration points at different tilts');
+      }
+    }
     if (patch.name !== undefined) s.config.name = patch.name.trim() || s.config.name;
     if (patch.color !== undefined) s.config.color = patch.color;
     if (patch.offsets !== undefined) s.config.offsets = patch.offsets;
     if (patch.archived !== undefined) s.config.archived = patch.archived;
     if (patch.order !== undefined) s.config.order = patch.order;
-    if (patch.model !== undefined) {
-      const model = { ...s.config.model, ...patch.model };
-      model.tiltPoly = fitTilt(model.tiltPoints);
-      if (model.gravitySource === 'tilt' && !model.tiltPoly) {
-        throw new PillError('Working out gravity from the tilt needs at least two calibration points at different tilts');
-      }
-      s.config.model = model;
-    }
+    if (model) s.config.model = model;
     this.save(s);
     const recalculated = patch.offsets !== undefined || patch.model !== undefined;
     if (recalculated) this.refreshDerived(s);
@@ -621,7 +645,9 @@ export class PillService extends EventEmitter {
     }
 
     if (!a.cached) {
-      s.lastHeardAt = a.at;
+      // A relay's batched advert can be older than one the radio has heard since.
+      s.lastHeardAt = Math.max(s.lastHeardAt ?? 0, a.at);
+      s.lastHeardMono = Math.max(s.lastHeardMono ?? -Infinity, a.mono);
       if (a.rssi !== null) s.rssi = a.rssi;
     }
     // Heard again with nothing new (BlueZ's monitor reports every advert) only counts as being heard.
@@ -701,6 +727,7 @@ export class PillService extends EventEmitter {
         kind: 'pill',
         firstHeardAt: a.at,
         lastHeardAt: a.at,
+        lastHeardMono: null,
         rssi: a.rssi,
         latest: null,
         info: NO_INFO,
@@ -736,7 +763,10 @@ export class PillService extends EventEmitter {
       n.latest = thermometerReading(a.at, n.thermo, a.rssi ?? n.rssi);
       sampled = true;
     }
-    if (!a.cached) n.lastHeardAt = a.at;
+    if (!a.cached) {
+      n.lastHeardAt = Math.max(n.lastHeardAt, a.at);
+      n.lastHeardMono = Math.max(n.lastHeardMono ?? -Infinity, a.mono);
+    }
     if (a.rssi !== null) n.rssi = a.rssi;
     const isNew = !this.nearbyPills.has(address);
     this.nearbyPills.set(address, n);
@@ -809,6 +839,9 @@ export class PillService extends EventEmitter {
   }
 
   private flushPending(): void {
+    // Heard while the clock was still wrong: when that was by the clock now it's set.
+    for (const s of this.pills.values()) if (s.lastHeardMono !== null) s.lastHeardAt = this.clock.wallTime(s.lastHeardMono);
+    for (const n of this.nearbyPills.values()) if (n.lastHeardMono !== null) n.lastHeardAt = this.clock.wallTime(n.lastHeardMono);
     const pending = this.pending;
     this.pending = [];
     if (pending.length) this.log.info({ readings: pending.length }, 'clock trusted: storing readings held since start-up');

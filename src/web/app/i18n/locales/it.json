@@ -412,6 +412,7 @@
   "Couldn't load brews": "Impossibile caricare le cotte",
   "Couldn't load the backup settings": "Impossibile caricare le impostazioni di backup",
   "Couldn't load the history: {error}": "Impossibile caricare lo storico: {error}",
+  "Couldn't load the MQTT settings": "Impossibile caricare le impostazioni MQTT",
   "Couldn't load the webhook": "Impossibile caricare il webhook",
   "Couldn't load webhooks": "Impossibile caricare i webhook",
   "Couldn't load where alerts go": "Impossibile caricare dove vanno gli avvisi",

@@ -5,6 +5,33 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Alerts:** an alert that "Don't repeat for" kept quiet is now announced once that time is up if it's still going
+  (before, a pill that went quiet again soon after coming back was never reported). An alert whose rule is switched
+  off, or whose brew ends, no longer stays "firing" and fires afresh the next time. "Fermentation stable" uses the
+  gravity worked out from the tilt when a pill is set to, as everything else does. The in-app message when an alert
+  clears now says where things are ("Back to normal: Kveik is at 21.0 °C") rather than repeating why it fired.
+- **No false "goes quiet" alerts after the hub starts:** on a Pi without a clock, pills heard before the time was set
+  from the network no longer look silent for as long as the hub was off, and their "last heard" time is put right.
+- **"Last heard" no longer jumps back** when a relay posts an advert it heard a few minutes earlier.
+- **Webhooks with an emoji (or other non-Latin text) in a header**, e.g. from a pill's name, are sent (as UTF-8)
+  instead of failing every time. Catching up after an outage now sends the smoothed gravity and RaptHooker's velocity
+  when a pill uses them, like a normal send.
+- **Settings saved by a newer version are kept** when hub, MQTT and backup settings, alerts or notification channels
+  are saved after going back to an older one.
+- **Backups:** a cloud (S3) backup turned away because the hub's clock is off now shows as a warning. A missed weekly
+  CSV export is made up the next day rather than the day after. Unfinished copies left by a restart in the middle of
+  one are tidied up, and a failed S3 upload no longer leaves the file open.
+- **Charts:** live readings on a brew's chart (and the dashboard and TV mode) no longer break the line for pills that
+  report every half hour or so. A brew's chart zooms out, and double-click, 0 and Escape show all of it, like a pill's.
+  The dashboard and TV mode sparklines leave out readings where the pill wasn't floating.
+- **The app no longer shows "Offline" for a moment** (or stays that way) after signing in or out.
+- A pill change that's turned down (gravity from the tilt without calibration points) no longer half-applies.
+- `LOG_LEVEL=debug` shows debug messages in the log and the in-app log viewer.
+- The message for MQTT settings that couldn't be loaded is translated.
+- Database compaction with a backup time after 23:30 waits for the quiet hours after midnight.
+
 ## [0.4.0] - 2026-10-26
 
 ### Added

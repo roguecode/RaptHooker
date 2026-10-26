@@ -237,7 +237,10 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       window.clearInterval(watchdog);
       window.clearTimeout(retry);
       document.removeEventListener('visibilitychange', onVisible);
-      ws?.close();
+      // Forgotten before it's closed, so its close event (which comes later) can't mark the next connection closed.
+      const old = ws;
+      ws = undefined;
+      old?.close();
     };
   }, [toast, upsertPill, refreshSession, role]);
 

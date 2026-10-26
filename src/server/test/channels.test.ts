@@ -7,7 +7,7 @@ import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import pino from 'pino';
 import { z } from 'zod';
-import { BROWSER_PUSH, type AlertRuleInput, type ChannelInput, type Pill, type Reading } from '@rapthooker/shared';
+import { BROWSER_PUSH, DEFAULT_PILL_MODEL, type AlertRuleInput, type ChannelInput, type Pill, type Reading } from '@rapthooker/shared';
 import { ChannelError, ChannelService, type ChannelDeps, type MailTransport, type Notification } from '../channels.js';
 import { AlertService } from '../alerts.js';
 import { MASKED, Settings } from '../settings.js';
@@ -119,6 +119,24 @@ const expectNoSecrets = (text: string) => {
 };
 
 describe('notification channels', () => {
+  it('keeps what a newer version saved in a channel when it is edited', () => {
+    const t = setup();
+    const ch = t.channels.create(NTFY);
+    // As a newer version (since put back) left it: a setting of its own, and one more ntfy option.
+    const json = { ...NTFY, quietHours: '22-07', config: { ...NTFY.config, priority: 'max' } };
+    t.store.db.prepare('UPDATE channels SET json = ? WHERE id = ?').run(JSON.stringify(json), ch.id);
+    t.channels.load();
+    t.channels.update(ch.id, { ...NTFY, name: 'My phone' });
+    const saved = () => JSON.parse((t.store.db.prepare('SELECT json FROM channels').get() as { json: string }).json) as ChannelInput;
+    expect(saved()).toMatchObject({ name: 'My phone', quietHours: '22-07', config: { topic: NTFY.config.topic, priority: 'max' } });
+    // Another kind of channel keeps none of the old kind's settings.
+    t.channels.update(ch.id, DISCORD);
+    expect(saved().config).toMatchObject(DISCORD.config);
+    expect(saved().config).not.toHaveProperty('topic');
+    expect(saved().config).not.toHaveProperty('priority');
+    expect(saved()).toMatchObject({ quietHours: '22-07' });
+  });
+
   it('posts to ntfy with title, priority, tags and the access token', async () => {
     const { channels, calls } = setup();
     const ch = channels.create(NTFY);
@@ -438,7 +456,7 @@ describe('notification channels', () => {
   });
 });
 
-const PILL = { id: 'p1', name: 'Kveik' } as Pill;
+const PILL = { id: 'p1', name: 'Kveik', model: DEFAULT_PILL_MODEL } as Pill;
 
 function reading(over: Partial<Reading> = {}): Reading {
   return {

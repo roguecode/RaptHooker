@@ -3,7 +3,7 @@ import { plausibleGravity, type NearbyPill, type Pill } from '@rapthooker/shared
 import { api, errorText } from '../api';
 import { useLive } from '../live';
 import { useUnits } from '../units';
-import { useHistory, useRecentRange } from '../hooks';
+import { historyGapMs, useHistory, useRecentRange } from '../hooks';
 import { href, navigate } from '../router';
 import { fixed, signalQuality, timeAgo, timeUntil, useNow } from '../format';
 import { t, tp } from '../i18n';
@@ -355,7 +355,7 @@ export function PillCard({ pill }: { pill: Pill }) {
   const { cachedAt } = useLive();
   const now = useNow(15_000);
   const range = useRecentRange(DAY);
-  const { history } = useHistory(pill.id, range, 160);
+  const { history } = useHistory(pill.id, range, 160, historyGapMs(pill.live.intervalSec));
   const r = pill.live.latest;
   const g = u.gravityParts(r?.gravity);
   const v = r?.velocity ?? null;
@@ -415,6 +415,7 @@ export function PillCard({ pill }: { pill: Pill }) {
         <Sparkline
           ts={history.ts}
           values={history.gravity}
+          skip={history.implausible}
           secondary={history.temperature}
           color={pill.color}
           from={range.from}

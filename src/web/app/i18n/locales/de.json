@@ -412,6 +412,7 @@
   "Couldn't load brews": "Sude konnten nicht geladen werden",
   "Couldn't load the backup settings": "Backup-Einstellungen konnten nicht geladen werden",
   "Couldn't load the history: {error}": "Verlauf konnte nicht geladen werden: {error}",
+  "Couldn't load the MQTT settings": "MQTT-Einstellungen konnten nicht geladen werden",
   "Couldn't load the webhook": "Webhook konnte nicht geladen werden",
   "Couldn't load webhooks": "Webhooks konnten nicht geladen werden",
   "Couldn't load where alerts go": "Alarmziele konnten nicht geladen werden",

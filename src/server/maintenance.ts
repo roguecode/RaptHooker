@@ -110,13 +110,15 @@ export class Maintenance {
     }
   }
 
-  /** Leftovers from downloads or uploads cut short by a restart. */
+  /** Leftovers from downloads, uploads and copies cut short by a restart. */
   private tidyTemp(): void {
-    try {
-      for (const f of readdirSync(this.dataDir)) {
-        if (/^(download-.+|restore-upload)\.partial(-wal|-shm|-journal)?$/.test(f)) rmSync(join(this.dataDir, f), { force: true });
-      }
-    } catch {}
+    const tidy = (dir: string, re: RegExp) => {
+      try {
+        for (const f of readdirSync(dir)) if (re.test(f)) rmSync(join(dir, f), { force: true });
+      } catch {}
+    };
+    tidy(this.dataDir, /^(download-.+|restore-upload|pre-update-.+\.db)\.partial(-wal|-shm|-journal)?$/);
+    tidy(this.dir, /^rapthooker-\d{4}-\d{2}-\d{2}\.db\.partial(-wal|-shm|-journal)?$/);
   }
 
   private backupSettings(): BackupSettings | null {
@@ -340,7 +342,8 @@ export class Maintenance {
     if (!this.backupSettings()?.weeklyCsv || !this.opts.pills || !this.opts.brews) return false;
     const now = this.now();
     if (this.csvState.folder && basename(this.csvState.folder) === localDate(now)) return false;
-    return now.getDay() === 0 || (this.csvState.at !== null && now.getTime() - this.csvState.at >= 8 * DAY);
+    // A week and a bit since the last one (made a little after the backup time) means a Sunday was missed.
+    return now.getDay() === 0 || (this.csvState.at !== null && now.getTime() - this.csvState.at > 7 * DAY);
   }
 
   /** Writes recent brews and each pill's last week as CSV into <backups>/csv/YYYY-MM-DD and copies them off the hub. */

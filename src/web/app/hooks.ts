@@ -7,6 +7,13 @@ import { detailRange, mergeHistory, presetRange, type HistoryRange, type RangePr
 
 export type { HistoryRange, RangePreset, TimeWindow } from './components/chartMath';
 
+/**
+ * How long without a reading breaks a chart's line, as the hub works it out for the history: a few of the pill's
+ * intervals, from 10 minutes to 3 hours.
+ */
+export const historyGapMs = (intervalSec: number | null | undefined): number =>
+  Math.min(3 * 3_600_000, Math.max(10 * 60_000, (intervalSec ?? 300) * 4000));
+
 /** Adds a live reading to a history (after a row of nulls when there's been a gap). */
 export function appendReading(h: History, r: Reading, gapMs: number): History {
   const lastTs = h.ts[h.ts.length - 1];

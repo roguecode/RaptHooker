@@ -3,11 +3,12 @@ import type { Brew } from '@rapthooker/shared';
 import { ApiError, api, errorText } from '../../api';
 import { useLive, useLiveMessages } from '../../live';
 import { useUnits } from '../../units';
-import { useHistory } from '../../hooks';
+import { historyGapMs, useZoomableHistory, type HistoryRange } from '../../hooks';
 import { href, navigate } from '../../router';
 import { dateTime, days, fixed, num, useNow } from '../../format';
 import { Icon } from '../../components/Icon';
 import { Chart, type SeriesKey } from '../../components/Chart';
+import { clampWindow, isZoomed, type TimeWindow } from '../../components/chartMath';
 import { brewAnnotations } from '../../components/annotations';
 import { FermentBar } from '../../components/Ferment';
 import { Confirm } from '../../components/ui';
@@ -16,6 +17,9 @@ import { EditBrewModal } from './EditBrewModal';
 import { EventsSection } from './events';
 import { abvOf, PredictionStats, StageChip, useAbvFormula } from './Prediction';
 import './brews.css';
+
+/** Until the brew has loaded. */
+const NO_RANGE: HistoryRange = { from: 0, to: 0, live: false };
 
 export function BrewPage({ id }: { id: string }) {
   const { pills, isOwner, toast } = useLive();
@@ -26,7 +30,7 @@ export function BrewPage({ id }: { id: string }) {
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState<'end' | 'delete' | null>(null);
   const [series, setSeries] = useState<SeriesKey[]>(['gravity', 'temperature']);
-  const [zoom, setZoom] = useState<{ from: number; to: number } | null>(null);
+  const [zoom, setZoom] = useState<TimeWindow | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const reload = useCallback(() => {
@@ -47,12 +51,25 @@ export function BrewPage({ id }: { id: string }) {
   });
 
   const pill = brew ? pills.find((p) => p.id === brew.pillId) : undefined;
-  const range = useMemo(() => {
-    if (!brew) return null;
-    if (zoom) return { ...zoom, live: false };
-    return { from: brew.startedAt, to: brew.endedAt ?? Date.now(), live: brew.endedAt === null };
-  }, [brew?.startedAt, brew?.endedAt, zoom]); // eslint-disable-line react-hooks/exhaustive-deps
-  const { history } = useHistory(brew?.pillId ?? null, range, 900);
+  const range = useMemo<HistoryRange>(
+    () => (brew ? { from: brew.startedAt, to: brew.endedAt ?? Date.now(), live: brew.endedAt === null } : NO_RANGE),
+    [brew?.startedAt, brew?.endedAt], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  // The whole brew, zoomed on the client (with the zoomed-in part fetched in more detail), like a pill's chart.
+  const { history, bounds } = useZoomableHistory(brew?.pillId ?? null, range, zoom, {
+    points: 900,
+    gapMs: historyGapMs(pill?.live.intervalSec),
+  });
+  const win = zoom ? clampWindow(zoom, bounds) : bounds;
+  const zoomed = zoom !== null && isZoomed(win, bounds);
+  const onZoom = useCallback(
+    (from: number, to: number) => {
+      const next = { from, to };
+      setZoom(isZoomed(next, bounds) ? next : null);
+    },
+    [bounds],
+  );
+  const resetZoom = useCallback(() => setZoom(null), []);
   const annotations = useMemo(() => brewAnnotations(brew), [brew]);
 
   if (brew === undefined)
@@ -185,8 +202,8 @@ export function BrewPage({ id }: { id: string }) {
         <div className="chart-toolbar">
           <h2 style={{ margin: 0, fontSize: '1.1rem' }}>{t('Fermentation')}</h2>
           <div className="chips">
-            {zoom && (
-              <button type="button" className="chip on" onClick={() => setZoom(null)}>
+            {zoomed && (
+              <button type="button" className="chip on" onClick={resetZoom}>
                 <Icon name="x" size={12} /> {t('Reset zoom')}
               </button>
             )}
@@ -202,18 +219,18 @@ export function BrewPage({ id }: { id: string }) {
             ))}
           </div>
         </div>
-        {range && (
-          <Chart
-            history={history}
-            series={series}
-            from={range.from}
-            to={Math.max(range.to, history?.to ?? 0)}
-            gravityColor={pill?.color}
-            targetFg={brew.targetFg}
-            annotations={annotations}
-            onZoom={(from, to) => setZoom({ from, to })}
-          />
-        )}
+        <Chart
+          history={history}
+          series={series}
+          from={win.from}
+          to={win.to}
+          bounds={bounds}
+          gravityColor={pill?.color}
+          targetFg={brew.targetFg}
+          annotations={annotations}
+          onZoom={onZoom}
+          onResetZoom={resetZoom}
+        />
       </section>
 
       <section className="panel">

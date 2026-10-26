@@ -65,7 +65,7 @@ export function compactionDue(now: Date, backupTime: string, lastCheckAt: number
   if (now.getTime() - lastCheckAt < 7 * DAY - 12 * 3_600_000) return false;
   const [hh, mm] = backupTime.split(':').map(Number) as [number, number];
   const minutesNow = now.getHours() * 60 + now.getMinutes();
-  const since = (minutesNow - (hh * 60 + mm + 30) + 1440) % 1440;
+  const since = (((minutesNow - (hh * 60 + mm + 30)) % 1440) + 1440) % 1440;
   return since < 180;
 }
 

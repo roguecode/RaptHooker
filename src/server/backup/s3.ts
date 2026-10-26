@@ -301,6 +301,8 @@ export class S3Client {
           fail(err);
           req.destroy();
         });
+        // pipe() leaves the file open when the request fails part-way.
+        req.on('close', () => stream.destroy());
         stream.pipe(req);
       } else req.end();
     });

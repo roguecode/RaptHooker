@@ -412,6 +412,7 @@
   "Couldn't load brews": "Kon brouwsels niet laden",
   "Couldn't load the backup settings": "Kon de back-upinstellingen niet laden",
   "Couldn't load the history: {error}": "Kon de geschiedenis niet laden: {error}",
+  "Couldn't load the MQTT settings": "Kon de MQTT-instellingen niet laden",
   "Couldn't load the webhook": "Kon de webhook niet laden",
   "Couldn't load webhooks": "Kon webhooks niet laden",
   "Couldn't load where alerts go": "Kon niet laden waar meldingen heen gaan",

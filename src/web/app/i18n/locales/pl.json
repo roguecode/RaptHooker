@@ -454,6 +454,7 @@
   "Couldn't load brews": "Nie udało się wczytać warek",
   "Couldn't load the backup settings": "Nie udało się wczytać ustawień kopii",
   "Couldn't load the history: {error}": "Nie udało się wczytać historii: {error}",
+  "Couldn't load the MQTT settings": "Nie udało się wczytać ustawień MQTT",
   "Couldn't load the webhook": "Nie udało się wczytać webhooka",
   "Couldn't load webhooks": "Nie udało się wczytać webhooków",
   "Couldn't load where alerts go": "Nie udało się wczytać, dokąd trafiają alerty",

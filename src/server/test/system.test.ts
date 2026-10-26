@@ -168,6 +168,20 @@ describe('warnings', () => {
     expect(ids()).not.toContain('event-loop-slow');
   });
 
+  it('warns about a backup turned away because the clock is off', () => {
+    const backups: BackupTargetStatus[] = [
+      {
+        target: 's3',
+        at: 1,
+        ok: false,
+        error: "The hub's clock is too far off for the storage service to accept the request (RequestTimeTooSkewed)",
+        file: null,
+      },
+    ];
+    const { system } = setup({ maintenance: { running: false, status: () => backups } });
+    expect(system.warnings().map((w) => w.id)).toEqual(['backup-failed-s3']);
+  });
+
   it('suggests raw retention for a big database', () => {
     const { system } = setup();
     expect(system.warnings()).toEqual([]);
@@ -215,6 +229,9 @@ describe('database compaction', () => {
     expect(compactionDue(at(3, 50), '03:15', at(3, 50).getTime() - 7 * DAY)).toBe(true);
     // A backup late in the evening: the quiet hours run past midnight.
     expect(compactionDue(at(1, 0), '23:30', 0)).toBe(true);
+    // Later still, they start after midnight, and not before.
+    expect(compactionDue(at(0, 0), '23:45', 0)).toBe(false);
+    expect(compactionDue(at(0, 15), '23:45', 0)).toBe(true);
   });
 
   it('compacts the database, giving the watchdog longer meanwhile', async () => {

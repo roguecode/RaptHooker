@@ -36,6 +36,26 @@ Kiosk mode, for an always-on screen in the brewery:
 - **RAPT Pill** (gravity and temperature), set to Bluetooth telemetry.
 - **RAPT Bluetooth Thermometer** (temperature): no setup needed, just switch it on near the Pi.
 
+## Integrations
+
+✅ Verified against the real service. ❔ Untested: built from the service's documentation, so please
+[report back](https://github.com/roguecode/RaptHooker/issues) if you try one.
+
+- ✅ **Home Assistant** by webhook: automations, and sensors for your pills ([guide](docs/home-assistant.md#without-mqtt-a-webhook))
+- ✅ **Grainfather**
+- ✅ **BrewSpy**
+- ✅ **Discord**
+- ❔ **Home Assistant** by MQTT: each pill added as a device automatically ([guide](docs/home-assistant.md))
+- ❔ **Brewfather**
+- ❔ **Brewer's Friend**
+- ❔ **Bricks (BierBot)**
+- ❔ **Fermentrack**
+- ❔ **Ubidots**
+- ❔ **ThingSpeak**
+
+Or send readings anywhere with your own [webhook](docs/webhooks.md), MQTT, or the read-only [API](docs/api.md). Setup
+notes for each service are in [docs/webhooks.md](docs/webhooks.md#presets).
+
 ## Experimental
 
 RaptHooker is a Work-In-Progress, and cuckcoded based on my previous projects. Kegland are an inspiration to us, so

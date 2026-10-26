@@ -63,8 +63,8 @@ What's sent:
   "hub": "RaptHooker",
   "count": 2,
   "readings": [
-    { "name": "Kveik", "gravity": 1.0213, "temperature": 19.6, "time": "2026-10-01T12:00:00.000Z" },
-    { "name": "Stout", "gravity": 1.0472, "temperature": 18.9, "time": "2026-10-01T11:58:10.000Z" }
+    { "name": "MyExamplePill", "gravity": 1.0213, "temperature": 19.6, "time": "2026-10-01T12:00:00.000Z" },
+    { "name": "MyOtherPill", "gravity": 1.0472, "temperature": 18.9, "time": "2026-10-01T11:58:10.000Z" }
   ]
 }
 ```
@@ -114,11 +114,11 @@ pause is over. Pills are still recorded meanwhile. The API: `POST /api/webhooks/
 
 The URL, header values and body are templates. `{{variable}}` is replaced by a value; escaping depends on where it is:
 
-| Where             | `{{name}}` with `Hazy "IPA"`                       | Empty value |
-| ----------------- | -------------------------------------------------- | ----------- |
-| JSON body         | `Hazy \"IPA\"` (put quotes round it: `"{{name}}"`) | `null`      |
-| URL / form body   | `Hazy%20%22IPA%22`                                 | empty       |
-| Header, text body | `Hazy "IPA"`                                       | empty       |
+| Where             | `{{name}}` with `My "Example" Pill`                       | Empty value |
+| ----------------- | --------------------------------------------------------- | ----------- |
+| JSON body         | `My \"Example\" Pill` (put quotes round it: `"{{name}}"`) | `null`      |
+| URL / form body   | `My%20%22Example%22%20Pill`                               | empty       |
+| Header, text body | `My "Example" Pill`                                       | empty       |
 
 Numbers go in bare: `"gravity": {{gravity}}`. Give a fallback for values that can be empty with `{{velocity|0}}`
 (in JSON the fallback is inserted as written, so `{{brew_name|none}}` inside quotes gives `"none"`).
@@ -172,12 +172,12 @@ Every preset is marked **Verified** or **Untested**:
 | Preset                | Status      | URL                                                                 | Notes                                                                                                                                                                                                                                                        |
 | --------------------- | ----------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Brewfather**        | Untested    | `https://log.brewfather.net/stream?id=<LOGGING_ID>`                 | [Custom Stream](https://docs.brewfather.app/integrations/custom-stream): Settings → Power-ups → Custom Stream. Max one post per device name per 15 min. The device is identified by `name`. Its `battery` field is volts, so the pill's % goes in `comment`. |
-| **Grainfather**       | Untested    | `http://community.grainfather.com/iot/<DEVICE_ID>/ispindel`         | Add "iSpindel DIY electronic Hydrometer" as equipment in the Grainfather app and copy the id from its Server URL. iSpindel JSON, gravity in °P (Grainfather converts it). 15 min.                                                                            |
+| **Grainfather**       | ✅ Verified | `http://community.grainfather.com/iot/<DEVICE_ID>/ispindel`         | Add "iSpindel DIY electronic Hydrometer" as equipment in the Grainfather app and copy the id from its Server URL. iSpindel JSON, gravity in °P (Grainfather converts it). 15 min.                                                                            |
 | **Brewer's Friend**   | Untested    | `https://log.brewersfriend.com/stream/<API_KEY>`                    | [Device stream API](https://docs.brewersfriend.com/api/stream). One post per 15 min per key and brew session (HTTP 429 otherwise).                                                                                                                           |
-| **BrewSpy**           | Untested    | `http://brew-spy.com/api/ispindel`                                  | iSpindel JSON with your hydrometer's token in `token`; one token (and webhook) per pill.                                                                                                                                                                     |
+| **BrewSpy**           | ✅ Verified | `http://brew-spy.com/api/ispindel`                                  | iSpindel JSON with your hydrometer's token in `token`; one token (and webhook) per pill.                                                                                                                                                                     |
 | **Bricks (BierBot)**  | Untested    | `https://brewbricks.com/api/iot/v1`                                 | The [same payload as the RAPT portal integration](https://docs.bierbot.com/hardware/hardware/raptpill), with your API key.                                                                                                                                   |
 | **Fermentrack**       | Untested    | `http://<FERMENTRACK_HOST>/ispindel/`                               | iSpindel JSON; name the gravity sensor in Fermentrack like the pill.                                                                                                                                                                                         |
-| **Home Assistant**    | Untested    | `http://<HOME_ASSISTANT>:8123/api/webhook/<WEBHOOK_ID>`             | Webhook trigger; use `trigger.json.gravity` etc.                                                                                                                                                                                                             |
+| **Home Assistant**    | ✅ Verified | `http://<HOME_ASSISTANT>:8123/api/webhook/<WEBHOOK_ID>`             | Webhook trigger; use `trigger.json.gravity` etc. To make sensors from it, see [Home Assistant](home-assistant.md#without-mqtt-a-webhook).                                                                                                                    |
 | **Ubidots**           | Untested    | `https://industrial.api.ubidots.com/api/v1.6/devices/{{name_slug}}` | `X-Auth-Token` header.                                                                                                                                                                                                                                       |
 | **ThingSpeak**        | Untested    | `https://api.thingspeak.com/update.json`                            | Write API key in the body; one channel per pill.                                                                                                                                                                                                             |
 | **Discord**           | ✅ Verified | your channel's webhook URL                                          | A short message per reading; pick a long interval.                                                                                                                                                                                                           |

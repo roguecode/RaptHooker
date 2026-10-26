@@ -117,7 +117,7 @@ export const PRESETS: WebhookPreset[] = [
       'Grainfather expects gravity in °P (it converts to SG itself) and accepts one reading every 15 minutes.',
       ISPINDEL_BATTERY_NOTE,
     ],
-    verified: false,
+    verified: true,
   },
   {
     id: 'brewersfriend',
@@ -174,7 +174,7 @@ export const PRESETS: WebhookPreset[] = [
       'Replace <BREWSPY_TOKEN> in the body with it. Each pill needs its own token, so make one webhook per pill.',
     ],
     notes: ['If BrewSpy shows odd gravity values, switch the gravity unit to °P.', ISPINDEL_BATTERY_NOTE],
-    verified: false,
+    verified: true,
   },
   {
     id: 'bricks',
@@ -262,7 +262,7 @@ export const PRESETS: WebhookPreset[] = [
       'Replace <HOME_ASSISTANT> and <WEBHOOK_ID> above. Use trigger.json.gravity etc. in the automation.',
     ],
     notes: ['Allow the webhook to be called from your local network in the trigger settings.'],
-    verified: false,
+    verified: true,
   },
   {
     id: 'ubidots',

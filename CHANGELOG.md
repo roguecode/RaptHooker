@@ -22,6 +22,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   first start after updating converts the database once (seconds, or up to half a minute for a very big one on a Pi);
   every reading, average and setting is kept exactly as it was. Versions from now on also refuse to open data that a
   later version has marked as unusable by them, rather than risk damaging it.
+- **Grainfather, BrewSpy and Home Assistant webhook presets are verified:** tried against the real services and
+  working. The Home Assistant guide now shows how to make sensors for your pills from the webhook, without MQTT.
 
 ## [0.3.0] - 2026-10-25
 

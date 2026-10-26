@@ -62,9 +62,10 @@ describe('webhooks UI', () => {
     vi.unstubAllGlobals();
   });
 
-  it('marks Discord as verified and the other services as untested', () => {
+  it('marks the services tried for real as verified and the others as untested', () => {
     render(createElement(PresetGrid, { onPick: () => undefined }));
-    expect(screen.getAllByText('Verified')).toHaveLength(1);
+    expect(PRESETS.filter((p) => p.verified).map((p) => p.name)).toEqual(['Grainfather', 'BrewSpy', 'Home Assistant', 'Discord']);
+    expect(screen.getAllByText('Verified')).toHaveLength(4);
     const services = PRESETS.filter((p) => p.docsUrl !== null && !p.verified).length;
     expect(screen.getAllByText('Untested')).toHaveLength(services + 1);
     expect(screen.getAllByText('Untested')[0]!.getAttribute('title')).toMatch(/not yet tried against the real service/);

@@ -148,6 +148,8 @@ export function maskChannel(c: Channel): Channel {
  */
 export class ChannelService extends EventEmitter {
   private channels = new Map<string, Channel>();
+  /** Each channel's saved JSON as it is, so saving keeps what a newer version added. */
+  private saved = new Map<string, Record<string, unknown>>();
   private readonly fetchImpl: typeof fetch;
   private readonly makeTransport: (options: SMTPTransport.Options) => MailTransport;
   private readonly now: () => number;
@@ -167,12 +169,14 @@ export class ChannelService extends EventEmitter {
 
   load(): void {
     this.channels.clear();
+    this.saved.clear();
     const rows = this.store.db
       .prepare('SELECT id, json, created_at, last_at, last_ok, last_error FROM channels ORDER BY created_at')
       .all() as unknown as ChannelRow[];
     for (const row of rows) {
       try {
         const input = JSON.parse(row.json) as ChannelInput;
+        this.saved.set(row.id, input as unknown as Record<string, unknown>);
         this.channels.set(row.id, {
           name: input.name,
           kind: input.kind,
@@ -215,6 +219,7 @@ export class ChannelService extends EventEmitter {
     this.store.db
       .prepare('INSERT INTO channels (id, json, created_at) VALUES (?, ?, ?)')
       .run(channel.id, JSON.stringify(clean), channel.createdAt);
+    this.saved.set(channel.id, { ...clean });
     this.channels.set(channel.id, channel);
     this.emit('channel', copy(channel));
     return copy(channel);
@@ -225,7 +230,12 @@ export class ChannelService extends EventEmitter {
     if (!old) throw new ChannelError('Unknown notification channel', 404);
     const clean = this.prepare(input, old);
     const channel: Channel = { ...old, ...clean };
-    this.store.db.prepare('UPDATE channels SET json = ? WHERE id = ?').run(JSON.stringify(clean), id);
+    // Over what's saved: fields a newer version added stay, and so do its settings while the kind is the same.
+    const saved = this.saved.get(id) ?? {};
+    const savedConfig = saved.kind === clean.kind && saved.config && typeof saved.config === 'object' ? saved.config : {};
+    const json = { ...saved, ...clean, config: { ...savedConfig, ...clean.config } };
+    this.store.db.prepare('UPDATE channels SET json = ? WHERE id = ?').run(JSON.stringify(json), id);
+    this.saved.set(id, json);
     this.channels.set(id, channel);
     this.emit('channel', copy(channel));
     return copy(channel);
@@ -233,6 +243,7 @@ export class ChannelService extends EventEmitter {
 
   delete(id: string): void {
     if (!this.channels.delete(id)) throw new ChannelError('Unknown notification channel', 404);
+    this.saved.delete(id);
     this.store.db.prepare('DELETE FROM channels WHERE id = ?').run(id);
     this.emit('removed', id);
   }

@@ -356,7 +356,7 @@ export class SystemService {
     }
     for (const b of this.deps.maintenance?.status() ?? []) {
       // "Backups are off" isn't a failure.
-      if (b.ok !== false || !b.error || /\boff\b/i.test(b.error)) continue;
+      if (b.ok !== false || !b.error || /^Backups are off\b/i.test(b.error)) continue;
       const where = b.target === 'usb' ? 'USB stick' : b.target === 's3' ? 'cloud (S3)' : 'nightly';
       out.push({
         id: `backup-failed-${b.target}`,

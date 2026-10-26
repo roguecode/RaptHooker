@@ -44,9 +44,9 @@ export class Settings extends EventEmitter {
   }
 
   setHub(hub: HubSettings): HubSettings {
-    this.store.setMeta('hub', JSON.stringify(hub));
-    this.emit('hub', hub);
-    return hub;
+    const saved = this.write('hub', hub);
+    this.emit('hub', saved);
+    return saved;
   }
 
   /** Units for notifications, and for browsers that haven't picked their own. */
@@ -63,9 +63,9 @@ export class Settings extends EventEmitter {
   }
 
   setMqtt(mqtt: MqttSettings): MqttSettings {
-    this.store.setMeta('mqtt', JSON.stringify(mqtt));
-    this.emit('mqtt', mqtt);
-    return mqtt;
+    const saved = this.write('mqtt', mqtt);
+    this.emit('mqtt', saved);
+    return saved;
   }
 
   backups(): BackupSettings {
@@ -73,9 +73,26 @@ export class Settings extends EventEmitter {
   }
 
   setBackups(backups: BackupSettings): BackupSettings {
-    this.store.setMeta('backups', JSON.stringify(backups));
-    this.emit('backups', backups);
-    return backups;
+    const saved = this.write('backups', backups);
+    this.emit('backups', saved);
+    return saved;
+  }
+
+  /**
+   * Saves over what's saved, one level of nesting deep like read(), so fields this version doesn't know (saved by a
+   * newer one before it was put back) are kept.
+   */
+  private write<T extends object>(key: string, value: T): T {
+    let saved: Partial<T> = {};
+    try {
+      const raw = JSON.parse(this.store.getMeta(key) ?? '{}') as unknown;
+      if (raw && typeof raw === 'object' && !Array.isArray(raw)) saved = raw as Partial<T>;
+    } catch {
+      // Unreadable: replaced by what's saved now.
+    }
+    const merged = mergeDefaults(saved as T, value);
+    this.store.setMeta(key, JSON.stringify(merged));
+    return merged;
   }
 }
 

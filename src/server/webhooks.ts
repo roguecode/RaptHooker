@@ -23,7 +23,7 @@ import {
 } from '@rapthooker/shared';
 import type { RawReading, Store, WebhookStateRow } from './db.js';
 import type { Logger } from './log.js';
-import { calibrate } from './pills.js';
+import { calibrate, type Derived } from './pills.js';
 
 export class WebhookError extends Error {
   constructor(
@@ -42,6 +42,8 @@ export interface WebhookDeps {
     /** Used to replay stored readings (catch-up); no offsets and the pill's own values when missing. */
     offsets?(id: string): Offsets;
     model?(id: string): PillModel;
+    /** RaptHooker's own velocity and smoothed gravity at a stored reading's time (catch-up). */
+    derivedAt?(id: string, ts: number): Derived;
   };
   brews: { activeFor(pillId: string): Brew | null };
   /** False until the clock can be trusted after boot. */
@@ -116,6 +118,12 @@ export function maskStatus(status: WebhookStatus): WebhookStatus {
 
 /** Takes URLs out of an error message before it's stored. */
 const scrubUrls = (text: string): string => text.replace(/[a-z][a-z0-9+.-]*:\/\/[^\s'"<>]+/gi, '(the URL)');
+
+/**
+ * fetch only takes header values it can send as one byte per character (Latin-1). Anything beyond that, like an emoji
+ * in a pill's name, goes out as its UTF-8 bytes (as curl sends it) instead of failing every send.
+ */
+const headerBytes = (value: string): string => (/[\u0100-\u{10ffff}]/u.test(value) ? Buffer.from(value, 'utf8').toString('latin1') : value);
 
 /** A saved webhook with the options added since it was saved. */
 export function upgradeWebhook(saved: Partial<WebhookInput>): WebhookInput {
@@ -431,6 +439,8 @@ export class WebhookService extends EventEmitter {
         raw,
         this.deps.pills.offsets?.(pillId) ?? { gravity: 0, temperature: 0 },
         this.deps.pills.model?.(pillId) ?? DEFAULT_PILL_MODEL,
+        // Smoothed and with RaptHooker's velocity as it was then, like a reading sent live.
+        this.deps.pills.derivedAt?.(pillId, raw.ts),
       );
       const silentMs = state.last_reading_ts === null ? null : reading.ts - state.last_reading_ts;
       if ((!hook.skipImplausible || reading.plausible) && changedEnough(hook, state, reading, silentMs)) return reading;
@@ -570,7 +580,7 @@ export class WebhookService extends EventEmitter {
     let status: number | null = null;
     let responseBody: string | null = null;
     try {
-      for (const h of req.headers) headers.set(h.name, h.value);
+      for (const h of req.headers) headers.set(h.name, headerBytes(h.value));
       const res = await this.fetchImpl(req.url, {
         method: req.method,
         headers,

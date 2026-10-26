@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import {
   BROWSER_PUSH,
   gravityIn,
+  plausibleGravity,
   temperatureIn,
   type AlertEvent,
   type AlertRule,
@@ -13,10 +14,11 @@ import {
   type Reading,
   type TemperatureUnit,
 } from '@rapthooker/shared';
-import type { Store } from './db.js';
+import { FLAG_IMPLAUSIBLE, type Store } from './db.js';
 import type { Logger } from './log.js';
 import type { Notifier } from './push.js';
 import type { Notification } from './channels.js';
+import { modelGravity } from './pills.js';
 
 /** Where alerts go besides browser push (the ChannelService). */
 export interface ChannelSender {
@@ -48,6 +50,8 @@ export interface AlertDeps {
   };
   brews: { activeFor(pillId: string): Brew | null };
   units: () => { temperature: TemperatureUnit; gravity: GravityUnit };
+  /** False until the clock can be trusted after boot ("last heard" times can't be compared with now until then). */
+  clockTrusted?: () => boolean;
   now?: () => number;
 }
 
@@ -59,6 +63,9 @@ interface Check {
 }
 
 const HYSTERESIS = { temperature: 0.5, gravity: 0.003, battery: 5 };
+
+/** What's saved for a rule: everything but what's worked out while running (fields a newer version added are kept). */
+const ruleInput = ({ id: _id, createdAt: _c, active: _a, ...input }: AlertRule): AlertRuleInput => input;
 
 /**
  * Watches readings against your alert rules and notifies (in the app, by browser push and through the rule's
@@ -97,7 +104,14 @@ export class AlertService extends EventEmitter {
   }
 
   start(): void {
-    this.timer = setInterval(() => this.evaluateAll(), 60_000);
+    this.timer = setInterval(() => {
+      // Thrown from a timer it would stop the hub (and the recording with it).
+      try {
+        this.evaluateAll();
+      } catch (err) {
+        this.log.error({ err: (err as Error).stack ?? String(err) }, 'checking the alerts failed');
+      }
+    }, 60_000);
     this.timer.unref();
   }
 
@@ -122,7 +136,7 @@ export class AlertService extends EventEmitter {
     if (!old) throw new AlertError('Unknown alert', 404);
     const rule: AlertRule = { ...old, ...input };
     this.rules.set(id, rule);
-    this.store.saveAlertRule(id, input, rule.createdAt);
+    this.store.saveAlertRule(id, ruleInput(rule), rule.createdAt);
     this.evaluateAll();
     return this.withActive(rule);
   }
@@ -137,10 +151,9 @@ export class AlertService extends EventEmitter {
   forgetChannel(channelId: string): void {
     for (const rule of this.rules.values()) {
       if (rule.channelIds === 'all' || !rule.channelIds.includes(channelId)) continue;
-      const { id, createdAt, active: _active, ...input } = rule;
-      const next: AlertRuleInput = { ...input, channelIds: rule.channelIds.filter((c) => c !== channelId) };
-      this.rules.set(id, { ...rule, channelIds: next.channelIds });
-      this.store.saveAlertRule(id, next, createdAt);
+      const next: AlertRule = { ...rule, channelIds: rule.channelIds.filter((c) => c !== channelId) };
+      this.rules.set(rule.id, next);
+      this.store.saveAlertRule(rule.id, ruleInput(next), rule.createdAt);
     }
   }
 
@@ -176,8 +189,21 @@ export class AlertService extends EventEmitter {
 
   /** Every minute, for time-based rules (and rules that just changed). */
   evaluateAll(): void {
-    for (const pillId of this.deps.pills.activeIds()) {
-      for (const rule of this.rules.values()) if (this.appliesTo(rule, pillId)) this.evaluate(rule, pillId);
+    for (const pillId of this.deps.pills.activeIds()) this.evaluatePill(pillId);
+    // A rule that no longer applies (switched off, the pill taken out of it or archived, the brew ended) lets go of what
+    // it was firing for, without a word, so it fires afresh if it applies again.
+    for (const [key, st] of this.state) {
+      if (!st.active) continue;
+      const [ruleId, pillId] = key.split('|') as [string, string];
+      const rule = this.rules.get(ruleId);
+      if (!rule || this.appliesTo(rule, pillId)) continue;
+      // A removed pill's state went with it.
+      if (!this.deps.pills.get(pillId)) {
+        this.state.delete(key);
+        continue;
+      }
+      this.state.set(key, { active: false, quiet: false, lastFiredAt: st.lastFiredAt });
+      this.store.saveAlertState(ruleId, pillId, false, st.lastFiredAt);
     }
   }
 
@@ -191,9 +217,12 @@ export class AlertService extends EventEmitter {
     return unit === 'plato' ? `${gravityIn(sg, unit).toFixed(1)} °P` : gravityIn(sg, unit).toFixed(3);
   }
 
-  private check(rule: AlertRule, pillId: string, name: string, active: boolean): Check {
+  private check(rule: AlertRule, pill: Pill, active: boolean): Check {
     const now = this.now();
+    const { id: pillId, name } = pill;
     if (rule.kind === 'offline') {
+      // Before the clock is set, "last heard" was stamped by a clock that's about to jump.
+      if (this.deps.clockTrusted?.() === false) return { firing: null, value: null, message: '' };
       const heard = this.deps.pills.lastHeardAt(pillId);
       const silentMin = heard === null ? null : (now - heard) / 60_000;
       if (silentMin === null) return { firing: null, value: null, message: '' };
@@ -207,27 +236,27 @@ export class AlertService extends EventEmitter {
     if (!r.plausible && (rule.kind === 'gravity_below' || rule.kind === 'gravity_stable'))
       return { firing: null, value: null, message: '' };
     const th = rule.threshold;
+    // The message when it clears is "Back to normal: …" (see record()), so it says only where things are.
     switch (rule.kind) {
-      case 'temp_above':
-        return {
-          firing: r.temperature > th ? true : r.temperature < th - HYSTERESIS.temperature ? false : null,
-          value: r.temperature,
-          message: `${name} is at ${this.fmtT(r.temperature)}, above ${this.fmtT(th)}`,
-        };
-      case 'temp_below':
-        return {
-          firing: r.temperature < th ? true : r.temperature > th + HYSTERESIS.temperature ? false : null,
-          value: r.temperature,
-          message: `${name} is at ${this.fmtT(r.temperature)}, below ${this.fmtT(th)}`,
-        };
+      case 'temp_above': {
+        const firing = r.temperature > th ? true : r.temperature < th - HYSTERESIS.temperature ? false : null;
+        const at = `${name} is at ${this.fmtT(r.temperature)}`;
+        return { firing, value: r.temperature, message: firing === false ? at : `${at}, above ${this.fmtT(th)}` };
+      }
+      case 'temp_below': {
+        const firing = r.temperature < th ? true : r.temperature > th + HYSTERESIS.temperature ? false : null;
+        const at = `${name} is at ${this.fmtT(r.temperature)}`;
+        return { firing, value: r.temperature, message: firing === false ? at : `${at}, below ${this.fmtT(th)}` };
+      }
       case 'gravity_below': {
         // A thermometer has no gravity (or battery): such rules don't apply to it.
         const g = r.gravity;
         if (g === null) return { firing: null, value: null, message: '' };
+        const firing = g <= th ? true : g > th + HYSTERESIS.gravity ? false : null;
         return {
-          firing: g <= th ? true : g > th + HYSTERESIS.gravity ? false : null,
+          firing,
           value: g,
-          message: `${name} has reached ${this.fmtG(g)} (target ${this.fmtG(th)})`,
+          message: firing === false ? `${name} is at ${this.fmtG(g)}` : `${name} has reached ${this.fmtG(g)} (target ${this.fmtG(th)})`,
         };
       }
       case 'battery_below': {
@@ -243,16 +272,20 @@ export class AlertService extends EventEmitter {
         const g = r.gravity;
         if (g === null) return { firing: null, value: null, message: '' };
         const windowMs = Math.max(1, rule.hours) * 3_600_000;
-        const range = this.store.sgRange(pillId, now - windowMs, now);
+        const range = this.gravityRange(pill, now - windowMs, now);
         const brew = this.deps.brews.activeFor(pillId);
         const spansWindow = range.firstTs !== null && range.firstTs <= now - windowMs * 0.9 && (!brew || brew.startedAt <= now - windowMs);
         if (range.n < 3 || range.min === null || range.max === null || !spansWindow)
           return { firing: active ? null : false, value: null, message: '' };
         const pts = (range.max - range.min) * 1000;
+        const firing = pts < th ? true : pts > th + 1 ? false : null;
         return {
-          firing: pts < th ? true : pts > th + 1 ? false : null,
+          firing,
           value: Math.round(pts * 10) / 10,
-          message: `${name} has been steady at ${this.fmtG(g)} for ${rule.hours} hours (moved ${pts.toFixed(1)} points). Fermentation looks finished.`,
+          message:
+            firing === false
+              ? `${name}'s gravity has moved ${pts.toFixed(1)} points over the last ${rule.hours} hours`
+              : `${name} has been steady at ${this.fmtG(g)} for ${rule.hours} hours (moved ${pts.toFixed(1)} points). Fermentation looks finished.`,
         };
       }
       default:
@@ -260,19 +293,52 @@ export class AlertService extends EventEmitter {
     }
   }
 
+  /**
+   * Lowest and highest plausible gravity over a window, as the pill's model works it out. The stored gravity is the
+   * pill's own, so a pill whose gravity comes from its tilt needs its readings worked through.
+   */
+  private gravityRange(
+    pill: Pill,
+    from: number,
+    to: number,
+  ): { n: number; min: number | null; max: number | null; firstTs: number | null } {
+    if (pill.model.gravitySource !== 'tilt') return this.store.sgRange(pill.id, from, to);
+    const offsets = this.deps.pills.offsets(pill.id);
+    let n = 0;
+    let min: number | null = null;
+    let max: number | null = null;
+    let firstTs: number | null = null;
+    for (const r of this.store.iterateReadings(pill.id, from, to)) {
+      if (r.flags & FLAG_IMPLAUSIBLE) continue;
+      const g = modelGravity(r, offsets, pill.model);
+      if (g === null || !plausibleGravity(g)) continue;
+      n++;
+      firstTs ??= r.ts;
+      min = min === null ? g : Math.min(min, g);
+      max = max === null ? g : Math.max(max, g);
+    }
+    return { n, min, max, firstTs };
+  }
+
   private evaluate(rule: AlertRule, pillId: string): void {
     const pill = this.deps.pills.get(pillId);
     if (!pill) return;
     const key = `${rule.id}|${pillId}`;
     const st = this.state.get(key) ?? { active: false, quiet: false, lastFiredAt: null };
-    const c = this.check(rule, pillId, pill.name, st.active);
+    const c = this.check(rule, pill, st.active);
     const now = this.now();
+    const cooling = (lastFiredAt: number | null) => lastFiredAt !== null && now - lastFiredAt < rule.cooldownMin * 60_000;
     if (c.firing === true && !st.active) {
-      const quiet = st.lastFiredAt !== null && now - st.lastFiredAt < rule.cooldownMin * 60_000;
+      const quiet = cooling(st.lastFiredAt);
       const next = { active: true, quiet, lastFiredAt: quiet ? st.lastFiredAt : now };
       this.state.set(key, next);
       this.store.saveAlertState(rule.id, pillId, true, next.lastFiredAt, quiet);
       if (!quiet) this.record(rule, pillId, 'fired', c, true);
+    } else if (c.firing === true && st.quiet && !cooling(st.lastFiredAt)) {
+      // Kept quiet by the cooldown and still going once it's over: it's news now.
+      this.state.set(key, { active: true, quiet: false, lastFiredAt: now });
+      this.store.saveAlertState(rule.id, pillId, true, now);
+      this.record(rule, pillId, 'fired', c, true);
     } else if (c.firing === false && st.active) {
       this.state.set(key, { active: false, quiet: false, lastFiredAt: st.lastFiredAt });
       this.store.saveAlertState(rule.id, pillId, false, st.lastFiredAt);

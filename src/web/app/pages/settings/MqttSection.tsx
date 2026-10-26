@@ -83,7 +83,7 @@ export function MqttSection() {
     if (!isOwner) return;
     http
       .get<MqttSettings>('/api/settings/mqtt')
-      .then(setDraft, (err) => toast({ tone: 'error', title: "Couldn't load the MQTT settings", body: errorText(err) }));
+      .then(setDraft, (err) => toast({ tone: 'error', title: t("Couldn't load the MQTT settings"), body: errorText(err) }));
   }, [isOwner, toast]);
 
   const set = <K extends keyof MqttSettings>(k: K, v: MqttSettings[K]) => {

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { Pill } from '@rapthooker/shared';
 import { api, errorText } from '../../api';
-import { useHistoryRange, useZoomableHistory } from '../../hooks';
+import { historyGapMs, useHistoryRange, useZoomableHistory } from '../../hooks';
 import { useLive } from '../../live';
 import { useUnits } from '../../units';
 import { dateTime } from '../../format';
@@ -47,7 +47,7 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
   const chart = useRef<ChartHandle>(null);
   const offered = thermometer ? SERIES.filter((s) => THERMOMETER_SERIES.includes(s.key)) : SERIES;
 
-  const gapMs = Math.max(10 * 60_000, (pill.live.intervalSec ?? 300) * 4000);
+  const gapMs = historyGapMs(pill.live.intervalSec);
   const m = pill.model;
   const reloadKey = [
     pill.offsets.gravity,

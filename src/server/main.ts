@@ -43,7 +43,11 @@ async function main(): Promise<void> {
   const logs = new LogBuffer();
   const log = pino(
     { level: process.env.LOG_LEVEL ?? 'info' },
-    pino.multistream([{ stream: process.stdout }, { stream: { write: (line: string) => logs.write(line) } }]),
+    // Each stream passes everything the logger lets through (a stream without a level only takes info and up).
+    pino.multistream([
+      { level: 'trace', stream: process.stdout },
+      { level: 'trace', stream: { write: (line: string) => logs.write(line) } },
+    ]),
   );
   // One misbehaving part must not stop the recording.
   process.on('unhandledRejection', (reason) => {
@@ -83,7 +87,13 @@ async function main(): Promise<void> {
   const push = new PushService(store, loadVapidKeys(config.dataDir), config.push.subject, log.child({ svc: 'push' }));
   const channels = new ChannelService(store, log.child({ svc: 'channels' }));
   channels.load();
-  const alerts = new AlertService(store, { pills, brews, units: () => settings.units() }, push, log.child({ svc: 'alerts' }), channels);
+  const alerts = new AlertService(
+    store,
+    { pills, brews, units: () => settings.units(), clockTrusted: () => clock.trusted },
+    push,
+    log.child({ svc: 'alerts' }),
+    channels,
+  );
   alerts.load();
   const maintenance = new Maintenance(store, log.child({ svc: 'maintenance' }), {
     backupDir: config.backup.dir,

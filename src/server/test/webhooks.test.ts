@@ -6,12 +6,13 @@ import {
   webhookImportSchema,
   type Brew,
   type Pill,
+  type PillModel,
   type Reading,
   type WebhookInput,
 } from '@rapthooker/shared';
 import { CATCH_UP_PER_MIN, WebhookService, maskWebhook } from '../webhooks.js';
 import { AlertService } from '../alerts.js';
-import { calibrate } from '../pills.js';
+import { calibrate, type Derived } from '../pills.js';
 import { silent, tempStore } from './helpers.js';
 
 let cleanup: (() => void) | undefined;
@@ -46,7 +47,7 @@ const pill: Pill = {
 
 const MIN = 60_000;
 
-function setup(opts: { pills?: Pill[]; hubName?: string } = {}) {
+function setup(opts: { pills?: Pill[]; hubName?: string; model?: PillModel; derivedAt?: (id: string, ts: number) => Derived } = {}) {
   const t = tempStore();
   cleanup = t.cleanup;
   const list = opts.pills ?? [pill];
@@ -76,6 +77,8 @@ function setup(opts: { pills?: Pill[]; hubName?: string } = {}) {
         get: (id) => list.find((p) => p.id === id) ?? null,
         activeIds: () => list.map((p) => p.id),
         latest: (id) => readings.get(id) ?? null,
+        ...(opts.model ? { model: () => opts.model! } : {}),
+        ...(opts.derivedAt ? { derivedAt: opts.derivedAt } : {}),
       },
       brews: { activeFor: () => brew },
       clockTrusted: () => true,
@@ -281,6 +284,16 @@ describe('webhook scheduler', () => {
     expect(masked.url).not.toContain('abc');
     expect(masked.headers[0]!.value).not.toBe('secret');
     expect(masked.body).toBe('');
+  });
+
+  it('sends a header with an emoji in it as UTF-8 rather than failing', async () => {
+    const t = setup({ pills: [{ ...pill, name: 'Kveik 🍺 Weißbier' }] });
+    const hook = t.svc.create({ ...brewfather(), headers: [{ name: 'X-Device', value: '{{name}}' }] });
+    await t.run();
+    expect(t.svc.deliveries(hook.id)[0]).toMatchObject({ ok: true });
+    const sent = new Headers(t.fetchMock.mock.calls[0]![1]?.headers).get('x-device')!;
+    // Headers hold one byte per character: these are the UTF-8 bytes.
+    expect(Buffer.from(sent, 'latin1').toString('utf8')).toBe('Kveik 🍺 Weißbier');
   });
 
   it('reports timeouts and network errors without leaking the URL', async () => {
@@ -542,6 +555,28 @@ describe('webhook options', () => {
         .slice(before)
         .map((b) => b.ts),
     ).toEqual([start + 60 * MIN]);
+  });
+
+  it("replays missed readings with RaptHooker's velocity when the pill uses it", async () => {
+    const derivedAt = vi.fn((_id: string, _ts: number): Derived => ({ velocity: -3.5, smoothed: null, caught: null }));
+    const t = setup({ model: { ...DEFAULT_PILL_MODEL, velocitySource: 'computed' }, derivedAt });
+    const start = t.now();
+    t.record(1.05);
+    const hook = t.svc.create({ ...custom(), catchUp: true, body: '{"ts": {{timestamp_ms}}, "velocity": {{velocity}}}' });
+    await t.run();
+    t.fetchMock.mockImplementation(async () => new Response('down', { status: 503 }));
+    for (let i = 1; i <= 6; i++) {
+      t.advance(5 * MIN);
+      t.record(1.05 - i * 0.0002);
+      await t.run();
+    }
+    const before = t.fetchMock.mock.calls.length;
+    t.fetchMock.mockImplementation(async () => new Response('ok'));
+    const { retry_at } = t.store.webhookStates(hook.id)[0]!;
+    t.advance(retry_at! - t.now() + 1000);
+    await t.run();
+    expect(t.bodies()[before]).toEqual({ ts: start + 15 * MIN, velocity: -3.5 });
+    expect(derivedAt).toHaveBeenCalledWith('p1', start + 15 * MIN);
   });
 });
 

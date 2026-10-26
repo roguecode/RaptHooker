@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { History, Reading } from '@rapthooker/shared';
-import { appendReading } from './hooks';
+import { appendReading, historyGapMs } from './hooks';
 
 const reading = (ts: number, extra: Partial<Reading> = {}): Reading => ({
   ts,
@@ -57,5 +57,15 @@ describe('appendReading', () => {
     expect(h.gravity[1]).toBeNull();
     expect(h.implausible[1]).toBeNull();
     expect(appendReading(h, reading(500), 60_000)).toBe(h);
+  });
+});
+
+describe('historyGapMs', () => {
+  it("breaks the line where the hub does: a few of the pill's intervals, 10 minutes to 3 hours", () => {
+    expect(historyGapMs(null)).toBe(20 * 60_000);
+    expect(historyGapMs(60)).toBe(10 * 60_000);
+    // A pill sending every half hour isn't broken up at each reading.
+    expect(historyGapMs(1800)).toBe(2 * 3_600_000);
+    expect(historyGapMs(3600)).toBe(3 * 3_600_000);
   });
 });

@@ -158,6 +158,58 @@ describe('pills', () => {
     t.pills.remove(id);
     expect(t.pills.list()).toHaveLength(0);
   });
+
+  it('leaves a pill as it was when a change is turned down', () => {
+    const t = setup();
+    const { id } = t.pills.adopt(ADDR, { name: 'Pale' });
+    expect(() =>
+      t.pills.update(id, { name: 'Renamed', offsets: { gravity: 0.01, temperature: 1 }, model: { gravitySource: 'tilt' } }),
+    ).toThrow(/two calibration points/);
+    expect(t.pills.get(id)).toMatchObject({ name: 'Pale', offsets: { gravity: 0, temperature: 0 }, model: { gravitySource: 'pill' } });
+  });
+
+  it("doesn't move when a pill was last heard back for a relay's late copy", () => {
+    const t = setup();
+    t.pills.handleAdvert(t.advert(CAPTURED.metricsFalling));
+    const { id } = t.pills.adopt(ADDR, {});
+    t.advance(1000);
+    t.pills.handleAdvert(t.advert(CAPTURED.metricsFalling, RAPT_COMPANY_ID, { manufacturer: null }));
+    const heard = t.now();
+    // A relay posting a batch: what it heard almost 5 minutes ago.
+    const late = { at: heard - 290_000, mono: heard - 290_000, source: 'relay:shed' };
+    t.pills.handleAdvert(t.advert(CAPTURED.metricsFalling, RAPT_COMPANY_ID, late));
+    expect(t.pills.get(id)!.live.lastHeardAt).toBe(heard);
+  });
+
+  it('dates when a pill was last heard by the clock once it is set', () => {
+    const t = tempStore();
+    cleanup = t.cleanup;
+    // Booted with the time the Pi last saved; the network sets it 3 hours later a moment after the pill is heard.
+    let wall = Date.UTC(2026, 9, 1, 12);
+    let mono = 1000;
+    let synced = false;
+    const clock = new ClockGuard({ syncFile: '/sync', maxWaitMs: 600_000, exists: () => synced, now: () => wall, mono: () => mono });
+    const pills = new PillService(t.store, clock, silent, () => wall);
+    pills.load();
+    const advert = (): Advert => ({
+      address: ADDR,
+      rssi: -50,
+      manufacturer: new Map([[RAPT_COMPANY_ID, Buffer.from(CAPTURED.metricsFalling, 'hex')]]),
+      at: wall,
+      mono,
+      cached: false,
+    });
+    pills.handleAdvert(advert());
+    const { id } = pills.adopt(ADDR, {});
+    wall += 30_000;
+    mono += 30_000;
+    pills.handleAdvert(advert());
+    wall += 3 * 3_600_000 + 2000;
+    mono += 2000;
+    synced = true;
+    clock.check();
+    expect(pills.get(id)!.live.lastHeardAt).toBe(wall - 2000);
+  });
 });
 
 describe('history', () => {

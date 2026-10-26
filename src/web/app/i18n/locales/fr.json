@@ -433,6 +433,7 @@
   "Couldn't load brews": "Impossible de charger les brassins",
   "Couldn't load the backup settings": "Impossible de charger les réglages de sauvegarde",
   "Couldn't load the history: {error}": "Impossible de charger l'historique : {error}",
+  "Couldn't load the MQTT settings": "Impossible de charger les réglages MQTT",
   "Couldn't load the webhook": "Impossible de charger le webhook",
   "Couldn't load webhooks": "Impossible de charger les webhooks",
   "Couldn't load where alerts go": "Impossible de charger les destinations des alertes",

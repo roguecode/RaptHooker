@@ -7,6 +7,7 @@ const NOW = Date.UTC(2026, 9, 1, 12);
 function pill(id: string, order = 0): Pill {
   return {
     id,
+    kind: 'pill',
     address: 'AA:BB:CC:00:00:01',
     raptId: 'AA:BB:CC:00:00:03',
     name: `Pill ${id}`,

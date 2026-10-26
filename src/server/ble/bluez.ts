@@ -6,7 +6,7 @@ import type * as DbusNext from 'dbus-next';
 import type { MessageBus, Message as DbusMessage } from 'dbus-next';
 import type { BleStatus, ScanMode } from '@rapthooker/shared';
 import type { Logger } from '../log.js';
-import { KEG_COMPANY_ID, RAPT_COMPANY_ID } from './rapt.js';
+import { APPLE_COMPANY_ID, KEG_COMPANY_ID, RAPT_COMPANY_ID, THERMOMETER_PREFIX, isThermometerBeacon } from './rapt.js';
 import type { Advert, Scanner } from './scanner.js';
 
 /** dbus-next, or a stand-in with the same shape (the tests hand in a fake system bus). */
@@ -90,11 +90,13 @@ const MANAGER_MISSING = "BlueZ's experimental features are off, so it can't list
 /**
  * The advertisement monitor's "or_patterns": (start position, AD type, bytes). BlueZ and the kernel match manufacturer
  * data (AD type 0xFF) with its company id included, and company ids go on air little-endian, so RAPT's 0x4152 is
- * "RA" (0x52 0x41) and the firmware adverts' 0x454B is "KE" (0x4B 0x45).
+ * "RA" (0x52 0x41) and the firmware adverts' 0x454B is "KE" (0x4B 0x45). The RAPT Thermometer's iBeacon is Apple's
+ * 0x004C (0x4C 0x00), then the iBeacon type (02 15) and the "Keg" its UUID starts with.
  */
-export const MONITOR_PATTERNS: ReadonlyArray<readonly [number, number, readonly number[]]> = [RAPT_COMPANY_ID, KEG_COMPANY_ID].map(
-  (id) => [0, 0xff, [id & 0xff, id >> 8]] as const,
-);
+export const MONITOR_PATTERNS: ReadonlyArray<readonly [number, number, readonly number[]]> = [
+  ...[RAPT_COMPANY_ID, KEG_COMPANY_ID].map((id) => [0, 0xff, [id & 0xff, id >> 8]] as const),
+  [0, 0xff, [APPLE_COMPANY_ID & 0xff, APPLE_COMPANY_ID >> 8, ...THERMOMETER_PREFIX]],
+];
 
 interface Registration {
   /** The application root given to RegisterMonitor (answers GetManagedObjects). */
@@ -158,7 +160,8 @@ export function manufacturerMap(value: unknown): Map<number, Uint8Array> | null 
   return map;
 }
 
-const isRapt = (map: Map<number, Uint8Array> | null) => !!map && (map.has(RAPT_COMPANY_ID) || map.has(KEG_COMPANY_ID));
+const isRapt = (map: Map<number, Uint8Array> | null) =>
+  !!map && (map.has(RAPT_COMPANY_ID) || map.has(KEG_COMPANY_ID) || isThermometerBeacon(map.get(APPLE_COMPANY_ID)));
 
 /** Why passive scanning can't be used on this adapter, judging by what BlueZ exports for it, or null if it can. */
 function passiveUnavailable(ifaces: Record<string, Props> | undefined): string | null {
@@ -749,7 +752,7 @@ export class BluezScanner extends EventEmitter implements Scanner {
       }
       if (msg.interface === MONITOR) {
         // Calls for a monitor that has since been replaced are acknowledged and ignored.
-        if (hit && !hit.root) this.onMonitorCall(bus, hit.ad, hit.reg, msg.member);
+        if (hit && !hit.root) this.onMonitorCall(bus, hit.ad, hit.reg, msg.member, msg.body);
         reply();
         return true;
       }
@@ -771,7 +774,7 @@ export class BluezScanner extends EventEmitter implements Scanner {
     return false;
   }
 
-  private onMonitorCall(bus: MessageBus, ad: AdapterState, reg: Registration, member: string): void {
+  private onMonitorCall(bus: MessageBus, ad: AdapterState, reg: Registration, member: string, body: unknown[]): void {
     if (member === 'Activate') {
       if (reg.state === 'pending') {
         reg.state = 'active';
@@ -785,6 +788,11 @@ export class BluezScanner extends EventEmitter implements Scanner {
       else if (was === 'active') this.monitorLost(bus, ad, reg);
     } else if (member === 'DeviceFound') {
       ad.found++;
+      // BlueZ calls this for every matching advert (with no RSSI thresholds set), but only signals the device's data and
+      // signal strength when they change: a RAPT Thermometer sending the same temperature is otherwise silent.
+      const [path] = (body ?? []) as unknown[];
+      const address = typeof path === 'string' && ad.devices.has(path) ? addressFromPath(path) : null;
+      if (address) this.advert(path as string, { address, rssi: null, manufacturer: null, cached: false });
     }
   }
 

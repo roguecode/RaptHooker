@@ -47,7 +47,16 @@ dead SD card. For that, copy them off the Pi too (USB stick or S3, below), or do
 ### Download a copy
 
 - **Download a copy now** makes a fresh backup there and then and downloads it.
-- The list under **Saved on the hub** has every nightly backup (and the copies kept from before a restore) to download.
+- The list under **Saved on the hub** has every nightly backup (and the copies kept from before a restore or an
+  update) to download.
+
+### Before an update
+
+When an update changes how the data is stored, the hub first keeps a copy of the database as it was, as
+`pre-update-<date and time>.db` in the data folder. It's listed under **Saved on the hub** as **From before an
+update**, to download or restore, and the last 3 are kept. If the copy can't be made (a full SD card, say), the hub
+leaves the data as it is and doesn't start; the log says why. If the upgrade itself fails, the data is left exactly as
+it was and the copy is deleted again.
 
 ### Weekly CSV export
 
@@ -170,5 +179,6 @@ network).
 | Nightly backups          | `/var/lib/rapthooker/backups/rapthooker-YYYY-MM-DD.db` (last 7)   |
 | Weekly CSV files         | `/var/lib/rapthooker/backups/csv/YYYY-MM-DD/` (last 8 weeks)      |
 | Data from before restore | `/var/lib/rapthooker/pre-restore-YYYY-MM-DDTHH-MM-SS.db` (last 3) |
+| Data from before update  | `/var/lib/rapthooker/pre-update-YYYY-MM-DDTHH-MM-SS.db` (last 3)  |
 | USB stick                | `/mnt/rapthooker/rapthooker-YYYY-MM-DD.db` (last 30) and `csv/`   |
 | S3                       | `<folder>/rapthooker-YYYY-MM-DD.db` (last 30) and `<folder>/csv/` |

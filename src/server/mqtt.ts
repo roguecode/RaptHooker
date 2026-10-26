@@ -44,6 +44,8 @@ interface EntityDef {
   /** Created switched off in Home Assistant (the user can turn it on). */
   disabled?: boolean;
   icon?: string;
+  /** Also announced for a RAPT Thermometer (which only has these). */
+  thermometer?: boolean;
 }
 
 export const MQTT_ENTITIES: readonly EntityDef[] = [
@@ -68,6 +70,7 @@ export const MQTT_ENTITIES: readonly EntityDef[] = [
     deviceClass: 'temperature',
     precision: 1,
     measurement: true,
+    thermometer: true,
   },
   {
     component: 'sensor',
@@ -98,6 +101,7 @@ export const MQTT_ENTITIES: readonly EntityDef[] = [
     deviceClass: 'signal_strength',
     measurement: true,
     diagnostic: true,
+    thermometer: true,
   },
   {
     component: 'sensor',
@@ -110,7 +114,15 @@ export const MQTT_ENTITIES: readonly EntityDef[] = [
     diagnostic: true,
     icon: 'mdi:angle-acute',
   },
-  { component: 'sensor', object: 'last_reading', name: 'Last reading', field: 'timestamp', deviceClass: 'timestamp', diagnostic: true },
+  {
+    component: 'sensor',
+    object: 'last_reading',
+    name: 'Last reading',
+    field: 'timestamp',
+    deviceClass: 'timestamp',
+    diagnostic: true,
+    thermometer: true,
+  },
   {
     component: 'sensor',
     object: 'pill_gravity',
@@ -169,20 +181,23 @@ const round = (v: number, dp: number): number => Math.round(v * 10 ** dp) / 10 *
 const roundOrNull = (v: number | null | undefined, dp: number): number | null => (v === null || v === undefined ? null : round(v, dp));
 const errText = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
+/** Whether a device of this kind has the entity. */
+const hasEntity = (pill: Pill, e: EntityDef): boolean => pill.kind === 'pill' || e.thermometer === true;
+
 /** The JSON published to `<topic>/<pill id>/state`. Brew fields are null when no brew is running. */
 export function statePayload(pill: Pill, reading: Reading): Record<string, unknown> {
   const stats = pill.brew?.stats;
   return {
     name: pill.name,
-    gravity: round(reading.gravity, 4),
-    gravity_plato: round(sgToPlato(reading.gravity), 2),
+    gravity: roundOrNull(reading.gravity, 4),
+    gravity_plato: reading.gravity === null ? null : round(sgToPlato(reading.gravity), 2),
     temperature: round(reading.temperature, 2),
     velocity: roundOrNull(reading.velocity, 2),
-    battery: round(reading.battery, 1),
+    battery: roundOrNull(reading.battery, 1),
     rssi: reading.rssi,
     tilt: roundOrNull(reading.tilt, 1),
     plausible: reading.plausible,
-    pill_gravity: round(reading.pillGravity, 4),
+    pill_gravity: roundOrNull(reading.pillGravity, 4),
     pill_velocity: roundOrNull(reading.pillVelocity, 2),
     timestamp: new Date(reading.ts).toISOString(),
     brew_name: pill.brew?.name ?? null,
@@ -284,7 +299,7 @@ export function describeMqttError(err: unknown, url: string): string {
 const settingsProblem = (s: MqttSettings): string | null =>
   s.password && !s.username ? 'Enter the username too: MQTT only sends a password along with a username' : null;
 
-const discoverySig = (pill: Pill): string => JSON.stringify([pill.name, pill.info.firmware, pill.info.deviceType]);
+const discoverySig = (pill: Pill): string => JSON.stringify([pill.kind, pill.name, pill.info.firmware, pill.info.deviceType]);
 const brewSig = (brew: Brew | null): string =>
   brew ? JSON.stringify([brew.id, brew.name, brew.stats.og, brew.stats.prediction?.stage ?? null]) : '';
 
@@ -573,8 +588,9 @@ export class MqttService extends EventEmitter {
     this.brewSigs.clear();
     this.send(link, `${s.topic}/status`, 'online', true);
     if (s.discovery) {
-      // Home Assistant's birth message, and the pills announced earlier (to remove any that have gone since).
-      client.subscribe([`${s.discoveryPrefix}/status`, `${s.discoveryPrefix}/sensor/+/gravity/config`], { qos: 0 }, (err) => {
+      // Home Assistant's birth message, and the devices announced earlier (to remove any that have gone since). Every
+      // kind of device has a temperature.
+      client.subscribe([`${s.discoveryPrefix}/status`, `${s.discoveryPrefix}/sensor/+/temperature/config`], { qos: 0 }, (err) => {
         if (err) this.log.warn({ err: err.message }, "couldn't subscribe to Home Assistant's status");
       });
       this.publishAllDiscovery(link);
@@ -614,7 +630,7 @@ export class MqttService extends EventEmitter {
   /** The pill a retained discovery config is for, if this hub announced it. */
   private staleConfigPill(s: MqttSettings, topic: string, payload: Buffer): string | null {
     const head = `${s.discoveryPrefix}/sensor/rapthooker_`;
-    const tail = '/gravity/config';
+    const tail = '/temperature/config';
     if (payload.length === 0 || !topic.startsWith(head) || !topic.endsWith(tail)) return null;
     const id = topic.slice(head.length, -tail.length);
     if (!/^[0-9a-z]+$/.test(id)) return null;
@@ -702,7 +718,12 @@ export class MqttService extends EventEmitter {
         identifiers: [`rapthooker_${pill.id}`],
         name: pill.name,
         manufacturer: 'KegLand',
-        model: pill.info.deviceType ? `RAPT Pill (${pill.info.deviceType})` : 'RAPT Pill',
+        model:
+          pill.kind === 'thermometer'
+            ? 'RAPT Bluetooth Thermometer'
+            : pill.info.deviceType
+              ? `RAPT Pill (${pill.info.deviceType})`
+              : 'RAPT Pill',
         ...(pill.info.firmware ? { sw_version: pill.info.firmware } : {}),
         via_device: this.hubIdentifier,
       },
@@ -718,9 +739,12 @@ export class MqttService extends EventEmitter {
     return config;
   }
 
+  /** Announces the device's entities, and removes any its kind doesn't have (it may have turned out to be the other kind). */
   private publishDiscovery(link: Link, pill: Pill): void {
-    for (const e of MQTT_ENTITIES)
-      this.send(link, this.configTopic(link.s, e, pill.id), JSON.stringify(this.entityConfig(link.s, pill, e)), true);
+    for (const e of MQTT_ENTITIES) {
+      const config = hasEntity(pill, e) ? JSON.stringify(this.entityConfig(link.s, pill, e)) : '';
+      this.send(link, this.configTopic(link.s, e, pill.id), config, true);
+    }
     this.announced.set(pill.id, discoverySig(pill));
   }
 

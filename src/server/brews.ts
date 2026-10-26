@@ -15,6 +15,7 @@ import {
   type BrewEventKind,
   type BrewInput,
   type BrewStats,
+  type DeviceKind,
   type GravityPoint,
   type History,
   type Offsets,
@@ -41,6 +42,7 @@ export class BrewError extends Error {
 
 export interface PillLookup {
   has(id: string): boolean;
+  kind(id: string): DeviceKind | null;
   offsets(id: string): Offsets;
   model(id: string): PillModel;
 }
@@ -135,7 +137,9 @@ export class BrewService extends EventEmitter {
   }
 
   start(pillId: string, input: Partial<BrewInput>, startedAt?: number): Brew {
-    if (!this.pills.has(pillId)) throw new BrewError('Unknown pill', 404);
+    const kind = this.pills.kind(pillId);
+    if (!kind) throw new BrewError('Unknown pill', 404);
+    if (kind === 'thermometer') throw new BrewError("A brew needs a pill's gravity: a thermometer can't record one");
     if (this.activeFor(pillId)) throw new BrewError('This pill already has a brew running: end it first', 409);
     const now = this.now();
     const start = Math.min(startedAt ?? now, now);
@@ -224,7 +228,7 @@ export class BrewService extends EventEmitter {
   /** Keeps a running brew's stats current without re-reading its whole history. */
   onReading(pillId: string, reading: Reading): void {
     const brew = this.activeFor(pillId);
-    if (!brew || reading.ts < brew.startedAt || !reading.plausible) return;
+    if (!brew || reading.ts < brew.startedAt || !reading.plausible || reading.gravity === null) return;
     const s = brew.stats;
     const n = s.readings + 1;
     const firstAt = s.firstReadingAt ?? reading.ts;
@@ -385,13 +389,13 @@ export class BrewService extends EventEmitter {
   private usable(r: RawReading, offsets: Offsets, model: PillModel): number | null {
     if (r.flags & FLAG_IMPLAUSIBLE) return null;
     const g = modelGravity(r, offsets, model);
-    return plausibleGravity(g) ? g : null;
+    return g !== null && plausibleGravity(g) ? g : null;
   }
 
   /** The gravity a pill's model gives a 15-minute average, or null if it isn't a usable one. */
   private usableAverage(b: PrunedRollup, offsets: Offsets, model: PillModel): number | null {
     const g = modelGravity(b, offsets, model);
-    return plausibleGravity(g) ? g : null;
+    return g !== null && plausibleGravity(g) ? g : null;
   }
 
   /**
@@ -446,7 +450,8 @@ export class BrewService extends EventEmitter {
         n++;
       }
     }
-    return round(n > 0 ? sum / n : modelGravity(last, offsets, model), 6);
+    const g = n > 0 ? sum / n : modelGravity(last, offsets, model);
+    return g === null ? null : round(g, 6);
   }
 
   /** A pill's history over a brew, from the 15-minute averages where the raw readings have been pruned. */
@@ -487,13 +492,15 @@ export class BrewService extends EventEmitter {
     const pruned = this.store.prunedRollups(row.pill_id, row.started_at, end);
     const agg = this.store.aggregate(row.pill_id, row.started_at, end);
     if (pruned.length > 0) {
-      const temps = pruned.map((b) => b.temp);
+      const temps = pruned.flatMap((b) => (b.temp === null ? [] : [b.temp]));
       agg.firstTs = pruned[0]!.bucket;
       agg.lastTs ??= pruned.at(-1)!.bucket + ROLLUP_MS;
-      agg.tempMin = Math.min(agg.tempMin ?? Infinity, ...temps);
-      agg.tempMax = Math.max(agg.tempMax ?? -Infinity, ...temps);
-      agg.tempSum += pruned.reduce((sum, b) => sum + b.temp * b.n, 0);
-      agg.n += pruned.reduce((sum, b) => sum + b.n, 0);
+      if (temps.length > 0) {
+        agg.tempMin = Math.min(agg.tempMin ?? Infinity, ...temps);
+        agg.tempMax = Math.max(agg.tempMax ?? -Infinity, ...temps);
+      }
+      agg.tempSum += pruned.reduce((sum, b) => sum + (b.temp === null ? 0 : b.temp * b.n), 0);
+      agg.n += pruned.reduce((sum, b) => sum + (b.temp === null ? 0 : b.n), 0);
     }
     const og = input.og ?? (agg.firstTs === null ? null : this.autoOg(row.pill_id, agg.firstTs, end, pruned));
     const subject: Subject = { id: row.id, pillId: row.pill_id, startedAt: row.started_at, targetFg: input.targetFg };

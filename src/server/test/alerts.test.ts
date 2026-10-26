@@ -8,6 +8,7 @@ afterEach(() => cleanup?.());
 
 const pill: Pill = {
   id: 'p1',
+  kind: 'pill',
   address: '08:B6:1F:00:00:66',
   raptId: '08:B6:1F:00:00:64',
   name: 'Kveik',
@@ -32,7 +33,7 @@ const pill: Pill = {
   brew: null,
 };
 
-function setup() {
+function setup(over: Partial<Reading> = {}) {
   const t = tempStore();
   cleanup = t.cleanup;
   let now = Date.UTC(2026, 9, 1, 10);
@@ -51,6 +52,7 @@ function setup() {
     plausible: true,
     pillGravity: 1.04,
     pillVelocity: null,
+    ...over,
   });
   const sent: string[] = [];
   const make = () =>
@@ -119,5 +121,32 @@ describe('alert cooldown', () => {
     expect(t.sent).toHaveLength(2);
     expect(again.events(10).map((e) => e.kind)).toEqual(['resolved', 'fired']);
     expect(again.list()[0]!.active).toEqual([]);
+  });
+});
+
+describe('alerts on a thermometer', () => {
+  it('leaves out gravity and battery rules, and still watches the temperature', async () => {
+    const t = setup({ gravity: null, pillGravity: null, battery: null, tilt: null, x: null, y: null, z: null, temperature: 26 });
+    for (const [kind, threshold] of [
+      ['gravity_below', 1.1],
+      ['gravity_stable', 5],
+      ['battery_below', 50],
+      ['temp_above', 25],
+    ] as const) {
+      t.alerts.create({
+        name: kind,
+        enabled: true,
+        pillIds: 'all',
+        kind,
+        threshold,
+        hours: 48,
+        onlyDuringBrew: false,
+        cooldownMin: 60,
+        channelIds: 'all',
+      });
+    }
+    t.alerts.evaluatePill('p1');
+    await Promise.resolve();
+    expect(t.sent).toEqual([expect.stringContaining('above 25')]);
   });
 });

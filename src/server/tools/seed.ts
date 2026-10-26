@@ -1,16 +1,18 @@
 /**
- * Development only: adds the simulated pills with a few days of history (including an outage), plus brews, to the
- * development database. Run with the dev server stopped:  npm run seed
+ * Development only: adds the simulated pills with a few days of history (including an outage), plus brews, and the
+ * simulated thermometer, to the development database. Run with the dev server stopped:  npm run seed
  */
 import { mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { performance } from 'node:perf_hooks';
 import pino from 'pino';
 import { PILL_COLORS, pillIdFromAddress } from '@rapthooker/shared';
 import { Store } from '../db.js';
 import { ClockGuard } from '../clock.js';
-import { PillService } from '../pills.js';
+import { PillService, THERMOMETER_SAMPLE_MS, thermometerReading } from '../pills.js';
 import { BrewService } from '../brews.js';
-import { MOCK_PROFILES, cycleAgeDays, simulate, simulatedRssi } from '../ble/mock.js';
+import { APPLE_COMPANY_ID, encodeRaptThermometer } from '../ble/rapt.js';
+import { MOCK_PROFILES, MOCK_THERMOMETER, cycleAgeDays, simulate, simulatedRssi, simulatedThermometerTemp } from '../ble/mock.js';
 
 const dataDir = resolve(process.env.RAPTHOOKER_DATA_DIR ?? './data');
 mkdirSync(dataDir, { recursive: true });
@@ -56,5 +58,28 @@ if (!brews.activeFor(lager)) {
   brews.end(old.id, pitched[1]! - 0.2 * DAY);
   brews.start(lager, { name: 'Czech Pils', style: 'Czech Premium Pale Lager', targetFg: 1.012 }, pitched[1]! + 600_000);
 }
+
+// The thermometer, in a brew fridge. Heard first (as from BlueZ's cache, so without a reading of its own) so it's
+// added as a thermometer rather than a pill.
+const thermometer = pillIdFromAddress(MOCK_THERMOMETER.address);
+if (!pills.has(thermometer)) {
+  pills.handleAdvert({
+    address: MOCK_THERMOMETER.address,
+    rssi: null,
+    manufacturer: new Map([[APPLE_COMPANY_ID, encodeRaptThermometer(simulatedThermometerTemp(now))]]),
+    at: now,
+    mono: performance.now(),
+    cached: true,
+  });
+  pills.adopt(MOCK_THERMOMETER.address, { name: 'Brew fridge', color: PILL_COLORS[3] });
+}
+let readings = 0;
+store.transaction(() => {
+  for (let t = now - 3 * DAY; t < now - THERMOMETER_SAMPLE_MS; t += THERMOMETER_SAMPLE_MS) {
+    store.addReading(thermometer, thermometerReading(t, simulatedThermometerTemp(t), simulatedRssi(MOCK_THERMOMETER)));
+    readings++;
+  }
+});
+console.log(`Brew fridge: ${readings} readings`);
 store.close();
 console.log(`Seeded ${dataDir}`);

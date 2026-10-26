@@ -1,5 +1,5 @@
 import { copyFile, mkdir, open, readdir, rename, rm, stat } from 'node:fs/promises';
-import { existsSync, renameSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { Store } from '../db.js';
@@ -8,6 +8,10 @@ import type { Store } from '../db.js';
 export const BACKUP_RE = /^rapthooker-(\d{4}-\d{2}-\d{2})\.db$/;
 /** The database as it was before a restore: pre-restore-YYYY-MM-DDTHH-MM-SS.db */
 export const PRE_RESTORE_RE = /^pre-restore-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})\.db$/;
+/** The database as it was before an update upgraded it: pre-update-YYYY-MM-DDTHH-MM-SS.db */
+export const PRE_UPDATE_RE = /^pre-update-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})\.db$/;
+/** How many pre-update copies are kept. */
+export const PRE_UPDATE_KEEP = 3;
 /** Weekly CSV folders: csv/YYYY-MM-DD */
 export const WEEK_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -21,6 +25,43 @@ export const localStamp = (d: Date) =>
 const removeSideFiles = (file: string) => {
   for (const suffix of ['-wal', '-shm', '-journal']) rmSync(`${file}${suffix}`, { force: true });
 };
+
+/**
+ * Keeps a copy of the database before an update upgrades it (see StoreOptions.beforeUpgrade), as
+ * pre-update-<time>.db in the data folder, and only the newest few of those. Throws if it can't, so the database
+ * isn't upgraded without one. Returns the copy's path.
+ */
+export function keepPreUpdateCopy(dataDir: string, copyTo: (file: string) => void, now = new Date()): string {
+  const file = join(dataDir, `pre-update-${localStamp(now)}.db`);
+  const tmp = `${file}.partial`;
+  rmSync(tmp, { force: true });
+  removeSideFiles(tmp);
+  try {
+    copyTo(tmp);
+    removeSideFiles(tmp);
+    renameSync(tmp, file);
+  } catch (err) {
+    rmSync(tmp, { force: true });
+    removeSideFiles(tmp);
+    throw new Error(
+      `Couldn't keep a copy of the data before upgrading it, so it was left as it is (is the SD card full?): ${(err as Error).message}`,
+      { cause: err },
+    );
+  }
+  try {
+    // The copy just made always stays; of the others, the most recently written (names can't be trusted to sort by
+    // age: a Pi's clock can start out wrong).
+    const others = readdirSync(dataDir)
+      .filter((f) => PRE_UPDATE_RE.test(f) && join(dataDir, f) !== file)
+      .map((f) => ({ f, at: statSync(join(dataDir, f)).mtimeMs }))
+      .sort((a, b) => b.at - a.at)
+      .slice(PRE_UPDATE_KEEP - 1);
+    for (const { f } of others) rmSync(join(dataDir, f), { force: true });
+  } catch {
+    // Old copies left behind take some space; nothing more.
+  }
+  return file;
+}
 
 /**
  * A consistent copy of the live database (SQLite's online backup, so recording carries on) in `file`. The copy is

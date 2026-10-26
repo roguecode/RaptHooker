@@ -55,6 +55,52 @@ describe('templates', () => {
   it('chip_id is the last three bytes of the address', () => {
     expect(ctx.chip_id).toBe(0x66);
   });
+
+  it('gives null for everything a thermometer has no reading of', () => {
+    const reading = {
+      ...sampleReading(Date.UTC(2026, 9, 1)),
+      gravity: null,
+      pillGravity: null,
+      velocity: null,
+      battery: null,
+      tilt: null,
+      x: null,
+      y: null,
+      z: null,
+    };
+    const t = buildContext({
+      pill: {
+        id: 't1',
+        name: 'Fridge',
+        address: 'D0:26:25:B4:48:95',
+        raptId: 'D0:26:25:B4:48:95',
+        info: { firmware: null, deviceType: null, payloadVersion: null },
+        kind: 'thermometer',
+      },
+      reading,
+      brew: null,
+      gravityUnit: 'plato',
+      temperatureUnit: 'F',
+      intervalSec: 900,
+      now: Date.UTC(2026, 9, 1),
+      appVersion: '1.0.0',
+    });
+    expect(t).toMatchObject({ device: 'thermometer', temperature: 67.28, temperature_c: 19.6, rssi: -61 });
+    for (const key of [
+      'gravity',
+      'gravity_sg',
+      'gravity_plato',
+      'gravity_points',
+      'pill_gravity_sg',
+      'battery',
+      'tilt',
+      'accel_x',
+      'accel_z',
+    ])
+      expect(t[key], key).toBeNull();
+    expect(JSON.parse(renderTemplate('{"g": {{gravity}}, "t": {{temperature}}}', t, 'json').text)).toEqual({ g: null, t: 67.28 });
+    expect(ctx.device).toBe('pill');
+  });
 });
 
 describe('presets', () => {

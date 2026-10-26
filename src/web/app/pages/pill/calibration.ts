@@ -43,17 +43,17 @@ export function describeChanges(from: SourceChoices, to: SourceChoices): string[
 const r4 = (v: number) => Math.round(v * 1e4) / 1e4;
 const finite = (v: number | null | undefined): v is number => v !== null && v !== undefined && Number.isFinite(v);
 
-/** The gravity the pill's model works out for a reading, before the offset and smoothing. */
+/** The gravity the pill's model works out for a reading, before the offset and smoothing (null for a thermometer's). */
 export function baseGravity(
   r: Pick<Reading, 'pillGravity' | 'tilt'>,
   offsets: Offsets,
   model: Pick<PillModel, 'gravitySource' | 'tiltPoly'>,
-): number {
+): number | null {
   if (model.gravitySource === 'tilt' && model.tiltPoly && r.tilt !== null) {
     const g = polyval(model.tiltPoly, r.tilt);
     if (Number.isFinite(g)) return g;
   }
-  return r.pillGravity - offsets.gravity;
+  return r.pillGravity === null ? null : r.pillGravity - offsets.gravity;
 }
 
 /** The gravity offset that makes plain water read 1.000 (rounded to 0.0001). */

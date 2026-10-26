@@ -34,7 +34,9 @@ curl -H "Authorization: Bearer $TOKEN" $HUB/api/pills
 
 ## Endpoints
 
-All times are milliseconds since 1970 (UTC). Gravity is SG and temperature °C, whatever units the app shows.
+All times are milliseconds since 1970 (UTC). Gravity is SG and temperature °C, whatever units the app shows. Each pill
+has a `kind`: `"pill"`, or `"thermometer"` for a RAPT Bluetooth Thermometer, whose readings have only a `temperature`
+and `rssi` (the rest is `null`).
 
 | Endpoint                                                 | What                                                                                                                                                                                      |
 | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

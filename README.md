@@ -5,9 +5,9 @@ In a smart move that isn't
 Kegland has added subscriptions to their highly rated Rapt software (1.6⭐ on PlayStore!), removing features that
 "[cheap arse customers and freeloaders](docs/receipts.md)" were using.
 
-RaptHooker - A fully local dashboard for Kegland Rapt Pills that runs on a Raspberry Pi.
+RaptHooker - A fully local dashboard for Kegland Rapt devices that runs on a Raspberry Pi.
 
-- Track any number of pills
+- Track any number of RAPT Pills, and RAPT Bluetooth Thermometers
 - Unlimited webhooks and integrations at any frequency
 - All data is stored on your own hardware and can't be accessed by arbitrary employees
 - Only requires a cheap Raspberry Pi with SD card and power, and a PC to install it for the first time
@@ -29,7 +29,12 @@ Kiosk mode, for an always-on screen in the brewery:
 
 ![Kiosk mode](docs/images/kiosk.png)
 
-(Screenshots use simulated pills.)
+(Screenshots use simulated devices.)
+
+## Currently Supported Devices
+
+- **RAPT Pill** (gravity and temperature), set to Bluetooth telemetry.
+- **RAPT Bluetooth Thermometer** (temperature): no setup needed, just switch it on near the Pi.
 
 ## Experimental
 

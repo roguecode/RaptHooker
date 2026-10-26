@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { performance } from 'node:perf_hooks';
 import type { BleStatus } from '@rapthooker/shared';
-import { encodeRaptV2, KEG_COMPANY_ID, RAPT_COMPANY_ID } from './rapt.js';
+import { APPLE_COMPANY_ID, encodeRaptThermometer, encodeRaptV2, KEG_COMPANY_ID, RAPT_COMPANY_ID } from './rapt.js';
 import type { Advert, Scanner } from './scanner.js';
 
 const DAY = 86_400_000;
@@ -60,7 +60,23 @@ export const MOCK_PROFILES: Profile[] = [
 ];
 
 /** A broadcast's signal: the pill's typical strength, give or take 4 dBm. */
-export const simulatedRssi = (p: Profile): number => p.rssi + Math.round((Math.random() - 0.5) * 8);
+export const simulatedRssi = (p: Pick<Profile, 'rssi'>): number => p.rssi + Math.round((Math.random() - 0.5) * 8);
+
+/** A simulated RAPT Bluetooth Thermometer (made-up address) in a brew fridge, drifting slowly around its temperature. */
+export const MOCK_THERMOMETER = { address: 'F0:0D:5E:ED:00:10', temp: 18.5, rssi: -52 } as const;
+/** How often the simulated thermometer broadcasts (a real one does about every second). */
+const THERMOMETER_EVERY_MS = 2000;
+/** BlueZ only passes on a new signal strength when it has moved this much (RSSI_THRESHOLD in its device.c). */
+const BLUEZ_RSSI_DELTA = 8;
+
+/**
+ * The simulated thermometer's temperature at time t, in its 0.1 °C steps: the room's daily swing getting through, and
+ * the fridge's cooling cycling on and off.
+ */
+export function simulatedThermometerTemp(t: number): number {
+  const wave = (amplitude: number, hours: number, phase = 0) => amplitude * Math.sin((2 * Math.PI * t) / (hours * 3_600_000) + phase);
+  return Math.round((MOCK_THERMOMETER.temp + wave(0.35, 24) + wave(0.25, 3.7) + wave(0.12, 1.3, 2)) * 10) / 10;
+}
 
 const CYCLE_DAYS = 14;
 
@@ -94,11 +110,16 @@ export function simulate(
   };
 }
 
-/** Pretends to be BlueZ: every pill sends a burst like a real one (its previous reading, then the new one). */
+/**
+ * Pretends to be BlueZ: every pill sends a burst like a real one (its previous reading, then the new one), and the
+ * thermometer its beacon, passed on the way BlueZ's monitor does (the data and signal strength only when they change).
+ */
 export class MockScanner extends EventEmitter implements Scanner {
   private timers: NodeJS.Timeout[] = [];
   private readonly previous = new Map<string, Buffer>();
   private counts = new Map<string, number>();
+  /** What "BlueZ" last passed on for the thermometer. */
+  private thermo: { hex: string; rssi: number } | null = null;
   private _status: BleStatus = {
     state: 'mock',
     adapter: 'simulated',
@@ -124,6 +145,8 @@ export class MockScanner extends EventEmitter implements Scanner {
       const every = setInterval(() => this.transmit(p), this.intervalMs + i * 1300);
       this.timers.push(first, every);
     });
+    const beacon = () => this.beacon();
+    this.timers.push(setTimeout(beacon, 1200), setInterval(beacon, THERMOMETER_EVERY_MS));
   }
 
   async stop(): Promise<void> {
@@ -131,13 +154,13 @@ export class MockScanner extends EventEmitter implements Scanner {
     this.timers = [];
   }
 
-  private emitAdvert(address: string, companyId: number, data: Uint8Array, rssi: number): void {
+  private emitAdvert(address: string, manufacturer: Map<number, Uint8Array> | null, rssi: number | null): void {
     const at = Date.now();
     this._status = { ...this._status, lastAdvertAt: at };
     this.emit('advert', {
       address,
       rssi,
-      manufacturer: new Map([[companyId, data]]),
+      manufacturer,
       at,
       mono: performance.now(),
       cached: false,
@@ -145,19 +168,31 @@ export class MockScanner extends EventEmitter implements Scanner {
     } satisfies Advert);
   }
 
+  private beacon(): void {
+    const data = encodeRaptThermometer(simulatedThermometerTemp(Date.now()));
+    const hex = Buffer.from(data).toString('hex');
+    const rssi = simulatedRssi(MOCK_THERMOMETER);
+    const last = this.thermo;
+    const newData = last?.hex !== hex;
+    const newRssi = !last || Math.abs(rssi - last.rssi) >= BLUEZ_RSSI_DELTA;
+    this.thermo = { hex, rssi: newRssi || !last ? rssi : last.rssi };
+    this.emitAdvert(MOCK_THERMOMETER.address, newData ? new Map([[APPLE_COMPANY_ID, data]]) : null, newRssi ? rssi : null);
+  }
+
   private transmit(p: Profile): void {
     const rssi = simulatedRssi(p);
     const payload = encodeRaptV2(simulate(p, Date.now()));
     const before = this.previous.get(p.address);
-    if (before) this.emitAdvert(p.address, RAPT_COMPANY_ID, before, rssi);
-    this.emitAdvert(p.address, RAPT_COMPANY_ID, payload, rssi);
-    this.emitAdvert(p.address, RAPT_COMPANY_ID, payload, rssi);
+    const rapt = (data: Uint8Array) => new Map([[RAPT_COMPANY_ID, data]]);
+    if (before) this.emitAdvert(p.address, rapt(before), rssi);
+    this.emitAdvert(p.address, rapt(payload), rssi);
+    this.emitAdvert(p.address, rapt(payload), rssi);
     this.previous.set(p.address, payload);
     const n = (this.counts.get(p.address) ?? 0) + 1;
     this.counts.set(p.address, n);
     if (n % 10 === 1) {
-      this.emitAdvert(p.address, KEG_COMPANY_ID, Buffer.from(`G${p.firmware}`, 'latin1'), rssi);
-      this.emitAdvert(p.address, RAPT_COMPANY_ID, Buffer.from('PTdPillG1', 'latin1'), rssi);
+      this.emitAdvert(p.address, new Map([[KEG_COMPANY_ID, Buffer.from(`G${p.firmware}`, 'latin1')]]), rssi);
+      this.emitAdvert(p.address, rapt(Buffer.from('PTdPillG1', 'latin1')), rssi);
     }
   }
 }

@@ -83,7 +83,7 @@ export function FirstRunGuide({ onHide }: { onHide: () => void }) {
   const doneCount = essentials.filter((s) => s.done).length;
   const allDone = doneCount === essentials.length;
   const current = essentials.find((s) => !s.done)?.id ?? 'extras';
-  const firstPill = sortByOrder(pills.filter((p) => !p.archived))[0] ?? pills[0];
+  const firstPill = sortByOrder(pills.filter((p) => !p.archived && p.kind === 'pill'))[0] ?? pills.find((p) => p.kind === 'pill');
   const listening = ble?.state === 'scanning' || ble?.state === 'mock';
 
   return (

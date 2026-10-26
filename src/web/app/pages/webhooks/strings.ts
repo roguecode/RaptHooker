@@ -78,6 +78,7 @@ export const SHARED_STRINGS: readonly string[] = [
   tk('The MAC address the RAPT app shows'),
   tk('Firmware version'),
   tk('Device type, e.g. PillG1'),
+  tk('"pill" or "thermometer" (a thermometer only sends the temperature: the rest is null)'),
   tk("Gravity in the webhook's unit (SG or °P)"),
   tk('"G" for SG or "P" for Plato (Brewfather/Brewer\'s Friend style)'),
   tk('"SG" or "°P"'),

@@ -60,8 +60,11 @@ export function parseLive(raw: string | null, now: number): CachedLive | null {
   if (!d.pills.every(isPill)) return null;
   return {
     savedAt: d.savedAt,
-    pills: d.pills,
-    nearby: Array.isArray(d.nearby) ? d.nearby.filter(isNearby) : [],
+    // Saved before thermometers were supported, everything was a pill.
+    pills: d.pills.map((p) => ({ ...p, kind: p.kind === 'thermometer' ? 'thermometer' : 'pill' })),
+    nearby: Array.isArray(d.nearby)
+      ? d.nearby.filter(isNearby).map((n) => ({ ...n, kind: n.kind === 'thermometer' ? 'thermometer' : 'pill' }))
+      : [],
     ble: isObject(d.ble) && typeof d.ble.state === 'string' ? (d.ble as unknown as BleStatus) : null,
     clockSynced: d.clockSynced !== false,
     hub: hubFrom(d.hub),

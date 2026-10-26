@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import type { BackupTargetStatus, BleStatus, DiskStatus, HubAddress, HubWarning } from '@rapthooker/shared';
 import type { Config } from './config.js';
-import type { Store } from './db.js';
+import { COMPACT_AFTER_UPGRADE_KEY, type Store } from './db.js';
 import type { Logger } from './log.js';
 import type { Advert } from './ble/scanner.js';
 import { KEG_COMPANY_ID, RAPT_COMPANY_ID } from './ble/rapt.js';
@@ -38,6 +38,8 @@ const TAILSCALE_CACHE_MS = 5 * 60_000;
 const ADVERTS_KEPT = 200;
 /** How long the watchdog may wait while the database is compacted (the event loop is blocked meanwhile). */
 const COMPACT_WATCHDOG_USEC = 15 * 60 * 1_000_000;
+/** After an update upgraded the database, compacting waits this long (the installer is checking the hub answers). */
+const COMPACT_AFTER_UPGRADE_MS = 5 * 60_000;
 
 /** An advert as heard, for the diagnostics bundle. Only RAPT and KegLand data is kept; other makers' is just measured. */
 export interface AdvertSample {
@@ -156,6 +158,7 @@ export class SystemService {
   private lastEmergencyAt = 0;
   private restarting = false;
   private started = false;
+  private startedAt = 0;
   private isReady = false;
 
   constructor(
@@ -185,6 +188,7 @@ export class SystemService {
   start(): void {
     if (this.started) return;
     this.started = true;
+    this.startedAt = this.now();
     this.deps.scanner?.on('advert', this.onAdvert);
     try {
       this.histogram = monitorEventLoopDelay({ resolution: 20 });
@@ -372,11 +376,17 @@ export class SystemService {
     return out;
   }
 
-  // ---------- Housekeeping: emergency cleanup and weekly compaction ----------
+  // ---------- Housekeeping: emergency cleanup, and compaction after an upgrade and weekly ----------
 
   private async housekeeping(): Promise<void> {
     try {
       this.checkDiskSpace();
+      // An upgrade that rebuilt a table leaves its old space unused (and copied into every backup) until compacted.
+      if (this.store.getMeta(COMPACT_AFTER_UPGRADE_KEY) !== null && this.now() - this.startedAt >= COMPACT_AFTER_UPGRADE_MS) {
+        const outcome = await this.compact();
+        if (!outcome.retry) this.store.deleteMeta(COMPACT_AFTER_UPGRADE_KEY);
+        return;
+      }
       const last = Number(this.store.getMeta('lastCompactionCheck') ?? 0);
       if (!compactionDue(new Date(this.now()), this.config.backup.time, last)) return;
       const outcome = await this.compact();
@@ -488,6 +498,8 @@ export class SystemService {
   // ---------- Adverts, for the diagnostics bundle ----------
 
   private readonly onAdvert = (a: Advert): void => {
+    // Only heard again, nothing new (BlueZ's monitor does that for every advert): it would crowd out the rest.
+    if (a.manufacturer === null && a.rssi === null) return;
     try {
       const data = [...(a.manufacturer ?? new Map<number, Uint8Array>())].map(([companyId, bytes]) => ({
         companyId,

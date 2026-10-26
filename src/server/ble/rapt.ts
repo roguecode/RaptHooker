@@ -11,11 +11,23 @@
  * temp is Kelvin × 128, gravity is SG × 1000, x/y/z are raw accelerometer × 16 and battery is % × 256.
  * Every 10th transmission also carries "PTd" + device type (e.g. PillG1) under 0x4152, and "G" + firmware version
  * under 0x454B (the "KE" of "KEG"; company ids are little-endian, so "RA" is 0x4152 and "KE" is 0x454B).
+ *
+ * The RAPT Bluetooth Thermometer (KL24334) broadcasts an Apple iBeacon (company id 0x004C) about once a second. KegLand
+ * doesn't document it; this was worked out from a thermometer at rest, in warm water and in iced water:
+ *
+ *   02 15  uuid:16  temp:u16  ?:u16  power:i8      (uuid = "Keg" + 9 bytes + "Land"; the 9 bytes never changed)
+ *
+ * temp is Kelvin × 64, in 0.1 °C steps. What the second u16 (always 0x4000 so far) and the power byte mean isn't known.
  */
 
 export const RAPT_COMPANY_ID = 0x4152;
 /** "KE" (0x4B, 0x45 on air, read little-endian like every company id). */
 export const KEG_COMPANY_ID = 0x454b;
+/** Apple's company id, which iBeacons (and so the RAPT Bluetooth Thermometer) broadcast under. */
+export const APPLE_COMPANY_ID = 0x004c;
+/** The start of a RAPT Thermometer's manufacturer data after the company id: iBeacon (02 15), then "Keg". */
+export const THERMOMETER_PREFIX: readonly number[] = [0x02, 0x15, 0x4b, 0x65, 0x67];
+const LAND = [0x4c, 0x61, 0x6e, 0x64];
 
 export interface RaptMetrics {
   version: number;
@@ -33,7 +45,9 @@ export interface RaptMetrics {
 export type RaptAdvert =
   | { kind: 'metrics'; metrics: RaptMetrics; fingerprint: string }
   | { kind: 'deviceType'; deviceType: string }
-  | { kind: 'firmware'; firmware: string };
+  | { kind: 'firmware'; firmware: string }
+  /** A RAPT Bluetooth Thermometer's temperature, °C. */
+  | { kind: 'thermometer'; temp: number };
 
 const round = (v: number, d: number) => Math.round(v * 10 ** d) / 10 ** d;
 
@@ -44,12 +58,31 @@ const ascii = (bytes: Uint8Array) =>
     .trim();
 
 /** Identifies a reading by its values, so repeats (and the previous reading re-sent before each new one) are skipped. */
-export function fingerprintOf(m: Pick<RaptMetrics, 'sg' | 'temp' | 'battery' | 'x' | 'y' | 'z' | 'velocity'>): string {
+export function fingerprintOf(m: {
+  sg: number | null;
+  temp: number;
+  battery: number | null;
+  x: number | null;
+  y: number | null;
+  z: number | null;
+  velocity: number | null;
+}): string {
   return [m.sg, m.temp, m.battery, m.x, m.y, m.z, m.velocity ?? '-'].join('|');
+}
+
+/** Whether manufacturer data under Apple's company id is a RAPT Thermometer's iBeacon. */
+export function isThermometerBeacon(data: Uint8Array | undefined): boolean {
+  return !!data && data.length === 23 && THERMOMETER_PREFIX.every((b, i) => data[i] === b) && LAND.every((b, i) => data[14 + i] === b);
 }
 
 export function decodeRapt(companyId: number, data: Uint8Array): RaptAdvert | null {
   const buf = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+  if (companyId === APPLE_COMPANY_ID) {
+    if (!isThermometerBeacon(data)) return null;
+    const temp = Math.round((buf.readUInt16BE(18) / 64 - 273.15) * 10) / 10 || 0;
+    // Outside what the thermometer can measure: not a reading.
+    return temp >= -40 && temp <= 125 ? { kind: 'thermometer', temp } : null;
+  }
   if (companyId === KEG_COMPANY_ID) {
     if (buf.length < 2 || buf[0] !== 0x47) return null;
     const firmware = ascii(buf.subarray(1));
@@ -117,5 +150,19 @@ export function encodeRaptV2(m: {
   buf.writeInt16BE(Math.round(m.y * 16), 17);
   buf.writeInt16BE(Math.round(m.z * 16), 19);
   buf.writeUInt16BE(Math.max(0, Math.min(65535, Math.round(m.battery * 256))), 21);
+  return buf;
+}
+
+/** The UUID heard from a real RAPT Thermometer (its middle 9 bytes may differ between thermometers). */
+const THERMOMETER_UUID = '4b6567b722314977852625b74c616e64';
+
+/** Builds a RAPT Thermometer iBeacon (as BlueZ presents it, under Apple's company id); used by the simulator and tests. */
+export function encodeRaptThermometer(temp: number): Buffer {
+  const buf = Buffer.alloc(23);
+  buf[0] = 0x02;
+  buf[1] = 0x15;
+  buf.write(THERMOMETER_UUID, 2, 'hex');
+  buf.writeUInt16BE(Math.round((temp + 273.15) * 64), 18);
+  buf.writeUInt16BE(0x4000, 20);
   return buf;
 }

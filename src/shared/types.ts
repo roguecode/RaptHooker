@@ -3,30 +3,36 @@
 export type GravityUnit = 'sg' | 'plato';
 export type TemperatureUnit = 'C' | 'F';
 
-/** One reading from a pill, with the pill's calibration offsets and data choices applied. */
+/** A RAPT Pill (hydrometer and thermometer) or a RAPT Bluetooth Thermometer (temperature only). */
+export type DeviceKind = 'pill' | 'thermometer';
+
+/**
+ * One reading from a pill, with the pill's calibration offsets and data choices applied. A thermometer only has a
+ * temperature and signal strength: everything a pill measures besides is null.
+ */
 export interface Reading {
   /** Unix time in ms. */
   ts: number;
   /** Specific gravity used everywhere (from the pill, or worked out by RaptHooker from the tilt), e.g. 1.0465. */
-  gravity: number;
+  gravity: number | null;
   /** °C */
   temperature: number;
   /** Gravity points per day (negative while fermenting) from the pill or RaptHooker, or null when not known yet. */
   velocity: number | null;
   /** Battery state of charge, %. */
-  battery: number;
+  battery: number | null;
   /** Signal strength at the hub, dBm. */
   rssi: number | null;
   /** Angle from vertical, degrees. */
   tilt: number | null;
   /** Raw accelerometer values. */
-  x: number;
-  y: number;
-  z: number;
+  x: number | null;
+  y: number | null;
+  z: number | null;
   /** False when the pill doesn't look like it's floating (lying on its side, or a gravity no beer could have). */
   plausible: boolean;
   /** The gravity the pill itself reported (with the offset applied). */
-  pillGravity: number;
+  pillGravity: number | null;
   /** The velocity the pill itself reported. */
   pillVelocity: number | null;
 }
@@ -108,6 +114,7 @@ export interface PillLive {
 
 export interface Pill {
   id: string;
+  kind: DeviceKind;
   /** Bluetooth address, AA:BB:CC:DD:EE:FF. */
   address: string;
   /** The address the RAPT app shows (Bluetooth address with 2 off the last octet). */
@@ -127,9 +134,10 @@ export interface Pill {
   brew: Brew | null;
 }
 
-/** A RAPT Pill heard nearby that hasn't been added. */
+/** A RAPT Pill or Thermometer heard nearby that hasn't been added. */
 export interface NearbyPill {
   address: string;
+  kind: DeviceKind;
   raptId: string;
   firstHeardAt: number;
   lastHeardAt: number;
@@ -579,8 +587,11 @@ export interface BackupFile {
   name: string;
   bytes: number;
   at: number;
-  /** daily: a nightly backup; pre-restore: the data as it was just before a restore. */
-  kind: 'daily' | 'pre-restore';
+  /**
+   * daily: a nightly backup; pre-restore: the data as it was just before a restore; pre-update: as it was just before
+   * an update changed how it's stored.
+   */
+  kind: 'daily' | 'pre-restore' | 'pre-update';
 }
 
 /** GET /api/backups */

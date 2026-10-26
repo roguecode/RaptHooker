@@ -152,6 +152,9 @@ All entities show as _unavailable_ while the hub is offline. Renaming a pill in 
 Assistant (unless you've renamed it there yourself); archiving or removing a pill removes the device. When Home
 Assistant restarts, RaptHooker announces everything again as soon as Home Assistant says it's back.
 
+A RAPT Bluetooth Thermometer appears as a _RAPT Bluetooth Thermometer_ device with only **Temperature**, **Signal
+strength** and **Last reading**. In its state the gravity, velocity, battery, tilt and brew fields are `null`.
+
 An example automation, a notification when a fermenter gets too warm:
 
 ```yaml

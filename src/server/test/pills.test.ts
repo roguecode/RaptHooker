@@ -76,6 +76,29 @@ describe('pills', () => {
     expect(count(t.store)).toBe(2);
   });
 
+  it('counts a pill only heard again (BlueZ reporting a repeat) as heard, without announcing it', () => {
+    const t = setup();
+    t.pills.handleAdvert(t.advert(CAPTURED.metricsFalling));
+    const pill = t.pills.adopt(ADDR, {});
+    let events = 0;
+    let nearby = 0;
+    t.pills.on('pill', () => events++);
+    t.pills.on('nearby', () => nearby++);
+    t.advance(30_000);
+    t.pills.handleAdvert(t.advert(CAPTURED.metricsFalling, RAPT_COMPANY_ID, { manufacturer: null, rssi: null }));
+    expect(events).toBe(0);
+    expect(t.pills.get(pill.id)!.live.lastHeardAt).toBe(t.now());
+    expect(count(t.store)).toBe(1);
+    // Likewise for one nearby that hasn't been added.
+    const other = '08:B6:1F:00:00:76';
+    t.pills.handleAdvert(t.advert(CAPTURED.metricsRising, RAPT_COMPANY_ID, { address: other }));
+    expect(nearby).toBe(1);
+    t.advance(1000);
+    t.pills.handleAdvert(t.advert(CAPTURED.metricsRising, RAPT_COMPANY_ID, { address: other, manufacturer: null, rssi: null }));
+    expect(nearby).toBe(1);
+    expect(t.pills.nearby()[0]).toMatchObject({ address: other, lastHeardAt: t.now() });
+  });
+
   it('records each reading once, however often it is repeated', () => {
     const t = setup();
     t.pills.adopt(ADDR, {});

@@ -492,7 +492,7 @@ function TiltStep({ pill, save, busy }: { pill: Pill; save: Save; busy: boolean 
                     {' '}
                     {t('Right now that would read {tilt} (the pill says {pill}).', {
                       tilt: u.gravityText(
-                        baseGravity(r, pill.offsets, { gravitySource: 'tilt', tiltPoly: fit.coeffs }) + pill.offsets.gravity,
+                        (baseGravity(r, pill.offsets, { gravitySource: 'tilt', tiltPoly: fit.coeffs }) ?? NaN) + pill.offsets.gravity,
                       ),
                       pill: u.gravityText(r.pillGravity),
                     })}

@@ -3,6 +3,7 @@ import type { Pill } from '@rapthooker/shared';
 import { dropIndex, moveBy, moveItem } from '../../order';
 import { Icon } from '../../components/Icon';
 import { PillFigure } from '../../components/PillFigure';
+import { ThermometerBadge } from './ThermometerCard';
 import { t } from '../../i18n';
 
 interface Drag {
@@ -135,7 +136,11 @@ export function ArrangeList({ pills, onChange }: { pills: Pill[]; onChange: (ids
             <span className="drag-handle" aria-hidden="true" title={t('Drag to move')}>
               <Icon name="grip" size={18} />
             </span>
-            <PillFigure color={p.color} tilt={p.live.latest?.tilt} size={34} offline={!p.live.online} decorative />
+            {p.kind === 'thermometer' ? (
+              <ThermometerBadge color={p.color} size={30} offline={!p.live.online} />
+            ) : (
+              <PillFigure color={p.color} tilt={p.live.latest?.tilt} size={34} offline={!p.live.online} decorative />
+            )}
             <div className="grow">
               <strong>{p.name}</strong>
               <span className="small muted">

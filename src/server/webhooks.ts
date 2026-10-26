@@ -677,11 +677,11 @@ function changedEnough(hook: WebhookInput, s: WebhookStateRow, r: Reading, silen
   const g = hook.minChangeGravity;
   const t = hook.minChangeTemp;
   if (g === null && t === null) return true;
-  if (s.last_gravity == null || s.last_temp == null) return true;
+  if (s.last_temp == null || (r.gravity !== null && s.last_gravity == null)) return true;
   if (hook.maxSilenceMin !== null && silentMs !== null && silentMs >= hook.maxSilenceMin * 60_000) return true;
   const eps = 1e-9;
   return (
-    (g !== null && Math.abs(r.gravity - s.last_gravity) * 1000 >= g - eps) ||
+    (g !== null && r.gravity !== null && s.last_gravity != null && Math.abs(r.gravity - s.last_gravity) * 1000 >= g - eps) ||
     (t !== null && Math.abs(r.temperature - s.last_temp) >= t - eps)
   );
 }

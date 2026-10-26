@@ -19,6 +19,7 @@ import { PinNotice } from './settings/OwnerSection';
 import { FirstRunGuide, useGuide } from './dashboard/FirstRunGuide';
 import { ArrangeList } from './dashboard/ArrangeList';
 import { PillRow, pillStatus } from './dashboard/PillRow';
+import { ThermometerCard } from './dashboard/ThermometerCard';
 import './dashboard/dashboard.css';
 
 const DAY = 86_400_000;
@@ -99,6 +100,12 @@ export function Dashboard() {
   const active = useMemo(() => pills.filter((p) => !p.archived), [pills]);
   const ordered = useMemo(() => applyOrder(active, localOrder), [active, localOrder]);
   const brewing = active.filter((p) => p.brew).length;
+  const thermometers = active.filter((p) => p.kind === 'thermometer').length;
+  const recording = [
+    ...(active.length > thermometers ? [tp(active.length - thermometers, '{count} pill recording', '{count} pills recording')] : []),
+    ...(thermometers ? [tp(thermometers, '{count} thermometer recording', '{count} thermometers recording')] : []),
+    ...(brewing ? [tp(brewing, '{count} brew on the go', '{count} brews on the go')] : []),
+  ].join(' · ');
   const shown = brewingOnly && !arranging ? ordered.filter((p) => p.brew) : ordered;
 
   // The local order only bridges the gap until the hub's order catches up.
@@ -131,11 +138,7 @@ export function Dashboard() {
       <div className="page-head">
         <div>
           <h1>{t('Your pills')}</h1>
-          <p>
-            {active.length === 0
-              ? t('Live readings from your RAPT Pills, recorded around the clock.')
-              : `${tp(active.length, '{count} pill recording', '{count} pills recording')}${brewing ? ` · ${tp(brewing, '{count} brew on the go', '{count} brews on the go')}` : ''}`}
-          </p>
+          <p>{active.length === 0 ? t('Live readings from your RAPT Pills, recorded around the clock.') : recording}</p>
         </div>
         <BleChip />
       </div>
@@ -239,9 +242,7 @@ export function Dashboard() {
             </ul>
           ) : (
             <div className="grid cards">
-              {shown.map((p) => (
-                <PillCard key={p.id} pill={p} />
-              ))}
+              {shown.map((p) => (p.kind === 'thermometer' ? <ThermometerCard key={p.id} pill={p} /> : <PillCard key={p.id} pill={p} />))}
             </div>
           )}
         </>
@@ -275,6 +276,7 @@ function NearbyCard({ pill }: { pill: NearbyPill }) {
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const nearbySignal = signalQuality(pill.rssi);
+  const thermometer = pill.kind === 'thermometer';
   const add = async () => {
     setBusy(true);
     try {
@@ -283,7 +285,7 @@ function NearbyCard({ pill }: { pill: NearbyPill }) {
       toast({ tone: 'success', title: t('{name} added', { name: added.name }), body: t('Recording has started.') });
       navigate(href.pill(added.id));
     } catch (err) {
-      toast({ tone: 'error', title: t("Couldn't add the pill"), body: errorText(err) });
+      toast({ tone: 'error', title: thermometer ? t("Couldn't add the thermometer") : t("Couldn't add the pill"), body: errorText(err) });
     } finally {
       setBusy(false);
     }
@@ -291,12 +293,13 @@ function NearbyCard({ pill }: { pill: NearbyPill }) {
   return (
     <div className="panel nearby">
       <div className="radar" aria-hidden="true">
-        <Icon name="bluetooth" size={20} />
+        <Icon name={thermometer ? 'thermometer' : 'bluetooth'} size={20} />
       </div>
       <div className="info">
-        <h2>{t('Found a RAPT Pill nearby')}</h2>
+        <h2>{thermometer ? t('Found a RAPT Thermometer nearby') : t('Found a RAPT Pill nearby')}</h2>
         <div className="small muted num">
-          {pill.raptId} · {pill.latest ? `${u.gravityText(pill.latest.gravity)} · ${u.tempText(pill.latest.temperature)} · ` : ''}
+          {pill.raptId} ·{' '}
+          {pill.latest ? `${thermometer ? '' : `${u.gravityText(pill.latest.gravity)} · `}${u.tempText(pill.latest.temperature)} · ` : ''}
           {nearbySignal
             ? t('Signal: {quality} ({rssi} dBm)', { quality: nearbySignal.label, rssi: nearbySignal.rssi })
             : t('Signal unknown')}{' '}
@@ -314,14 +317,18 @@ function NearbyCard({ pill }: { pill: NearbyPill }) {
           <input
             className="input"
             style={{ width: '12rem' }}
-            aria-label={t('Name for the pill {id} (optional)', { id: pill.raptId })}
+            aria-label={
+              thermometer
+                ? t('Name for the thermometer {id} (optional)', { id: pill.raptId })
+                : t('Name for the pill {id} (optional)', { id: pill.raptId })
+            }
             placeholder={t('Name it (optional)')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={60}
           />
           <button type="submit" className="btn primary" disabled={busy}>
-            <Icon name="plus" /> {t('Add pill')}
+            <Icon name="plus" /> {thermometer ? t('Add thermometer') : t('Add pill')}
           </button>
           <button
             type="button"
@@ -373,7 +380,7 @@ export function PillCard({ pill }: { pill: Pill }) {
         </div>
         {pill.brew ? <span className="chip brew">{t('Brewing')}</span> : <span className="chip">{t('Idle')}</span>}
       </div>
-      {r && !plausibleGravity(r.gravity) && (
+      {r && r.gravity !== null && !plausibleGravity(r.gravity) && (
         <div
           className="chip warning"
           style={{ alignSelf: 'flex-start', position: 'relative' }}
@@ -424,7 +431,7 @@ export function PillCard({ pill }: { pill: Pill }) {
           <span className="k">
             <Icon name="battery" size={12} /> {t('Battery')}
           </span>
-          {r ? `${Math.round(r.battery)}%` : '–'}
+          {r?.battery != null ? `${Math.round(r.battery)}%` : '–'}
           <BatteryBar percent={r?.battery} />
         </div>
         <div className="mini-stat" title={signal ? t('{rssi} dBm at the hub', { rssi: signal.rssi }) : undefined}>

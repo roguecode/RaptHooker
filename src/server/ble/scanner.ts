@@ -6,7 +6,10 @@ export interface Advert {
   /** AA:BB:CC:DD:EE:FF */
   address: string;
   rssi: number | null;
-  /** Manufacturer data by company id, or null when only the signal strength changed. */
+  /**
+   * Manufacturer data by company id, or null when only the signal strength changed. With both null the device was only
+   * heard again: BlueZ's monitor reports every advert, but only passes on data and signal strength when they change.
+   */
   manufacturer: Map<number, Uint8Array> | null;
   /** Wall-clock time it was heard. */
   at: number;

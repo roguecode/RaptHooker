@@ -17,6 +17,7 @@ export function OverviewStrip({
   bounds,
   view,
   color,
+  tempOnly = false,
   onChange,
 }: {
   history: History | null;
@@ -24,6 +25,8 @@ export function OverviewStrip({
   /** The visible window, or null for all of it. */
   view: TimeWindow | null;
   color: string;
+  /** A thermometer: the temperature is the line (there's no gravity). */
+  tempOnly?: boolean;
   onChange: (win: TimeWindow) => void;
 }) {
   const el = useRef<HTMLDivElement | null>(null);
@@ -111,17 +114,21 @@ export function OverviewStrip({
       onPointerCancel={onPointerEnd}
     >
       {history && history.ts.length > 1 ? (
-        <Sparkline
-          ts={history.ts}
-          values={history.gravity}
-          skip={history.implausible}
-          secondary={history.temperature}
-          color={color}
-          from={bounds.from}
-          to={bounds.to}
-          minSpan={0.004}
-          secondaryMinSpan={3}
-        />
+        tempOnly ? (
+          <Sparkline ts={history.ts} values={history.temperature} color={color} from={bounds.from} to={bounds.to} minSpan={2} />
+        ) : (
+          <Sparkline
+            ts={history.ts}
+            values={history.gravity}
+            skip={history.implausible}
+            secondary={history.temperature}
+            color={color}
+            from={bounds.from}
+            to={bounds.to}
+            minSpan={0.004}
+            secondaryMinSpan={3}
+          />
+        )
       ) : (
         <div className="sparkline" />
       )}

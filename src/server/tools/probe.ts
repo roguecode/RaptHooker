@@ -1,5 +1,6 @@
 /**
- * Prints every RAPT Pill advert heard, decoded. Handy for checking a pill is in Bluetooth mode and in range.
+ * Prints every RAPT Pill and RAPT Thermometer advert heard, decoded. Handy for checking a device is in range (and a
+ * pill in Bluetooth mode).
  *   node rapthooker-probe.cjs [seconds]      (on the Pi: sudo systemctl stop rapthooker first is NOT needed)
  * RAPTHOOKER_ADAPTER=hci1 (or hci0,hci1) picks adapters; RAPTHOOKER_SCAN_MODE=passive|active|auto (default auto).
  */
@@ -34,6 +35,7 @@ scanner.on('advert', (a) => {
     let text = 'not a RAPT payload';
     if (d?.kind === 'firmware') text = `firmware ${d.firmware}`;
     else if (d?.kind === 'deviceType') text = `device type ${d.deviceType}`;
+    else if (d?.kind === 'thermometer') text = `RAPT Thermometer ${d.temp.toFixed(1)} °C`;
     else if (d?.kind === 'metrics') {
       const m = d.metrics;
       const tilt = tiltOf(m.x, m.y, m.z);
@@ -48,7 +50,7 @@ scanner.on('advert', (a) => {
   }
 });
 
-console.log(`Listening for RAPT Pills for ${seconds} s...`);
+console.log(`Listening for RAPT Pills and Thermometers for ${seconds} s...`);
 scanner.start().then(
   () =>
     setTimeout(() => {

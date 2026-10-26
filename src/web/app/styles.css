@@ -1666,6 +1666,23 @@ button.chip:hover {
   transition: transform 1.2s var(--spring);
 }
 
+/* A RAPT Thermometer's stand-in for the pill figure */
+.thermo-badge {
+  --pill: var(--violet-2);
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--pill) 55%, #fff), var(--pill) 70%);
+  box-shadow: 0 10px 22px -8px color-mix(in srgb, var(--pill) 70%, transparent);
+}
+
+.thermo-badge.offline {
+  filter: grayscale(0.8);
+  opacity: 0.7;
+}
+
 .tiles {
   display: grid;
   gap: 0.75rem;

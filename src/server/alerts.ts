@@ -220,19 +220,28 @@ export class AlertService extends EventEmitter {
           value: r.temperature,
           message: `${name} is at ${this.fmtT(r.temperature)}, below ${this.fmtT(th)}`,
         };
-      case 'gravity_below':
+      case 'gravity_below': {
+        // A thermometer has no gravity (or battery): such rules don't apply to it.
+        const g = r.gravity;
+        if (g === null) return { firing: null, value: null, message: '' };
         return {
-          firing: r.gravity <= th ? true : r.gravity > th + HYSTERESIS.gravity ? false : null,
-          value: r.gravity,
-          message: `${name} has reached ${this.fmtG(r.gravity)} (target ${this.fmtG(th)})`,
+          firing: g <= th ? true : g > th + HYSTERESIS.gravity ? false : null,
+          value: g,
+          message: `${name} has reached ${this.fmtG(g)} (target ${this.fmtG(th)})`,
         };
-      case 'battery_below':
+      }
+      case 'battery_below': {
+        const b = r.battery;
+        if (b === null) return { firing: null, value: null, message: '' };
         return {
-          firing: r.battery < th ? true : r.battery >= th + HYSTERESIS.battery ? false : null,
-          value: r.battery,
-          message: `${name}'s battery is at ${Math.round(r.battery)}%`,
+          firing: b < th ? true : b >= th + HYSTERESIS.battery ? false : null,
+          value: b,
+          message: `${name}'s battery is at ${Math.round(b)}%`,
         };
+      }
       case 'gravity_stable': {
+        const g = r.gravity;
+        if (g === null) return { firing: null, value: null, message: '' };
         const windowMs = Math.max(1, rule.hours) * 3_600_000;
         const range = this.store.sgRange(pillId, now - windowMs, now);
         const brew = this.deps.brews.activeFor(pillId);
@@ -243,7 +252,7 @@ export class AlertService extends EventEmitter {
         return {
           firing: pts < th ? true : pts > th + 1 ? false : null,
           value: Math.round(pts * 10) / 10,
-          message: `${name} has been steady at ${this.fmtG(r.gravity)} for ${rule.hours} hours (moved ${pts.toFixed(1)} points). Fermentation looks finished.`,
+          message: `${name} has been steady at ${this.fmtG(g)} for ${rule.hours} hours (moved ${pts.toFixed(1)} points). Fermentation looks finished.`,
         };
       }
       default:

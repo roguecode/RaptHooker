@@ -1,23 +1,31 @@
+import { rmSync } from 'node:fs';
 import { DatabaseSync, backup as sqliteBackup, type SQLInputValue, type StatementSync } from 'node:sqlite';
 import { DEFAULT_PILL_MODEL, rollingSlope, SMOOTHING_MS, smooth, tiltGravity } from '@rapthooker/shared';
 import type { History, Offsets, PillModel, WebhookDelivery } from '@rapthooker/shared';
 
-/** A reading as decoded from the pill, before calibration offsets. */
+/**
+ * A reading as decoded from a device, before calibration offsets. What a device doesn't measure is null (a RAPT
+ * Thermometer has no gravity, battery or accelerometer).
+ */
 export interface RawReading {
   ts: number;
-  sg: number;
+  sg: number | null;
+  /** Every kind of device so far measures it (the column allows NULL, for one that doesn't). */
   temp: number;
   velocity: number | null;
-  battery: number;
+  battery: number | null;
   rssi: number | null;
-  x: number;
-  y: number;
-  z: number;
+  x: number | null;
+  y: number | null;
+  z: number | null;
   /** FLAG_* bits. */
   flags: number;
 }
 
-/** Schema versions, applied in order; the database's user_version says how many have run. Never edit one once released. */
+/**
+ * Schema versions, applied in order; the database's user_version says how many have run. People's brewing history is
+ * in these tables: read docs/data-compatibility.md before adding one. Never edit, reorder or remove one once released.
+ */
 export const MIGRATIONS: string[] = [
   `
   CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -93,9 +101,43 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE webhook_state ADD COLUMN last_temp REAL;
   ALTER TABLE webhook_state ADD COLUMN cursor_ts INTEGER;
   `,
+  // v4: what a device doesn't measure is NULL rather than 0 (a RAPT Thermometer has no gravity, battery or
+  // accelerometer, and other kinds of device will measure other things). SQLite can't drop NOT NULL, so readings is
+  // copied, every row, into a new table. Rollups count, for each measurement, the readings that didn't have it (a
+  // bucket's average is sum / (n - missing)): counting what's missing rather than what's there keeps a bucket right
+  // when an older version (put back after an update) adds a pill's reading, which has everything, without knowing
+  // these columns. Development builds stored a thermometer's readings as zeros with flag 2: those become NULLs.
+  `
+  CREATE TABLE readings_v4 (
+    pill_id TEXT NOT NULL, ts INTEGER NOT NULL,
+    sg REAL, temp REAL, velocity REAL, battery REAL, rssi INTEGER, x REAL, y REAL, z REAL,
+    flags INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (pill_id, ts)
+  ) WITHOUT ROWID;
+  INSERT INTO readings_v4 (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, flags)
+    SELECT pill_id, ts,
+      CASE WHEN flags & 2 THEN NULL ELSE sg END, temp, velocity, CASE WHEN flags & 2 THEN NULL ELSE battery END, rssi,
+      CASE WHEN flags & 2 THEN NULL ELSE x END, CASE WHEN flags & 2 THEN NULL ELSE y END, CASE WHEN flags & 2 THEN NULL ELSE z END,
+      flags & ~2
+    FROM readings;
+  DROP TABLE readings;
+  ALTER TABLE readings_v4 RENAME TO readings;
+  ALTER TABLE rollups ADD COLUMN sg_missing INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE rollups ADD COLUMN temp_missing INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE rollups ADD COLUMN battery_missing INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE rollups ADD COLUMN xyz_missing INTEGER NOT NULL DEFAULT 0;
+  UPDATE rollups SET sg_all = 0, sg_missing = n, battery = 0, battery_missing = n, x = 0, y = 0, z = 0, xyz_missing = n
+    WHERE pill_id IN (SELECT id FROM pills WHERE CASE WHEN json_valid(json) THEN json_extract(json, '$.kind') END = 'thermometer');
+  `,
 ];
 
-/** Bits in readings.flags. */
+/**
+ * A meta key a migration sets when versions of RaptHooker that don't know it can't use the database safely any more:
+ * the lowest schema version (MIGRATIONS.length) that can. Older versions then refuse to open it rather than damage it.
+ */
+export const MIN_SCHEMA_KEY = 'minSchema';
+
+/** Bits in readings.flags. (2 was a development build's; don't use it.) */
 export const FLAG_IMPLAUSIBLE = 1;
 
 export const ROLLUP_MS = 15 * 60_000;
@@ -147,10 +189,10 @@ export interface PrunedRollup {
   /** Plausible readings in the bucket. */
   n: number;
   sg: number;
-  temp: number;
-  x: number;
-  y: number;
-  z: number;
+  temp: number | null;
+  x: number | null;
+  y: number | null;
+  z: number | null;
 }
 
 export interface Aggregate {
@@ -163,11 +205,33 @@ export interface Aggregate {
 }
 
 /** Angle from vertical, degrees, from the accelerometer (the pill's long axis is z). */
-export function tiltOf(x: number, y: number, z: number): number | null {
+export function tiltOf(x: number | null, y: number | null, z: number | null): number | null {
+  if (x === null || y === null || z === null) return null;
   const g = Math.sqrt(x * x + y * y + z * z);
   if (!(g > 0)) return null;
   return (Math.acos(Math.min(1, Math.abs(z) / g)) * 180) / Math.PI;
 }
+
+/** The database was upgraded by a newer version of RaptHooker that said older ones can't use it any more. */
+export class IncompatibleDatabaseError extends Error {}
+
+export interface StoreOptions {
+  /**
+   * Called just before an existing database is upgraded, to keep a copy of it as it was: `copyTo` writes one. If it
+   * throws, the database is left as it is and opening it fails. It returns the copy's path, which is deleted again if
+   * the upgrade then fails (the database is as it was). Without it (tests, or a backup being restored, which is a copy
+   * already) no copy is made.
+   */
+  beforeUpgrade?: (copyTo: (file: string) => void, from: number, to: number) => string | void;
+}
+
+/**
+ * A meta key set when an update has upgraded the database: a rebuilt table leaves unused space in the file (and in
+ * every backup), so the hub checks whether to compact it soon after (see SystemService.housekeeping).
+ */
+export const COMPACT_AFTER_UPGRADE_KEY = 'compactAfterUpgrade';
+
+const sqlString = (s: string) => `'${s.replace(/'/g, "''")}'`;
 
 export class Store {
   readonly db: DatabaseSync;
@@ -175,22 +239,34 @@ export class Store {
   private readonly upsertRollupStmt: StatementSync;
   private depth = 0;
 
-  constructor(readonly path: string) {
+  constructor(
+    readonly path: string,
+    private readonly opts: StoreOptions = {},
+  ) {
     this.db = new DatabaseSync(path);
     this.db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = OFF;');
-    this.migrate();
+    try {
+      this.migrate();
+    } catch (err) {
+      this.db.close();
+      throw err;
+    }
     this.insertReadingStmt = this.db.prepare(
       'INSERT OR IGNORE INTO readings (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
-    // sg/sg_n only count plausible readings; sg_all covers every reading, for buckets where none were plausible.
+    // Each measurement is a sum, with a count of the readings that didn't have it (see migration v4). sg/sg_n only
+    // count plausible readings; sg_all covers every reading with a gravity, for buckets where none were plausible.
     this.upsertRollupStmt = this.db.prepare(`
-      INSERT INTO rollups (pill_id, bucket, n, sg, sg_n, sg_all, temp, velocity, velocity_n, battery, rssi, rssi_n, x, y, z)
-      VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO rollups (pill_id, bucket, n, sg, sg_n, sg_all, sg_missing, temp, temp_missing, velocity, velocity_n, battery,
+        battery_missing, rssi, rssi_n, x, y, z, xyz_missing)
+      VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT (pill_id, bucket) DO UPDATE SET
-        n = n + 1, sg = sg + excluded.sg, sg_n = sg_n + excluded.sg_n, sg_all = sg_all + excluded.sg_all, temp = temp + excluded.temp,
+        n = n + 1, sg = sg + excluded.sg, sg_n = sg_n + excluded.sg_n, sg_all = sg_all + excluded.sg_all,
+        sg_missing = sg_missing + excluded.sg_missing, temp = temp + excluded.temp, temp_missing = temp_missing + excluded.temp_missing,
         velocity = velocity + excluded.velocity, velocity_n = velocity_n + excluded.velocity_n,
-        battery = battery + excluded.battery, rssi = rssi + excluded.rssi, rssi_n = rssi_n + excluded.rssi_n,
-        x = x + excluded.x, y = y + excluded.y, z = z + excluded.z`);
+        battery = battery + excluded.battery, battery_missing = battery_missing + excluded.battery_missing,
+        rssi = rssi + excluded.rssi, rssi_n = rssi_n + excluded.rssi_n,
+        x = x + excluded.x, y = y + excluded.y, z = z + excluded.z, xyz_missing = xyz_missing + excluded.xyz_missing`);
   }
 
   get schemaVersion(): number {
@@ -199,11 +275,47 @@ export class Store {
 
   private migrate(): void {
     const from = this.schemaVersion;
-    for (let v = from; v < MIGRATIONS.length; v++) {
+    if (from > MIGRATIONS.length) {
+      // Upgraded by a newer version (since put back, say). Its changes keep older versions working unless it says not.
+      const min = Number(this.getMeta(MIN_SCHEMA_KEY) ?? 0);
+      if (min > MIGRATIONS.length) {
+        throw new IncompatibleDatabaseError(
+          `The database was upgraded by a newer version of RaptHooker (schema ${from}) that this one (schema ${MIGRATIONS.length}) ` +
+            "can't use safely. Update RaptHooker again, or restore the copy saved before that update.",
+        );
+      }
+      return;
+    }
+    let copy: string | void = undefined;
+    if (from > 0 && from < MIGRATIONS.length && this.opts.beforeUpgrade) {
+      copy = this.opts.beforeUpgrade((file) => this.copyTo(file), from, MIGRATIONS.length);
+    }
+    if (from === MIGRATIONS.length) return;
+    // All in one transaction: if any of it fails, the database is exactly as it was.
+    try {
       this.transaction(() => {
-        this.db.exec(MIGRATIONS[v]!);
-        this.db.exec(`PRAGMA user_version = ${v + 1}`);
+        for (let v = from; v < MIGRATIONS.length; v++) {
+          this.db.exec(MIGRATIONS[v]!);
+          this.db.exec(`PRAGMA user_version = ${v + 1}`);
+        }
+        if (from > 0) this.setMeta(COMPACT_AFTER_UPGRADE_KEY, String(MIGRATIONS.length));
       });
+    } catch (err) {
+      if (copy) rmSync(copy, { force: true });
+      throw err;
+    }
+    // The write-ahead log grew with the upgrade: give the space back.
+    this.db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
+  }
+
+  /** A consistent, self-contained copy of the database in `file` (which mustn't exist yet). */
+  private copyTo(file: string): void {
+    this.db.exec(`VACUUM INTO ${sqlString(file)}`);
+    const copy = new DatabaseSync(file);
+    try {
+      copy.exec('PRAGMA journal_mode = DELETE');
+    } finally {
+      copy.close();
     }
   }
 
@@ -287,21 +399,22 @@ export class Store {
       if (res.changes === 0) return false;
       const bucket = r.ts - (r.ts % ROLLUP_MS);
       const plausible = (r.flags & FLAG_IMPLAUSIBLE) === 0;
+      const sum = (v: number | null): [number, number] => (v === null ? [0, 0] : [v, 1]);
+      const missing = (v: number | null): [number, number] => (v === null ? [0, 1] : [v, 0]);
+      const xyz = r.x !== null && r.y !== null && r.z !== null;
       this.upsertRollupStmt.run(
         pillId,
         bucket,
-        plausible ? r.sg : 0,
-        plausible ? 1 : 0,
-        r.sg,
-        r.temp,
-        r.velocity ?? 0,
-        r.velocity === null ? 0 : 1,
-        r.battery,
-        r.rssi ?? 0,
-        r.rssi === null ? 0 : 1,
-        r.x,
-        r.y,
-        r.z,
+        ...sum(plausible ? r.sg : null),
+        ...missing(r.sg),
+        ...missing(r.temp),
+        ...sum(r.velocity),
+        ...missing(r.battery),
+        ...sum(r.rssi),
+        xyz ? r.x : 0,
+        xyz ? r.y : 0,
+        xyz ? r.z : 0,
+        xyz ? 0 : 1,
       );
       return true;
     });
@@ -311,12 +424,12 @@ export class Store {
   setReadingFlags(pillId: string, ts: number, flags: number): void {
     this.transaction(() => {
       const row = this.db.prepare('SELECT sg, flags FROM readings WHERE pill_id = ? AND ts = ?').get(pillId, ts) as
-        { sg: number; flags: number } | undefined;
+        { sg: number | null; flags: number } | undefined;
       if (!row || row.flags === flags) return;
       this.db.prepare('UPDATE readings SET flags = ? WHERE pill_id = ? AND ts = ?').run(flags, pillId, ts);
       const was = (row.flags & FLAG_IMPLAUSIBLE) === 0;
       const now = (flags & FLAG_IMPLAUSIBLE) === 0;
-      if (was === now) return;
+      if (was === now || row.sg === null) return;
       const sign = now ? 1 : -1;
       this.db
         .prepare('UPDATE rollups SET sg = sg + ?, sg_n = sg_n + ? WHERE pill_id = ? AND bucket = ?')
@@ -352,7 +465,7 @@ export class Store {
     return (
       (this.db
         .prepare(
-          'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts <= ? AND flags & 1 = 0 ORDER BY ts DESC LIMIT 1',
+          'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts <= ? AND flags & 1 = 0 AND sg IS NOT NULL ORDER BY ts DESC LIMIT 1',
         )
         .get(pillId, ts) as unknown as RawReading | undefined) ?? null
     );
@@ -372,7 +485,7 @@ export class Store {
   aggregate(pillId: string, from: number, to: number): Aggregate {
     const row = this.db
       .prepare(
-        'SELECT COUNT(*) AS n, MIN(ts) AS firstTs, MAX(ts) AS lastTs, MIN(temp) AS tempMin, MAX(temp) AS tempMax, TOTAL(temp) AS tempSum FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? AND flags & 1 = 0',
+        'SELECT COUNT(temp) AS n, MIN(ts) AS firstTs, MAX(ts) AS lastTs, MIN(temp) AS tempMin, MAX(temp) AS tempMax, TOTAL(temp) AS tempSum FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? AND flags & 1 = 0',
       )
       .get(pillId, from, to) as unknown as Aggregate;
     return row;
@@ -387,7 +500,7 @@ export class Store {
   sgRange(pillId: string, from: number, to: number): { n: number; min: number | null; max: number | null; firstTs: number | null } {
     return this.db
       .prepare(
-        'SELECT COUNT(*) AS n, MIN(sg) AS min, MAX(sg) AS max, MIN(ts) AS firstTs FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? AND flags & 1 = 0',
+        'SELECT COUNT(sg) AS n, MIN(sg) AS min, MAX(sg) AS max, MIN(CASE WHEN sg IS NOT NULL THEN ts END) AS firstTs FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? AND flags & 1 = 0',
       )
       .get(pillId, from, to) as unknown as { n: number; min: number | null; max: number | null; firstTs: number | null };
   }
@@ -407,7 +520,9 @@ export class Store {
     if (until <= from) return [];
     return this.db
       .prepare(
-        `SELECT bucket, sg_n AS n, sg / sg_n AS sg, temp / n AS temp, x / n AS x, y / n AS y, z / n AS z
+        `SELECT bucket, sg_n AS n, sg / sg_n AS sg, CASE WHEN n > temp_missing THEN temp / (n - temp_missing) END AS temp,
+                CASE WHEN n > xyz_missing THEN x / (n - xyz_missing) END AS x, CASE WHEN n > xyz_missing THEN y / (n - xyz_missing) END AS y,
+                CASE WHEN n > xyz_missing THEN z / (n - xyz_missing) END AS z
          FROM rollups WHERE pill_id = ? AND bucket >= ? AND bucket + ${ROLLUP_MS} <= ? AND sg_n > 0 ORDER BY bucket`,
       )
       .all(pillId, from, until) as unknown as PrunedRollup[];
@@ -416,7 +531,8 @@ export class Store {
   /**
    * Chart history: raw readings when they fit in `maxPoints`, otherwise averages over buckets (from the 15-minute
    * rollups for long ranges). Gaps longer than `gapMs` (e.g. the hub was off) become a row of nulls so charts break
-   * the line there. The pill's model decides where the gravity and velocity come from.
+   * the line there. The pill's model decides where the gravity and velocity come from. Whatever a device doesn't
+   * measure (a thermometer's gravity, battery and tilt) is null.
    */
   history(
     pillId: string,
@@ -435,14 +551,14 @@ export class Store {
     const qFrom = from - lookback;
     type P = {
       ts: number;
-      sg: number;
-      temp: number;
+      sg: number | null;
+      temp: number | null;
       velocity: number | null;
-      battery: number;
+      battery: number | null;
       rssi: number | null;
-      x: number;
-      y: number;
-      z: number;
+      x: number | null;
+      y: number | null;
+      z: number | null;
       flags: number;
     };
     let rows: P[];
@@ -468,13 +584,16 @@ export class Store {
       rows = this.db
         .prepare(
           `SELECT CAST(TOTAL(n * bucket) / TOTAL(n) AS INTEGER) + ${ROLLUP_MS / 2} AS ts,
-                  CASE WHEN TOTAL(sg_n) > 0 THEN TOTAL(sg) / TOTAL(sg_n) ELSE TOTAL(sg_all) / TOTAL(n) END AS sg,
-                  TOTAL(temp) / TOTAL(n) AS temp,
+                  CASE WHEN TOTAL(sg_n) > 0 THEN TOTAL(sg) / TOTAL(sg_n)
+                       WHEN TOTAL(n) > TOTAL(sg_missing) THEN TOTAL(sg_all) / (TOTAL(n) - TOTAL(sg_missing)) END AS sg,
+                  CASE WHEN TOTAL(n) > TOTAL(temp_missing) THEN TOTAL(temp) / (TOTAL(n) - TOTAL(temp_missing)) END AS temp,
                   CASE WHEN TOTAL(velocity_n) > 0 THEN TOTAL(velocity) / TOTAL(velocity_n) END AS velocity,
-                  TOTAL(battery) / TOTAL(n) AS battery,
+                  CASE WHEN TOTAL(n) > TOTAL(battery_missing) THEN TOTAL(battery) / (TOTAL(n) - TOTAL(battery_missing)) END AS battery,
                   CASE WHEN TOTAL(rssi_n) > 0 THEN TOTAL(rssi) / TOTAL(rssi_n) END AS rssi,
-                  TOTAL(x) / TOTAL(n) AS x, TOTAL(y) / TOTAL(n) AS y, TOTAL(z) / TOTAL(n) AS z,
-                  CASE WHEN TOTAL(sg_n) > 0 THEN 0 ELSE 1 END AS flags
+                  CASE WHEN TOTAL(n) > TOTAL(xyz_missing) THEN TOTAL(x) / (TOTAL(n) - TOTAL(xyz_missing)) END AS x,
+                  CASE WHEN TOTAL(n) > TOTAL(xyz_missing) THEN TOTAL(y) / (TOTAL(n) - TOTAL(xyz_missing)) END AS y,
+                  CASE WHEN TOTAL(n) > TOTAL(xyz_missing) THEN TOTAL(z) / (TOTAL(n) - TOTAL(xyz_missing)) END AS z,
+                  CASE WHEN TOTAL(sg_n) > 0 OR TOTAL(n) = TOTAL(sg_missing) THEN 0 ELSE 1 END AS flags
            FROM rollups WHERE pill_id = ? AND bucket BETWEEN ? AND ? GROUP BY bucket / ${Math.floor(bucket)} ORDER BY 1`,
         )
         .all(pillId, qFrom - (qFrom % ROLLUP_MS), to) as unknown as P[];
@@ -484,7 +603,7 @@ export class Store {
     const ts = rows.map((r) => r.ts);
     const implausible = rows.map((r) => (r.flags & FLAG_IMPLAUSIBLE) !== 0);
     const tilt = rows.map((r) => tiltOf(r.x, r.y, r.z));
-    const pillGravity = rows.map((r) => r.sg + opts.offsets.gravity);
+    const pillGravity = rows.map((r) => (r.sg === null ? null : r.sg + opts.offsets.gravity));
     let gravity = rows.map((r, i) => {
       const fromTilt = tiltGravity(model, tilt[i]!);
       return fromTilt === null ? pillGravity[i]! : fromTilt + opts.offsets.gravity;
@@ -539,11 +658,11 @@ export class Store {
       if (prev !== null && r.ts - prev > gap) pushNull(Math.round((prev + r.ts) / 2));
       prev = r.ts;
       out.ts.push(r.ts);
+      out.temperature.push(r.temp === null ? null : r.temp + opts.offsets.temperature);
+      out.rssi.push(r.rssi === null ? null : Math.round(r.rssi));
       out.gravity.push(gravity[i]!);
-      out.temperature.push(r.temp + opts.offsets.temperature);
       out.velocity.push(velocity[i] ?? null);
       out.battery.push(r.battery);
-      out.rssi.push(r.rssi === null ? null : Math.round(r.rssi));
       out.tilt.push(tilt[i]!);
       out.implausible.push(implausible[i]!);
       out.pillGravity?.push(pillGravity[i]!);

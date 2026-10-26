@@ -5,6 +5,24 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **RAPT Bluetooth Thermometers:** a RAPT Bluetooth Thermometer near the hub (or a relay) shows up under "Found nearby"
+  and is added like a pill. It's recorded once a minute, with its own card, page, charts, TV mode tile and CSV export,
+  and is sent by webhooks (gravity and battery are `null`), published over MQTT (a Home Assistant device with
+  temperature, signal and last reading) and watched by temperature and "gone quiet" alerts. It has no gravity, battery
+  or brews.
+- **A copy of the data before an update changes how it's stored**, kept on the hub (the last 3) and listed under
+  Settings → Backups as "From before an update", to download or restore. If the copy can't be made, the data is left
+  as it was.
+
+### Changed
+
+- **Ready for more kinds of device:** readings now store what a device doesn't measure as empty rather than 0. The
+  first start after updating converts the database once (seconds, or up to half a minute for a very big one on a Pi);
+  every reading, average and setting is kept exactly as it was. Versions from now on also refuse to open data that a
+  later version has marked as unusable by them, rather than risk damaging it.
+
 ## [0.3.0] - 2026-10-25
 
 The first release.

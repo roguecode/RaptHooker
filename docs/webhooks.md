@@ -135,6 +135,7 @@ as it will be sent.
 | `pill_id`, `chip_id`                                 | RaptHooker's id; a number from the last 3 bytes of the Bluetooth address (like an iSpindel ID) |
 | `address`, `rapt_id`                                 | Bluetooth address; the MAC address the RAPT app shows                                          |
 | `firmware`, `device_type`                            | e.g. `20250319_055542_b3788ba`, `PillG1`                                                       |
+| `device`                                             | `pill`, or `thermometer` for a RAPT Bluetooth Thermometer                                      |
 | `gravity`, `gravity_unit`, `gravity_label`           | In the webhook's unit; `G` or `P`; `SG` or `°P`                                                |
 | `gravity_sg`, `gravity_plato`, `gravity_points`      | Always in that unit (points: 1.0465 → 46.5)                                                    |
 | `temperature`, `temp_unit`                           | In the webhook's unit; `C` or `F`                                                              |
@@ -153,6 +154,10 @@ as it will be sent.
 | `app`, `app_version`                                 | `RaptHooker` and its version                                                                   |
 
 In batch mode the batch body also has `items` and `count` (see [batch mode](#all-pills-in-one-request-batch-mode)).
+
+A RAPT Bluetooth Thermometer only has a temperature and a signal strength: its gravity, velocity, battery, tilt and
+accelerometer variables are `null` (empty outside JSON), and it never has a brew. Give a fallback (`{{gravity|0}}`) if
+the service you send to needs a number, or pick only pills for that webhook.
 
 ## Presets
 

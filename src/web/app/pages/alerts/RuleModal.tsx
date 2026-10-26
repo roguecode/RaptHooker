@@ -261,6 +261,10 @@ export function RuleModal({
                 );
               })}
           </div>
+          {['gravity_below', 'gravity_stable', 'battery_below'].includes(rule.kind) &&
+            pills.some((p) => !p.archived && p.kind === 'thermometer') && (
+              <span className="hint">{t('Thermometers have no gravity or battery reading, so this alert leaves them out.')}</span>
+            )}
         </div>
         <SendTo value={rule.channelIds} channels={channels} onChange={(channelIds) => setRule({ ...rule, channelIds })} />
         <FieldError error={errors.channelIds} />

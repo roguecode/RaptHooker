@@ -27,4 +27,9 @@ export const CAPTURED = {
   metricsOutOfLiquid: '5054020001434f6dd6900b434dbd57415dfed102346400',
   firmware: '4732303235303331395f3035353534325f62333738386261',
   deviceType: '50546450696c6c4731',
+  /** A RAPT Bluetooth Thermometer's iBeacon (after Apple's company id), at rest: 15.3 °C by the RAPT app. */
+  thermometerRest: '02154b6567b722314977852625b74c616e64481d400000',
+  /** In warm water (32.4 °C) and iced water (0.0 °C) by the RAPT app. */
+  thermometerWarm: '02154b6567b722314977852625b74c616e644c63400000',
+  thermometerIced: '02154b6567b722314977852625b74c616e64444a400000',
 };

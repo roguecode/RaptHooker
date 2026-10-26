@@ -178,6 +178,7 @@ export function buildDiagnostics(s: Services, now = Date.now()) {
     },
     pills: l.pills.map((p, i) => ({
       pill: `pill ${i + 1}`,
+      kind: p.kind,
       archived: p.archived,
       info: p.info,
       offsets: p.offsets,
@@ -214,6 +215,7 @@ export function buildDiagnostics(s: Services, now = Date.now()) {
     })),
     nearby: l.nearby.map((n) => ({
       device: l.deviceLabel(n.address),
+      kind: n.kind,
       rssi: n.rssi,
       lastHeardAgoSec: Math.round((now - n.lastHeardAt) / 1000),
       info: n.info,

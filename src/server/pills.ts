@@ -12,6 +12,7 @@ import {
   tiltGravity,
   type Brew,
   type CatchRate,
+  type DeviceKind,
   type NearbyPill,
   type Offsets,
   type Pill,
@@ -26,6 +27,7 @@ import { decodeRapt, fingerprintOf } from './ble/rapt.js';
 import type { Advert } from './ble/scanner.js';
 
 interface PillConfig {
+  kind: DeviceKind;
   name: string;
   color: string;
   archived: boolean;
@@ -71,15 +73,25 @@ interface PillState {
   derived: Derived;
   /** A new reading held back for a moment in case another follows (see hold()). */
   held: { raw: RawReading; timer: NodeJS.Timeout } | null;
+  /** A thermometer's temperature as last decoded (BlueZ only passes it on when it changes), °C. */
+  thermo: number | null;
+  /** When (performance.now()) the advert `thermo` came from was heard: a relay's late copy of an older one doesn't count. */
+  thermoMono: number | null;
+  /** When (performance.now()) a thermometer's temperature was last taken as a reading (see sampleDue()). */
+  lastSampleMono: number | null;
 }
 
 interface NearbyState {
   address: string;
+  kind: DeviceKind;
   firstHeardAt: number;
   lastHeardAt: number;
   rssi: number | null;
   latest: RawReading | null;
   info: PillInfo;
+  thermo: number | null;
+  thermoMono: number | null;
+  lastSampleMono: number | null;
 }
 
 interface Pending {
@@ -102,6 +114,8 @@ const GAPS = 15;
 const NEARBY_EXPIRY_MS = 15 * 60_000;
 const IGNORED_KEY = 'ignoredAddresses';
 const MAX_PENDING = 2000;
+/** A thermometer broadcasts about once a second; one reading a minute is recorded. */
+export const THERMOMETER_SAMPLE_MS = 60_000;
 
 const median = (xs: number[]): number | null => {
   if (xs.length === 0) return null;
@@ -111,21 +125,73 @@ const median = (xs: number[]): number | null => {
 };
 
 const NO_DERIVED: Derived = { velocity: null, smoothed: null, caught: null };
+const NO_INFO: PillInfo = { firmware: null, deviceType: null, payloadVersion: null };
 
 /** FLAG_* bits for a reading as the pill sent it. */
 export const flagsOf = (sg: number): number => (plausibleGravity(sg) ? 0 : FLAG_IMPLAUSIBLE);
 
+/** A thermometer's reading: it measures only the temperature (and the hub the signal). */
+export const thermometerReading = (ts: number, temp: number, rssi: number | null): RawReading => ({
+  ts,
+  sg: null,
+  temp,
+  velocity: null,
+  battery: null,
+  rssi,
+  x: null,
+  y: null,
+  z: null,
+  flags: 0,
+});
+
+/**
+ * Whether a thermometer heard at `mono` (performance.now()) should have its temperature taken as a reading: once a
+ * minute. Monotonic time, as a relay's adverts arrive backdated (and the wall clock can jump).
+ */
+const sampleDue = (lastMono: number | null, mono: number): boolean => lastMono === null || mono - lastMono >= THERMOMETER_SAMPLE_MS;
+
+/** Takes a thermometer's temperature from an advert, unless what it has is from a later one (a relay's can arrive late). */
+function takeThermo(t: { thermo: number | null; thermoMono: number | null }, temp: number, a: Advert): void {
+  // BlueZ's cache at start-up holds the data it last heard, so it's a start until the thermometer is heard.
+  if (a.cached) {
+    if (t.thermoMono === null) t.thermo = temp;
+    return;
+  }
+  if (t.thermoMono !== null && a.mono < t.thermoMono) return;
+  t.thermo = temp;
+  t.thermoMono = a.mono;
+}
+
+/** What the RAPT app calls a pill (the Bluetooth address with 2 off the last octet); thermometers go by their address. */
+const raptIdOf = (kind: DeviceKind, address: string): string => (kind === 'pill' ? raptIdFromAddress(address) : address);
+
+/**
+ * The kinds of device this version understands. One added by a newer version (and kept after going back to this one)
+ * is listed, but nothing is recorded for it and its kind isn't changed.
+ */
+const KNOWN_KINDS: ReadonlySet<string> = new Set<DeviceKind>(['pill', 'thermometer']);
+
+const defaultName = (kind: DeviceKind, address: string): string =>
+  kind === 'pill'
+    ? `RAPT Pill ${raptIdFromAddress(address).slice(-5).replace(':', '')}`
+    : `RAPT Thermometer ${address.slice(-5).replace(':', '')}`;
+
 const r6 = (v: number): number => Math.round(v * 1e6) / 1e6;
 
-/** The gravity a pill's model uses for a stored reading (offset applied), before smoothing. */
-export function modelGravity(raw: Pick<RawReading, 'sg' | 'x' | 'y' | 'z'>, offsets: Offsets, model: PillModel): number {
+/** The gravity a pill's model uses for a stored reading (offset applied), before smoothing; null if it has none. */
+export function modelGravity(
+  raw: { sg: number | null; x: number | null; y: number | null; z: number | null },
+  offsets: Offsets,
+  model: PillModel,
+): number | null {
   const fromTilt = tiltGravity(model, tiltOf(raw.x, raw.y, raw.z));
-  return (fromTilt ?? raw.sg) + offsets.gravity;
+  const g = fromTilt ?? raw.sg;
+  return g === null ? null : g + offsets.gravity;
 }
 
 /**
  * A stored reading as shown and sent: offsets applied, gravity and velocity from wherever the pill's model says
- * (with `derived` holding RaptHooker's own values for the latest reading).
+ * (with `derived` holding RaptHooker's own values for the latest reading). What the device doesn't measure is null.
  */
 export function calibrate(
   raw: RawReading,
@@ -133,15 +199,17 @@ export function calibrate(
   model: PillModel = DEFAULT_PILL_MODEL,
   derived: Derived = NO_DERIVED,
 ): Reading {
-  const pillGravity = r6(raw.sg + offsets.gravity);
-  let gravity = r6(modelGravity(raw, offsets, model));
-  const plausible = (raw.flags & FLAG_IMPLAUSIBLE) === 0 && plausibleGravity(gravity);
-  if (plausible && model.smoothing !== 'off' && derived.smoothed !== null) gravity = r6(derived.smoothed);
+  const temperature = Math.round((raw.temp + offsets.temperature) * 1e4) / 1e4;
+  const pillGravity = raw.sg === null ? null : r6(raw.sg + offsets.gravity);
+  const modelled = modelGravity(raw, offsets, model);
+  let gravity = modelled === null ? null : r6(modelled);
+  const plausible = gravity === null || ((raw.flags & FLAG_IMPLAUSIBLE) === 0 && plausibleGravity(gravity));
+  if (gravity !== null && plausible && model.smoothing !== 'off' && derived.smoothed !== null) gravity = r6(derived.smoothed);
   return {
     ts: raw.ts,
     gravity,
-    temperature: Math.round((raw.temp + offsets.temperature) * 1e4) / 1e4,
-    velocity: model.velocitySource === 'computed' ? derived.velocity : raw.velocity,
+    temperature,
+    velocity: gravity === null ? null : model.velocitySource === 'computed' ? derived.velocity : raw.velocity,
     battery: raw.battery,
     rssi: raw.rssi,
     tilt: tiltOf(raw.x, raw.y, raw.z),
@@ -150,18 +218,18 @@ export function calibrate(
     z: raw.z,
     plausible,
     pillGravity,
-    pillVelocity: raw.velocity,
+    pillVelocity: gravity === null ? null : raw.velocity,
   };
 }
 
 /** Fills in what older saved configs don't have. */
 function upgradeConfig(c: Partial<PillConfig> & Pick<PillConfig, 'name' | 'color' | 'offsets' | 'info'>, order: number): PillConfig {
   const model = { ...DEFAULT_PILL_MODEL, ...c.model };
-  return { archived: false, ...c, model: { ...model, tiltPoly: fitTilt(model.tiltPoints) }, order: c.order ?? order };
+  return { kind: 'pill', archived: false, ...c, model: { ...model, tiltPoly: fitTilt(model.tiltPoints) }, order: c.order ?? order };
 }
 
 /**
- * Pills you've added (recorded around the clock, brew or not) and pills heard nearby that you haven't.
+ * Pills and thermometers you've added (recorded around the clock, brew or not) and ones heard nearby that you haven't.
  * Emits 'pill' (Pill), 'reading' (pillId, Reading), 'removed' (pillId) and 'nearby' ().
  */
 export class PillService extends EventEmitter {
@@ -201,7 +269,7 @@ export class PillService extends EventEmitter {
       const state: PillState = {
         id: row.id,
         address: row.address,
-        raptId: raptIdFromAddress(row.address),
+        raptId: raptIdOf(config.kind, row.address),
         createdAt: row.created_at,
         config,
         lastHeardAt: latest?.ts ?? null,
@@ -214,6 +282,9 @@ export class PillService extends EventEmitter {
         online: false,
         derived: NO_DERIVED,
         held: null,
+        thermo: null,
+        thermoMono: null,
+        lastSampleMono: null,
       };
       state.online = this.isOnline(state);
       this.refreshDerived(state);
@@ -246,6 +317,10 @@ export class PillService extends EventEmitter {
 
   has(id: string): boolean {
     return this.pills.has(id);
+  }
+
+  kind(id: string): DeviceKind | null {
+    return this.pills.get(id)?.config.kind ?? null;
   }
 
   /** Pills being recorded (not archived). */
@@ -288,7 +363,8 @@ export class PillService extends EventEmitter {
       .sort((a, b) => a.firstHeardAt - b.firstHeardAt)
       .map((n) => ({
         address: n.address,
-        raptId: raptIdFromAddress(n.address),
+        kind: n.kind,
+        raptId: raptIdOf(n.kind, n.address),
         firstHeardAt: n.firstHeardAt,
         lastHeardAt: n.lastHeardAt,
         rssi: n.rssi,
@@ -304,6 +380,7 @@ export class PillService extends EventEmitter {
   private view(s: PillState): Pill {
     return {
       id: s.id,
+      kind: s.config.kind,
       address: s.address,
       raptId: s.raptId,
       name: s.config.name,
@@ -339,6 +416,10 @@ export class PillService extends EventEmitter {
       s.derived = NO_DERIVED;
       return;
     }
+    if (s.config.kind === 'thermometer') {
+      s.derived = { ...NO_DERIVED, caught: this.catchRate(s) };
+      return;
+    }
     const { model, offsets } = s.config;
     const velocityMs = model.velocityHours * 3_600_000;
     const smoothMs = SMOOTHING_MS[model.smoothing];
@@ -349,7 +430,7 @@ export class PillService extends EventEmitter {
     for (const r of this.store.iterateReadings(s.id, latest.ts - Math.max(velocityMs, smoothMs), latest.ts)) {
       if (r.flags & FLAG_IMPLAUSIBLE) continue;
       const g = modelGravity(r, offsets, model);
-      if (!plausibleGravity(g)) continue;
+      if (g === null || !plausibleGravity(g)) continue;
       if (r.ts >= latest.ts - velocityMs) {
         ts.push(r.ts);
         gravity.push(g);
@@ -412,20 +493,22 @@ export class PillService extends EventEmitter {
     const id = pillIdFromAddress(addr);
     const near = this.nearbyPills.get(addr);
     const used = new Set([...this.pills.values()].map((p) => p.config.color));
-    const raptId = raptIdFromAddress(addr);
+    // Added by address before it was heard, it's taken to be a pill until it turns out otherwise (see settleKind()).
+    const kind = near?.kind ?? 'pill';
     const config: PillConfig = {
-      name: input.name?.trim() || `RAPT Pill ${raptId.slice(-5).replace(':', '')}`,
+      kind,
+      name: input.name?.trim() || defaultName(kind, addr),
       color: input.color ?? PILL_COLORS.find((c) => !used.has(c)) ?? PILL_COLORS[this.pills.size % PILL_COLORS.length]!,
       archived: false,
       offsets: { gravity: 0, temperature: 0 },
       model: { ...DEFAULT_PILL_MODEL },
       order: Math.max(-1, ...[...this.pills.values()].map((p) => p.config.order)) + 1,
-      info: near?.info ?? { firmware: null, deviceType: null, payloadVersion: null },
+      info: near?.info ?? NO_INFO,
     };
     const state: PillState = {
       id,
       address: addr,
-      raptId,
+      raptId: raptIdOf(kind, addr),
       createdAt: this.now(),
       config,
       lastHeardAt: near?.lastHeardAt ?? null,
@@ -438,6 +521,9 @@ export class PillService extends EventEmitter {
       online: false,
       derived: NO_DERIVED,
       held: null,
+      thermo: near?.thermo ?? null,
+      thermoMono: near?.thermoMono ?? null,
+      lastSampleMono: near?.lastSampleMono ?? null,
     };
     // A pill removed earlier may have left nothing behind; make sure its id is free.
     this.store.deletePill(id);
@@ -528,7 +614,7 @@ export class PillService extends EventEmitter {
     const address = normalizeAddress(a.address);
     const id = this.byAddress.get(address);
     const s = id ? this.pills.get(id) : undefined;
-    if (s?.config.archived) return;
+    if (s?.config.archived || (s && !KNOWN_KINDS.has(s.config.kind))) return;
     if (!s) {
       this.handleNearby(address, a);
       return;
@@ -538,11 +624,16 @@ export class PillService extends EventEmitter {
       s.lastHeardAt = a.at;
       if (a.rssi !== null) s.rssi = a.rssi;
     }
-    let changed = !a.cached;
+    // Heard again with nothing new (BlueZ's monitor reports every advert) only counts as being heard.
+    const onlyHeard = a.manufacturer === null && a.rssi === null;
+    // A thermometer is heard every second: only its readings (once a minute) are worth announcing.
+    let changed = !a.cached && !onlyHeard && s.config.kind === 'pill';
     for (const [companyId, data] of a.manufacturer ?? []) {
       const decoded = decodeRapt(companyId, data);
-      if (!decoded) continue;
-      if (decoded.kind === 'firmware' && decoded.firmware !== s.config.info.firmware) {
+      if (!decoded || !this.settleKind(s, decoded.kind === 'thermometer' ? 'thermometer' : 'pill')) continue;
+      if (decoded.kind === 'thermometer') {
+        takeThermo(s, decoded.temp, a);
+      } else if (decoded.kind === 'firmware' && decoded.firmware !== s.config.info.firmware) {
         s.config.info = { ...s.config.info, firmware: decoded.firmware };
         this.save(s);
       } else if (decoded.kind === 'deviceType' && decoded.deviceType !== s.config.info.deviceType) {
@@ -558,41 +649,75 @@ export class PillService extends EventEmitter {
         const { sg, temp, velocity, battery, x, y, z } = decoded.metrics;
         const raw: RawReading = { ts: a.at, sg, temp, velocity, battery, rssi: a.rssi ?? s.rssi, x, y, z, flags: flagsOf(sg) };
         if (a.cached) s.lastHeardAt = Math.max(s.lastHeardAt ?? 0, a.at);
-        if (this.clock.trusted) {
-          this.hold(s, raw);
-        } else {
-          // Shown straight away, stored once the clock can be trusted.
-          s.latest = raw;
-          if (this.pending.length < MAX_PENDING) this.pending.push({ pillId: s.id, raw, mono: a.mono });
-        }
+        this.record(s, raw, a.mono, true);
         changed = true;
       }
+    }
+    // BlueZ only passes a thermometer's data on when it changes, so any sign of life (being heard again, or a new signal
+    // strength) means it's still sending the temperature it last sent. BlueZ's cache at start-up only sets `thermo`.
+    if (s.config.kind === 'thermometer' && s.thermo !== null && !a.cached && sampleDue(s.lastSampleMono, a.mono)) {
+      s.lastSampleMono = a.mono;
+      this.record(s, thermometerReading(a.at, s.thermo, a.rssi ?? s.rssi), a.mono, false);
+      changed = true;
     }
     const wasOnline = s.online;
     s.online = this.isOnline(s);
     if (changed || wasOnline !== s.online) this.emitPill(s);
   }
 
+  /**
+   * Whether an advert of this kind is for this device. One added by address before it was ever heard becomes
+   * whatever it turns out to be; otherwise adverts of the other kind are ignored.
+   */
+  private settleKind(s: PillState, kind: DeviceKind): boolean {
+    if (s.config.kind === kind) return true;
+    if (s.latest !== null || s.firstReadingAt !== null) return false;
+    if (s.config.name === defaultName(s.config.kind, s.address)) s.config.name = defaultName(kind, s.address);
+    s.config.kind = kind;
+    s.raptId = raptIdOf(kind, s.address);
+    this.save(s);
+    this.log.info({ id: s.id, kind }, 'an added device turned out to be another kind');
+    return true;
+  }
+
+  /** Stores a reading, or shows it until the clock can be trusted. Pills' readings are held back first (see hold()). */
+  private record(s: PillState, raw: RawReading, mono: number, holdFirst: boolean): void {
+    if (this.clock.trusted) {
+      if (holdFirst) this.hold(s, raw);
+      else this.commit(s, raw);
+      return;
+    }
+    s.latest = raw;
+    if (this.pending.length < MAX_PENDING) this.pending.push({ pillId: s.id, raw, mono });
+  }
+
   private handleNearby(address: string, a: Advert): void {
     let n = this.nearbyPills.get(address);
     if (!n) {
-      // RSSI-only updates don't say it's a RAPT Pill; wait for manufacturer data.
+      // RSSI-only updates don't say it's a RAPT device; wait for manufacturer data.
       if (!a.manufacturer) return;
       n = {
         address,
+        kind: 'pill',
         firstHeardAt: a.at,
         lastHeardAt: a.at,
         rssi: a.rssi,
         latest: null,
-        info: { firmware: null, deviceType: null, payloadVersion: null },
+        info: NO_INFO,
+        thermo: null,
+        thermoMono: null,
+        lastSampleMono: null,
       };
     }
-    let isPill = false;
+    let isRapt = false;
     for (const [companyId, data] of a.manufacturer ?? []) {
       const decoded = decodeRapt(companyId, data);
       if (!decoded) continue;
-      isPill = true;
-      if (decoded.kind === 'firmware') n.info = { ...n.info, firmware: decoded.firmware };
+      isRapt = true;
+      if (decoded.kind === 'thermometer') {
+        n.kind = 'thermometer';
+        takeThermo(n, decoded.temp, a);
+      } else if (decoded.kind === 'firmware') n.info = { ...n.info, firmware: decoded.firmware };
       else if (decoded.kind === 'deviceType') n.info = { ...n.info, deviceType: decoded.deviceType };
       else {
         const recent = this.nearbyRecent.get(address) ?? [];
@@ -604,13 +729,20 @@ export class PillService extends EventEmitter {
         n.info = { ...n.info, payloadVersion: decoded.metrics.version };
       }
     }
-    if (!this.nearbyPills.has(address) && !isPill) return;
+    if (!this.nearbyPills.has(address) && !isRapt) return;
+    let sampled = false;
+    if (n.kind === 'thermometer' && n.thermo !== null && !a.cached && sampleDue(n.lastSampleMono, a.mono)) {
+      n.lastSampleMono = a.mono;
+      n.latest = thermometerReading(a.at, n.thermo, a.rssi ?? n.rssi);
+      sampled = true;
+    }
     if (!a.cached) n.lastHeardAt = a.at;
     if (a.rssi !== null) n.rssi = a.rssi;
     const isNew = !this.nearbyPills.has(address);
     this.nearbyPills.set(address, n);
-    if (isNew) this.log.info({ address }, 'found a RAPT Pill nearby');
-    if (!this.ignored.has(address)) this.emit('nearby');
+    if (isNew) this.log.info({ address }, n.kind === 'thermometer' ? 'found a RAPT Thermometer nearby' : 'found a RAPT Pill nearby');
+    const onlyHeard = a.manufacturer === null && a.rssi === null;
+    if (!this.ignored.has(address) && ((n.kind === 'pill' && !onlyHeard) || isNew || sampled)) this.emit('nearby');
   }
 
   /**

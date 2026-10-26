@@ -49,8 +49,8 @@ async function hubReady() {
   throw new Error('The hub did not start');
 }
 
-/** Waits until every pill card has heard its pill and drawn its chart. */
-async function pillsLive(page, count = 3) {
+/** Waits until every card (the three pills and the thermometer) has heard its device and drawn its chart. */
+async function pillsLive(page, count = 4) {
   await page.waitForFunction(
     (n) => {
       const cards = [...document.querySelectorAll('article.pill-card')];
@@ -111,7 +111,7 @@ try {
   // The lager is mid-fermentation in the simulation, so its page has predictions to show.
   const lager = (await (await fetch(`${BASE}/api/pills`)).json()).find((p) => p.name === 'Czech Pils');
 
-  await shoot('dashboard', { width: 1280, height: 860 }, '', { ready: (p) => pillsLive(p) });
+  await shoot('dashboard', { width: 1280, height: 860 }, '', { fullPage: true, ready: (p) => pillsLive(p) });
   await shoot('pill', { width: 1280, height: 900 }, `#/pill/${lager.id}`, {
     fullPage: true,
     ready: (p) => p.locator('section.pill-tiles .signal-bars').waitFor(),
@@ -128,7 +128,7 @@ try {
   await shoot('mobile', { width: 448, height: 998 }, '', { mobile: true, ready: firstCardInView });
   // TV mode shows its controls for a few seconds after opening.
   await shoot('kiosk', { width: 1280, height: 720 }, '#/kiosk', {
-    ready: (p) => p.locator('svg.sparkline path').nth(2).waitFor(),
+    ready: (p) => p.locator('svg.sparkline path').nth(3).waitFor(),
     settleMs: 5500,
   });
   console.log(`Saved ${shots.map((s) => `${s}.png`).join(', ')} to ${OUT}`);

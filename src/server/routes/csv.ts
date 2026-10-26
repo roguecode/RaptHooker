@@ -8,10 +8,20 @@ const csvNumber = (v: number | null, d: number) => (v === null || !Number.isFini
 
 /**
  * A pill's calibrated readings between two times as CSV lines (the header first). The gravity is the one the pill's
- * model uses (unsmoothed), next to the gravity the pill sent. Also used by the weekly CSV backups.
+ * model uses (unsmoothed), next to the gravity the pill sent. A thermometer only has the temperature and signal
+ * columns. Also used by the weekly CSV backups.
  */
 export function* csvLines(store: Store, pill: Pill, from: number, to: number): Generator<string> {
   const { offsets, model } = pill;
+  if (pill.kind === 'thermometer') {
+    yield 'timestamp,unix_ms,temperature_c,temperature_f,rssi_dbm\n';
+    for (const raw of store.iterateReadings(pill.id, from, to)) {
+      const r = calibrate(raw, offsets);
+      yield [new Date(r.ts).toISOString(), r.ts, csvNumber(r.temperature, 2), csvNumber(cToF(r.temperature), 2), r.rssi ?? ''].join(',') +
+        '\n';
+    }
+    return;
+  }
   yield 'timestamp,unix_ms,gravity_sg,gravity_plato,temperature_c,temperature_f,velocity_points_per_day,battery_percent,rssi_dbm,tilt_degrees,accel_x,accel_y,accel_z,pill_gravity_sg,plausible\n';
   for (const raw of store.iterateReadings(pill.id, from, to)) {
     const r = calibrate(raw, offsets, { ...model, smoothing: 'off', velocitySource: 'pill' });
@@ -19,16 +29,16 @@ export function* csvLines(store: Store, pill: Pill, from: number, to: number): G
       new Date(r.ts).toISOString(),
       r.ts,
       csvNumber(r.gravity, 5),
-      csvNumber(sgToPlato(r.gravity), 2),
+      csvNumber(r.gravity === null ? null : sgToPlato(r.gravity), 2),
       csvNumber(r.temperature, 2),
       csvNumber(cToF(r.temperature), 2),
       csvNumber(r.velocity, 3),
       csvNumber(r.battery, 1),
       r.rssi ?? '',
       csvNumber(r.tilt, 2),
-      r.x,
-      r.y,
-      r.z,
+      r.x ?? '',
+      r.y ?? '',
+      r.z ?? '',
       csvNumber(r.pillGravity, 5),
       r.plausible ? 1 : 0,
     ].join(',') + '\n';

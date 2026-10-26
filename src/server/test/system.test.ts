@@ -13,7 +13,7 @@ import { LogBuffer } from '../logbuffer.js';
 import { RAPT_COMPANY_ID } from '../ble/rapt.js';
 import type { RouteContext } from '../routes/context.js';
 import type { Services } from '../server.js';
-import type { Store } from '../db.js';
+import { COMPACT_AFTER_UPGRADE_KEY, type Store } from '../db.js';
 import type { Advert } from '../ble/scanner.js';
 import { CAPTURED, silent, tempStore } from './helpers.js';
 
@@ -265,6 +265,23 @@ describe('database compaction', () => {
     cleanup?.();
     const tidy = setup();
     expect(await tidy.system.compact()).toMatchObject({ ran: false, retry: false });
+  });
+
+  it('compacts soon after an update upgraded the database, once the installer has seen the hub answer', async () => {
+    vi.useFakeTimers();
+    // Mid-afternoon: not the weekly check's quiet hours.
+    vi.setSystemTime(new Date(2026, 9, 21, 14, 0));
+    const { system, store } = setup();
+    fillAndDelete(store);
+    store.setMeta(COMPACT_AFTER_UPGRADE_KEY, '4');
+    const free = () => dbPages(store.db).freelistCount;
+    expect(free()).toBeGreaterThan(0);
+    system.start();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(free()).toBeGreaterThan(0);
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    expect(free()).toBe(0);
+    expect(store.getMeta(COMPACT_AFTER_UPGRADE_KEY)).toBeNull();
   });
 
   it('frees space in an emergency without touching readings', () => {

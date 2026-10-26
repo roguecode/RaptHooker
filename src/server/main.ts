@@ -11,6 +11,7 @@ import { AlertService } from './alerts.js';
 import { PushService, loadVapidKeys } from './push.js';
 import { Maintenance } from './maintenance.js';
 import { applyPendingRestore } from './restore.js';
+import { keepPreUpdateCopy } from './backup/files.js';
 import { buildServer } from './server.js';
 import { Settings } from './settings.js';
 import { MqttService } from './mqtt.js';
@@ -56,7 +57,14 @@ async function main(): Promise<void> {
   mkdirSync(config.dataDir, { recursive: true });
 
   applyPendingRestore(config.dataDir, log.child({ svc: 'restore' }));
-  const store = new Store(join(config.dataDir, 'rapthooker.db'));
+  // An update that changes how the data is stored keeps a copy of it from before (listed with the backups).
+  const store = new Store(join(config.dataDir, 'rapthooker.db'), {
+    beforeUpgrade: (copyTo, from, to) => {
+      const copy = keepPreUpdateCopy(config.dataDir, copyTo);
+      log.warn({ from, to, copy }, 'upgrading the database; a copy of it from before is kept');
+      return copy;
+    },
+  });
   const clock = ClockGuard.forPlatform(config.clock.maxSyncWaitMin * 60_000);
   if (!clock.trusted) log.warn("the clock hasn't been synced yet: readings are held until it is");
   const settings = new Settings(store);

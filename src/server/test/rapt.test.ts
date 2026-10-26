@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { decodeRapt, encodeRaptV2, KEG_COMPANY_ID, RAPT_COMPANY_ID } from '../ble/rapt.js';
+import {
+  APPLE_COMPANY_ID,
+  decodeRapt,
+  encodeRaptThermometer,
+  encodeRaptV2,
+  isThermometerBeacon,
+  KEG_COMPANY_ID,
+  RAPT_COMPANY_ID,
+} from '../ble/rapt.js';
 import { manufacturerMap } from '../ble/bluez.js';
 import { tiltOf } from '../db.js';
 import { CAPTURED } from './helpers.js';
@@ -87,6 +95,49 @@ describe('RAPT decoder', () => {
     const c = decodeRapt(RAPT_COMPANY_ID, hex(CAPTURED.metricsRising));
     expect(a?.kind === 'metrics' && a.fingerprint).toBe(b?.kind === 'metrics' && b.fingerprint);
     expect(a?.kind === 'metrics' && a.fingerprint).not.toBe(c?.kind === 'metrics' && c.fingerprint);
+  });
+});
+
+describe('RAPT Thermometer decoder', () => {
+  it('reads the temperatures the RAPT app showed', () => {
+    expect(decodeRapt(APPLE_COMPANY_ID, hex(CAPTURED.thermometerRest))).toEqual({ kind: 'thermometer', temp: 15.3 });
+    expect(decodeRapt(APPLE_COMPANY_ID, hex(CAPTURED.thermometerWarm))).toEqual({ kind: 'thermometer', temp: 32.4 });
+    expect(decodeRapt(APPLE_COMPANY_ID, hex(CAPTURED.thermometerIced))).toEqual({ kind: 'thermometer', temp: 0 });
+  });
+
+  it('rounds to the 0.1 °C steps the thermometer measures in', () => {
+    // 0x4816 is 15.19 °C as sent.
+    const b = hex(CAPTURED.thermometerRest);
+    b.writeUInt16BE(0x4816, 18);
+    expect(decodeRapt(APPLE_COMPANY_ID, b)).toEqual({ kind: 'thermometer', temp: 15.2 });
+  });
+
+  it('only takes iBeacons with KegLand UUIDs', () => {
+    expect(isThermometerBeacon(hex(CAPTURED.thermometerRest))).toBe(true);
+    const other = hex(CAPTURED.thermometerRest);
+    other[2] = 0x00;
+    expect(decodeRapt(APPLE_COMPANY_ID, other)).toBeNull();
+    const noLand = hex(CAPTURED.thermometerRest);
+    noLand[17] = 0x00;
+    expect(decodeRapt(APPLE_COMPANY_ID, noLand)).toBeNull();
+    expect(decodeRapt(APPLE_COMPANY_ID, hex(CAPTURED.thermometerRest).subarray(0, 22))).toBeNull();
+    // The same bytes under another company id aren't a thermometer.
+    expect(decodeRapt(RAPT_COMPANY_ID, hex(CAPTURED.thermometerRest))).toBeNull();
+  });
+
+  it('drops temperatures it could never measure', () => {
+    const b = hex(CAPTURED.thermometerRest);
+    b.writeUInt16BE(0, 18);
+    expect(decodeRapt(APPLE_COMPANY_ID, b)).toBeNull();
+    b.writeUInt16BE(0xffff, 18);
+    expect(decodeRapt(APPLE_COMPANY_ID, b)).toBeNull();
+  });
+
+  it('round-trips through the encoder', () => {
+    for (const temp of [-5.5, 0, 15.3, 32.4, 99.9]) {
+      expect(decodeRapt(APPLE_COMPANY_ID, encodeRaptThermometer(temp))).toEqual({ kind: 'thermometer', temp });
+    }
+    expect(encodeRaptThermometer(15.3).toString('hex')).toBe(CAPTURED.thermometerRest);
   });
 });
 

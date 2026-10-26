@@ -1,11 +1,12 @@
 import type { Pill } from '@rapthooker/shared';
 import { useLive } from '../../live';
 import { useUnits } from '../../units';
-import { timeAgo, timeUntil, useNow } from '../../format';
+import { fixed, timeAgo, timeUntil, useNow } from '../../format';
 import { Icon } from '../../components/Icon';
 import { PillFigure } from '../../components/PillFigure';
 import { OwnerOnly } from '../../components/ui';
 import { t } from '../../i18n';
+import { ThermometerBadge } from '../dashboard/ThermometerCard';
 import { BrewPanel } from './BrewPanel';
 import { Tiles } from './Tiles';
 import { HistoryPanel } from './HistoryPanel';
@@ -37,6 +38,7 @@ function PillView({ pill }: { pill: Pill }) {
   const r = pill.live.latest;
   const g = u.gravityParts(r?.gravity);
   const next = pill.live.lastReadingAt && pill.live.intervalSec ? pill.live.lastReadingAt + pill.live.intervalSec * 1000 : null;
+  const thermometer = pill.kind === 'thermometer';
 
   return (
     <div className="page pill-page">
@@ -45,7 +47,11 @@ function PillView({ pill }: { pill: Pill }) {
           <Icon name="left" size={16} /> {t('All pills')}
         </a>
         <div className="panel hero" style={{ '--pill': pill.color } as React.CSSProperties}>
-          <PillFigure color={pill.color} tilt={r?.tilt} size={92} offline={!pill.live.online} />
+          {thermometer ? (
+            <ThermometerBadge color={pill.color} size={92} offline={!pill.live.online} />
+          ) : (
+            <PillFigure color={pill.color} tilt={r?.tilt} size={92} offline={!pill.live.online} />
+          )}
           <div style={{ minWidth: 0 }}>
             <div className="row">
               <h1>{pill.name}</h1>
@@ -63,31 +69,43 @@ function PillView({ pill }: { pill: Pill }) {
               <span>{t('Last reading {time}', { time: timeAgo(pill.live.lastReadingAt, now) })}</span>
               {/* i18n: when the next reading is due, e.g. "Next in 5 min" */}
               {pill.live.online && next && <span>{t('Next {time}', { time: timeUntil(next, now) })}</span>}
-              <span className="num">RAPT ID {pill.raptId}</span>
+              <span className="num">{thermometer ? pill.address : `RAPT ID ${pill.raptId}`}</span>
             </div>
           </div>
           <div className="hero-figures">
-            <div>
-              <div className="reading-label">
-                {t('Gravity')}
-                {pill.model.gravitySource === 'tilt' ? ` · ${t('from tilt')}` : ''}
-                {pill.model.smoothing !== 'off' ? ` · ${t('smoothed')}` : ''}
+            {thermometer ? (
+              <div>
+                <div className="reading-label">{t('Temperature')}</div>
+                <div className="gravity-value">
+                  {r ? fixed(u.tempValue(r.temperature), 1) : '–'}
+                  <span className="unit">{u.tempLabel}</span>
+                </div>
               </div>
-              <div className="gravity-value">
-                {g.main}
-                <span className="tail">{g.tail}</span>
-                <span className="unit">{g.unit}</span>
-              </div>
-            </div>
-            <div>
-              <div className="reading-label">{t('Temperature')}</div>
-              <div className="temp-value">{r ? u.tempText(r.temperature) : '–'}</div>
-            </div>
+            ) : (
+              <>
+                <div>
+                  <div className="reading-label">
+                    {t('Gravity')}
+                    {pill.model.gravitySource === 'tilt' ? ` · ${t('from tilt')}` : ''}
+                    {pill.model.smoothing !== 'off' ? ` · ${t('smoothed')}` : ''}
+                  </div>
+                  <div className="gravity-value">
+                    {g.main}
+                    <span className="tail">{g.tail}</span>
+                    <span className="unit">{g.unit}</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="reading-label">{t('Temperature')}</div>
+                  <div className="temp-value">{r ? u.tempText(r.temperature) : '–'}</div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      <BrewPanel pill={pill} />
+      {!thermometer && <BrewPanel pill={pill} />}
       <Tiles pill={pill} now={now} />
       <HistoryPanel pill={pill} />
       {isOwner ? <PillSettings pill={pill} /> : <OwnerOnly isOwner={false}>{null}</OwnerOnly>}

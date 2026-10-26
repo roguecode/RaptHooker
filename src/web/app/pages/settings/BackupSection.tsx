@@ -227,6 +227,7 @@ function RestoreModal({ files, initial, onClose }: { files: BackupFile[]; initia
                   <option key={f.name} value={f.name}>
                     {dateTime(f.at)} · {bytes(f.bytes)}
                     {f.kind === 'pre-restore' ? ` · ${t('from before a restore')}` : ''}
+                    {f.kind === 'pre-update' ? ` · ${t('from before an update')}` : ''}
                   </option>
                 ))}
               </select>
@@ -493,6 +494,7 @@ export function BackupSection() {
                   <div className="grow">
                     <h4>
                       {dateTime(f.at)} {f.kind === 'pre-restore' && <span className="chip warning">{t('From before a restore')}</span>}
+                      {f.kind === 'pre-update' && <span className="chip">{t('From before an update')}</span>}
                     </h4>
                     <p className="mono small">
                       {f.name} · {bytes(f.bytes)}

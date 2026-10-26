@@ -3,7 +3,17 @@ import { basename, dirname, join } from 'node:path';
 import type { BackupFile, BackupOverview, BackupSettings, BackupTargetStatus, Brew, Pill } from '@rapthooker/shared';
 import type { Store } from './db.js';
 import type { Logger } from './log.js';
-import { BACKUP_RE, PRE_RESTORE_RE, WEEK_RE, copyFolder, copyInto, localDate, pruneFiles, snapshot } from './backup/files.js';
+import {
+  BACKUP_RE,
+  PRE_RESTORE_RE,
+  PRE_UPDATE_RE,
+  WEEK_RE,
+  copyFolder,
+  copyInto,
+  localDate,
+  pruneFiles,
+  snapshot,
+} from './backup/files.js';
 import { USB_DIR, usbErrorText, usbMounted, type UsbCheck } from './backup/usb.js';
 import { S3Client, normalizePrefix, pruneS3Backups, pruneS3Csv } from './backup/s3.js';
 import { writeWeeklyCsv } from './backup/csv.js';
@@ -146,7 +156,7 @@ export class Maintenance {
     return out;
   }
 
-  /** The backups kept on the hub, newest first: the daily ones and the copies made just before a restore. */
+  /** The backups kept on the hub, newest first: the daily ones and the copies made just before a restore or an update. */
   files(): BackupFile[] {
     const list = (dir: string, re: RegExp, kind: BackupFile['kind']): BackupFile[] => {
       try {
@@ -160,7 +170,11 @@ export class Maintenance {
         return [];
       }
     };
-    return [...list(this.dir, BACKUP_RE, 'daily'), ...list(this.dataDir, PRE_RESTORE_RE, 'pre-restore')].sort((a, b) => b.at - a.at);
+    return [
+      ...list(this.dir, BACKUP_RE, 'daily'),
+      ...list(this.dataDir, PRE_RESTORE_RE, 'pre-restore'),
+      ...list(this.dataDir, PRE_UPDATE_RE, 'pre-update'),
+    ].sort((a, b) => b.at - a.at);
   }
 
   /** The full path of a file from files(), or null. Only listed names work, so nothing else can be reached. */

@@ -60,7 +60,7 @@ export function BrewsPage() {
   const pillOf = (id: string) => pills.find((p) => p.id === id);
   const active = brews?.filter((b) => b.endedAt === null) ?? [];
   const past = brews?.filter((b) => b.endedAt !== null) ?? [];
-  const free = pills.filter((p) => !p.archived && !p.brew);
+  const free = pills.filter((p) => !p.archived && !p.brew && p.kind === 'pill');
   const known = brews ? selected.filter((id) => brews.some((b) => b.id === id)) : selected;
 
   const toggle = (id: string) => {

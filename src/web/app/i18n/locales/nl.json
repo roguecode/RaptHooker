@@ -608,6 +608,8 @@
   "From @BotFather.": "Van @BotFather.",
   "from before a restore": "van voor een herstel",
   "From before a restore": "Van voor een herstel",
+  "from before an update": "van voor een update",
+  "From before an update": "Van voor een update",
   "From should be an email address": "Van moet een e-mailadres zijn",
   "from the pill": "van de pill",
   "From the pill (default)": "Van de pill (standaard)",
@@ -1591,5 +1593,23 @@
   "Commit {commit}, built {time}": "Commit {commit}, gebouwd {time}",
   "Build": "Build",
   "It was built from source and copied to the hub by hand, not installed from a release, so its version number doesn't say exactly what it runs and it doesn't update itself.": "Hij is uit de broncode gebouwd en met de hand naar de hub gekopieerd, niet uit een release geïnstalleerd, dus het versienummer zegt niet precies wat hij draait en hij werkt zichzelf niet bij.",
-  "To go back to releases, run the one-line installer on the hub.": "Om terug te gaan naar releases, voer je het installatiecommando van één regel uit op de hub."
+  "To go back to releases, run the one-line installer on the hub.": "Om terug te gaan naar releases, voer je het installatiecommando van één regel uit op de hub.",
+  "\"pill\" or \"thermometer\" (a thermometer only sends the temperature: the rest is null)": "\"pill\" of \"thermometer\" (een thermometer stuurt alleen de temperatuur: de rest is null)",
+  "{count} thermometer recording|{count} thermometers recording": {
+    "one": "{count} thermometer registreert",
+    "other": "{count} thermometers registreren"
+  },
+  "Add thermometer": "Thermometer toevoegen",
+  "Added to every reading, including history and webhooks.": "Wordt bij elke meting opgeteld, ook in de geschiedenis en bij webhooks.",
+  "all of its readings": "al zijn metingen",
+  "Couldn't add the thermometer": "Kon de thermometer niet toevoegen",
+  "Found a RAPT Thermometer nearby": "RAPT-thermometer in de buurt gevonden",
+  "Last 24 h": "Laatste 24 u",
+  "Missing quite a few: try the hub (or a relay) closer to the thermometer.": "Mist er nogal wat: zet de hub (of een relay) dichter bij de thermometer.",
+  "Name for the thermometer {id} (optional)": "Naam voor de thermometer {id} (optioneel)",
+  "Remove thermometer": "Thermometer verwijderen",
+  "Some readings may be missed: try the hub (or a relay) closer to the thermometer.": "Er kunnen metingen gemist worden: zet de hub (of een relay) dichter bij de thermometer.",
+  "Thermometer settings": "Thermometerinstellingen",
+  "Thermometers have no gravity or battery reading, so this alert leaves them out.": "Thermometers hebben geen dichtheid of batterij, dus deze melding slaat ze over.",
+  "This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)": "Hiermee verwijder je {what}. Dit kan niet ongedaan worden gemaakt. (Wil je ze bewaren, archiveer de thermometer dan.)"
 }

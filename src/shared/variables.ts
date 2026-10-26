@@ -1,5 +1,5 @@
 import type { TemplateContext, TemplateValue } from './template.js';
-import type { Brew, GravityUnit, PillInfo, Reading, TemperatureUnit } from './types.js';
+import type { Brew, DeviceKind, GravityUnit, PillInfo, Reading, TemperatureUnit } from './types.js';
 import { cToF, gravityIn, points, round, sgToPlato, temperatureIn } from './units.js';
 
 export type VariableGroup = 'Pill' | 'Reading' | 'Brew' | 'Time' | 'Other' | 'Batch';
@@ -19,6 +19,11 @@ export const VARIABLES: VariableDef[] = [
   { key: 'rapt_id', group: 'Pill', description: 'The MAC address the RAPT app shows' },
   { key: 'firmware', group: 'Pill', description: 'Firmware version' },
   { key: 'device_type', group: 'Pill', description: 'Device type, e.g. PillG1' },
+  {
+    key: 'device',
+    group: 'Pill',
+    description: '"pill" or "thermometer" (a thermometer only sends the temperature: the rest is null)',
+  },
   { key: 'gravity', group: 'Reading', description: "Gravity in the webhook's unit (SG or °P)" },
   { key: 'gravity_unit', group: 'Reading', description: '"G" for SG or "P" for Plato (Brewfather/Brewer\'s Friend style)' },
   { key: 'gravity_label', group: 'Reading', description: '"SG" or "°P"' },
@@ -96,7 +101,7 @@ export function buildBatchContext(input: {
 }
 
 export interface ContextInput {
-  pill: { id: string; name: string; address: string; raptId: string; info: PillInfo };
+  pill: { id: string; name: string; address: string; raptId: string; info: PillInfo; kind?: DeviceKind };
   reading: Reading;
   brew: Brew | null;
   gravityUnit: GravityUnit;
@@ -125,6 +130,7 @@ const num = (value: number | null | undefined, decimals: number): number | null 
 export function buildContext(input: ContextInput): TemplateContext {
   const { pill, reading, brew, gravityUnit, temperatureUnit } = input;
   const hex = pill.address.replace(/[^0-9a-f]/gi, '');
+  const sg = reading.gravity;
   const ctx: Record<string, TemplateValue> = {
     name: pill.name,
     name_slug: slugify(pill.name),
@@ -134,26 +140,27 @@ export function buildContext(input: ContextInput): TemplateContext {
     rapt_id: pill.raptId,
     firmware: pill.info.firmware ?? '',
     device_type: pill.info.deviceType ?? '',
-    gravity: gravityIn(reading.gravity, gravityUnit),
+    device: pill.kind ?? 'pill',
+    gravity: sg === null ? null : gravityIn(sg, gravityUnit),
     gravity_unit: gravityUnit === 'plato' ? 'P' : 'G',
     gravity_label: gravityUnit === 'plato' ? '°P' : 'SG',
-    gravity_sg: round(reading.gravity, 4),
-    gravity_plato: round(sgToPlato(reading.gravity), 2),
-    gravity_points: round(points(reading.gravity), 1),
+    gravity_sg: num(sg, 4),
+    gravity_plato: sg === null ? null : round(sgToPlato(sg), 2),
+    gravity_points: sg === null ? null : round(points(sg), 1),
     temperature: temperatureIn(reading.temperature, temperatureUnit),
     temp_unit: temperatureUnit,
     temperature_c: round(reading.temperature, 2),
     temperature_f: round(cToF(reading.temperature), 2),
     velocity: num(reading.velocity, 2),
     plausible: reading.plausible,
-    pill_gravity_sg: round(reading.pillGravity, 4),
+    pill_gravity_sg: num(reading.pillGravity, 4),
     pill_velocity: num(reading.pillVelocity, 2),
-    battery: round(reading.battery, 1),
+    battery: num(reading.battery, 1),
     rssi: reading.rssi,
     tilt: num(reading.tilt, 2),
-    accel_x: round(reading.x, 2),
-    accel_y: round(reading.y, 2),
-    accel_z: round(reading.z, 2),
+    accel_x: num(reading.x, 2),
+    accel_y: num(reading.y, 2),
+    accel_z: num(reading.z, 2),
     timestamp: new Date(reading.ts).toISOString(),
     timestamp_unix: Math.floor(reading.ts / 1000),
     timestamp_ms: reading.ts,

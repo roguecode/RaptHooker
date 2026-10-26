@@ -16,6 +16,7 @@ export function PillSettings({ pill }: { pill: Pill }) {
   const u = useUnits();
   const { toast, upsertPill } = useLive();
   const tempUnit = u.temperature;
+  const thermometer = pill.kind === 'thermometer';
   // The offsets as the boxes show them: rounded, so an offset whose box wasn't touched is saved as it was.
   const shownG = String(Math.round(pill.offsets.gravity * 10000) / 10);
   const shownT = String(Math.round(temperatureDeltaIn(pill.offsets.temperature, tempUnit) * 100) / 100);
@@ -43,7 +44,7 @@ export function PillSettings({ pill }: { pill: Pill }) {
       <div className="panel-head">
         <div>
           <h2>
-            <Icon name="sliders" /> {t('Pill settings')}
+            <Icon name="sliders" /> {thermometer ? t('Thermometer settings') : t('Pill settings')}
           </h2>
         </div>
       </div>
@@ -92,18 +93,20 @@ export function PillSettings({ pill }: { pill: Pill }) {
           }}
         >
           <div className="form-grid">
-            <label className="field">
-              <span>{t('Gravity offset (points)')}</span>
-              <input
-                className="input num"
-                type="number"
-                step="0.1"
-                min={-50}
-                max={50}
-                value={gOff}
-                onChange={(e) => setGOff(e.target.value)}
-              />
-            </label>
+            {!thermometer && (
+              <label className="field">
+                <span>{t('Gravity offset (points)')}</span>
+                <input
+                  className="input num"
+                  type="number"
+                  step="0.1"
+                  min={-50}
+                  max={50}
+                  value={gOff}
+                  onChange={(e) => setGOff(e.target.value)}
+                />
+              </label>
+            )}
             <label className="field">
               <span>{t('Temperature offset ({unit})', { unit: u.tempLabel })}</span>
               <input
@@ -118,22 +121,30 @@ export function PillSettings({ pill }: { pill: Pill }) {
             </label>
           </div>
           <p className="hint" style={{ marginTop: 0 }}>
-            {t(
-              'Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. Calibrate the pill in the RAPT app first; this is for fine-tuning.',
-            )}
+            {thermometer
+              ? t('Added to every reading, including history and webhooks.')
+              : t(
+                  'Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. Calibrate the pill in the RAPT app first; this is for fine-tuning.',
+                )}
           </p>
           <div className="row">
             <button type="submit" className="btn">
               {t('Save calibration')}
             </button>
-            <button type="button" className="btn ghost" onClick={() => setWizard('water')}>
-              <Icon name="flask" size={16} /> {t('Calibration wizard')}
-            </button>
+            {!thermometer && (
+              <button type="button" className="btn ghost" onClick={() => setWizard('water')}>
+                <Icon name="flask" size={16} /> {t('Calibration wizard')}
+              </button>
+            )}
           </div>
         </form>
       </div>
-      <hr className="divider" />
-      <DataSources pill={pill} onCalibrateTilt={() => setWizard('tilt')} />
+      {!thermometer && (
+        <>
+          <hr className="divider" />
+          <DataSources pill={pill} onCalibrateTilt={() => setWizard('tilt')} />
+        </>
+      )}
       <hr className="divider" />
       <div className="row">
         <button
@@ -144,7 +155,7 @@ export function PillSettings({ pill }: { pill: Pill }) {
           <Icon name={pill.archived ? 'play' : 'archive'} size={16} /> {pill.archived ? t('Start recording again') : t('Archive')}
         </button>
         <button type="button" className="btn danger" onClick={() => setConfirm('delete')}>
-          <Icon name="trash" size={16} /> {t('Remove pill')}
+          <Icon name="trash" size={16} /> {thermometer ? t('Remove thermometer') : t('Remove pill')}
         </button>
       </div>
       {wizard && <CalibrationWizard pillId={pill.id} step={wizard} onClose={() => setWizard(null)} />}
@@ -168,10 +179,17 @@ export function PillSettings({ pill }: { pill: Pill }) {
           title={t('Remove {name}?', { name: pill.name })}
           body={
             <p>
-              <Trans
-                text={t("This deletes {what}. This can't be undone. (To keep them, archive the pill instead.)")}
-                values={{ what: <strong>{t('all of its readings and brews')}</strong> }}
-              />
+              {thermometer ? (
+                <Trans
+                  text={t("This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)")}
+                  values={{ what: <strong>{t('all of its readings')}</strong> }}
+                />
+              ) : (
+                <Trans
+                  text={t("This deletes {what}. This can't be undone. (To keep them, archive the pill instead.)")}
+                  values={{ what: <strong>{t('all of its readings and brews')}</strong> }}
+                />
+              )}
             </p>
           }
           confirm={t('Delete everything')}

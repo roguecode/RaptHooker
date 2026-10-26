@@ -19,6 +19,7 @@ afterEach(() => cleanup?.());
 
 const pill: Pill = {
   id: 'p1',
+  kind: 'pill',
   address: '08:B6:1F:00:00:66',
   raptId: '08:B6:1F:00:00:64',
   name: 'Kveik',
@@ -97,7 +98,7 @@ function setup(opts: { pills?: Pill[]; hubName?: string } = {}) {
     /** A new reading now, 1 point lower. */
     newReading: (id = 'p1') => {
       const r = readings.get(id)!;
-      readings.set(id, { ...r, ts: now, gravity: Math.round((r.gravity - 0.001) * 1e6) / 1e6 });
+      readings.set(id, { ...r, ts: now, gravity: Math.round((r.gravity! - 0.001) * 1e6) / 1e6 });
     },
     /** A new reading now with these values. */
     setReading: (change: Partial<Reading>, id = 'p1') => readings.set(id, { ...readings.get(id)!, ts: now, ...change }),

@@ -118,6 +118,18 @@ describe('POST /api/relay', () => {
     expect(scanner.status.lastAdvertAt).toBeTypeOf('number');
   });
 
+  it('passes on a RAPT Thermometer heard by a relay', async () => {
+    const { app, relayToken } = await setup();
+    const thermometer = { address: 'D0:26:25:B4:48:95', rssi: -50, manufacturerData: { [0x004c]: CAPTURED.thermometerRest } };
+    const res = await app.inject({ method: 'POST', url: '/api/relay', headers: auth(relayToken), payload: body([thermometer]) });
+    expect(res.json()).toEqual({ accepted: 1, ignored: 0 });
+    const state = (await app.inject({ url: '/api/state' })).json<{ nearby: NearbyPill[] }>();
+    expect(state.nearby).toEqual([
+      expect.objectContaining({ address: 'D0:26:25:B4:48:95', kind: 'thermometer', raptId: 'D0:26:25:B4:48:95', rssi: -50 }),
+    ]);
+    expect(state.nearby[0]!.latest).toMatchObject({ temperature: 15.3, gravity: null, battery: null });
+  });
+
   it('back-dates adverts the relay heard a while ago', async () => {
     const { app, scanner, relayToken } = await setup();
     const heard: number[] = [];

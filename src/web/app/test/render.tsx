@@ -57,6 +57,7 @@ export function makePill(over: PillOverrides = {}): Pill {
   const now = Date.now();
   return {
     id: 'pill-1',
+    kind: 'pill',
     address: 'F0:0D:5E:ED:00:03',
     raptId: 'F0:0D:5E:ED:00:01',
     name: 'Hazy IPA',
@@ -123,6 +124,7 @@ export function makeNearby(over: Partial<NearbyPill> = {}): NearbyPill {
   const now = Date.now();
   return {
     address: 'F0:0D:5E:ED:00:04',
+    kind: 'pill',
     raptId: 'F0:0D:5E:ED:00:02',
     firstHeardAt: now - 5 * 60_000,
     lastHeardAt: now - 20_000,

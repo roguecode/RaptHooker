@@ -4,6 +4,10 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
 
 - **Every pill, recorded around the clock.** Add as many pills as you like; each is recorded on its own, whether or not
   a brew is running. Readings are stored in SQLite on the Pi.
+- **RAPT Bluetooth Thermometers too.** A RAPT Bluetooth Thermometer (KL24334) is found and added like a pill, and
+  recorded once a minute: its temperature and signal on the dashboard, its own page, charts, TV mode, CSV export,
+  webhooks, MQTT and Home Assistant, and temperature and "gone quiet" alerts. It has no gravity, battery or brews. Its
+  Bluetooth format isn't published by KegLand; RaptHooker's decoding was worked out against the RAPT app's readings.
 - **Brews.** Start a brew on a pill (now, or back-dated to when you pitched), and end it when you're done. Each brew
   keeps its own chart, OG (typed in, or taken from the pill once it has settled), current/final gravity, ABV (standard
   or strong-beer formula), attenuation, temperature range and notes. Brews can be edited, resumed and exported.

@@ -15,12 +15,18 @@ import { clampWindow, isZoomed, pngFileName, type TimeWindow } from '../../compo
 import './pill.css';
 
 const SERIES_KEY = 'rapthooker.series';
-const loadSeries = (): SeriesKey[] => {
+/** A thermometer only has these, and keeps its own choice of them. */
+const THERMOMETER_SERIES: readonly SeriesKey[] = ['temperature', 'rssi'];
+const THERMOMETER_SERIES_KEY = 'rapthooker.series.thermometer';
+
+const loadSeries = (thermometer: boolean): SeriesKey[] => {
+  const fallback: SeriesKey[] = thermometer ? ['temperature'] : ['gravity', 'temperature'];
   try {
-    const s = JSON.parse(localStorage.getItem(SERIES_KEY) ?? 'null') as SeriesKey[] | null;
-    return Array.isArray(s) && s.length ? s.filter((k) => SERIES.some((x) => x.key === k)) : ['gravity', 'temperature'];
+    const s = JSON.parse(localStorage.getItem(thermometer ? THERMOMETER_SERIES_KEY : SERIES_KEY) ?? 'null') as SeriesKey[] | null;
+    const allowed = s?.filter((k) => SERIES.some((x) => x.key === k) && (!thermometer || THERMOMETER_SERIES.includes(k)));
+    return Array.isArray(allowed) && allowed.length ? allowed : fallback;
   } catch {
-    return ['gravity', 'temperature'];
+    return fallback;
   }
 };
 
@@ -28,6 +34,7 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
   const { isOwner, toast, upsertPill } = useLive();
   const u = useUnits();
   const brew = pill.brew;
+  const thermometer = pill.kind === 'thermometer';
   const firstAt = Math.min(pill.live.firstReadingAt ?? pill.createdAt, pill.createdAt);
   const { preset, setPreset, custom, setCustom, range } = useHistoryRange({
     initial: brew ? 'brew' : '24h',
@@ -35,9 +42,10 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
     brewStart: brew?.startedAt ?? null,
   });
   const [view, setView] = useState<TimeWindow | null>(null);
-  const [series, setSeries] = useState<SeriesKey[]>(loadSeries);
+  const [series, setSeries] = useState<SeriesKey[]>(() => loadSeries(thermometer));
   const [exporting, setExporting] = useState(false);
   const chart = useRef<ChartHandle>(null);
+  const offered = thermometer ? SERIES.filter((s) => THERMOMETER_SERIES.includes(s.key)) : SERIES;
 
   const gapMs = Math.max(10 * 60_000, (pill.live.intervalSec ?? 300) * 4000);
   const m = pill.model;
@@ -71,7 +79,7 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
     const next = series.includes(k) ? series.filter((s) => s !== k) : [...series, k];
     const ordered = SERIES.map((s) => s.key).filter((s) => next.includes(s));
     setSeries(ordered);
-    localStorage.setItem(SERIES_KEY, JSON.stringify(ordered));
+    localStorage.setItem(thermometer ? THERMOMETER_SERIES_KEY : SERIES_KEY, JSON.stringify(ordered));
   };
 
   const exportPng = async () => {
@@ -144,7 +152,7 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
             </button>
           )}
           <div className="chips" role="group" aria-label={t('Lines on the chart')}>
-            {SERIES.map((s) => (
+            {offered.map((s) => (
               <button
                 key={s.key}
                 type="button"
@@ -183,7 +191,14 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
           label={t('History of {name}', { name: pill.name })}
         />
         {(overview?.ts.length ?? 0) > 1 && (
-          <OverviewStrip history={overview} bounds={bounds} view={view} color={pill.color} onChange={(w) => onZoom(w.from, w.to)} />
+          <OverviewStrip
+            history={overview}
+            bounds={bounds}
+            view={view}
+            color={pill.color}
+            tempOnly={thermometer}
+            onChange={(w) => onZoom(w.from, w.to)}
+          />
         )}
       </div>
       {(anyImplausible || history?.pillGravity || history?.pillVelocity || canPick) && (

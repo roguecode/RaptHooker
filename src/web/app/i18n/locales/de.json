@@ -608,6 +608,8 @@
   "From @BotFather.": "Von @BotFather.",
   "from before a restore": "von vor einer Wiederherstellung",
   "From before a restore": "Von vor einer Wiederherstellung",
+  "from before an update": "von vor einem Update",
+  "From before an update": "Von vor einem Update",
   "From should be an email address": "„Von“ sollte eine E-Mail-Adresse sein",
   "from the pill": "von der Pill",
   "From the pill (default)": "Von der Pill (Standard)",
@@ -1591,5 +1593,23 @@
   "Commit {commit}, built {time}": "Commit {commit}, gebaut {time}",
   "Build": "Build",
   "It was built from source and copied to the hub by hand, not installed from a release, so its version number doesn't say exactly what it runs and it doesn't update itself.": "Er wurde aus dem Quellcode gebaut und von Hand auf den Hub kopiert, nicht aus einer veröffentlichten Version installiert. Seine Versionsnummer sagt daher nicht genau, was er enthält, und er aktualisiert sich nicht selbst.",
-  "To go back to releases, run the one-line installer on the hub.": "Um zu den veröffentlichten Versionen zurückzukehren, führe den Einzeiler-Installer auf dem Hub aus."
+  "To go back to releases, run the one-line installer on the hub.": "Um zu den veröffentlichten Versionen zurückzukehren, führe den Einzeiler-Installer auf dem Hub aus.",
+  "\"pill\" or \"thermometer\" (a thermometer only sends the temperature: the rest is null)": "\"pill\" oder \"thermometer\" (ein Thermometer sendet nur die Temperatur: der Rest ist null)",
+  "{count} thermometer recording|{count} thermometers recording": {
+    "one": "{count} Thermometer zeichnet auf",
+    "other": "{count} Thermometer zeichnen auf"
+  },
+  "Add thermometer": "Thermometer hinzufügen",
+  "Added to every reading, including history and webhooks.": "Wird zu jedem Messwert addiert, auch im Verlauf und bei Webhooks.",
+  "all of its readings": "alle seine Messwerte",
+  "Couldn't add the thermometer": "Thermometer konnte nicht hinzugefügt werden",
+  "Found a RAPT Thermometer nearby": "RAPT Thermometer in der Nähe gefunden",
+  "Last 24 h": "Letzte 24 h",
+  "Missing quite a few: try the hub (or a relay) closer to the thermometer.": "Es fehlen einige: Stell den Hub (oder ein Relais) näher an das Thermometer.",
+  "Name for the thermometer {id} (optional)": "Name für das Thermometer {id} (optional)",
+  "Remove thermometer": "Thermometer entfernen",
+  "Some readings may be missed: try the hub (or a relay) closer to the thermometer.": "Einige Messwerte könnten fehlen: Stell den Hub (oder ein Relais) näher an das Thermometer.",
+  "Thermometer settings": "Thermometer-Einstellungen",
+  "Thermometers have no gravity or battery reading, so this alert leaves them out.": "Thermometer haben weder Dichte noch Akkustand, daher lässt dieser Alarm sie aus.",
+  "This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)": "Das löscht {what}. Das lässt sich nicht rückgängig machen. (Um sie zu behalten, archiviere das Thermometer stattdessen.)"
 }

@@ -19,6 +19,9 @@ On a hub set up with the [one-line installer](../README.md#install) (or the Rasp
 
 The page reconnects by itself and loads the new version, then shows what's new.
 
+When a new version changes how the data is stored, it keeps a copy of the database from before first (listed under
+Settings → Backups as **From before an update**; see [Backups](./backups.md#before-an-update)).
+
 ### How it works
 
 The app runs as the `rapthooker` user and can't change its own files (that's on purpose). To ask for an update it
@@ -74,7 +77,8 @@ sudo bash /opt/rapthooker/deploy/install.sh --rollback
 
 swaps back to the version in `/opt/rapthooker/previous` (and keeps the newer one there, so running it again undoes the
 rollback). Your data isn't touched. A newer version may have added to the database; older versions ignore what they
-don't know about.
+don't know about. In the rare case that a newer version has changed the data in a way the older one can't use, the
+older one won't start rather than damage it: update again, or restore the copy from before the update.
 
 ## When something goes wrong
 

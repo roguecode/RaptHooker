@@ -13,8 +13,8 @@ import { MASKED, Settings } from '../settings.js';
 import { MQTT_ENTITIES, MqttService, describeMqttError } from '../mqtt.js';
 import { mqttRoutes } from '../routes/mqtt.js';
 import type { RouteContext } from '../routes/context.js';
-import { RAPT_COMPANY_ID, encodeRaptV2 } from '../ble/rapt.js';
-import { silent, tempStore } from './helpers.js';
+import { APPLE_COMPANY_ID, RAPT_COMPANY_ID, encodeRaptV2 } from '../ble/rapt.js';
+import { CAPTURED, silent, tempStore } from './helpers.js';
 
 const ADDR = 'AA:BB:CC:00:00:01';
 const CLIENT_ID = 'rapthooker-test-hub';
@@ -208,6 +208,36 @@ describe('MQTT', () => {
     await waitFor(() => w.json(topic('sensor', 'battery')) && w.json(hubTopic));
   });
 
+  it('announces a thermometer with only its temperature, signal and last reading', async () => {
+    const b = await startBroker();
+    const h = hub({ url: b.url });
+    await h.mqtt.start();
+    await connected(h);
+    const address = 'D0:26:25:B4:48:95';
+    const now = Date.now();
+    const beacon = Buffer.from(CAPTURED.thermometerRest, 'hex');
+    h.pills.handleAdvert({ address, rssi: -50, manufacturer: new Map([[APPLE_COMPANY_ID, beacon]]), at: now, mono: now, cached: false });
+    const thermometer = h.pills.adopt(address, {});
+    expect(thermometer).toMatchObject({ kind: 'thermometer', name: 'RAPT Thermometer 4895' });
+
+    const w = await watch(b.url);
+    const topic = (component: string, object: string) => `homeassistant/${component}/rapthooker_${thermometer.id}/${object}/config`;
+    const temperature = await waitFor(() => w.json(topic('sensor', 'temperature')));
+    expect(temperature).toMatchObject({
+      device_class: 'temperature',
+      device: { manufacturer: 'KegLand', model: 'RAPT Bluetooth Thermometer', name: 'RAPT Thermometer 4895' },
+    });
+    expect(w.json(topic('sensor', 'signal_strength'))).toMatchObject({ device_class: 'signal_strength' });
+    expect(w.json(topic('sensor', 'last_reading'))).toMatchObject({ device_class: 'timestamp' });
+    const others = MQTT_ENTITIES.filter((e) => !['temperature', 'signal_strength', 'last_reading'].includes(e.object));
+    expect(others.length).toBeGreaterThan(5);
+    for (const e of others) expect(w.seen.get(topic(e.component, e.object))?.payload ?? '').toBe('');
+
+    const state = await waitFor(() => w.json(`rapthooker/${thermometer.id}/state`));
+    expect(state).toMatchObject({ name: 'RAPT Thermometer 4895', temperature: 15.3, rssi: -50, plausible: true });
+    expect(state).toMatchObject({ gravity: null, gravity_plato: null, battery: null, tilt: null, pill_gravity: null, brew_name: null });
+  });
+
   it('removes a pill everywhere, including one removed while disconnected', async () => {
     const b = await startBroker();
     const h = hub({ url: b.url });
@@ -224,15 +254,16 @@ describe('MQTT', () => {
       MQTT_ENTITIES.every((e) => w.seen.get(`homeassistant/${e.component}/rapthooker_${pill.id}/${e.object}/config`)?.payload === ''),
     );
 
-    // A config this hub left behind for a pill it no longer has is cleared when it connects.
+    // A config this hub left behind for a device it no longer has is cleared when it connects (every kind of device
+    // has a temperature).
     await h.mqtt.stop();
     const hubId = `rapthooker_hub_${hostname()
       .replace(/[^A-Za-z0-9_-]/g, '')
       .toLowerCase()}`;
-    const stale = 'homeassistant/sensor/rapthooker_0123456789ab/gravity/config';
-    await w.client.publishAsync(stale, JSON.stringify({ name: 'Gravity', device: { via_device: hubId } }), { retain: true, qos: 1 });
-    const other = 'homeassistant/sensor/rapthooker_ba9876543210/gravity/config';
-    await w.client.publishAsync(other, JSON.stringify({ name: 'Gravity', device: { via_device: 'someone_else' } }), {
+    const stale = 'homeassistant/sensor/rapthooker_0123456789ab/temperature/config';
+    await w.client.publishAsync(stale, JSON.stringify({ name: 'Temperature', device: { via_device: hubId } }), { retain: true, qos: 1 });
+    const other = 'homeassistant/sensor/rapthooker_ba9876543210/temperature/config';
+    await w.client.publishAsync(other, JSON.stringify({ name: 'Temperature', device: { via_device: 'someone_else' } }), {
       retain: true,
       qos: 1,
     });

@@ -30,6 +30,10 @@ Guides: [Pi setup](./pi-setup.md), [configuration](./configuration.md), [feature
 [Home Assistant](./home-assistant.md), [backups](./backups.md), [relays](./relay.md), [API](./api.md),
 [updating](./updating.md), [translations](./translations.md), [Docker](./docker.md).
 
+Changing how anything is stored, identified or sent, or adding a kind of device? Read
+[Keeping people's data](./data-compatibility.md) first: updates must never lose or change what's on people's hubs. The
+same rules are in [AGENTS.md](../AGENTS.md) for coding agents.
+
 ## Testing
 
 ```bash
@@ -68,5 +72,5 @@ Docker is also possible (for a Linux host with Bluetooth): see [Docker](./docker
 ## Pictures in the README
 
 The screenshots in [images](./images) are taken by `node scripts/screenshots.mjs` (after `npm run build`): it starts
-a hub with the simulated pills and seeded history in a temporary folder and photographs it with Playwright. The diagram
+a hub with the simulated pills and thermometer and seeded history in a temporary folder and photographs it with Playwright. The diagram
 is drawn by `node scripts/flowchart.mjs` (it reuses the app's icons), which writes `images/how-it-works.svg` and `.png`.

@@ -4,12 +4,13 @@ import { useLive } from '../../live';
 import { useUnits } from '../../units';
 import { useHistory, useRecentRange } from '../../hooks';
 import { navigate } from '../../router';
-import { fixed, timeAgo, timeOnly, useNow } from '../../format';
+import { fixed, signalQuality, timeAgo, timeOnly, useNow } from '../../format';
 import { t } from '../../i18n';
 import { sortByOrder } from '../../order';
 import { useStored } from '../../storage';
 import { Icon } from '../../components/Icon';
 import { Sparkline } from '../../components/Sparkline';
+import { rangeOf } from '../dashboard/ThermometerCard';
 import { brewDay, kioskLayout, pageItems, parseKioskSettings, ROTATE_SECONDS, serializeKioskSettings } from './layout';
 import './kiosk.css';
 
@@ -276,6 +277,9 @@ function KioskTile({ pill, now, stale }: { pill: Pill; now: number; stale: boole
   const seen = pill.live.lastHeardAt ?? pill.live.lastReadingAt;
   const online = pill.live.online && !stale;
   const nameId = useId();
+  const thermometer = pill.kind === 'thermometer';
+  const day = useMemo(() => (thermometer ? rangeOf(history?.temperature) : null), [thermometer, history]);
+  const signal = signalQuality(pill.live.rssi);
 
   return (
     <article
@@ -286,7 +290,9 @@ function KioskTile({ pill, now, stale }: { pill: Pill; now: number; stale: boole
       <div className="kt-head">
         <h2 id={nameId}>{pill.name}</h2>
         <span className="kt-brew">
-          {brew ? (
+          {thermometer ? (
+            t('Thermometer')
+          ) : brew ? (
             <>
               {brew.name} · <strong>{t('Day {n}', { n: brewDay(brew.startedAt, now) })}</strong>
             </>
@@ -297,50 +303,87 @@ function KioskTile({ pill, now, stale }: { pill: Pill; now: number; stale: boole
       </div>
 
       <div className="kt-main">
-        <div className="kt-gravity num">
-          {g.main}
-          <span className="tail">{g.tail}</span>
-          <span className="unit">{g.unit}</span>
-        </div>
-        <div className="kt-temp num">{r ? u.tempText(r.temperature) : '–'}</div>
+        {thermometer ? (
+          <div className="kt-gravity num">
+            {r ? fixed(u.tempValue(r.temperature), 1) : '–'}
+            <span className="unit">{u.tempLabel}</span>
+          </div>
+        ) : (
+          <>
+            <div className="kt-gravity num">
+              {g.main}
+              <span className="tail">{g.tail}</span>
+              <span className="unit">{g.unit}</span>
+            </div>
+            <div className="kt-temp num">{r ? u.tempText(r.temperature) : '–'}</div>
+          </>
+        )}
       </div>
-      {r && !plausibleGravity(r.gravity) && (
+      {r && r.gravity !== null && !plausibleGravity(r.gravity) && (
         <div className="kt-warn">
           <Icon name="alert" size={16} /> {t('Gravity looks wrong: is the pill floating?')}
         </div>
       )}
 
       <div className="kt-spark">
-        {history && history.ts.length > 1 && (
-          <Sparkline
-            ts={history.ts}
-            values={history.gravity}
-            secondary={history.temperature}
-            color={pill.color}
-            from={range.from}
-            to={Math.max(history.to, Date.now())}
-            minSpan={0.004}
-            secondaryMinSpan={3}
-          />
-        )}
+        {history &&
+          history.ts.length > 1 &&
+          (thermometer ? (
+            <Sparkline
+              ts={history.ts}
+              values={history.temperature}
+              color={pill.color}
+              from={range.from}
+              to={Math.max(history.to, Date.now())}
+              minSpan={2}
+            />
+          ) : (
+            <Sparkline
+              ts={history.ts}
+              values={history.gravity}
+              secondary={history.temperature}
+              color={pill.color}
+              from={range.from}
+              to={Math.max(history.to, Date.now())}
+              minSpan={0.004}
+              secondaryMinSpan={3}
+            />
+          ))}
       </div>
 
       <dl className="kt-stats">
-        <div>
-          <dt>ABV</dt>
-          <dd className="num">{abv === null ? '–' : `${fixed(abv, 1)}%`}</dd>
-        </div>
-        <div>
-          <dt>{t('Velocity')}</dt>
-          <dd className="num">
-            {v === null ? '–' : `${v > 0 ? '+' : ''}${fixed(v, 1)}`}
-            {v !== null && <small> {t('pts/day')}</small>}
-          </dd>
-        </div>
-        <div>
-          <dt>{t('Battery')}</dt>
-          <dd className={`num${r && r.battery < 20 ? ' low' : ''}`}>{r ? `${Math.round(r.battery)}%` : '–'}</dd>
-        </div>
+        {thermometer ? (
+          <>
+            <div>
+              <dt>{t('Last 24 h')}</dt>
+              <dd className="num">{day ? `${fixed(u.tempValue(day.min), 1)}–${fixed(u.tempValue(day.max), 1)}` : '–'}</dd>
+            </div>
+            <div>
+              <dt>{t('Signal')}</dt>
+              <dd>{signal ? signal.label : '–'}</dd>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <dt>ABV</dt>
+              <dd className="num">{abv === null ? '–' : `${fixed(abv, 1)}%`}</dd>
+            </div>
+            <div>
+              <dt>{t('Velocity')}</dt>
+              <dd className="num">
+                {v === null ? '–' : `${v > 0 ? '+' : ''}${fixed(v, 1)}`}
+                {v !== null && <small> {t('pts/day')}</small>}
+              </dd>
+            </div>
+            <div>
+              <dt>{t('Battery')}</dt>
+              <dd className={`num${r?.battery != null && r.battery < 20 ? ' low' : ''}`}>
+                {r?.battery != null ? `${Math.round(r.battery)}%` : '–'}
+              </dd>
+            </div>
+          </>
+        )}
         <div>
           <dt>{t('Last seen')}</dt>
           <dd>

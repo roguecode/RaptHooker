@@ -297,12 +297,14 @@ describe('BlueZ scanner, passive', () => {
     expect(app.props.Type!.value).toBe('or_patterns');
     expect(app.props.Patterns!.signature).toBe('a(yyay)');
     const patterns = (app.props.Patterns!.value as [number, number, Buffer][]).map(([pos, type, bytes]) => [pos, type, [...bytes]]);
-    // 'RA' and 'KE': company ids 0x4152 and 0x454B as they go on air (little-endian), at the start of the AD data.
+    // 'RA' and 'KE': company ids 0x4152 and 0x454B as they go on air (little-endian), at the start of the AD data;
+    // then the RAPT Thermometer's iBeacon: Apple's 0x004C, the iBeacon type and "Keg".
     expect(patterns).toEqual([
       [0, 0xff, [0x52, 0x41]],
       [0, 0xff, [0x4b, 0x45]],
+      [0, 0xff, [0x4c, 0x00, 0x02, 0x15, 0x4b, 0x65, 0x67]],
     ]);
-    expect(MONITOR_PATTERNS).toHaveLength(2);
+    expect(MONITOR_PATTERNS).toHaveLength(3);
 
     // The monitor's properties can be read the usual way too.
     const all = await fake.bus.callScanner(app.monitor, PROPS, 'GetAll', 's', [MONITOR]);
@@ -320,16 +322,23 @@ describe('BlueZ scanner, passive', () => {
     fake.deviceAdded(PILL_PATH, CAPTURED.metricsFalling, RAPT_COMPANY_ID, -77);
     await settle();
     fake.deviceChanged(PILL_PATH, CAPTURED.metricsRising, -60);
+    // An iPhone's Apple data is ignored; a RAPT Thermometer's iBeacon (under Apple's id too) isn't.
     fake.deviceAdded('/org/bluez/hci0/dev_02_00_00_00_00_01', '1005031c0e5b2a', 0x004c);
+    fake.deviceAdded('/org/bluez/hci0/dev_D0_26_25_B4_48_95', CAPTURED.thermometerRest, 0x004c, -45);
     await settle();
-    // BlueZ telling the monitor it found something is fine too (the data comes with the device signals).
-    await fake.bus.callScanner(fake.apps.get('/org/bluez/hci0')!.monitor, MONITOR, 'DeviceFound', 'o', [PILL_PATH], true);
+    // BlueZ's monitor reporting each advert: for a RAPT device it knows, that it was heard again; anything else, nothing.
+    const monitor = fake.apps.get('/org/bluez/hci0')!.monitor;
+    await fake.bus.callScanner(monitor, MONITOR, 'DeviceFound', 'o', ['/org/bluez/hci0/dev_D0_26_25_B4_48_95'], true);
+    await fake.bus.callScanner(monitor, MONITOR, 'DeviceFound', 'o', ['/org/bluez/hci0/dev_02_00_00_00_00_01'], true);
 
-    expect(adverts).toHaveLength(2);
+    expect(adverts).toHaveLength(4);
     expect(adverts[0]).toMatchObject({ address: '08:B6:1F:00:00:66', rssi: -77, cached: false, source: 'hci0' });
     expect(Buffer.from(adverts[0]!.manufacturer!.get(RAPT_COMPANY_ID)!).toString('hex')).toBe(CAPTURED.metricsFalling);
     expect(adverts[1]).toMatchObject({ address: '08:B6:1F:00:00:66', rssi: -60 });
     expect(Buffer.from(adverts[1]!.manufacturer!.get(RAPT_COMPANY_ID)!).toString('hex')).toBe(CAPTURED.metricsRising);
+    expect(adverts[2]).toMatchObject({ address: 'D0:26:25:B4:48:95', rssi: -45 });
+    expect(Buffer.from(adverts[2]!.manufacturer!.get(0x004c)!).toString('hex')).toBe(CAPTURED.thermometerRest);
+    expect(adverts[3]).toMatchObject({ address: 'D0:26:25:B4:48:95', rssi: null, manufacturer: null, cached: false, source: 'hci0' });
   });
 
   it('picks up RAPT devices BlueZ already knows', async () => {

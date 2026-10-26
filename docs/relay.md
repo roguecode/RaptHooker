@@ -1,9 +1,9 @@
 # Bluetooth relays (ESP32 + ESPHome)
 
 A RAPT Pill floating in beer, inside a stainless fermenter or a fridge in the garage, can be too far from the Pi to
-hear. A **relay** is a small Wi-Fi board near the fermenter that listens for the pill and passes what it hears on to
-RaptHooker. You can have as many as you like, alongside the Pi's own Bluetooth: every reading is still stored once,
-however many of them hear it.
+hear. A **relay** is a small Wi-Fi board near the fermenter that listens for the pill (and RAPT Bluetooth Thermometers)
+and passes what it hears on to RaptHooker. You can have as many as you like, alongside the Pi's own Bluetooth: every
+reading is still stored once, however many of them hear it.
 
 The relay below is an ESP32 running [ESPHome](https://esphome.io). Anything else that can hear Bluetooth adverts and
 make an HTTP request can be a relay too: see [Posting adverts yourself](#posting-adverts-yourself).
@@ -71,8 +71,9 @@ curl -X POST http://rapthooker.local:8080/api/relay \
 - `relay`: a name for the relay (up to 60 characters).
 - `adverts`: 1 to 50 adverts. Each has the Bluetooth `address`, the `rssi` in dBm (or `null`) and `manufacturerData`:
   the company id **in decimal** (`16722` for RAPT's 0x4152, `17739` for 0x454B) mapped to the data **after** the
-  company id, in hex. That's how BlueZ presents it, and how [rapt.ts](../src/server/ble/rapt.ts) decodes it. Data under
-  other company ids is ignored.
+  company id, in hex. That's how BlueZ presents it, and how [rapt.ts](../src/server/ble/rapt.ts) decodes it. A RAPT
+  Bluetooth Thermometer's iBeacon goes under `76` (Apple's 0x004C, starting `02154b6567`). Data under other company ids
+  is ignored.
 - `ageMs` (optional): how long ago the relay heard the advert, if it collects them before posting. RaptHooker stamps
   readings with the time it receives them otherwise.
 

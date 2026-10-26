@@ -5,6 +5,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-26
+
 ### Added
 
 - **RAPT Bluetooth Thermometers:** a RAPT Bluetooth Thermometer near the hub (or a relay) shows up under "Found nearby"
@@ -67,5 +69,6 @@ The first release.
 - **Translations**: Deutsch, Español, Français, Italiano, Nederlands, Polski and Português (Brasil).
 - **Docker** image for Linux hosts with Bluetooth.
 
-[Unreleased]: https://github.com/roguecode/RaptHooker/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/roguecode/RaptHooker/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/roguecode/RaptHooker/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/roguecode/RaptHooker/releases/tag/v0.3.0

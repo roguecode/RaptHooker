@@ -180,7 +180,7 @@
 .compare-check.on {
   border-color: var(--violet);
   background: var(--violet);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .pill-card.picking,

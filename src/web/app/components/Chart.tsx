@@ -268,9 +268,9 @@ export function Chart({
   L.annotations = annotations ?? [];
   L.pick = pick;
 
-  // Colours come from CSS variables, so a theme change rebuilds the chart too.
-  const { theme } = useTheme();
-  const key = `${cols.map((c) => c.key).join(',')}|${fadedAuto}|${u.gravity}|${u.temperature}|${gravityColor ?? ''}|${compact}|${zoomable}|${theme}`;
+  // Colours come from CSS variables, so a theme or palette change rebuilds the chart too.
+  const { look } = useTheme();
+  const key = `${cols.map((c) => c.key).join(',')}|${fadedAuto}|${u.gravity}|${u.temperature}|${gravityColor ?? ''}|${compact}|${zoomable}|${look}`;
 
   useEffect(() => {
     const el = box.current;

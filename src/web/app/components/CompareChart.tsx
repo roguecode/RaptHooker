@@ -30,7 +30,7 @@ const plotHeight = () => (window.innerWidth < 640 ? 260 : 360);
 export function CompareChart({ lines, showTemp }: { lines: CompareLine[]; showTemp: boolean }) {
   const box = useRef<HTMLDivElement | null>(null);
   const u = useUnits();
-  const { theme } = useTheme();
+  const { look } = useTheme();
   const [cursor, setCursor] = useState<number | null>(null);
 
   const data = useMemo<AlignedData>(() => {
@@ -111,7 +111,7 @@ export function CompareChart({ lines, showTemp }: { lines: CompareLine[]; showTe
       ro.disconnect();
       chart.destroy();
     };
-  }, [data, lines, showTemp, u, theme]);
+  }, [data, lines, showTemp, u, look]);
 
   const day = cursor === null ? null : ((data[0] as number[])[cursor] ?? null);
   /** Each brew's reading nearest the cursor (brews are sampled at different times, so rarely exactly on it). */

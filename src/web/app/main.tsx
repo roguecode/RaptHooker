@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
+import './palettes.css';
 import { App } from './App';
 import { startTheme } from './theme';
 import { initI18n } from './i18n';

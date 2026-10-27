@@ -8,6 +8,7 @@ import { FieldError, useFormCheck } from '../../validation';
 import { Icon } from '../../components/Icon';
 import { OwnerOnly, Switch } from '../../components/ui';
 import { ThemeSwitch } from '../../components/ThemeSwitch';
+import { PalettePicker } from '../../components/PalettePicker';
 
 const GRAVITY: { id: GravityUnit; label: string; name: string }[] = [
   { id: 'sg', label: 'SG', name: tk('SG, specific gravity') },
@@ -189,6 +190,11 @@ export function HubSection() {
           <span className="label">{t('Theme')}</span>
           <ThemeSwitch />
           <span className="hint">{t("Auto follows your device's light or dark setting.")}</span>
+        </div>
+        <div className="field">
+          <span className="label">{t('Colours')}</span>
+          <PalettePicker />
+          <span className="hint">{t('Each comes in a dark and a light version, following the theme.')}</span>
         </div>
         <label className="field">
           <span className="label">{t('Language')}</span>

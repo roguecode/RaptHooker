@@ -1,0 +1,386 @@
+/* =========================================================================
+   Colour palettes (<html data-palette>, chosen per browser in app/theme.ts)
+
+   Violet, the default, is styles.css itself. Each palette here has a dark and a light block that override the
+   variables carrying its hue; anything not listed (status colours, most chart series, radii, motion) comes from
+   styles.css. A series or status colour is only changed where it would look like the palette's own colour.
+   --bg must match the palette's `bar` colours in theme.ts (theme.test.ts checks).
+   ========================================================================= */
+
+/* ---------- Ocean: deep sea, cyan to blue ---------- */
+
+:root[data-palette='ocean'][data-theme='dark'] {
+  --bg: #031019;
+  --bg-glow-1: rgba(6, 182, 212, 0.22);
+  --bg-glow-2: rgba(37, 99, 235, 0.24);
+  --bg-glow-3: rgba(45, 212, 191, 0.08);
+  --surface: rgba(12, 38, 56, 0.64);
+  --surface-solid: #0b2232;
+  --surface-2: rgba(20, 62, 88, 0.55);
+  --surface-3: rgba(30, 88, 122, 0.5);
+  --glass: rgba(3, 20, 32, 0.74);
+  --border: rgba(103, 232, 249, 0.13);
+  --border-strong: rgba(103, 232, 249, 0.28);
+  --grid: rgba(103, 232, 249, 0.08);
+  --text: #e9f8ff;
+  --muted: #9ac3d6;
+  --faint: #80abc0;
+  --violet: #0891b2;
+  --violet-2: #22d3ee;
+  --indigo: #0ea5e9;
+  --blue: #3b82f6;
+  --blue-2: #60a5fa;
+  --accent: linear-gradient(135deg, #a5f3fc 0%, #22d3ee 38%, #0ea5e9 64%, #3b82f6 100%);
+  --accent-strong: linear-gradient(135deg, #0891b2 0%, #0e7490 38%, #0369a1 64%, #1d4ed8 100%);
+  --accent-soft: linear-gradient(135deg, rgba(6, 182, 212, 0.22), rgba(59, 130, 246, 0.18));
+  --focus: #22d3ee;
+  --series-gravity: #22d3ee;
+  --series-velocity: #a78bfa;
+  --code-bg: rgba(1, 9, 15, 0.6);
+  --backdrop: rgba(1, 9, 15, 0.6);
+  --shine: linear-gradient(90deg, #a5f3fc, #99f6e4, #93c5fd, #a5f3fc);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ac3d6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 20px 50px -24px rgba(1, 8, 16, 0.9);
+  --shadow-lg: 0 30px 90px -20px rgba(1, 8, 16, 0.85);
+  --glow: 0 12px 34px -12px rgba(6, 182, 212, 0.6);
+}
+
+:root[data-palette='ocean'][data-theme='light'] {
+  --bg: #eff9fc;
+  --bg-glow-1: rgba(6, 182, 212, 0.16);
+  --bg-glow-2: rgba(59, 130, 246, 0.13);
+  --bg-glow-3: rgba(45, 212, 191, 0.08);
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-solid: #ffffff;
+  --surface-2: rgba(224, 242, 254, 0.75);
+  --surface-3: rgba(186, 230, 253, 0.7);
+  --glass: rgba(246, 252, 255, 0.82);
+  --border: rgba(8, 51, 68, 0.12);
+  --border-strong: rgba(8, 51, 68, 0.24);
+  --grid: rgba(8, 51, 68, 0.1);
+  --text: #0b2433;
+  --muted: #3b5f72;
+  --faint: #4b6f82;
+  --violet: #0891b2;
+  --violet-2: #0e7490;
+  --indigo: #0284c7;
+  --blue: #2563eb;
+  --blue-2: #2563eb;
+  --accent: linear-gradient(135deg, #0891b2 0%, #0e7490 38%, #0369a1 64%, #2563eb 100%);
+  --accent-strong: linear-gradient(135deg, #0891b2 0%, #0e7490 38%, #0369a1 64%, #1d4ed8 100%);
+  --accent-soft: linear-gradient(135deg, rgba(6, 182, 212, 0.16), rgba(59, 130, 246, 0.12));
+  --focus: #0e7490;
+  --series-gravity: #0891b2;
+  --series-velocity: #7c3aed;
+  --code-bg: #f1f9fc;
+  --backdrop: rgba(11, 36, 51, 0.35);
+  --shine: linear-gradient(90deg, #0891b2, #0d9488, #2563eb, #0891b2);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233b5f72' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 18px 40px -24px rgba(8, 60, 90, 0.35);
+  --shadow-lg: 0 30px 80px -24px rgba(8, 60, 90, 0.4);
+  --glow: 0 12px 30px -12px rgba(8, 145, 178, 0.5);
+}
+
+/* ---------- Hops: forest green, lime to emerald ---------- */
+
+:root[data-palette='hops'][data-theme='dark'] {
+  --bg: #06110a;
+  --bg-glow-1: rgba(132, 204, 22, 0.2);
+  --bg-glow-2: rgba(16, 185, 129, 0.2);
+  --bg-glow-3: rgba(250, 204, 21, 0.06);
+  --surface: rgba(18, 42, 28, 0.64);
+  --surface-solid: #0f2418;
+  --surface-2: rgba(30, 66, 44, 0.55);
+  --surface-3: rgba(46, 94, 62, 0.5);
+  --glass: rgba(6, 20, 12, 0.74);
+  --border: rgba(187, 247, 208, 0.13);
+  --border-strong: rgba(187, 247, 208, 0.27);
+  --grid: rgba(187, 247, 208, 0.08);
+  --text: #eefcf2;
+  --muted: #a4c8b0;
+  --faint: #88ae95;
+  --violet: #84cc16;
+  --violet-2: #a3e635;
+  --indigo: #22c55e;
+  --blue: #10b981;
+  --blue-2: #34d399;
+  --accent: linear-gradient(135deg, #ecfccb 0%, #a3e635 38%, #4ade80 64%, #10b981 100%);
+  /* Bright enough for dark text on it. */
+  --accent-strong: linear-gradient(135deg, #d9f99d 0%, #a3e635 38%, #4ade80 64%, #34d399 100%);
+  --accent-soft: linear-gradient(135deg, rgba(132, 204, 22, 0.2), rgba(16, 185, 129, 0.16));
+  --on-accent: #052e16;
+  --focus: #a3e635;
+  --series-gravity: #a3e635;
+  --code-bg: rgba(2, 9, 5, 0.6);
+  --backdrop: rgba(2, 9, 5, 0.6);
+  --shine: linear-gradient(90deg, #d9f99d, #fde68a, #6ee7b7, #d9f99d);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a4c8b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 20px 50px -24px rgba(1, 8, 4, 0.9);
+  --shadow-lg: 0 30px 90px -20px rgba(1, 8, 4, 0.85);
+  --glow: 0 12px 34px -12px rgba(132, 204, 22, 0.5);
+}
+
+:root[data-palette='hops'][data-theme='light'] {
+  --bg: #f3f8ec;
+  --bg-glow-1: rgba(132, 204, 22, 0.16);
+  --bg-glow-2: rgba(16, 185, 129, 0.12);
+  --bg-glow-3: rgba(234, 179, 8, 0.07);
+  --surface: rgba(255, 255, 255, 0.8);
+  --surface-solid: #ffffff;
+  --surface-2: rgba(230, 244, 214, 0.75);
+  --surface-3: rgba(208, 234, 186, 0.7);
+  --glass: rgba(250, 253, 246, 0.82);
+  --border: rgba(20, 83, 45, 0.12);
+  --border-strong: rgba(20, 83, 45, 0.24);
+  --grid: rgba(20, 83, 45, 0.1);
+  --text: #11261a;
+  --muted: #415e4c;
+  --faint: #52705d;
+  --violet: #4d7c0f;
+  --violet-2: #3f6212;
+  --indigo: #15803d;
+  --blue: #047857;
+  --blue-2: #047857;
+  --accent: linear-gradient(135deg, #4d7c0f 0%, #3f6212 38%, #15803d 64%, #047857 100%);
+  --accent-strong: linear-gradient(135deg, #4d7c0f 0%, #3f6212 38%, #166534 64%, #047857 100%);
+  --accent-soft: linear-gradient(135deg, rgba(101, 163, 13, 0.16), rgba(4, 120, 87, 0.12));
+  --focus: #3f6212;
+  --series-gravity: #4d7c0f;
+  --code-bg: #f5faf0;
+  --backdrop: rgba(17, 38, 26, 0.35);
+  --shine: linear-gradient(90deg, #4d7c0f, #a16207, #047857, #4d7c0f);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23415e4c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 18px 40px -24px rgba(22, 70, 35, 0.32);
+  --shadow-lg: 0 30px 80px -24px rgba(22, 70, 35, 0.38);
+  --glow: 0 12px 30px -12px rgba(77, 124, 15, 0.45);
+}
+
+/* ---------- Amber: dark ale, gold to orange ---------- */
+
+:root[data-palette='amber'][data-theme='dark'] {
+  --bg: #130c06;
+  --bg-glow-1: rgba(245, 158, 11, 0.2);
+  --bg-glow-2: rgba(234, 88, 12, 0.2);
+  --bg-glow-3: rgba(251, 191, 36, 0.06);
+  --surface: rgba(46, 30, 16, 0.64);
+  --surface-solid: #241709;
+  --surface-2: rgba(74, 48, 24, 0.52);
+  --surface-3: rgba(106, 68, 32, 0.48);
+  --glass: rgba(22, 14, 7, 0.74);
+  --border: rgba(253, 216, 160, 0.13);
+  --border-strong: rgba(253, 216, 160, 0.27);
+  --grid: rgba(253, 216, 160, 0.08);
+  --text: #fff6ea;
+  --muted: #d4b896;
+  --faint: #bc9e7c;
+  --violet: #f59e0b;
+  --violet-2: #fbbf24;
+  --indigo: #f97316;
+  --blue: #ea580c;
+  --blue-2: #fb923c;
+  /* The usual warning colour is this palette's gold. */
+  --warning: #fb923c;
+  --accent: linear-gradient(135deg, #fef3c7 0%, #fbbf24 38%, #f59e0b 64%, #ea580c 100%);
+  /* Bright enough for dark text on it. */
+  --accent-strong: linear-gradient(135deg, #fde68a 0%, #fbbf24 38%, #f59e0b 64%, #f97316 100%);
+  --accent-soft: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(234, 88, 12, 0.16));
+  --on-accent: #241405;
+  --focus: #fbbf24;
+  --series-gravity: #fbbf24;
+  --series-rssi: #c4b5fd;
+  --code-bg: rgba(10, 6, 2, 0.6);
+  --backdrop: rgba(10, 6, 2, 0.6);
+  --shine: linear-gradient(90deg, #fde68a, #fdba74, #fef3c7, #fde68a);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d4b896' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 20px 50px -24px rgba(8, 4, 1, 0.9);
+  --shadow-lg: 0 30px 90px -20px rgba(8, 4, 1, 0.85);
+  --glow: 0 12px 34px -12px rgba(245, 158, 11, 0.5);
+}
+
+:root[data-palette='amber'][data-theme='light'] {
+  --bg: #fdf7ef;
+  --bg-glow-1: rgba(245, 158, 11, 0.16);
+  --bg-glow-2: rgba(234, 88, 12, 0.11);
+  --bg-glow-3: rgba(250, 204, 21, 0.08);
+  --surface: rgba(255, 255, 255, 0.8);
+  --surface-solid: #ffffff;
+  --surface-2: rgba(254, 240, 214, 0.75);
+  --surface-3: rgba(253, 222, 176, 0.7);
+  --glass: rgba(255, 251, 245, 0.82);
+  --border: rgba(120, 53, 15, 0.12);
+  --border-strong: rgba(120, 53, 15, 0.24);
+  --grid: rgba(120, 53, 15, 0.1);
+  --text: #2b1a0a;
+  --muted: #6b4d2f;
+  --faint: #7a5b3c;
+  --violet: #d97706;
+  --violet-2: #92400e;
+  --indigo: #ea580c;
+  --blue: #c2410c;
+  --blue-2: #c2410c;
+  --warning: #c2410c;
+  --accent: linear-gradient(135deg, #d97706 0%, #b45309 38%, #c2410c 64%, #9a3412 100%);
+  --accent-strong: linear-gradient(135deg, #d97706 0%, #b45309 38%, #c2410c 64%, #9a3412 100%);
+  --accent-soft: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(234, 88, 12, 0.12));
+  --focus: #92400e;
+  --series-gravity: #d97706;
+  --series-rssi: #7c3aed;
+  --code-bg: #fdf8f1;
+  --backdrop: rgba(43, 26, 10, 0.35);
+  --shine: linear-gradient(90deg, #b45309, #ea580c, #a16207, #b45309);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b4d2f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 18px 40px -24px rgba(110, 60, 15, 0.32);
+  --shadow-lg: 0 30px 80px -24px rgba(110, 60, 15, 0.38);
+  --glow: 0 12px 30px -12px rgba(217, 119, 6, 0.45);
+}
+
+/* ---------- Rosé: plum dusk, pink to coral ---------- */
+
+:root[data-palette='rose'][data-theme='dark'] {
+  --bg: #14070f;
+  --bg-glow-1: rgba(236, 72, 153, 0.24);
+  --bg-glow-2: rgba(249, 115, 22, 0.14);
+  --bg-glow-3: rgba(168, 85, 247, 0.1);
+  --surface: rgba(50, 18, 38, 0.64);
+  --surface-solid: #27101f;
+  --surface-2: rgba(82, 30, 62, 0.52);
+  --surface-3: rgba(114, 44, 86, 0.48);
+  --glass: rgba(24, 8, 18, 0.74);
+  --border: rgba(251, 207, 232, 0.13);
+  --border-strong: rgba(251, 207, 232, 0.27);
+  --grid: rgba(251, 207, 232, 0.08);
+  --text: #fff0f7;
+  --muted: #d7a9c0;
+  --faint: #c28ea8;
+  --violet: #ec4899;
+  --violet-2: #f472b6;
+  --indigo: #f43f5e;
+  --blue: #f97316;
+  --blue-2: #fb923c;
+  /* The usual danger colour (rose) and temperature line (pink) are this palette's own. */
+  --danger: #f87171;
+  --series-temp: #fb923c;
+  --accent: linear-gradient(135deg, #fbcfe8 0%, #f472b6 38%, #fb7185 64%, #fb923c 100%);
+  --accent-strong: linear-gradient(135deg, #f472b6 0%, #db2777 38%, #e11d48 64%, #ea580c 100%);
+  --accent-soft: linear-gradient(135deg, rgba(236, 72, 153, 0.22), rgba(249, 115, 22, 0.14));
+  --focus: #f472b6;
+  --series-gravity: #f472b6;
+  --code-bg: rgba(12, 3, 9, 0.6);
+  --backdrop: rgba(12, 3, 9, 0.6);
+  --shine: linear-gradient(90deg, #fbcfe8, #fed7aa, #f5d0fe, #fbcfe8);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d7a9c0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 20px 50px -24px rgba(10, 2, 7, 0.9);
+  --shadow-lg: 0 30px 90px -20px rgba(10, 2, 7, 0.85);
+  --glow: 0 12px 34px -12px rgba(219, 39, 119, 0.7);
+}
+
+:root[data-palette='rose'][data-theme='light'] {
+  --bg: #fdf2f7;
+  --bg-glow-1: rgba(236, 72, 153, 0.14);
+  --bg-glow-2: rgba(249, 115, 22, 0.1);
+  --bg-glow-3: rgba(168, 85, 247, 0.07);
+  --surface: rgba(255, 255, 255, 0.8);
+  --surface-solid: #ffffff;
+  --surface-2: rgba(252, 231, 243, 0.75);
+  --surface-3: rgba(251, 207, 232, 0.7);
+  --glass: rgba(255, 248, 252, 0.82);
+  --border: rgba(131, 24, 67, 0.12);
+  --border-strong: rgba(131, 24, 67, 0.24);
+  --grid: rgba(131, 24, 67, 0.1);
+  --text: #2d0f1f;
+  --muted: #6d3c54;
+  --faint: #7c4b63;
+  --violet: #db2777;
+  --violet-2: #be185d;
+  --indigo: #e11d48;
+  --blue: #ea580c;
+  --blue-2: #c2410c;
+  --danger: #b91c1c;
+  --series-temp: #ea580c;
+  --accent: linear-gradient(135deg, #ec4899 0%, #db2777 38%, #e11d48 64%, #ea580c 100%);
+  --accent-strong: linear-gradient(135deg, #ec4899 0%, #db2777 38%, #be123c 64%, #c2410c 100%);
+  --accent-soft: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(249, 115, 22, 0.1));
+  --focus: #be185d;
+  --series-gravity: #db2777;
+  --code-bg: #fdf5f9;
+  --backdrop: rgba(45, 15, 31, 0.35);
+  --shine: linear-gradient(90deg, #db2777, #ea580c, #c026d3, #db2777);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236d3c54' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 18px 40px -24px rgba(112, 20, 62, 0.3);
+  --shadow-lg: 0 30px 80px -24px rgba(112, 20, 62, 0.36);
+  --glow: 0 12px 30px -12px rgba(219, 39, 119, 0.45);
+}
+
+/* ---------- Graphite: plain greys, white on black (or black on white) ---------- */
+
+:root[data-palette='graphite'][data-theme='dark'] {
+  --bg: #0a0a0c;
+  --bg-glow-1: rgba(161, 161, 170, 0.12);
+  --bg-glow-2: rgba(113, 113, 122, 0.12);
+  --bg-glow-3: rgba(244, 244, 245, 0.04);
+  --surface: rgba(30, 30, 34, 0.66);
+  --surface-solid: #18181b;
+  --surface-2: rgba(48, 48, 54, 0.55);
+  --surface-3: rgba(70, 70, 78, 0.5);
+  --glass: rgba(12, 12, 14, 0.76);
+  --border: rgba(228, 228, 231, 0.1);
+  --border-strong: rgba(228, 228, 231, 0.22);
+  --grid: rgba(228, 228, 231, 0.07);
+  --text: #fafafa;
+  --muted: #a1a1aa;
+  --faint: #8d8d96;
+  --violet: #a1a1aa;
+  --violet-2: #e4e4e7;
+  --indigo: #d4d4d8;
+  --blue: #71717a;
+  --blue-2: #a1a1aa;
+  --accent: linear-gradient(135deg, #ffffff 0%, #e4e4e7 38%, #a1a1aa 100%);
+  /* White buttons with dark text. */
+  --accent-strong: linear-gradient(135deg, #ffffff 0%, #f4f4f5 50%, #d4d4d8 100%);
+  --accent-soft: linear-gradient(135deg, rgba(244, 244, 245, 0.1), rgba(161, 161, 170, 0.08));
+  --on-accent: #09090b;
+  --focus: #e4e4e7;
+  --series-gravity: #e4e4e7;
+  --code-bg: rgba(0, 0, 0, 0.5);
+  --backdrop: rgba(0, 0, 0, 0.6);
+  --shine: linear-gradient(90deg, #ffffff, #a1a1aa, #e4e4e7, #ffffff);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 20px 50px -24px rgba(0, 0, 0, 0.9);
+  --shadow-lg: 0 30px 90px -20px rgba(0, 0, 0, 0.85);
+  --glow: 0 12px 34px -12px rgba(255, 255, 255, 0.18);
+}
+
+:root[data-palette='graphite'][data-theme='light'] {
+  --bg: #f4f4f5;
+  --bg-glow-1: rgba(113, 113, 122, 0.1);
+  --bg-glow-2: rgba(161, 161, 170, 0.12);
+  --bg-glow-3: rgba(24, 24, 27, 0.03);
+  --surface: rgba(255, 255, 255, 0.8);
+  --surface-solid: #ffffff;
+  --surface-2: rgba(228, 228, 231, 0.6);
+  --surface-3: rgba(212, 212, 216, 0.65);
+  --glass: rgba(250, 250, 250, 0.84);
+  --border: rgba(24, 24, 27, 0.11);
+  --border-strong: rgba(24, 24, 27, 0.22);
+  --grid: rgba(24, 24, 27, 0.08);
+  --text: #18181b;
+  --muted: #52525b;
+  --faint: #5f5f68;
+  --violet: #52525b;
+  --violet-2: #27272a;
+  --indigo: #3f3f46;
+  --blue: #71717a;
+  --blue-2: #52525b;
+  --accent: linear-gradient(135deg, #71717a 0%, #3f3f46 38%, #27272a 64%, #09090b 100%);
+  --accent-strong: linear-gradient(135deg, #52525b 0%, #3f3f46 38%, #27272a 64%, #18181b 100%);
+  --accent-soft: linear-gradient(135deg, rgba(24, 24, 27, 0.08), rgba(82, 82, 91, 0.06));
+  --focus: #27272a;
+  --series-gravity: #3f3f46;
+  --code-bg: #f8f8f9;
+  --backdrop: rgba(24, 24, 27, 0.35);
+  --shine: linear-gradient(90deg, #18181b, #71717a, #3f3f46, #18181b);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2352525b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 18px 40px -24px rgba(24, 24, 27, 0.25);
+  --shadow-lg: 0 30px 80px -24px rgba(24, 24, 27, 0.3);
+  --glow: 0 12px 30px -12px rgba(24, 24, 27, 0.35);
+}

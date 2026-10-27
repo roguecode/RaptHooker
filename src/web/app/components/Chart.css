@@ -168,7 +168,7 @@
   bottom: 0;
   border: 1.5px solid var(--violet-2);
   border-radius: var(--radius-sm);
-  background: rgba(139, 92, 246, 0.08);
+  background: color-mix(in srgb, var(--violet) 8%, transparent);
   cursor: grab;
 }
 

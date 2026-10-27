@@ -6,3 +6,5 @@
 deploy/pi-image/** text eol=lf
 Dockerfile text eol=lf
 *.png binary
+*.gif binary
+*.mp4 binary

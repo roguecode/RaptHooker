@@ -33,7 +33,7 @@ Kiosk mode, for an always-on screen in the brewery:
 
 ## Currently Supported Devices
 
-- **RAPT Pill** (gravity and temperature), set to Bluetooth telemetry.
+- **RAPT Pill** (gravity and temperature), set to [Bluetooth telemetry](#switch-a-rapt-pill-to-bluetooth).
 - **RAPT Bluetooth Thermometer** (temperature): no setup needed, just switch it on near the Pi.
 
 ## Integrations
@@ -83,9 +83,8 @@ It takes about 20 minutes, most of it waiting. No experience needed: just follow
 - A **computer** (Windows, Mac or Linux) that can write to the card. Most laptops have a slot; otherwise use a cheap
   USB card reader.
 - Your **Wi-Fi name and password**, or a network cable for the Pi.
-- Your **RAPT Pill set to Bluetooth**: in the RAPT app open the pill, then **Connect → Setup → Telemetry via
-  Bluetooth**. The pill then broadcasts its readings for RaptHooker to pick up (instead of sending them to KegLand's
-  cloud). The telemetry interval you choose there is how often it broadcasts. The new beta firmware is currently untested, stick with the original for now.
+- Your **RAPT Pill/s set to Bluetooth**, so it broadcasts its readings for RaptHooker to pick up (instead of sending them
+  to KegLand's cloud). If it's on Wi-Fi, [switch it to Bluetooth](#switch-a-rapt-pill-to-bluetooth).
 
 ### 1. Prepare the SD card
 
@@ -153,10 +152,47 @@ On a phone, use your browser's **Add to Home Screen** to open it like an app.
   e.g. `ssh pi@192.168.1.23` and `http://192.168.1.23:8080`.
 - **`ssh` says the connection was refused or timed out:** give the Pi another minute. If it still doesn't work, SSH
   probably wasn't switched on: write the card again (step 1) and check the SSH setting.
-- **No pill appears:** check the pill is in Bluetooth mode and close to the Pi. A fridge or a stainless steel fermenter
-  makes it harder to hear. More help: [troubleshooting](docs/pi-setup.md#troubleshooting).
+- **No pill appears:** check the pill is in [Bluetooth mode](#switch-a-rapt-pill-to-bluetooth) and close to the Pi. A
+  fridge or a stainless steel fermenter makes it harder to hear. More help:
+  [troubleshooting](docs/pi-setup.md#troubleshooting).
 - More options (HTTPS and access away from home with Tailscale, a particular version, a ready-made Pi image) are in
   [docs/pi-setup.md](docs/pi-setup.md).
+
+## Switch a RAPT Pill to Bluetooth
+
+If your RAPT Pills are currently set to WiFi then you need to switch them to Bluetooth. This can be done with both the old (v1) and new (v2) stock firmware.
+
+### Original firmware (V1)
+
+1. Plug the pill into USB-C power, or put it on its wireless charger. Its setup network is only there while it's
+   charging.
+2. On your phone, open the Wi-Fi settings and join the **RAPT Pill XXXX** network. The password is `kegland1`.
+3. Your phone offers to **sign in** to the network: select it to open the pill's setup page. If it doesn't, select the
+   **RAPT Pill** network in the Wi-Fi settings again.
+4. Under **Other stuff**, select **Settings**.
+5. Set **Telemetry method** to **Bluetooth**.
+6. If you like, change **Telemetry interval (Bluetooth)** and select **Set interval (Bluetooth)**. It's the minutes
+   between broadcasts: shorter means fresher readings but a flatter battery (KegLand recommends 5).
+
+[![Switching a pill on the original firmware to Bluetooth from its setup page](docs/images/pill-to-bluetooth-v1.gif)](docs/videos/pill-to-bluetooth-v1.mp4)
+
+### New firmware (V2)
+
+1. In the RAPT app, open the pill and select **Connect to Pill**, with your phone close to the pill.
+2. When your phone asks to pair with the **RAPT Pill Hydrometer**, select **Pair**.
+3. Once it's connected, select **Setup**. It shows **Direct Change via BLE**: changes go straight to the pill.
+4. Set **Telemetry via** to **Bluetooth**. If you like, change the **BLE Telemetry Frequency**, how often it
+   broadcasts.
+5. Select **Apply**. The app confirms with **Settings applied to the Pill via Bluetooth**.
+
+[![Switching a pill on the new firmware to Bluetooth from the RAPT app](docs/images/pill-to-bluetooth-v2.gif)](docs/videos/pill-to-bluetooth-v2.mp4)
+
+### Once it's switched
+
+After its next broadcast, the pill appears on RaptHooker's dashboard under **Found a RAPT Pill nearby**. Name it if you
+like and select **Add pill**: from then on every reading is recorded.
+
+![RaptHooker showing a RAPT Pill it found nearby, ready to add](docs/images/found-pill.png)
 
 ## Updating
 

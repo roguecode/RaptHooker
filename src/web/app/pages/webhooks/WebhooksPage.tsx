@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { presetById, type Webhook } from '@rapthooker/shared';
+import { mixesPills, presetById, type Webhook } from '@rapthooker/shared';
 import { api, errorText } from '../../api';
 import { useLive, useLiveMessages } from '../../live';
 import { href, navigate } from '../../router';
@@ -216,6 +216,14 @@ export function WebhooksPage() {
                       <Icon name="droplet" size={12} />{' '}
                       {h.pillIds === 'all' ? t('All pills') : h.pillIds.map(pillName).join(', ') || t('No pills')}
                     </span>
+                    {mixesPills(preset, h.pillIds) && (
+                      <span
+                        className="chip warning"
+                        title={t('Readings from more than one pill will be mixed together in {name}.', { name: preset!.name })}
+                      >
+                        <Icon name="alert" size={12} /> {t('Several pills on one {name} device', { name: preset!.name })}
+                      </span>
+                    )}
                     {h.batch && <span className="chip">{t('One request for all')}</span>}
                     {h.onlyDuringBrew && <span className="chip">{t('While brewing')}</span>}
                     {(h.minChangeGravity !== null || h.minChangeTemp !== null) && <span className="chip">{t('On change')}</span>}

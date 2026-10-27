@@ -1645,5 +1645,14 @@
   "Some readings may be missed: try the hub (or a relay) closer to the thermometer.": "Algumas leituras podem se perder: tente o hub (ou um repetidor) mais perto do termômetro.",
   "Thermometer settings": "Configurações do termômetro",
   "Thermometers have no gravity or battery reading, so this alert leaves them out.": "Termômetros não medem densidade nem bateria, então este alerta os deixa de fora.",
-  "This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)": "Isto exclui {what}. Não dá para desfazer. (Para mantê-las, arquive o termômetro.)"
+  "This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)": "Isto exclui {what}. Não dá para desfazer. (Para mantê-las, arquive o termômetro.)",
+  "One pill per webhook": "Um Pill por webhook",
+  "{name} files everything a webhook sends under one device, so readings from several pills would be mixed together. Choose one pill below, and make another webhook, with its own {name} device, for each other pill.": "O {name} registra tudo o que um webhook envia em um único dispositivo, então as leituras de vários Pills ficariam misturadas. Escolha um Pill abaixo e crie outro webhook, com o próprio dispositivo do {name}, para cada um dos outros Pills.",
+  "Several pills on one {name} device": "Vários Pills em um único dispositivo do {name}",
+  "Readings from more than one pill will be mixed together in {name}.": "As leituras de mais de um Pill vão ficar misturadas no {name}.",
+  "Not for {name}: it takes one pill per webhook.": "Não para o {name}: ele aceita um Pill por webhook.",
+  "One pill:": "Um Pill:",
+  "Allow several pills anyway": "Permitir vários Pills mesmo assim",
+  "Back to one pill": "Voltar para um Pill",
+  "Choose one pill": "Escolha um Pill"
 }

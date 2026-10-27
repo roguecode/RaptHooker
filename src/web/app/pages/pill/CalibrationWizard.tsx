@@ -527,7 +527,7 @@ const cssVar = (name: string, fallback: string) => getComputedStyle(document.doc
 function TiltFitChart({ pts, coeffs }: { pts: TiltPoint[]; coeffs: number[] | null }) {
   const box = useRef<HTMLDivElement | null>(null);
   const u = useUnits();
-  const { theme } = useTheme();
+  const { look } = useTheme();
   const latest = useRef({ pts, coeffs });
   latest.current = { pts, coeffs };
   // The pill (and so these arrays) is replaced with every reading; only redraw when the points change.
@@ -580,7 +580,7 @@ function TiltFitChart({ pts, coeffs }: { pts: TiltPoint[]; coeffs: number[] | nu
       ro.disconnect();
       chart.destroy();
     };
-  }, [key, u, theme]);
+  }, [key, u, look]);
   return (
     <div
       ref={box}

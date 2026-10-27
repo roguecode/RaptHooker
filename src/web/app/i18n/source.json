@@ -975,6 +975,11 @@
       "pages/settings/BackupSection.tsx"
     ]
   },
+  "Amber": {
+    "files": [
+      "theme.ts"
+    ]
+  },
   "Angle from vertical, degrees": {
     "files": [
       "pages/webhooks/strings.ts"
@@ -1685,6 +1690,12 @@
   "Colour": {
     "files": [
       "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Colours": {
+    "files": [
+      "components/PalettePicker.tsx",
+      "pages/settings/HubSection.tsx"
     ]
   },
   "Commit {commit} with uncommitted changes, built {time}": {
@@ -2420,6 +2431,11 @@
       "pages/settings/TokensSection.tsx"
     ]
   },
+  "Each comes in a dark and a light version, following the theme.": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
   "each new reading as JSON: {gravity} (SG), {gravity_plato}, {temperature} (°C), {velocity} (points/day), {battery} (%), {rssi} (dBm), {tilt} (°), {plausible}, {timestamp}, and the running brew's {brew_name}, {og}, {abv}, {attenuation} and {stage} (empty when there's no brew).": {
     "files": [
       "pages/settings/MqttSection.tsx"
@@ -3096,6 +3112,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "Graphite": {
+    "files": [
+      "theme.ts"
+    ]
+  },
   "Gravity": {
     "files": [
       "components/Chart.tsx",
@@ -3316,6 +3337,11 @@
   "Home Assistant discovery, when it's on.": {
     "files": [
       "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Hops": {
+    "files": [
+      "theme.ts"
     ]
   },
   "Hours of readings RaptHooker uses": {
@@ -4541,6 +4567,11 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Ocean": {
+    "files": [
+      "theme.ts"
+    ]
+  },
   "of readings since {time}": {
     "files": [
       "pages/pill/Tiles.tsx"
@@ -5710,6 +5741,11 @@
   "Rising": {
     "files": [
       "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Rosé": {
+    "files": [
+      "theme.ts"
     ]
   },
   "Rules": {
@@ -7521,6 +7557,11 @@
   "Viewing": {
     "files": [
       "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Violet": {
+    "files": [
+      "theme.ts"
     ]
   },
   "Wait a minute after a backup before pulling it out.": {

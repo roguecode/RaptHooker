@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Icon } from './Icon';
 import { ThemeSwitch } from './ThemeSwitch';
+import { PalettePicker } from './PalettePicker';
 import { UnitSource, UnitToggles } from '../units';
 import { LOCALES, t, useI18n, type LocaleId } from '../i18n';
 
@@ -65,6 +66,7 @@ export function DisplayMenu() {
           <div className="menu-section">
             <span className="label">{t('Theme in this browser')}</span>
             <ThemeSwitch />
+            <PalettePicker compact />
           </div>
           <div className="menu-section">
             <label className="label row" style={{ gap: '0.35rem' }} htmlFor={langId}>

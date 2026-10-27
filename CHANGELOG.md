@@ -5,6 +5,12 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Colours to choose from.** Besides the original violet and blue, the app now comes in Ocean, Hops, Amber, Rosé and
+  Graphite, each with a dark and a light version that follow the Auto, Dark or Light theme. Pick one per browser under
+  **Settings → Hub → This browser** or in the top bar menu. Violet stays the default.
+
 ### Changed
 
 - **A tidier pill page.** Under the pill's summary come the running brew, the history, the pill's data (battery,

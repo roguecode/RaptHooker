@@ -354,6 +354,11 @@
       "pages/webhooks/PresetGrid.tsx"
     ]
   },
+  "{name} files everything a webhook sends under one device, so readings from several pills would be mixed together. Choose one pill below, and make another webhook, with its own {name} device, for each other pill.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
   "{name} has been saved.": {
     "files": [
       "pages/pill/BrewPanel.tsx"
@@ -939,6 +944,11 @@
       "pages/webhooks/WebhookEditor.tsx"
     ]
   },
+  "Allow several pills anyway": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
   "Allow the webhook to be called from your local network in the trigger settings.": {
     "files": [
       "pages/webhooks/strings.ts"
@@ -1149,6 +1159,11 @@
   "Averages out wobbles from bubbles and knocks. Used for what's shown, sent and alerted.": {
     "files": [
       "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Back to one pill": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
     ]
   },
   "Back to the brew": {
@@ -1606,6 +1621,11 @@
   "Choose a PIN (4+ characters)": {
     "files": [
       "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Choose one pill": {
+    "files": [
+      "pages/webhooks/WebhookEditor.tsx"
     ]
   },
   "Choose where your readings should go. Everything can be changed afterwards.": {
@@ -4374,6 +4394,11 @@
       "pages/pill/PillPage.tsx"
     ]
   },
+  "Not for {name}: it takes one pill per webhook.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
   "not known yet": {
     "files": [
       "pages/pill/DataSources.tsx"
@@ -4663,6 +4688,16 @@
   "One at a time": {
     "files": [
       "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "One pill per webhook": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "One pill:": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx"
     ]
   },
   "One request for all": {
@@ -5354,6 +5389,12 @@
       "pages/settings/BluetoothSection.tsx"
     ]
   },
+  "Readings from more than one pill will be mixed together in {name}.": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
   "Readings will be missing until it's back; the hub keeps trying.": {
     "files": [
       "pages/Dashboard.tsx"
@@ -5901,6 +5942,12 @@
   "Setup progress": {
     "files": [
       "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Several pills on one {name} device": {
+    "files": [
+      "pages/webhooks/ScheduleFields.tsx",
+      "pages/webhooks/WebhooksPage.tsx"
     ]
   },
   "SG, specific gravity": {

@@ -1678,5 +1678,14 @@
   "Some readings may be missed: try the hub (or a relay) closer to the thermometer.": "Część odczytów może przepaść: przysuń hub (lub przekaźnik) bliżej termometru.",
   "Thermometer settings": "Ustawienia termometru",
   "Thermometers have no gravity or battery reading, so this alert leaves them out.": "Termometry nie mierzą gęstości ani baterii, więc ten alert je pomija.",
-  "This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)": "To usunie {what}. Tego nie da się cofnąć. (Aby je zachować, zarchiwizuj termometr.)"
+  "This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)": "To usunie {what}. Tego nie da się cofnąć. (Aby je zachować, zarchiwizuj termometr.)",
+  "One pill per webhook": "Jeden czujnik na webhook",
+  "{name} files everything a webhook sends under one device, so readings from several pills would be mixed together. Choose one pill below, and make another webhook, with its own {name} device, for each other pill.": "{name} zapisuje wszystko, co wysyła webhook, jako jedno urządzenie, więc odczyty z kilku czujników by się pomieszały. Wybierz poniżej jeden czujnik, a dla każdego kolejnego utwórz osobny webhook z własnym urządzeniem w {name}.",
+  "Several pills on one {name} device": "Kilka czujników na jednym urządzeniu {name}",
+  "Readings from more than one pill will be mixed together in {name}.": "Odczyty z więcej niż jednego czujnika pomieszają się w {name}.",
+  "Not for {name}: it takes one pill per webhook.": "Nie dla {name}: przyjmuje jeden czujnik na webhook.",
+  "One pill:": "Jeden czujnik:",
+  "Allow several pills anyway": "Mimo to zezwól na kilka czujników",
+  "Back to one pill": "Wróć do jednego czujnika",
+  "Choose one pill": "Wybierz jeden czujnik"
 }

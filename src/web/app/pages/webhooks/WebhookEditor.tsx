@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
   DEFAULT_WEBHOOK_OPTIONS,
+  mixesPills,
   presetById,
   webhookInputSchema,
+  type Pill,
   type Webhook,
   type WebhookInput,
   type WebhookPreset,
@@ -18,7 +20,7 @@ import { useFormCheck } from '../../validation';
 import { PresetGrid, PresetSetup, PresetTrust } from './PresetGrid';
 import { SparkleLine } from './SparkleLine';
 import { RequestFields, type SetField } from './RequestFields';
-import { ScheduleFields } from './ScheduleFields';
+import { ScheduleFields, OnePillNotice } from './ScheduleFields';
 import { Preview } from './Preview';
 import { DeliveryLog } from './DeliveryLog';
 import { PauseButton } from './PauseButton';
@@ -43,24 +45,34 @@ const LABELS: Record<string, string> = {
   pausedUntil: tk('Pause'),
 };
 
-const fromPreset = (p: WebhookPreset): WebhookInput => ({
-  name: p.id === 'custom' ? t('My webhook') : p.name,
-  enabled: true,
-  preset: p.id,
-  url: p.url,
-  method: p.method,
-  headers: p.headers.map((h) => ({ ...h })),
-  bodyFormat: p.bodyFormat,
-  body: p.body,
-  intervalMin: p.intervalMin,
-  pillIds: 'all',
-  onlyDuringBrew: false,
-  onlyNewReadings: true,
-  gravityUnit: p.gravityUnit,
-  temperatureUnit: p.temperatureUnit,
-  timeoutSec: 15,
-  ...DEFAULT_WEBHOOK_OPTIONS,
+/** For a service that takes one pill per webhook, unless the owner allows several anyway. */
+const onePillSchema = webhookInputSchema.refine((w) => Array.isArray(w.pillIds) && w.pillIds.length === 1, {
+  path: ['pillIds'],
+  error: tk('Choose one pill'),
 });
+
+const fromPreset = (p: WebhookPreset, pills: Pill[]): WebhookInput => {
+  const real = pills.filter((x) => !x.archived && x.kind === 'pill');
+  return {
+    name: p.id === 'custom' ? t('My webhook') : p.name,
+    enabled: true,
+    preset: p.id,
+    url: p.url,
+    method: p.method,
+    headers: p.headers.map((h) => ({ ...h })),
+    bodyFormat: p.bodyFormat,
+    body: p.body,
+    intervalMin: p.intervalMin,
+    // A service that takes one pill starts with the hub's only pill; with several, the owner picks.
+    pillIds: p.onePillPerWebhook ? (real.length === 1 ? [real[0]!.id] : []) : 'all',
+    onlyDuringBrew: false,
+    onlyNewReadings: true,
+    gravityUnit: p.gravityUnit,
+    temperatureUnit: p.temperatureUnit,
+    timeoutSec: 15,
+    ...DEFAULT_WEBHOOK_OPTIONS,
+  };
+};
 
 const toInput = (h: Webhook): WebhookInput => ({
   name: h.name,
@@ -89,7 +101,7 @@ const toInput = (h: Webhook): WebhookInput => ({
 });
 
 export function WebhookEditor({ id }: { id: string | null }) {
-  const { isOwner, toast } = useLive();
+  const { isOwner, toast, pills } = useLive();
   const [draft, setDraft] = useState<WebhookInput | null>(null);
   const [existing, setExisting] = useState<Webhook | null>(null);
   const [missing, setMissing] = useState(false);
@@ -98,7 +110,7 @@ export function WebhookEditor({ id }: { id: string | null }) {
     if (id === null) {
       const presetId = new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('preset');
       const preset = presetId ? presetById(presetId) : undefined;
-      setDraft(preset ? fromPreset(preset) : null);
+      setDraft(preset ? fromPreset(preset, pills) : null);
       return;
     }
     api.webhooks().then(
@@ -110,7 +122,8 @@ export function WebhookEditor({ id }: { id: string | null }) {
       },
       (err) => toast({ tone: 'error', title: t("Couldn't load the webhook"), body: errorText(err) }),
     );
-  }, [id, toast]);
+    // Only the pills there when the form opens: new readings mustn't reset it.
+  }, [id, toast]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOwner) {
     return (
@@ -149,7 +162,7 @@ export function WebhookEditor({ id }: { id: string | null }) {
             </div>
           </div>
         </div>
-        <PresetGrid onPick={(p) => setDraft(fromPreset(p))} />
+        <PresetGrid onPick={(p) => setDraft(fromPreset(p, pills))} />
       </div>
     );
   }
@@ -172,8 +185,11 @@ function EditorForm({
   const now = useNow(30_000);
   const preset = presetById(draft.preset);
   const [saving, setSaving] = useState(false);
+  // A webhook saved with several pills for such a service was allowed them, so it opens that way.
+  const [severalAllowed, setSeveralAllowed] = useState(() => mixesPills(preset, draft.pillIds));
   const set: SetField = (k, v) => setDraft((d) => (d ? { ...d, [k]: v } : d));
-  const check = useFormCheck(webhookInputSchema, draft, LABELS);
+  const onePill = preset?.onePillPerWebhook === true && !severalAllowed;
+  const check = useFormCheck(onePill ? onePillSchema : webhookInputSchema, draft, LABELS);
   const paused = isPausedNow(draft, now);
 
   const save = async () => {
@@ -258,10 +274,18 @@ function EditorForm({
         </div>
       )}
 
+      {preset?.onePillPerWebhook && <OnePillNotice preset={preset} pillIds={draft.pillIds} />}
+
       <div className="editor">
         <div className="stack">
           <RequestFields draft={draft} set={set} errors={check.errors} />
-          <ScheduleFields draft={draft} set={set} errors={check.errors} />
+          <ScheduleFields
+            draft={draft}
+            set={set}
+            errors={check.errors}
+            severalAllowed={severalAllowed}
+            setSeveralAllowed={setSeveralAllowed}
+          />
 
           <div className="row">
             <button type="button" className="btn primary" disabled={saving} onClick={() => void save()}>

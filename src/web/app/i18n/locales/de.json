@@ -1612,5 +1612,14 @@
   "Some readings may be missed: try the hub (or a relay) closer to the thermometer.": "Einige Messwerte könnten fehlen: Stell den Hub (oder ein Relais) näher an das Thermometer.",
   "Thermometer settings": "Thermometer-Einstellungen",
   "Thermometers have no gravity or battery reading, so this alert leaves them out.": "Thermometer haben weder Dichte noch Akkustand, daher lässt dieser Alarm sie aus.",
-  "This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)": "Das löscht {what}. Das lässt sich nicht rückgängig machen. (Um sie zu behalten, archiviere das Thermometer stattdessen.)"
+  "This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)": "Das löscht {what}. Das lässt sich nicht rückgängig machen. (Um sie zu behalten, archiviere das Thermometer stattdessen.)",
+  "One pill per webhook": "Eine Pill pro Webhook",
+  "{name} files everything a webhook sends under one device, so readings from several pills would be mixed together. Choose one pill below, and make another webhook, with its own {name} device, for each other pill.": "{name} legt alles, was ein Webhook sendet, unter einem Gerät ab, daher würden die Messwerte mehrerer Pills vermischt. Wähle unten eine Pill und lege für jede weitere Pill einen eigenen Webhook mit einem eigenen {name}-Gerät an.",
+  "Several pills on one {name} device": "Mehrere Pills auf einem {name}-Gerät",
+  "Readings from more than one pill will be mixed together in {name}.": "Messwerte von mehr als einer Pill werden in {name} vermischt.",
+  "Not for {name}: it takes one pill per webhook.": "Nicht für {name}: Es nimmt nur eine Pill pro Webhook.",
+  "One pill:": "Eine Pill:",
+  "Allow several pills anyway": "Trotzdem mehrere Pills erlauben",
+  "Back to one pill": "Zurück zu einer Pill",
+  "Choose one pill": "Wähle eine Pill"
 }

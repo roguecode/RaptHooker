@@ -5,6 +5,14 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Grainfather, BrewSpy and ThingSpeak webhooks take one pill each.** These services file everything a webhook sends
+  under one device, so a webhook for several pills mixed their readings together. The editor now says so at the top,
+  starts with one pill (the hub's only pill, if it has one) and saves only one, unless you choose **Allow several pills
+  anyway**. Existing webhooks keep sending as they are; one that sends several pills to such a service shows a warning
+  on its card and in the editor.
+
 ## [0.4.1] - 2026-10-27
 
 ### Added

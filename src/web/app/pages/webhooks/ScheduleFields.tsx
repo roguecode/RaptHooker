@@ -1,10 +1,17 @@
 import { useState } from 'react';
-import { presetById } from '@rapthooker/shared';
+import { mixesPills, presetById, type WebhookPreset } from '@rapthooker/shared';
 import { useLive } from '../../live';
 import { t } from '../../i18n';
 import { FieldError } from '../../validation';
+import { Icon } from '../../components/Icon';
 import { NumberInput } from '../../components/NumberInput';
 import type { FieldsProps } from './RequestFields';
+
+interface ScheduleProps extends FieldsProps {
+  /** For a service that takes one pill per webhook: the owner allowed several anyway. */
+  severalAllowed: boolean;
+  setSeveralAllowed: (on: boolean) => void;
+}
 
 const nullableNumber = (value: string): number | null => (value.trim() === '' ? null : Number(value));
 
@@ -97,13 +104,115 @@ function ChangeFields({ draft, set, errors }: FieldsProps) {
   );
 }
 
-/** How often the webhook sends, for which pills and in which units. */
-export function ScheduleFields({ draft, set, errors }: FieldsProps) {
+/** The warning at the top of the editor for a service that takes one pill per webhook. */
+export function OnePillNotice({ preset, pillIds }: { preset: WebhookPreset; pillIds: string[] | 'all' }) {
+  const mixing = mixesPills(preset, pillIds);
+  return (
+    <div className="notice warning wh-notice" role="alert">
+      <Icon name="alert" />
+      <div className="grow">
+        <p>
+          <strong>{mixing ? t('Several pills on one {name} device', { name: preset.name }) : t('One pill per webhook')}</strong>
+        </p>
+        <p>
+          {mixing
+            ? t('Readings from more than one pill will be mixed together in {name}.', { name: preset.name })
+            : t(
+                '{name} files everything a webhook sends under one device, so readings from several pills would be mixed together. Choose one pill below, and make another webhook, with its own {name} device, for each other pill.',
+                { name: preset.name },
+              )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Which pills a webhook sends. A service that takes one pill per webhook gets one, unless the owner allows several. */
+function PillsField({ draft, set, errors, severalAllowed, setSeveralAllowed }: ScheduleProps) {
   const { pills } = useLive();
   const preset = presetById(draft.preset);
   const activePills = pills.filter((p) => !p.archived);
-  const tooOften = preset?.minIntervalMin != null && draft.intervalMin < preset.minIntervalMin;
+  const limited = preset?.onePillPerWebhook === true;
+  const onePill = limited && !severalAllowed;
+  const service = preset?.name ?? '';
+  const chosen = draft.pillIds === 'all' ? [] : draft.pillIds;
   const pillsError = Object.entries(errors).find(([k]) => k === 'pillIds' || k.startsWith('pillIds.'))?.[1];
+
+  const backToOne = () => {
+    const real = activePills.filter((p) => p.kind === 'pill');
+    setSeveralAllowed(false);
+    set('pillIds', draft.pillIds === 'all' ? (real.length === 1 ? [real[0]!.id] : []) : draft.pillIds.slice(0, 1));
+  };
+
+  return (
+    <div className="field wh-pills">
+      <span>{t('Pills')}</span>
+      <label className="check">
+        <input type="radio" disabled={onePill} checked={draft.pillIds === 'all'} onChange={() => set('pillIds', 'all')} />
+        <span>
+          {t('All pills')}
+          <small>
+            {onePill
+              ? t('Not for {name}: it takes one pill per webhook.', { name: service })
+              : `${t('Including any you add later.')} ${draft.batch ? t('They all go in one request.') : t('Each pill is sent separately.')}`}
+          </small>
+        </span>
+      </label>
+      <label className="check">
+        <input
+          type="radio"
+          checked={draft.pillIds !== 'all'}
+          onChange={() =>
+            set(
+              'pillIds',
+              activePills.map((p) => p.id),
+            )
+          }
+        />
+        <span>{onePill ? t('One pill:') : t('Only these:')}</span>
+      </label>
+      {draft.pillIds !== 'all' && (
+        <div className="chips" style={{ paddingLeft: '1.6rem' }}>
+          {activePills.length === 0 && <span className="muted small">{t('No pills yet.')}</span>}
+          {activePills.map((p) => {
+            const on = chosen.includes(p.id);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={`chip${on ? ' on' : ''}`}
+                aria-pressed={on}
+                onClick={() => set('pillIds', onePill ? [p.id] : on ? chosen.filter((x) => x !== p.id) : [...chosen, p.id])}
+              >
+                <span className="swatch" style={{ background: p.color }} /> {p.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <FieldError error={pillsError} />
+      {limited && (
+        <div>
+          {onePill ? (
+            <button type="button" className="btn small ghost" onClick={() => setSeveralAllowed(true)}>
+              {t('Allow several pills anyway')}
+            </button>
+          ) : (
+            <button type="button" className="btn small" onClick={backToOne}>
+              {t('Back to one pill')}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** How often the webhook sends, for which pills and in which units. */
+export function ScheduleFields(props: ScheduleProps) {
+  const { draft, set, errors } = props;
+  const preset = presetById(draft.preset);
+  const tooOften = preset?.minIntervalMin != null && draft.intervalMin < preset.minIntervalMin;
 
   return (
     <section className="panel stack">
@@ -139,51 +248,7 @@ export function ScheduleFields({ draft, set, errors }: FieldsProps) {
           </span>
         )}
       </div>
-      <div className="field">
-        <span>{t('Pills')}</span>
-        <label className="check">
-          <input type="radio" checked={draft.pillIds === 'all'} onChange={() => set('pillIds', 'all')} />
-          <span>
-            {t('All pills')}
-            <small>
-              {t('Including any you add later.')} {draft.batch ? t('They all go in one request.') : t('Each pill is sent separately.')}
-            </small>
-          </span>
-        </label>
-        <label className="check">
-          <input
-            type="radio"
-            checked={draft.pillIds !== 'all'}
-            onChange={() =>
-              set(
-                'pillIds',
-                activePills.map((p) => p.id),
-              )
-            }
-          />
-          <span>{t('Only these:')}</span>
-        </label>
-        {draft.pillIds !== 'all' && (
-          <div className="chips" style={{ paddingLeft: '1.6rem' }}>
-            {activePills.length === 0 && <span className="muted small">{t('No pills yet.')}</span>}
-            {activePills.map((p) => {
-              const ids = draft.pillIds as string[];
-              const on = ids.includes(p.id);
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  className={`chip${on ? ' on' : ''}`}
-                  onClick={() => set('pillIds', on ? ids.filter((x) => x !== p.id) : [...ids, p.id])}
-                >
-                  <span className="swatch" style={{ background: p.color }} /> {p.name}
-                </button>
-              );
-            })}
-          </div>
-        )}
-        <FieldError error={pillsError} />
-      </div>
+      <PillsField {...props} />
       <label className="check">
         <input type="checkbox" checked={draft.onlyDuringBrew} onChange={(e) => set('onlyDuringBrew', e.target.checked)} />
         <span>

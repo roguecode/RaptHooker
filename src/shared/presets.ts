@@ -25,6 +25,16 @@ export interface WebhookPreset {
    * documentation and other open-source projects.
    */
   verified: boolean;
+  /**
+   * The service files everything sent with one URL or key under a single device, so readings from several pills would
+   * be mixed together. The editor asks for one pill unless the owner allows several anyway.
+   */
+  onePillPerWebhook: boolean;
+}
+
+/** True when a webhook sends (or will send) several pills to a service that can only tell one apart. */
+export function mixesPills(preset: Pick<WebhookPreset, 'onePillPerWebhook'> | undefined, pillIds: string[] | 'all'): boolean {
+  return preset?.onePillPerWebhook === true && (pillIds === 'all' || pillIds.length > 1);
 }
 
 /** 'verified' or 'untested' for presets that talk to a service; null for your own endpoint (nothing to test). */
@@ -92,6 +102,7 @@ export const PRESETS: WebhookPreset[] = [
       "Brewfather's battery field is in volts, so the pill's battery % goes in the comment instead.",
     ],
     verified: false,
+    onePillPerWebhook: false,
   },
   {
     id: 'grainfather',
@@ -118,6 +129,7 @@ export const PRESETS: WebhookPreset[] = [
       ISPINDEL_BATTERY_NOTE,
     ],
     verified: true,
+    onePillPerWebhook: true,
   },
   {
     id: 'brewersfriend',
@@ -153,6 +165,7 @@ export const PRESETS: WebhookPreset[] = [
     ],
     notes: ["Brewer's Friend allows one post every 15 minutes per API key and brew session (more gets HTTP 429)."],
     verified: false,
+    onePillPerWebhook: false,
   },
   {
     id: 'brewspy',
@@ -175,6 +188,7 @@ export const PRESETS: WebhookPreset[] = [
     ],
     notes: ['If BrewSpy shows odd gravity values, switch the gravity unit to °P.', ISPINDEL_BATTERY_NOTE],
     verified: true,
+    onePillPerWebhook: true,
   },
   {
     id: 'bricks',
@@ -207,6 +221,7 @@ export const PRESETS: WebhookPreset[] = [
     ],
     notes: [],
     verified: false,
+    onePillPerWebhook: false,
   },
   {
     id: 'fermentrack',
@@ -229,6 +244,7 @@ export const PRESETS: WebhookPreset[] = [
     ],
     notes: [ISPINDEL_BATTERY_NOTE],
     verified: false,
+    onePillPerWebhook: false,
   },
   {
     id: 'homeassistant',
@@ -263,6 +279,7 @@ export const PRESETS: WebhookPreset[] = [
     ],
     notes: ['Allow the webhook to be called from your local network in the trigger settings.'],
     verified: true,
+    onePillPerWebhook: false,
   },
   {
     id: 'ubidots',
@@ -289,6 +306,7 @@ export const PRESETS: WebhookPreset[] = [
     setup: ['Copy a token from your Ubidots account (API Credentials) into the X-Auth-Token header.'],
     notes: ['Each pill becomes an Ubidots device named after it.'],
     verified: false,
+    onePillPerWebhook: false,
   },
   {
     id: 'thingspeak',
@@ -316,6 +334,7 @@ export const PRESETS: WebhookPreset[] = [
     setup: ["Copy the channel's Write API Key into the body.", 'Use one channel (and one webhook) per pill.'],
     notes: ['Fields: 1 gravity, 2 temperature, 3 battery, 4 velocity, 5 tilt, 6 signal.'],
     verified: false,
+    onePillPerWebhook: true,
   },
   {
     id: 'discord',
@@ -338,6 +357,7 @@ export const PRESETS: WebhookPreset[] = [
     setup: ['In Discord: channel settings → Integrations → Webhooks → New Webhook → Copy Webhook URL, then paste it above.'],
     notes: [],
     verified: true,
+    onePillPerWebhook: false,
   },
   {
     id: 'generic',
@@ -390,6 +410,7 @@ export const PRESETS: WebhookPreset[] = [
     setup: ['Point the URL at your own endpoint.'],
     notes: [],
     verified: false,
+    onePillPerWebhook: false,
   },
   {
     id: 'custom',
@@ -413,6 +434,7 @@ export const PRESETS: WebhookPreset[] = [
     setup: [],
     notes: [],
     verified: false,
+    onePillPerWebhook: false,
   },
 ];
 

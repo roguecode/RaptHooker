@@ -1612,5 +1612,14 @@
   "Some readings may be missed: try the hub (or a relay) closer to the thermometer.": "Er kunnen metingen gemist worden: zet de hub (of een relay) dichter bij de thermometer.",
   "Thermometer settings": "Thermometerinstellingen",
   "Thermometers have no gravity or battery reading, so this alert leaves them out.": "Thermometers hebben geen dichtheid of batterij, dus deze melding slaat ze over.",
-  "This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)": "Hiermee verwijder je {what}. Dit kan niet ongedaan worden gemaakt. (Wil je ze bewaren, archiveer de thermometer dan.)"
+  "This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)": "Hiermee verwijder je {what}. Dit kan niet ongedaan worden gemaakt. (Wil je ze bewaren, archiveer de thermometer dan.)",
+  "One pill per webhook": "Eén pill per webhook",
+  "{name} files everything a webhook sends under one device, so readings from several pills would be mixed together. Choose one pill below, and make another webhook, with its own {name} device, for each other pill.": "{name} slaat alles wat een webhook verstuurt op onder één apparaat, dus metingen van meerdere pills zouden door elkaar raken. Kies hieronder één pill en maak voor elke andere pill een eigen webhook, met een eigen {name}-apparaat.",
+  "Several pills on one {name} device": "Meerdere pills op één {name}-apparaat",
+  "Readings from more than one pill will be mixed together in {name}.": "Metingen van meer dan één pill raken in {name} door elkaar.",
+  "Not for {name}: it takes one pill per webhook.": "Niet voor {name}: dat neemt één pill per webhook.",
+  "One pill:": "Eén pill:",
+  "Allow several pills anyway": "Toch meerdere pills toestaan",
+  "Back to one pill": "Terug naar één pill",
+  "Choose one pill": "Kies één pill"
 }

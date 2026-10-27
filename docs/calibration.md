@@ -4,7 +4,8 @@ Every number RaptHooker shows, sends and alerts on comes from your pill. By defa
 works out itself; RaptHooker can work some of them out instead, per pill, if you'd like. Nothing you choose here
 changes what's stored: the readings the pill sent are kept as they are, so you can switch back (or compare) any time.
 
-Find the choices on the pill's page, under **Pill settings → Where the numbers come from** (owner only).
+Find the choices on the pill's page, under **Pill settings → Where the numbers come from** (owner only; open Pill
+settings from its heading).
 
 ## Gravity
 

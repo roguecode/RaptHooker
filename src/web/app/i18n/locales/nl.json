@@ -1621,5 +1621,7 @@
   "One pill:": "Eén pill:",
   "Allow several pills anyway": "Toch meerdere pills toestaan",
   "Back to one pill": "Terug naar één pill",
-  "Choose one pill": "Kies één pill"
+  "Choose one pill": "Kies één pill",
+  "Data": "Gegevens",
+  "Readings caught: {percent}%": "Opgevangen metingen: {percent}%"
 }

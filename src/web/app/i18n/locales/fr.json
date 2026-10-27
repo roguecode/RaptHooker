@@ -1654,5 +1654,7 @@
   "One pill:": "Une Pill :",
   "Allow several pills anyway": "Autoriser plusieurs Pills quand même",
   "Back to one pill": "Revenir à une seule Pill",
-  "Choose one pill": "Choisissez une Pill"
+  "Choose one pill": "Choisissez une Pill",
+  "Data": "Données",
+  "Readings caught: {percent}%": "Mesures captées : {percent} %"
 }

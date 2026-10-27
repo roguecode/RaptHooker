@@ -3,6 +3,7 @@ import type { Pill } from '@rapthooker/shared';
 import { useUnits } from '../../units';
 import { dateOnly, dateTime, days, duration, fixed, signalQuality, timeAgo, timeOnly } from '../../format';
 import { Icon, type IconName } from '../../components/Icon';
+import { CollapsiblePanel, usePanelOpen } from '../../components/CollapsiblePanel';
 import { BatteryBar, SignalBars } from '../../components/ui';
 import { t, tp } from '../../i18n';
 import './pill.css';
@@ -57,6 +58,51 @@ export function caughtPercent(c: Pill['live']['caught']): number | null {
   return Math.min(100, Math.round((c.received / c.expected) * 100));
 }
 
+/** How well the hub hears the device, and whether that needs looking at. */
+export function reception(pill: Pill) {
+  const caught = caughtPercent(pill.live.caught);
+  const signal = signalQuality(pill.live.rssi);
+  return { caught, lowCatch: caught !== null && caught < 80, signal, weakSignal: signal !== null && signal.level <= 1 };
+}
+
+/** The tiles, in a panel that starts folded. What needs looking at shows in its heading while it's folded. */
+export function DataPanel({ pill, now }: { pill: Pill; now: number }) {
+  const [open, toggle] = usePanelOpen('pill.data', false);
+  const { caught, lowCatch, signal, weakSignal } = reception(pill);
+  return (
+    <CollapsiblePanel
+      open={open}
+      onToggle={toggle}
+      className="pill-data"
+      title={
+        <>
+          {/* i18n: the heading over a pill's or thermometer's latest values: battery, signal, firmware... */}
+          <Icon name="grid" /> {t('Data')}
+        </>
+      }
+      badges={
+        !open &&
+        (lowCatch || weakSignal) && (
+          <>
+            {lowCatch && caught !== null && (
+              <span className="chip warning">
+                <Icon name="alert" size={12} /> {t('Readings caught: {percent}%', { percent: caught })}
+              </span>
+            )}
+            {weakSignal && signal && (
+              <span className="chip warning">
+                <Icon name="alert" size={12} /> {t('Signal: {quality}', { quality: signal.label })}
+              </span>
+            )}
+          </>
+        )
+      }
+    >
+      <Tiles pill={pill} now={now} />
+    </CollapsiblePanel>
+  );
+}
+
 export function Tiles({ pill, now }: { pill: Pill; now: number }) {
   const u = useUnits();
   const r = pill.live.latest;
@@ -68,11 +114,8 @@ export function Tiles({ pill, now }: { pill: Pill; now: number }) {
   const pillV = r?.pillVelocity ?? null;
   const ourV = pill.live.computedVelocity;
   const caught = pill.live.caught;
-  const pct = caughtPercent(caught);
-  const lowCatch = pct !== null && pct < 80;
+  const { caught: pct, lowCatch, signal, weakSignal } = reception(pill);
   const sinceRestart = caught !== null && caught.since > now - 23 * 3_600_000;
-  const signal = signalQuality(pill.live.rssi);
-  const weakSignal = signal !== null && signal.level <= 1;
   const thermometer = pill.kind === 'thermometer';
 
   const caughtTile = (
@@ -176,15 +219,6 @@ export function Tiles({ pill, now }: { pill: Pill; now: number }) {
 
   return (
     <section className="tiles pill-tiles" aria-label={t('Latest values')}>
-      {r && !r.plausible && (
-        <div className="notice warning tiles-notice" role="status">
-          <Icon name="alert" />
-          <p>
-            <strong>{t('This reading looks wrong: is the pill floating?')}</strong>{' '}
-            {t("It isn't used for brew stats, gravity alerts or (by default) webhooks.")}
-          </p>
-        </div>
-      )}
       <Tile
         icon="droplet"
         k={t('Gravity')}

@@ -2141,6 +2141,11 @@
       "theme.ts"
     ]
   },
+  "Data": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
   "Database": {
     "files": [
       "pages/settings/StatusSection.tsx"
@@ -3557,7 +3562,7 @@
   },
   "It isn't used for brew stats, gravity alerts or (by default) webhooks.": {
     "files": [
-      "pages/pill/Tiles.tsx"
+      "pages/pill/PillPage.tsx"
     ]
   },
   "It may have been removed.": {
@@ -5389,6 +5394,11 @@
       "pages/settings/BluetoothSection.tsx"
     ]
   },
+  "Readings caught: {percent}%": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
   "Readings from more than one pill will be mixed together in {name}.": {
     "files": [
       "pages/webhooks/ScheduleFields.tsx",
@@ -6044,7 +6054,8 @@
   },
   "Signal: {quality}": {
     "files": [
-      "components/ui.tsx"
+      "components/ui.tsx",
+      "pages/pill/Tiles.tsx"
     ]
   },
   "Signal: {quality} ({rssi} dBm)": {
@@ -7033,7 +7044,7 @@
   },
   "This reading looks wrong: is the pill floating?": {
     "files": [
-      "pages/pill/Tiles.tsx"
+      "pages/pill/PillPage.tsx"
     ]
   },
   "This release came without notes.": {

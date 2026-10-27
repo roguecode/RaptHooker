@@ -1687,5 +1687,7 @@
   "One pill:": "Jeden czujnik:",
   "Allow several pills anyway": "Mimo to zezwól na kilka czujników",
   "Back to one pill": "Wróć do jednego czujnika",
-  "Choose one pill": "Wybierz jeden czujnik"
+  "Choose one pill": "Wybierz jeden czujnik",
+  "Data": "Dane",
+  "Readings caught: {percent}%": "Odebrane odczyty: {percent}%"
 }

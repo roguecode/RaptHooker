@@ -68,9 +68,9 @@
   }
 
   .pill-history > .panel-head,
-  .pill-history > .chart-toolbar,
-  .pill-history > .chart-notes,
-  .pill-history > .notice {
+  .pill-history > .panel-body > .chart-toolbar,
+  .pill-history > .panel-body > .chart-notes,
+  .pill-history > .panel-body > .notice {
     margin-inline: 0.45rem;
   }
 
@@ -100,10 +100,6 @@
 }
 
 /* Tiles */
-
-.tiles-notice {
-  grid-column: 1 / -1;
-}
 
 .pill-tiles .tile .k {
   flex-wrap: wrap;

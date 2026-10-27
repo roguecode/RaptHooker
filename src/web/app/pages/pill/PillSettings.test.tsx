@@ -7,10 +7,13 @@ import { PillSettings } from './PillSettings';
 
 const pill = makePill({ id: 'pill-1', offsets: { gravity: 0, temperature: 1 } });
 const offset = () => screen.getByLabelText(/^Temperature offset/) as HTMLInputElement;
+/** The settings start folded. */
+const unfold = () => fireEvent.click(screen.getByRole('button', { name: 'Pill settings' }));
 
 describe('PillSettings', () => {
   it("keeps a typed offset when the hub's settings arrive again", async () => {
     const view = await renderWithHub(<PillSettings pill={pill} />, { pills: [pill], afterLoad: true });
+    unfold();
     expect(offset().value).toBe('1');
     fireEvent.change(offset(), { target: { value: '0.7' } });
 
@@ -22,6 +25,7 @@ describe('PillSettings', () => {
 
   it('shows the offset in the units picked', async () => {
     const view = await renderWithHub(<PillSettings pill={pill} />, { pills: [pill], afterLoad: true });
+    unfold();
     await view.push({ type: 'hub', hub: { ...DEFAULT_HUB_SETTINGS, units: { gravity: 'sg', temperature: 'F' } } });
     expect(screen.getByLabelText(/^Temperature offset \(°F\)/)).toBe(offset());
     expect(offset().value).toBe('1.8');
@@ -34,6 +38,7 @@ describe('PillSettings', () => {
       afterLoad: true,
       routes: { 'PATCH /api/pills/*': (req: FakeRequest) => ({ ...precise, ...(req.body as object) }) },
     });
+    unfold();
     expect((screen.getByLabelText(/^Gravity offset/) as HTMLInputElement).value).toBe('1.2');
     expect(offset().value).toBe('0.46');
     fireEvent.change(offset(), { target: { value: '0.5' } });

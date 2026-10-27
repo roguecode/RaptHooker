@@ -114,7 +114,10 @@ try {
   await shoot('dashboard', { width: 1280, height: 860 }, '', { fullPage: true, ready: (p) => pillsLive(p) });
   await shoot('pill', { width: 1280, height: 900 }, `#/pill/${lager.id}`, {
     fullPage: true,
-    ready: (p) => p.locator('section.pill-tiles .signal-bars').waitFor(),
+    ready: async (p) => {
+      await p.getByRole('button', { name: 'Data', exact: true }).click();
+      await p.locator('section.pill-tiles .signal-bars').waitFor();
+    },
   });
   await shoot('webhooks', { width: 1280, height: 900 }, '#/webhooks', {
     fullPage: true,

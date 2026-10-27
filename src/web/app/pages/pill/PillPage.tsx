@@ -8,7 +8,7 @@ import { OwnerOnly } from '../../components/ui';
 import { t } from '../../i18n';
 import { ThermometerBadge } from '../dashboard/ThermometerCard';
 import { BrewPanel } from './BrewPanel';
-import { Tiles } from './Tiles';
+import { DataPanel } from './Tiles';
 import { HistoryPanel } from './HistoryPanel';
 import { PillSettings } from './PillSettings';
 import './pill.css';
@@ -105,9 +105,18 @@ function PillView({ pill }: { pill: Pill }) {
         </div>
       </div>
 
+      {!thermometer && r && !r.plausible && (
+        <div className="notice warning" role="status">
+          <Icon name="alert" />
+          <p>
+            <strong>{t('This reading looks wrong: is the pill floating?')}</strong>{' '}
+            {t("It isn't used for brew stats, gravity alerts or (by default) webhooks.")}
+          </p>
+        </div>
+      )}
       {!thermometer && <BrewPanel pill={pill} />}
-      <Tiles pill={pill} now={now} />
       <HistoryPanel pill={pill} />
+      <DataPanel pill={pill} now={now} />
       {isOwner ? <PillSettings pill={pill} /> : <OwnerOnly isOwner={false}>{null}</OwnerOnly>}
     </div>
   );

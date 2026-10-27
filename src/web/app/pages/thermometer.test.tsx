@@ -119,6 +119,8 @@ describe("RAPT Thermometer's page", () => {
     const t = thermometer();
     await renderWithHub(<PillSettings pill={t} />, { pills: [t], afterLoad: true });
     expect(screen.getByRole('heading', { name: 'Thermometer settings' })).toBeTruthy();
+    // The settings start folded.
+    fireEvent.click(screen.getByRole('button', { name: 'Thermometer settings' }));
     expect(screen.getByLabelText(/^Temperature offset/)).toBeTruthy();
     expect(screen.queryByLabelText(/^Gravity offset/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Calibration wizard' })).toBeNull();

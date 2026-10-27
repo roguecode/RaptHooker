@@ -6,6 +6,7 @@ test('a RAPT Thermometer is recorded with only its temperature', async ({ page, 
 
   await page.goto(`/#/pill/${thermometer.id}`);
   await expect(page.getByRole('heading', { level: 1, name: 'Brew fridge' })).toBeVisible();
+  await page.getByRole('button', { name: 'Data', exact: true }).click();
   const tiles = page.getByRole('region', { name: 'Latest values' });
   await expect(tiles.getByText('RAPT Thermometer', { exact: true })).toBeVisible();
   await expect(tiles.getByText('Gravity')).toHaveCount(0);

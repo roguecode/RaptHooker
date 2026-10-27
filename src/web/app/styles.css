@@ -713,6 +713,39 @@ main > .notice {
   font-size: 0.9rem;
 }
 
+/* A panel that folds away under its heading */
+.collapsible:not(.open) > .panel-head {
+  margin-bottom: 0;
+}
+
+.panel-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  margin: -0.3rem -0.45rem;
+  padding: 0.3rem 0.45rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.panel-toggle:hover {
+  background: var(--surface-2);
+}
+
+.panel-chevron {
+  flex: none;
+  color: var(--muted);
+  transition: transform 0.2s var(--ease);
+}
+
+.collapsible.open .panel-chevron {
+  transform: rotate(90deg);
+}
+
 .grid {
   display: grid;
   gap: 1rem;

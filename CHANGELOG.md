@@ -7,6 +7,11 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **A tidier pill page.** Under the pill's summary come the running brew, the history, the pill's data (battery,
+  signal, tilt, firmware and the rest, now in a **Data** panel) and its settings. Each panel folds away from its
+  heading; Data and the settings start folded, and the browser remembers what you open or fold. A folded Data panel
+  still says when readings are being missed or the signal is weak, and the "is the pill floating?" warning shows under
+  the summary. The history opens on the brew when one is running, including one started while the page is open.
 - **Grainfather, BrewSpy and ThingSpeak webhooks take one pill each.** These services file everything a webhook sends
   under one device, so a webhook for several pills mixed their readings together. The editor now says so at the top,
   starts with one pill (the hub's only pill, if it has one) and saves only one, unless you choose **Allow several pills

@@ -60,7 +60,6 @@ describe('pill tiles', () => {
     const pill = makePill({ live: { latest: makeReading({ gravity: 1.2, pillGravity: 1.2, plausible: false }) } });
     await renderWithHub(<Tiles pill={pill} now={Date.now()} />, { pills: [pill] });
 
-    expect(screen.getByRole('status').textContent).toContain('This reading looks wrong: is the pill floating?');
     expect(part('Gravity', '.s')).toBe('Not used: is the pill floating?');
   });
 

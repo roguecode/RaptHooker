@@ -6,6 +6,7 @@ import { useLive } from '../../live';
 import { useUnits } from '../../units';
 import { dateTime } from '../../format';
 import { Icon } from '../../components/Icon';
+import { CollapsiblePanel, usePanelOpen } from '../../components/CollapsiblePanel';
 import { t } from '../../i18n';
 import { Chart, SERIES, type ChartHandle, type SeriesKey } from '../../components/Chart';
 import { OverviewStrip } from '../../components/OverviewStrip';
@@ -33,6 +34,7 @@ const loadSeries = (thermometer: boolean): SeriesKey[] => {
 export function HistoryPanel({ pill }: { pill: Pill }) {
   const { isOwner, toast, upsertPill } = useLive();
   const u = useUnits();
+  const [open, toggleOpen] = usePanelOpen('pill.history', true);
   const brew = pill.brew;
   const thermometer = pill.kind === 'thermometer';
   const firstAt = Math.min(pill.live.firstReadingAt ?? pill.createdAt, pill.createdAt);
@@ -47,6 +49,16 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
   const chart = useRef<ChartHandle>(null);
   const offered = thermometer ? SERIES.filter((s) => THERMOMETER_SERIES.includes(s.key)) : SERIES;
 
+  // A brew started while the page is open is shown from its start.
+  const [shownBrew, setShownBrew] = useState(brew?.id ?? null);
+  if ((brew?.id ?? null) !== shownBrew) {
+    setShownBrew(brew?.id ?? null);
+    if (brew) {
+      setView(null);
+      setPreset('brew');
+    }
+  }
+
   const gapMs = historyGapMs(pill.live.intervalSec);
   const m = pill.model;
   const reloadKey = [
@@ -58,7 +70,11 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
     m.velocityHours,
     m.smoothing,
   ].join('|');
-  const { overview, history, bounds, loading, error } = useZoomableHistory(pill.id, range, view, { points: 1500, gapMs, reloadKey });
+  const { overview, history, bounds, loading, error } = useZoomableHistory(open ? pill.id : null, range, view, {
+    points: 1500,
+    gapMs,
+    reloadKey,
+  });
   const win = view ? clampWindow(view, bounds) : bounds;
   const zoomed = view !== null && isZoomed(win, bounds);
 
@@ -114,23 +130,30 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
   };
 
   return (
-    <section className="panel pill-history" aria-label={t('History')}>
-      <div className="panel-head">
-        <div>
-          <h2>
-            <Icon name="activity" /> {t('History')}
-          </h2>
-          <p>{t('Drag across the chart or pinch to zoom; double-tap to see it all. Gaps are times nothing was recorded.')}</p>
-        </div>
-        <div className="row">
-          <button type="button" className="btn small" onClick={() => void exportPng()} disabled={exporting || !history?.ts.length}>
-            <Icon name="download" size={16} /> PNG
-          </button>
+    <CollapsiblePanel
+      open={open}
+      onToggle={toggleOpen}
+      label={t('History')}
+      className="pill-history"
+      title={
+        <>
+          <Icon name="activity" /> {t('History')}
+        </>
+      }
+      lead={open && t('Drag across the chart or pinch to zoom; double-tap to see it all. Gaps are times nothing was recorded.')}
+      actions={
+        <>
+          {open && (
+            <button type="button" className="btn small" onClick={() => void exportPng()} disabled={exporting || !history?.ts.length}>
+              <Icon name="download" size={16} /> PNG
+            </button>
+          )}
           <a className="btn small" href={api.pillCsvUrl(pill.id)} download>
             <Icon name="download" size={16} /> CSV
           </a>
-        </div>
-      </div>
+        </>
+      }
+    >
       <div className="chart-toolbar">
         <RangePicker
           preset={preset}
@@ -225,6 +248,6 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
           )}
         </ul>
       )}
-    </section>
+    </CollapsiblePanel>
   );
 }

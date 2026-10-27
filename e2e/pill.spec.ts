@@ -4,6 +4,9 @@ test('the pill page draws its history and changes the range', async ({ page, req
   const pill = await ensurePill(request, SIMULATED.water, 'Water test');
   await page.goto(`/#/pill/${pill.id}`);
   await expect(page.getByRole('heading', { level: 1, name: 'Water test' })).toBeVisible();
+  const data = page.getByRole('button', { name: 'Data', exact: true });
+  await expect(data).toHaveAttribute('aria-expanded', 'false');
+  await data.click();
   await expect(page.getByRole('region', { name: 'Latest values' }).getByText('from the pill').first()).toBeVisible();
 
   const chart = page.getByRole('group', { name: 'History of Water test' });

@@ -161,6 +161,7 @@ On a phone, use your browser's **Add to Home Screen** to open it like an app.
 ## Switch a RAPT Pill to Bluetooth
 
 If your RAPT Pills are currently set to WiFi then you need to switch them to Bluetooth. This can be done with both the old (v1) and new (v2) stock firmware.
+
 ### Original firmware (V1)
 
 1. Plug the pill into USB-C power, or put it on its wireless charger. Its setup network is only there while it's

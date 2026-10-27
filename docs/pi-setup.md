@@ -97,9 +97,10 @@ Open `http://rapthooker.local:8080`. The dashboard shows a short guide that tick
 
 1. **Create an owner PIN** (right there in the guide, or in Settings). Anyone on your network can look; adding pills,
    brews and webhooks needs the owner.
-2. Put your RAPT Pill in **Bluetooth mode**: in the RAPT app, open the pill → Connect → Setup → **Telemetry via
-   Bluetooth**, and set the telemetry interval. It'll appear on the dashboard as **Found a RAPT Pill nearby** after its
-   next broadcast. Click **Add pill**: from then on it's recorded around the clock.
+2. Put your RAPT Pill in **Bluetooth mode** (how, on the original firmware or the new one:
+   [Switch a RAPT Pill to Bluetooth](../README.md#switch-a-rapt-pill-to-bluetooth)). It'll appear on the dashboard as
+   **Found a RAPT Pill nearby** after its next broadcast. Click **Add pill**: from then on it's recorded around the
+   clock.
 3. Start a brew from the pill's page, and add webhooks and alerts as you like.
 
 Under **Settings → Hub** you can name the hub (shown in the top bar and the browser tab), pick the default units (used

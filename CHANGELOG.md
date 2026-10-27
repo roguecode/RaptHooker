@@ -5,6 +5,11 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **How to switch a RAPT Pill to Bluetooth** in the README, on the original firmware and the new (V2) one, with a short
+  video of each.
+
 ### Fixed
 
 - **Alerts:** an alert that "Don't repeat for" kept quiet is now announced once that time is up if it's still going

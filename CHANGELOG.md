@@ -5,6 +5,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-28
+
 ### Added
 
 - **Colours to choose from.** Besides the original violet and blue, the app now comes in Ocean, Hops, Amber, Rosé and
@@ -16,7 +18,7 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   the brew and its progress, a graph of the brew, battery and signal), dark or light in any of the colours, the units,
   and PNG, JPEG or BMP, and watch the preview change as you go. The hub draws a fresh picture in the app's look each
   time the screen loads the link, and everything about it is in the link itself. See
-  [docs/screens.md](docs/screens.md).
+  [docs/screens.md](https://github.com/roguecode/RaptHooker/blob/main/docs/screens.md).
 
 ### Changed
 
@@ -129,7 +131,8 @@ The first release.
 - **Translations**: Deutsch, Español, Français, Italiano, Nederlands, Polski and Português (Brasil).
 - **Docker** image for Linux hosts with Bluetooth.
 
-[Unreleased]: https://github.com/roguecode/RaptHooker/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/roguecode/RaptHooker/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/roguecode/RaptHooker/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/roguecode/RaptHooker/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/roguecode/RaptHooker/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/roguecode/RaptHooker/releases/tag/v0.3.0

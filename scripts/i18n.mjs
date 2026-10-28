@@ -5,7 +5,11 @@
 //   node scripts/i18n.mjs --prune  removes strings from catalogues that the app no longer uses
 // Text is found in t('...'), tk('...'), tc('context', '...') (key "context::text") and tp(n, '...', '...') calls with
 // plain string literals.
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+//
+// Screen images are drawn by the hub (src/server/screen) in the language their link asks for. Their text is found the
+// same way and translated in the same catalogues, and the translations it uses are copied into
+// src/server/screen/locales.json (--check fails if that file is out of date).
+import { readdirSync, readFileSync, statSync, writeFileSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
@@ -13,6 +17,8 @@ const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '
 const APP = process.env.I18N_APP ?? join(ROOT, 'src/web/app');
 const I18N = join(APP, 'i18n');
 const LOCALES = join(I18N, 'locales');
+const SCREEN = process.env.I18N_APP ? null : join(ROOT, 'src/server/screen');
+const SCREEN_LOCALES = SCREEN && join(SCREEN, 'locales.json');
 const args = new Set(process.argv.slice(2));
 
 const STR = String.raw`'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"|\x60((?:[^\x60\\$]|\\.)*)\x60`;
@@ -40,23 +46,30 @@ function* files(dir) {
 
 const source = new Map();
 const problems = [];
-const add = (key, file, plural) => {
+/** Keys used by screen images. */
+const screenKeys = new Set();
+const add = (key, file, plural, screen) => {
   const entry = source.get(key) ?? { files: new Set(), plural };
   entry.files.add(file);
   source.set(key, entry);
+  if (screen) screenKeys.add(key);
 };
 
-for (const path of files(APP)) {
-  const text = readFileSync(path, 'utf8');
-  const file = relative(APP, path).replace(/\\/g, '/');
-  for (const m of text.matchAll(CALL)) add(literal(m, 2), file, false);
-  for (const m of text.matchAll(PLURAL)) add(`${literal(m, 1)}|${literal(m, 4)}`, file, true);
-  for (const m of text.matchAll(CONTEXT)) add(`${literal(m, 1)}::${literal(m, 4)}`, file, false);
-  for (const m of text.matchAll(DYNAMIC)) {
-    const line = text.slice(0, m.index).split('\n').length;
-    problems.push(`${file}:${line}: t() with \${...} can't be translated; use t('... {name} ...', { name })`);
+const scan = (dir, screen) => {
+  for (const path of files(dir)) {
+    const text = readFileSync(path, 'utf8');
+    const file = relative(APP, path).replace(/\\/g, '/');
+    for (const m of text.matchAll(CALL)) add(literal(m, 2), file, false, screen);
+    for (const m of text.matchAll(PLURAL)) add(`${literal(m, 1)}|${literal(m, 4)}`, file, true, screen);
+    for (const m of text.matchAll(CONTEXT)) add(`${literal(m, 1)}::${literal(m, 4)}`, file, false, screen);
+    for (const m of text.matchAll(DYNAMIC)) {
+      const line = text.slice(0, m.index).split('\n').length;
+      problems.push(`${file}:${line}: t() with \${...} can't be translated; use t('... {name} ...', { name })`);
+    }
   }
-}
+};
+scan(APP, false);
+if (SCREEN) scan(SCREEN, true);
 
 const sorted = [...source.entries()].sort(([a], [b]) => a.localeCompare(b));
 const out = Object.fromEntries(sorted.map(([k, v]) => [k, { files: [...v.files].sort(), ...(v.plural ? { plural: true } : {}) }]));
@@ -66,11 +79,20 @@ console.log(`${sorted.length} strings to translate (src/web/app/i18n/source.json
 let failed = problems.length > 0;
 for (const p of problems) console.error(p);
 
+/** The translations screen images use, by language. */
+const screenCatalogs = {};
+
 for (const name of readdirSync(LOCALES)
   .filter((n) => n.endsWith('.json'))
   .sort()) {
   const path = join(LOCALES, name);
   const catalog = JSON.parse(readFileSync(path, 'utf8'));
+  screenCatalogs[name.replace(/\.json$/, '')] = Object.fromEntries(
+    [...screenKeys]
+      .sort((a, b) => a.localeCompare(b))
+      .filter((k) => catalog[k] !== undefined && catalog[k] !== '')
+      .map((k) => [k, catalog[k]]),
+  );
   const missing = [];
   const broken = [];
   for (const [key, { plural }] of sorted) {
@@ -103,6 +125,19 @@ for (const name of readdirSync(LOCALES)
   for (const b of broken) console.error(`  ${name}: ${b}`);
   if (missing.length && args.has('--verbose')) for (const m of missing) console.log(`  missing: ${m}`);
   if (broken.length || (missing.length && args.has('--strict'))) failed = true;
+}
+
+if (SCREEN_LOCALES) {
+  const screenJson = JSON.stringify(screenCatalogs, null, 2) + '\n';
+  const current = existsSync(SCREEN_LOCALES) ? readFileSync(SCREEN_LOCALES, 'utf8').replace(/\r\n/g, '\n') : '';
+  if (current === screenJson) console.log(`screen images: ${screenKeys.size} strings (src/server/screen/locales.json)`);
+  else if (args.has('--check') || args.has('--strict')) {
+    console.error('src/server/screen/locales.json is out of date: run npm run i18n');
+    failed = true;
+  } else {
+    writeFileSync(SCREEN_LOCALES, screenJson);
+    console.log(`screen images: ${screenKeys.size} strings, translations written to src/server/screen/locales.json`);
+  }
 }
 
 if ((args.has('--check') || args.has('--strict')) && failed) process.exit(1);

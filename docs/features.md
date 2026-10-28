@@ -69,6 +69,12 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
   off as you create the PIN and add your first pill.
 - **TV mode** (`#/kiosk`): big, full-screen readings for a spare screen or TV, rotating through the pills when they don't
   all fit, keeping the screen awake where the browser allows it.
+- **Pictures for small screens.** **Image link**, on the dashboard and on each pill's page, makes a web address for a
+  picture of every pill (or of one) that a screen showing images from the web can load: a GeekMagic mini screen, an
+  ESPHome display, an e-paper frame. Pick the screen's size (or a preset), what's on it (readings, the brew and its
+  progress, a graph, battery and signal), dark or light in any of the colours, and PNG, JPEG or BMP, with a live
+  preview. The hub draws a fresh picture, in the app's look, each time the screen loads it. See
+  [docs/screens.md](./screens.md).
 - **Name your hub** and pick its default units and ABV formula (the standard one or one for strong beers). Problems
   the hub notices (a full SD card, Bluetooth trouble) show as a banner at the top.
 - **In your language:** English, Deutsch, Español, Français, Italiano, Nederlands, Polski and Português (Brasil),

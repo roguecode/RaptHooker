@@ -1,5 +1,17 @@
 /* Pill page: history panel, tiles, where the numbers come from, and the calibration wizard. */
 
+.pill-page-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.pill-page-top .back {
+  margin-bottom: 0;
+}
+
 .pill-history .chart-toolbar {
   align-items: flex-start;
 }

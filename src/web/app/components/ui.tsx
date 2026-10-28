@@ -21,11 +21,14 @@ export function Modal({
   children,
   onClose,
   wide = false,
+  className,
 }: {
   title: ReactNode;
   children: ReactNode;
   onClose: () => void;
   wide?: boolean;
+  /** Extra classes for the dialog box. */
+  className?: string;
 }) {
   const dialog = useRef<HTMLDivElement | null>(null);
   const titleId = useId();
@@ -88,7 +91,7 @@ export function Modal({
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
         ref={dialog}
-        className={`modal${wide ? ' wide' : ''}`}
+        className={`modal${wide ? ' wide' : ''}${className ? ` ${className}` : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

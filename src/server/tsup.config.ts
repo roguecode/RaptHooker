@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'tsup';
 
 const { version } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string };
@@ -30,6 +31,19 @@ export default defineConfig({
   // module and X11 session-bus helper, which a headless Pi doesn't use.
   noExternal: [/^(?!usocket$|x11$)/],
   external: ['usocket', 'x11'],
+  // Screen images: the renderer (WebAssembly) and fonts go inside the server file as bytes, in place of the module that
+  // reads them from disk when running from source.
+  loader: { '.wasm': 'binary', '.ttf': 'binary' },
+  esbuildPlugins: [
+    {
+      name: 'embed-screen-assets',
+      setup(build) {
+        build.onResolve({ filter: /\/assets-files\.js$/ }, () => ({
+          path: fileURLToPath(new URL('./screen/assets-embedded.ts', import.meta.url)),
+        }));
+      },
+    },
+  ],
   outExtension: () => ({ js: '.cjs' }),
   // node:sqlite only exists with the node: prefix.
   removeNodeProtocol: false,

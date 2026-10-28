@@ -57,6 +57,7 @@
   },
   "{abv}% ABV": {
     "files": [
+      "../../server/screen/render.ts",
       "components/Ferment.tsx"
     ]
   },
@@ -101,6 +102,7 @@
   },
   "{count} day ago|{count} days ago": {
     "files": [
+      "../../server/screen/strings.ts",
       "format.ts"
     ],
     "plural": true
@@ -304,6 +306,7 @@
   },
   "{n} h ago": {
     "files": [
+      "../../server/screen/strings.ts",
       "format.ts"
     ]
   },
@@ -314,6 +317,7 @@
   },
   "{n} min ago": {
     "files": [
+      "../../server/screen/strings.ts",
       "format.ts"
     ]
   },
@@ -336,12 +340,18 @@
   },
   "{n} s ago": {
     "files": [
+      "../../server/screen/strings.ts",
       "format.ts"
     ]
   },
   "{n}% att.": {
     "files": [
       "components/Ferment.tsx"
+    ]
+  },
+  "{name} ({width} × {height})": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "{name} added": {
@@ -406,6 +416,7 @@
   },
   "{pct}% there": {
     "files": [
+      "../../server/screen/render.ts",
       "components/Ferment.tsx"
     ]
   },
@@ -479,6 +490,11 @@
       "pages/pill/calibration.ts"
     ]
   },
+  "{width} × {height} px": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
   "°C, Celsius": {
     "files": [
       "pages/settings/HubSection.tsx",
@@ -499,6 +515,7 @@
   },
   "~FG {gravity}": {
     "files": [
+      "../../server/screen/render.ts",
       "components/Ferment.tsx"
     ]
   },
@@ -527,9 +544,19 @@
       "components/chartMath.ts"
     ]
   },
+  "2.9″ e-paper": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
   "24H": {
     "files": [
       "components/chartMath.ts"
+    ]
+  },
+  "3.5″ screen": {
+    "files": [
+      "components/imageLinkOptions.ts"
     ]
   },
   "30 letters and numbers": {
@@ -547,6 +574,11 @@
       "components/chartMath.ts"
     ]
   },
+  "4.2″ e-paper": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
   "6 to 72. Shorter follows changes faster; longer is steadier.": {
     "files": [
       "pages/pill/DataSources.tsx"
@@ -555,6 +587,21 @@
   "6H": {
     "files": [
       "components/chartMath.ts"
+    ]
+  },
+  "7.5″ e-paper": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
+  "7″ HD screen": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
+  "7″ screen": {
+    "files": [
+      "components/imageLinkOptions.ts"
     ]
   },
   "7D": {
@@ -595,6 +642,16 @@
   "A number from the last 3 bytes of the Bluetooth address (like an iSpindel ID)": {
     "files": [
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "A picture of the latest readings for a small screen (a GeekMagic, an ESPHome display, an e-paper frame) to load from the hub. Each time it loads the link it gets a fresh picture.": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
+  "A picture of the readings for a small screen": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "A retained message: anything that subscribes later (like Home Assistant after a restart) gets it straight away.": {
@@ -737,6 +794,7 @@
   },
   "Add a pill on the dashboard and its readings show up here.": {
     "files": [
+      "../../server/screen/render.ts",
       "pages/kiosk/Kiosk.tsx"
     ]
   },
@@ -898,6 +956,11 @@
     "files": [
       "pages/brews/BrewPage.tsx",
       "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "All of it, as space allows": {
+    "files": [
+      "components/imageLinkOptions.ts"
     ]
   },
   "all of its readings": {
@@ -1235,6 +1298,7 @@
   },
   "Battery": {
     "files": [
+      "../../server/screen/render.ts",
       "components/Chart.tsx",
       "pages/Dashboard.tsx",
       "pages/dashboard/PillRow.tsx",
@@ -1252,6 +1316,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "Battery, signal and more": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
   "Beer style": {
     "files": [
       "pages/webhooks/strings.ts"
@@ -1260,6 +1329,11 @@
   "Before the start": {
     "files": [
       "pages/brews/brewText.ts"
+    ]
+  },
+  "Big numbers": {
+    "files": [
+      "components/imageLinkOptions.ts"
     ]
   },
   "Big readings for a spare screen": {
@@ -1355,8 +1429,19 @@
     "files": [
       "App.tsx",
       "components/chartMath.ts",
+      "components/imageLinkOptions.ts",
       "pages/pill/BrewPanel.tsx",
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "Brew and day": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
+  "Brew and graph": {
+    "files": [
+      "components/imageLinkOptions.ts"
     ]
   },
   "Brew ended": {
@@ -1763,6 +1848,7 @@
   },
   "Copy": {
     "files": [
+      "components/ImageLink.tsx",
       "pages/settings/SystemSection.tsx"
     ]
   },
@@ -1858,6 +1944,7 @@
   },
   "Couldn't copy": {
     "files": [
+      "components/ImageLink.tsx",
       "pages/settings/SystemSection.tsx",
       "pages/settings/TokensSection.tsx"
     ]
@@ -1944,6 +2031,11 @@
   "Couldn't load the MQTT settings": {
     "files": [
       "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Couldn't load the preview": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Couldn't load the webhook": {
@@ -2134,12 +2226,18 @@
   },
   "Custom": {
     "files": [
+      "components/ImageLink.tsx",
       "components/RangePicker.tsx"
     ]
   },
   "Custom range": {
     "files": [
       "components/RangePicker.tsx"
+    ]
+  },
+  "Custom size": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Custom Stream logging to your batches": {
@@ -2149,6 +2247,7 @@
   },
   "Dark": {
     "files": [
+      "components/ImageLink.tsx",
       "theme.ts"
     ]
   },
@@ -2170,6 +2269,7 @@
   },
   "Day {n}": {
     "files": [
+      "../../server/screen/render.ts",
       "pages/kiosk/Kiosk.tsx"
     ]
   },
@@ -2687,6 +2787,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "Everything": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
   "Everything recorded": {
     "files": [
       "components/chartMath.ts"
@@ -2763,7 +2868,8 @@
   },
   "Fermentation progress": {
     "files": [
-      "components/Ferment.tsx"
+      "components/Ferment.tsx",
+      "components/imageLinkOptions.ts"
     ]
   },
   "Fermentation stable": {
@@ -2795,6 +2901,7 @@
   },
   "FG {gravity}": {
     "files": [
+      "../../server/screen/render.ts",
       "components/Ferment.tsx"
     ]
   },
@@ -2806,6 +2913,11 @@
   "Fields: 1 gravity, 2 temperature, 3 battery, 4 velocity, 5 tilt, 6 signal.": {
     "files": [
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "File type": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Fill a jug with plain tap water at about 20 °C (68 °F).": {
@@ -3052,9 +3164,24 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Full HD TV (1080p)": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
   "Full screen": {
     "files": [
       "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "GeekMagic mini screen": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
+  "GeekMagic screens and other ESP8266 boards need JPEG. ESPHome displays take any of these.": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Get alerts on your phone through ntfy, Pushover, Telegram, Discord or email, wherever you are.": {
@@ -3112,6 +3239,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "Graph": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
   "Graphite": {
     "files": [
       "theme.ts"
@@ -3119,7 +3251,9 @@
   },
   "Gravity": {
     "files": [
+      "../../server/screen/render.ts",
       "components/Chart.tsx",
+      "components/imageLinkOptions.ts",
       "pages/Dashboard.tsx",
       "pages/brews/BrewPage.tsx",
       "pages/dashboard/PillRow.tsx",
@@ -3244,6 +3378,7 @@
   },
   "Gravity unit": {
     "files": [
+      "components/ImageLink.tsx",
       "pages/webhooks/ScheduleFields.tsx",
       "units.tsx"
     ]
@@ -3256,6 +3391,11 @@
   "Grey dots: readings where the pill didn't look like it was floating. They're left out of the line, brew stats and gravity alerts.": {
     "files": [
       "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "HD TV (720p)": {
+    "files": [
+      "components/imageLinkOptions.ts"
     ]
   },
   "Header": {
@@ -3277,6 +3417,11 @@
   "heard {ago}": {
     "files": [
       "pages/Dashboard.tsx"
+    ]
+  },
+  "Height (px)": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Help": {
@@ -3385,9 +3530,19 @@
       "pages/settings/HubSection.tsx"
     ]
   },
+  "Hub address in the link": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
   "Hub name": {
     "files": [
       "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Hub name and time": {
+    "files": [
+      "components/imageLinkOptions.ts"
     ]
   },
   "Hub settings saved": {
@@ -3448,6 +3603,26 @@
   "Ignored: not shown when heard nearby.": {
     "files": [
       "pages/settings/PillsSection.tsx"
+    ]
+  },
+  "Image link": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
+  "Image link copied": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
+  "Image link for {name}": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
+  "Image link for all pills": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Import": {
@@ -3566,6 +3741,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "IP address": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
   "iSpindel-format services expect the battery in volts; RAPT Pills report a percentage, which is sent as it is.": {
     "files": [
       "pages/webhooks/strings.ts"
@@ -3593,6 +3773,7 @@
   },
   "It may have been removed.": {
     "files": [
+      "../../server/screen/render.ts",
       "pages/pill/PillPage.tsx"
     ]
   },
@@ -3648,7 +3829,13 @@
   },
   "just now": {
     "files": [
+      "../../server/screen/strings.ts",
       "format.ts"
+    ]
+  },
+  "Just the readings, as big as they go": {
+    "files": [
+      "components/imageLinkOptions.ts"
     ]
   },
   "Keep it somewhere private.": {
@@ -3719,6 +3906,8 @@
   },
   "Last 24 h": {
     "files": [
+      "../../server/screen/render.ts",
+      "components/imageLinkOptions.ts",
       "pages/dashboard/ThermometerCard.tsx",
       "pages/kiosk/Kiosk.tsx"
     ]
@@ -3735,7 +3924,8 @@
   },
   "Last 3 days": {
     "files": [
-      "components/chartMath.ts"
+      "components/chartMath.ts",
+      "components/imageLinkOptions.ts"
     ]
   },
   "Last 30 days": {
@@ -3750,7 +3940,8 @@
   },
   "Last 7 days": {
     "files": [
-      "components/chartMath.ts"
+      "components/chartMath.ts",
+      "components/imageLinkOptions.ts"
     ]
   },
   "Last backup {ago}": {
@@ -3922,6 +4113,7 @@
   },
   "Light": {
     "files": [
+      "components/ImageLink.tsx",
       "theme.ts"
     ]
   },
@@ -3933,6 +4125,11 @@
   "Lines on the chart": {
     "files": [
       "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "Link for the screen": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Listening": {
@@ -3988,6 +4185,11 @@
   "Logs": {
     "files": [
       "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Look": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Look up your mail provider's SMTP settings: server, port and security.": {
@@ -4145,6 +4347,8 @@
   },
   "Name": {
     "files": [
+      "components/ImageLink.tsx",
+      "components/imageLinkOptions.ts",
       "pages/alerts/ChannelEditor.tsx",
       "pages/alerts/RuleModal.tsx",
       "pages/brews/EditBrewModal.tsx",
@@ -4170,6 +4374,11 @@
       "pages/Dashboard.tsx"
     ]
   },
+  "Name, gravity and temperature": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
   "Needs a tilt calibration first: at least 2 points.": {
     "files": [
       "pages/pill/DataSources.tsx"
@@ -4177,6 +4386,7 @@
   },
   "never": {
     "files": [
+      "../../server/screen/strings.ts",
       "format.ts"
     ]
   },
@@ -4275,16 +4485,19 @@
   },
   "No brew": {
     "files": [
+      "../../server/screen/render.ts",
       "pages/dashboard/PillRow.tsx"
     ]
   },
   "No brew running": {
     "files": [
+      "../../server/screen/render.ts",
       "pages/kiosk/Kiosk.tsx"
     ]
   },
   "No brews on the go": {
     "files": [
+      "../../server/screen/render.ts",
       "pages/Dashboard.tsx"
     ]
   },
@@ -4315,6 +4528,7 @@
   },
   "No pills yet": {
     "files": [
+      "../../server/screen/render.ts",
       "pages/kiosk/Kiosk.tsx"
     ]
   },
@@ -4606,6 +4820,7 @@
   },
   "Offline": {
     "files": [
+      "../../server/screen/render.ts",
       "App.tsx",
       "pages/dashboard/PillRow.tsx",
       "pages/kiosk/Kiosk.tsx",
@@ -4635,6 +4850,7 @@
   },
   "OG {gravity}": {
     "files": [
+      "../../server/screen/render.ts",
       "components/Chart.tsx",
       "components/Ferment.tsx"
     ]
@@ -4743,8 +4959,14 @@
   },
   "Online": {
     "files": [
+      "../../server/screen/render.ts",
       "pages/dashboard/PillRow.tsx",
       "pages/pill/PillPage.tsx"
+    ]
+  },
+  "Online and last reading": {
+    "files": [
+      "components/imageLinkOptions.ts"
     ]
   },
   "Only change it if you run your own ntfy server.": {
@@ -4772,6 +4994,11 @@
       "pages/settings/BluetoothSection.tsx"
     ]
   },
+  "Only pills with a brew running": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
   "Only send new readings": {
     "files": [
       "pages/webhooks/ScheduleFields.tsx"
@@ -4796,6 +5023,11 @@
     "files": [
       "pages/alerts/RuleModal.tsx",
       "pages/webhooks/ScheduleFields.tsx"
+    ]
+  },
+  "Open": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Open a chat with your new bot and send it any message (or add the bot to a group).": {
@@ -5073,6 +5305,7 @@
   },
   "Pill not found": {
     "files": [
+      "../../server/screen/render.ts",
       "pages/pill/PillPage.tsx"
     ]
   },
@@ -5242,9 +5475,19 @@
       "pages/brews/Prediction.tsx"
     ]
   },
+  "Presets": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
   "Preview": {
     "files": [
       "pages/webhooks/Preview.tsx"
+    ]
+  },
+  "Preview of the picture": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Previous reading": {
@@ -5264,6 +5507,7 @@
   },
   "pts/day": {
     "files": [
+      "../../server/screen/render.ts",
       "pages/dashboard/PillRow.tsx",
       "pages/kiosk/Kiosk.tsx",
       "pages/pill/Tiles.tsx"
@@ -5407,6 +5651,7 @@
   },
   "Readings": {
     "files": [
+      "components/imageLinkOptions.ts",
       "pages/brews/BrewPage.tsx"
     ]
   },
@@ -5439,6 +5684,16 @@
   "Readings will be missing until it's back; the hub keeps trying.": {
     "files": [
       "pages/Dashboard.tsx"
+    ]
+  },
+  "Readings with the brew and its progress": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
+  "Readings, the brew and its graph": {
+    "files": [
+      "components/imageLinkOptions.ts"
     ]
   },
   "Ready.": {
@@ -5817,9 +6072,19 @@
       "pages/settings/StatusSection.tsx"
     ]
   },
+  "Screen": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
   "Screen {n} of {total}": {
     "files": [
       "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Screen size": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Secret access key": {
@@ -6074,6 +6339,7 @@
   },
   "Signal": {
     "files": [
+      "../../server/screen/render.ts",
       "components/Chart.tsx",
       "pages/Dashboard.tsx",
       "pages/dashboard/PillRow.tsx",
@@ -6101,26 +6367,31 @@
   },
   "signal::Excellent": {
     "files": [
+      "../../server/screen/render.ts",
       "format.ts"
     ]
   },
   "signal::Good": {
     "files": [
+      "../../server/screen/render.ts",
       "format.ts"
     ]
   },
   "signal::OK": {
     "files": [
+      "../../server/screen/render.ts",
       "format.ts"
     ]
   },
   "signal::Very weak": {
     "files": [
+      "../../server/screen/render.ts",
       "format.ts"
     ]
   },
   "signal::Weak": {
     "files": [
+      "../../server/screen/render.ts",
       "format.ts"
     ]
   },
@@ -6172,6 +6443,16 @@
   "Slowing down: under a quarter of its fastest rate.": {
     "files": [
       "pages/brews/brewText.ts"
+    ]
+  },
+  "Small screens often can't look up .local names, so the link uses the hub's IP address. Everything about the picture is in the link: change it there or make a new one here.": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
+  "Small TFT screen": {
+    "files": [
+      "components/imageLinkOptions.ts"
     ]
   },
   "smoothed": {
@@ -6264,6 +6545,7 @@
   },
   "Start a brew from a pill's page to track it here.": {
     "files": [
+      "../../server/screen/render.ts",
       "pages/Dashboard.tsx"
     ]
   },
@@ -6423,6 +6705,11 @@
       "pages/brews/SummaryPage.tsx"
     ]
   },
+  "Swap width and height": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
   "Switch off": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
@@ -6555,7 +6842,9 @@
   },
   "Temperature": {
     "files": [
+      "../../server/screen/render.ts",
       "components/Chart.tsx",
+      "components/imageLinkOptions.ts",
       "pages/Dashboard.tsx",
       "pages/brews/BrewPage.tsx",
       "pages/brews/Compare.tsx",
@@ -6608,6 +6897,7 @@
   },
   "Temperature unit": {
     "files": [
+      "components/ImageLink.tsx",
       "pages/webhooks/ScheduleFields.tsx",
       "units.tsx"
     ]
@@ -6743,6 +7033,11 @@
       "pages/brews/BrewPage.tsx"
     ]
   },
+  "The brew so far": {
+    "files": [
+      "components/imageLinkOptions.ts"
+    ]
+  },
   "The browser wouldn't copy it": {
     "files": [
       "pages/brews/SummaryPage.tsx"
@@ -6771,6 +7066,11 @@
   "The file has everything needed to set them up on another hub, {secrets} in URLs, headers and bodies.": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "The graph shows": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "The gravity has stopped moving (less than a point in 48 hours).": {
@@ -6965,6 +7265,7 @@
   },
   "Theme": {
     "files": [
+      "components/ImageLink.tsx",
       "components/ThemeSwitch.tsx",
       "pages/settings/HubSection.tsx"
     ]
@@ -7051,6 +7352,11 @@
   "This hub wasn't set up with the one-line installer, so it can't update itself from here.": {
     "files": [
       "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "this page": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "This pill has been removed.": {
@@ -7376,6 +7682,7 @@
   },
   "Updating…": {
     "files": [
+      "components/ImageLink.tsx",
       "pages/settings/UpdateSection.tsx"
     ]
   },
@@ -7521,6 +7828,7 @@
   },
   "Velocity": {
     "files": [
+      "../../server/screen/render.ts",
       "components/Chart.tsx",
       "pages/brews/BrewPage.tsx",
       "pages/dashboard/PillRow.tsx",
@@ -7591,6 +7899,7 @@
   },
   "Waiting for readings": {
     "files": [
+      "../../server/screen/render.ts",
       "components/Ferment.tsx"
     ]
   },
@@ -7706,6 +8015,11 @@
       "pages/pill/DataSources.tsx"
     ]
   },
+  "What doesn't fit at a readable size is left out, so check the preview.": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
   "What gets published": {
     "files": [
       "pages/settings/MqttSection.tsx"
@@ -7724,6 +8038,11 @@
   "What the pill sends, using its own calibration from the RAPT app.": {
     "files": [
       "pages/pill/DataSources.tsx"
+    ]
+  },
+  "What to show": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "What's in {version} (this version)": {
@@ -7816,6 +8135,11 @@
   "Why: {reason}": {
     "files": [
       "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Width (px)": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "With no OG, RaptHooker takes it from the pill once it has settled: the middle reading from its first to third hour in the wort.": {

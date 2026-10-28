@@ -55,6 +55,7 @@ and `rssi` (the rest is `null`).
 | `GET /api/status`                                        | Version, start time, database size, backups, disk space and warnings                                                                                                                      |
 | `GET /api/session`                                       | Who you are to the hub (`"via": "token"` for a token)                                                                                                                                     |
 | `GET /api/live` (WebSocket)                              | Live updates: a `hello` with everything, then `reading`, `pill`, `brew`, `webhook`... messages as they happen                                                                             |
+| `GET /api/image.png`, `GET /api/pills/:id/image.png`     | A picture of every pill, or of one, for a small screen; also `.jpg` and `.bmp`. Its size, look and contents are in the query: see [screens.md](./screens.md#whats-in-the-link)            |
 
 ## Examples
 

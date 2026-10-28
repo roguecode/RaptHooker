@@ -100,6 +100,19 @@ The channels in [src/server/channels.ts](src/server/channels.ts) follow each ser
 - The RaptHooker logo and the pill illustration were drawn for this project.
 - Preset badges are standard Unicode emoji, rendered by your device's emoji font.
 
+## Screen images
+
+- **[Inter](https://rsms.me/inter/)** by the Inter Project Authors (SIL Open Font License 1.1:
+  [src/server/screen/fonts/OFL.txt](src/server/screen/fonts/OFL.txt)): the typeface the hub draws screen images in. The
+  fonts in [src/server/screen/fonts](src/server/screen/fonts) are Inter 4.1 cut down to Latin, Greek and Cyrillic with
+  [fontTools](https://github.com/fonttools/fonttools)' `pyftsubset` (keeping the licence in each font's name table), and
+  are built into the server.
+- **[resvg](https://github.com/linebender/resvg)**, through [@resvg/resvg-wasm](https://github.com/yisibl/resvg-js)
+  (MPL-2.0, unmodified): turns the picture's SVG into pixels. It's WebAssembly, so the hub still only needs Node.
+- **[jpeg-js](https://github.com/jpeg-js/jpeg-js)** (BSD-3-Clause): the baseline JPEG encoder, for screens such as
+  GeekMagic's that decode JPEG but not PNG.
+- The layout, colours, pill figure and icons are the app's own (see above), drawn again as SVG.
+
 ## Libraries and tools
 
 - Server: [Fastify](https://fastify.dev) with [@fastify/cookie](https://github.com/fastify/fastify-cookie),

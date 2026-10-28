@@ -3,6 +3,7 @@ import { useLive } from '../../live';
 import { useUnits } from '../../units';
 import { fixed, timeAgo, timeUntil, useNow } from '../../format';
 import { Icon } from '../../components/Icon';
+import { ImageLinkButton } from '../../components/ImageLink';
 import { PillFigure } from '../../components/PillFigure';
 import { OwnerOnly } from '../../components/ui';
 import { t } from '../../i18n';
@@ -43,9 +44,12 @@ function PillView({ pill }: { pill: Pill }) {
   return (
     <div className="page pill-page">
       <div>
-        <a className="back" href="#/">
-          <Icon name="left" size={16} /> {t('All pills')}
-        </a>
+        <div className="pill-page-top">
+          <a className="back" href="#/">
+            <Icon name="left" size={16} /> {t('All pills')}
+          </a>
+          <ImageLinkButton pill={pill} />
+        </div>
         <div className="panel hero" style={{ '--pill': pill.color } as React.CSSProperties}>
           {thermometer ? (
             <ThermometerBadge color={pill.color} size={92} offline={!pill.live.online} />

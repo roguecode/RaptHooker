@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["*.ts", "ble", "routes", "tools", "test"]
+  "include": ["*.ts", "ble", "routes", "screen", "tools", "test"]
 }

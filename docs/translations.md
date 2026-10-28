@@ -8,7 +8,8 @@ The translations were made with the help of AI and haven't all been reviewed by 
 oddly, please open an issue or a pull request. Corrections are very welcome.
 
 Text that comes from the hub itself (error messages from the server, hub warnings, and the text of alert notifications
-and webhook templates) is in English for now.
+and webhook templates) is in English for now. [Screen images](./screens.md) are the exception: the hub draws them in the
+language their link asks for, with the app's own translations.
 
 ## How it works
 
@@ -21,6 +22,9 @@ and webhook templates) is in English for now.
 - Labels kept in constants are marked with `tk('Dry hop')` and translated where they're shown.
 - Catalogues are in [src/web/app/i18n/locales](../src/web/app/i18n/locales): one JSON file per language, loaded only
   when that language is picked. Anything missing falls back to English.
+- Screen images are drawn by the hub ([src/server/screen](../src/server/screen)), whose text is marked the same way and
+  translated in the same catalogues. `npm run i18n` copies the translations it uses into
+  `src/server/screen/locales.json`, and `npm run i18n:check` fails if that copy is out of date.
 
 ## Improving a translation
 

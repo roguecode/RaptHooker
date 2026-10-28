@@ -11,7 +11,8 @@ RaptHooker - A fully local dashboard for Kegland Rapt devices that runs on a Ras
 - Unlimited webhooks and integrations at any frequency
 - All data is stored on your own hardware and can't be accessed by arbitrary employees
 - Only requires a cheap Raspberry Pi with SD card and power, and a PC to install it for the first time
-- Much better overall experience, "Kiosk" mode for an always-on screen, predictions, backups and exports, etc.
+- Anytime-calibration, even when the Pill is in a fermenter
+- TV/Kiosk mode for an always-on brewery screen, [image endpoint for simple screens](docs/screens.md), predictions, backups and exports, etc.
 
 Everything it does, in detail: [docs/features.md](docs/features.md).
 
@@ -27,9 +28,7 @@ Webhooks: start from a preset for Brewfather, Grainfather, Brewer's Friend, Home
 
 Kiosk mode, for an always-on screen in the brewery:
 
-![Kiosk mode](docs/images/kiosk.png)
-
-(Screenshots use simulated devices.)
+![Kiosk/TV mode](docs/images/kiosk.png)
 
 ## Currently Supported Devices
 

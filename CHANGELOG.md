@@ -10,6 +10,13 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 - **Colours to choose from.** Besides the original violet and blue, the app now comes in Ocean, Hops, Amber, Rosé and
   Graphite, each with a dark and a light version that follow the Auto, Dark or Light theme. Pick one per browser under
   **Settings → Hub → This browser** or in the top bar menu. Violet stays the default.
+- **Pictures for small screens.** **Image link**, on the dashboard and on each pill's page, gives a web address for a
+  picture of every pill (or of one) for a screen that shows images from the web: a GeekMagic mini screen, an ESPHome
+  display, an e-paper frame. Choose the screen size (presets include the 240 × 240 GeekMagic), what's on it (readings,
+  the brew and its progress, a graph of the brew, battery and signal), dark or light in any of the colours, the units,
+  and PNG, JPEG or BMP, and watch the preview change as you go. The hub draws a fresh picture in the app's look each
+  time the screen loads the link, and everything about it is in the link itself. See
+  [docs/screens.md](docs/screens.md).
 
 ### Changed
 

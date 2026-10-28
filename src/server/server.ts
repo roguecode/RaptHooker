@@ -41,6 +41,7 @@ import { channelRoutes } from './routes/channels.js';
 import { tokenRoutes } from './routes/tokens.js';
 import { relayRoutes } from './routes/relay.js';
 import { updateRoutes } from './routes/updates.js';
+import { screenRoutes } from './routes/screen.js';
 
 export { Settings, type NotificationUnits } from './settings.js';
 
@@ -133,6 +134,7 @@ export async function buildServer(s: Services, opts: { logger?: FastifyBaseLogge
   tokenRoutes(ctx);
   relayRoutes(ctx);
   updateRoutes(ctx);
+  screenRoutes(ctx);
   liveRoutes(ctx, sockets);
   await webRoutes(ctx);
 

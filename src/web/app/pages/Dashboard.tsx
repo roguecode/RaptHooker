@@ -11,6 +11,7 @@ import { Trans } from '../i18n/Trans';
 import { applyOrder, fullOrder, sameOrder, sortByOrder } from '../order';
 import { parseFlag, serializeFlag, useStored } from '../storage';
 import { Icon } from '../components/Icon';
+import { ImageLinkButton } from '../components/ImageLink';
 import { PillFigure } from '../components/PillFigure';
 import { Sparkline } from '../components/Sparkline';
 import { FermentBar } from '../components/Ferment';
@@ -218,9 +219,12 @@ export function Dashboard() {
               </button>
             )}
             {!arranging && (
-              <a className="btn small" href="#/kiosk" title={t('Big readings for a spare screen')}>
-                <Icon name="tv" size={16} /> {t('TV mode')}
-              </a>
+              <>
+                <ImageLinkButton />
+                <a className="btn small" href="#/kiosk" title={t('Big readings for a spare screen')}>
+                  <Icon name="tv" size={16} /> {t('TV mode')}
+                </a>
+              </>
             )}
           </div>
 

@@ -1,9 +1,9 @@
 # RaptHooker
 
-In a smart move that isn't
+<small>~~In a smart move that isn't
 [controversial or anti-consumer](https://www.reddit.com/r/Homebrewing/comments/1xc1nl6/kegland_forcing_rapt_users_into_subscription/),
 Kegland has added subscriptions to their highly rated Rapt software (1.6⭐ on PlayStore!), removing features that
-"[cheap arse customers and freeloaders](docs/receipts.md)" were using.
+"[cheap arse customers and freeloaders](docs/receipts.md)" were using.~~ (Since reversed, nice job team!)</small>
 
 RaptHooker - A fully local dashboard for Kegland Rapt devices that runs on a Raspberry Pi.
 

@@ -14,6 +14,10 @@ RaptHooker - A fully local dashboard for Kegland Rapt devices that runs on a Ras
 - Anytime-calibration, even when the Pill is in a fermenter
 - TV/Kiosk mode for an always-on brewery screen, [image endpoint for simple screens](docs/screens.md), predictions, backups and exports, etc.
 
+(Click to play quick description video)
+
+<a href="https://www.youtube.com/watch?v=8DBBo27G_4w"><img src="docs/images/video-intro.jpg" alt="RaptHooker Intro - A local Raspberry Pi dashboard for RAPT Pills and other devices" width="480"></a>
+
 Everything it does, in detail: [docs/features.md](docs/features.md).
 
 ![Dashboard](docs/images/dashboard.png)
@@ -72,6 +76,10 @@ in the web app and sends them wherever you've asked: webhooks, MQTT (Home Assist
 ESP32 relay can pass on broadcasts from pills that are too far from the Pi.
 
 ## Install
+
+(Click to play quickstart install video)
+
+<a href="https://www.youtube.com/watch?v=ly00YsKGYaY"><img src="docs/images/video-install.jpg" alt="RaptHooker Pi Install Quickstart" width="480"></a>
 
 It takes about 20 minutes, most of it waiting. No experience needed: just follow the steps.
 

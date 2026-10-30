@@ -15,8 +15,7 @@ gravity no beer could have. They're still recorded, and show faded on the charts
 
 ## Original gravity (OG)
 
-If you type in an OG (when you start the brew, or later with **Edit**, or by picking it from the pill's chart), that's
-the one used.
+If you type in an OG (when you start the brew, or later with **Edit**), that's the one used.
 
 Otherwise RaptHooker takes it from the pill:
 

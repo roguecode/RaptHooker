@@ -5,6 +5,30 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Leave a bump out of the charts.** Knocked the pill while adding hops, and the chart shows a big spike? Zoom in on it
+  and press **Exclude this range**. The pill's and the brew's charts then hide those readings and draw a dashed curve
+  through the gap that carries on the way the readings were going either side; the charts' averages, smoothing and
+  RaptHooker's velocity leave the knock out too. Point at the curve (or tap it) to see the range shaded, with a button
+  to put its readings back for good. The readings themselves are kept: brew stats, alerts, webhooks and exports don't
+  change. **Exclusions**, next to the lines on the chart, switches back to the readings in this browser. The ranges are
+  saved with the pill's settings (a new `exclusions` list, which older versions keep), so every browser sees them.
+- **Smoothing for the eye.** **Smoothing − / +** under a pill's and a brew's chart draws the lines as a moving average
+  over 15 minutes up to 16 hours, centred so the line doesn't lag; 0 shows the readings as they are. Only the drawing
+  changes: the legend, stats, alerts and webhooks keep using the readings. Each browser remembers its choice.
+
+### Changed
+
+- **The chart's buttons are under it.** The lines to show, **Show it all**, **Exclude this range**, **Exclusions** and
+  **Smoothing** sit below the chart; the time ranges, PNG and CSV stay above. The notes that were under the chart are
+  gone (the legend names the dotted and faded lines).
+
+### Removed
+
+- **Picking the OG from the chart.** Tapping a reading to use it as the brew's OG is gone; change the OG with **Edit**
+  on the brew.
+
 ## [0.5.0] - 2026-10-28
 
 ### Added

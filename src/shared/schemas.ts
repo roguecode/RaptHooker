@@ -47,6 +47,11 @@ export const pillPatchSchema = z.object({
 
 export const pillOrderSchema = z.object({ ids: z.array(z.string().min(1).max(64)).max(200) });
 
+/** A range of a device's history to leave out of its charts. */
+export const chartExclusionSchema = z
+  .object({ from: z.number().int().positive(), to: z.number().int().positive() })
+  .refine((e) => e.to > e.from, { message: '"to" must be after "from"', path: ['to'] });
+
 /** An advert heard by a Bluetooth relay (e.g. an ESP32 running ESPHome). */
 export const relayAdvertSchema = z.object({
   address: z.string().regex(/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/, 'A Bluetooth address like AA:BB:CC:DD:EE:FF'),
@@ -74,6 +79,8 @@ export const historyQuerySchema = z.object({
   from: z.coerce.number().int(),
   to: z.coerce.number().int(),
   points: z.coerce.number().int().min(10).max(4000).default(800),
+  /** "1": leave out the pill's excluded ranges (as its charts do). */
+  exclude: z.enum(['0', '1']).default('0'),
 });
 
 export const csvExportQuerySchema = z.object({ from: z.coerce.number().int().default(0), to: z.coerce.number().int().optional() });

@@ -1312,6 +1312,81 @@ button.chip:hover {
   gap: 0.4rem;
 }
 
+/* An option after a group of chips, set apart by a divider */
+.chip-option {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.chips-divider {
+  flex: none;
+  width: 1px;
+  height: 1.1rem;
+  margin-inline: 0.1rem;
+  background: var(--border-strong);
+}
+
+/* "Label − 3 +", the same size as a chip */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.1rem 0.15rem 0.1rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 650;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.stepper.on {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--accent-soft);
+}
+
+.stepper-label {
+  margin-right: 0.15rem;
+}
+
+.stepper .icon-btn {
+  width: 1.45rem;
+  height: 1.45rem;
+  padding: 0;
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+.stepper .icon-btn:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.stepper .icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.stepper-value {
+  min-width: 1rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* What's drawn on a chart, under it: the lines, then options such as smoothing */
+.chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
 /* ---------- Notices ---------- */
 
 .notice {

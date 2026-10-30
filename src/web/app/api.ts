@@ -83,9 +83,15 @@ export const api = {
   updatePill: (id: string, patch: PillPatchBody) => request<Pill>('PATCH', `/api/pills/${encodeURIComponent(id)}`, patch),
   reorderPills: (ids: string[]) => post<void>('/api/pills/order', { ids }),
   deletePill: (id: string) => request<void>('DELETE', `/api/pills/${encodeURIComponent(id)}`),
+  addExclusion: (id: string, range: { from: number; to: number }) =>
+    post<Pill>(`/api/pills/${encodeURIComponent(id)}/exclusions`, { from: Math.round(range.from), to: Math.round(range.to) }),
+  removeExclusion: (id: string, exclusionId: string) =>
+    request<Pill>('DELETE', `/api/pills/${encodeURIComponent(id)}/exclusions/${encodeURIComponent(exclusionId)}`),
   ignoreNearby: (address: string, ignored: boolean) => post<{ ignored: string[] }>('/api/nearby/ignore', { address, ignored }),
-  history: (id: string, from: number, to: number, points = 800) =>
-    get<History>(`/api/pills/${encodeURIComponent(id)}/history?from=${Math.floor(from)}&to=${Math.ceil(to)}&points=${points}`),
+  history: (id: string, from: number, to: number, points = 800, exclude = false) =>
+    get<History>(
+      `/api/pills/${encodeURIComponent(id)}/history?from=${Math.floor(from)}&to=${Math.ceil(to)}&points=${points}${exclude ? '&exclude=1' : ''}`,
+    ),
   pillCsvUrl: (id: string) => `/api/pills/${encodeURIComponent(id)}/export.csv`,
 
   brews: (pillId?: string) => get<Brew[]>(`/api/brews${pillId ? `?pill=${encodeURIComponent(pillId)}` : ''}`),

@@ -7,7 +7,6 @@ import {
   flowLayout,
   isZoomed,
   mergeHistory,
-  nearestIndex,
   panWindow,
   pinchWindow,
   pngFileName,
@@ -15,9 +14,9 @@ import {
   presetRange,
   resizeWindow,
   skipImplausible,
+  smoothColumn,
   splitImplausible,
   stackLabels,
-  stepIndex,
   windowFromSelection,
   zoomWindow,
 } from './chartMath';
@@ -260,22 +259,36 @@ describe('splitImplausible', () => {
   });
 });
 
-describe('nearestIndex and stepIndex', () => {
-  const ts = [0, 10, 20, 30, 40];
-  const vals = [1, undefined, null, 4, 5];
+describe('smoothColumn', () => {
+  const M = MIN;
 
-  it('finds the nearest reading with a value', () => {
-    expect(nearestIndex(ts, vals, 12)).toBe(0);
-    expect(nearestIndex(ts, vals, 22)).toBe(3);
-    expect(nearestIndex(ts, vals, 100)).toBe(4);
-    expect(nearestIndex(ts, vals, -5)).toBe(0);
-    expect(nearestIndex([0, 1], [null, null], 0)).toBe(-1);
+  it('averages over a window around each reading, following the trend at the ends', () => {
+    const ts = [0, 1, 2, 3, 4, 5, 6].map((m) => m * M);
+    const zigzag = [1, 3, 1, 3, 1, 3, 1];
+    const s = smoothColumn(ts, zigzag, 4 * M);
+    // In the middle, the plain average of ±2 minutes; at the ends, a line through what there is, not the raw reading.
+    expect(s[3]).toBeCloseTo(11 / 5, 9);
+    expect(s[1]).toBeCloseTo(1.8, 9);
+    expect(s[0]).toBeCloseTo(5 / 3, 9);
+    expect(s[6]).toBeCloseTo(5 / 3, 9);
+    expect(smoothColumn(ts, zigzag, 0)).toEqual(zigzag);
   });
 
-  it('steps over readings without a value', () => {
-    expect(stepIndex(vals, 0, 1)).toBe(3);
-    expect(stepIndex(vals, 3, -1)).toBe(0);
-    expect(stepIndex(vals, 4, 1)).toBe(-1);
+  it("doesn't make a steady trend lean either way, even with readings missing", () => {
+    const ts = [...Array(20)].map((_, i) => i * 15 * M + (i % 3) * 2 * M);
+    const falling = ts.map((t) => 1.05 - t / D / 100);
+    smoothColumn(ts, falling, 2 * H).forEach((v, i) => expect(v).toBeCloseTo(falling[i]!, 12));
+  });
+
+  it('keeps gaps and leaves out what the line leaves out', () => {
+    const ts = [0, 1, 2, 3, 4, 5, 6].map((m) => m * M);
+    const s = smoothColumn(ts, [2, undefined, 4, null, 10, 20, 31], 10 * M);
+    expect(s[1]).toBeUndefined();
+    expect(s[3]).toBeNull();
+    // 2 and 4 don't mix with 10, 20, 31 across the gap.
+    expect(s[0]).toBeCloseTo(2, 9);
+    expect(s[2]).toBeCloseTo(4, 9);
+    expect(s[5]).toBeCloseTo(61 / 3, 9);
   });
 });
 

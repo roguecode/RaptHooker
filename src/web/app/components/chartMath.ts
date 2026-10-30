@@ -257,31 +257,76 @@ export function skipImplausible<T>(values: (T | null)[], implausible: (boolean |
   return values.map((v, i) => (implausible[i] === true && v !== null ? undefined : v));
 }
 
-/** Index of the reading nearest `t` that has a value, or -1. `ts` must be sorted. */
-export function nearestIndex(ts: number[], values: ArrayLike<number | null | undefined>, t: number): number {
+/** Index of the first of the (sorted) times at or after `t` (`after`: strictly after). */
+function firstFrom(ts: readonly number[], t: number, after = false): number {
   let lo = 0;
   let hi = ts.length;
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
-    if (ts[mid]! < t) lo = mid + 1;
+    if (ts[mid]! < t || (after && ts[mid] === t)) lo = mid + 1;
     else hi = mid;
   }
-  const ok = (i: number) => values[i] !== null && values[i] !== undefined;
-  let l = lo - 1;
-  let r = lo;
-  while (l >= 0 && !ok(l)) l--;
-  while (r < ts.length && !ok(r)) r++;
-  if (l < 0) return r < ts.length ? r : -1;
-  if (r >= ts.length) return l;
-  return t - ts[l]! <= ts[r]! - t ? l : r;
+  return lo;
 }
 
-/** The next index (in direction `dir`) with a value, or -1. */
-export function stepIndex(values: ArrayLike<number | null | undefined>, from: number, dir: 1 | -1): number {
-  for (let i = from + dir; i >= 0 && i < values.length; i += dir) {
-    if (values[i] !== null && values[i] !== undefined) return i;
+// Smoothing for the eye
+
+/** How wide a moving average each step of the chart's smoothing draws the lines with (step 0: the readings as they are). */
+export const SMOOTHING_STEPS_MS: readonly number[] = [0, 15 * MIN, 30 * MIN, H, 2 * H, 4 * H, 8 * H, 16 * H];
+
+/**
+ * Smooths a line for drawing: each value becomes a straight line fitted through the values within half `windowMs`
+ * either side of it, read off at its own time (a local linear fit). In the middle of a run that's a moving average;
+ * near the ends, where the window has only one side, it still follows a steady trend instead of leaning or going raw.
+ * A null breaks a run (a gap stays a gap); undefined values (left out of the line) are skipped and stay undefined.
+ */
+export function smoothColumn(
+  ts: readonly number[],
+  values: ArrayLike<number | null | undefined>,
+  windowMs: number,
+): (number | null | undefined)[] {
+  const out: (number | null | undefined)[] = Array.from(values);
+  if (!(windowMs > 0)) return out;
+  const half = windowMs / 2;
+  for (let start = 0; start < out.length;) {
+    if (values[start] === null) {
+      start++;
+      continue;
+    }
+    let end = start;
+    while (end < out.length && values[end] !== null) end++;
+    const at: number[] = [];
+    for (let i = start; i < end; i++) {
+      const v = values[i];
+      if (typeof v === 'number' && Number.isFinite(v)) at.push(i);
+    }
+    const t = at.map((i) => ts[i]!);
+    // Running sums of x (hours into the run), y, x² and xy, for a least-squares line over any stretch of them.
+    const x = t.map((v) => (v - (t[0] ?? 0)) / H);
+    const sx = [0];
+    const sy = [0];
+    const sxx = [0];
+    const sxy = [0];
+    at.forEach((i, k) => {
+      const y = values[i] as number;
+      sx.push(sx[k]! + x[k]!);
+      sy.push(sy[k]! + y);
+      sxx.push(sxx[k]! + x[k]! * x[k]!);
+      sxy.push(sxy[k]! + x[k]! * y);
+    });
+    at.forEach((i, k) => {
+      const a = firstFrom(t, t[k]! - half);
+      const b = firstFrom(t, t[k]! + half, true);
+      const n = b - a;
+      const mx = (sx[b]! - sx[a]!) / n;
+      const my = (sy[b]! - sy[a]!) / n;
+      const vx = (sxx[b]! - sxx[a]!) / n - mx * mx;
+      const cxy = (sxy[b]! - sxy[a]!) / n - mx * my;
+      out[i] = vx > 1e-12 ? my + (cxy / vx) * (x[k]! - mx) : my;
+    });
+    start = end;
   }
-  return -1;
+  return out;
 }
 
 // Labels and the exported image

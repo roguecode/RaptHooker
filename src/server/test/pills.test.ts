@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { performance } from 'node:perf_hooks';
+import { DEFAULT_PILL_MODEL, type History } from '@rapthooker/shared';
 import { ClockGuard } from '../clock.js';
 import { PillService } from '../pills.js';
 import { BrewService } from '../brews.js';
@@ -9,6 +10,7 @@ import { ROLLUP_MS, type Store } from '../db.js';
 import { CAPTURED, silent, tempStore } from './helpers.js';
 
 const ADDR = '08:B6:1F:00:00:66';
+const HOUR = 3_600_000;
 let cleanup: (() => void) | undefined;
 afterEach(() => cleanup?.());
 
@@ -168,6 +170,34 @@ describe('pills', () => {
     expect(t.pills.get(id)).toMatchObject({ name: 'Pale', offsets: { gravity: 0, temperature: 0 }, model: { gravitySource: 'pill' } });
   });
 
+  it('leaves ranges out of the charts, joining ones that overlap, and remembers them', () => {
+    const t = setup();
+    t.pills.handleAdvert(t.advert(CAPTURED.metricsFalling));
+    const { id, exclusions } = t.pills.adopt(ADDR, {});
+    expect(exclusions).toEqual([]);
+    expect(count(t.store)).toBe(1);
+    const H = 3_600_000;
+    const T = t.now();
+    t.pills.addExclusion(id, { from: T + 3 * H, to: T + 4 * H });
+    t.pills.addExclusion(id, { from: T, to: T + H });
+    expect(t.pills.get(id)!.exclusions!.map((e) => e.from)).toEqual([T, T + 3 * H]);
+    // One across both becomes a single range.
+    const joined = t.pills.addExclusion(id, { from: T + H / 2, to: T + 3 * H }).exclusions!;
+    expect(joined).toEqual([{ id: expect.any(String), from: T, to: T + 4 * H, createdAt: T }]);
+    // One inside it changes nothing.
+    expect(t.pills.addExclusion(id, { from: T + H, to: T + 2 * H }).exclusions).toEqual(joined);
+    expect(() => t.pills.addExclusion(id, { from: T, to: T })).toThrow(/after its start/);
+    expect(() => t.pills.addExclusion('nope', { from: T, to: T + H })).toThrow(/Unknown pill/);
+
+    const again = new PillService(t.store, t.clock, silent, t.now);
+    again.load();
+    expect(again.get(id)!.exclusions).toEqual(joined);
+    expect(again.removeExclusion(id, joined[0]!.id).exclusions).toEqual([]);
+    expect(() => again.removeExclusion(id, joined[0]!.id)).toThrow(/Unknown excluded range/);
+    // The readings were never touched.
+    expect(count(t.store)).toBe(1);
+  });
+
   it("doesn't move when a pill was last heard back for a relay's late copy", () => {
     const t = setup();
     t.pills.handleAdvert(t.advert(CAPTURED.metricsFalling));
@@ -285,6 +315,55 @@ describe('history', () => {
     expect(h.bucketMs).toBe(ROLLUP_MS);
     expect(h.ts.length).toBe(8);
     expect(h.gravity[0]).toBeCloseTo(1.04, 5);
+  });
+
+  it('leaves excluded ranges out of averages, smoothing and velocity when asked', () => {
+    const t = setup();
+    const { id } = t.pills.adopt(ADDR, {});
+    const start = Math.floor(t.now() / ROLLUP_MS) * ROLLUP_MS;
+    const bump = { from: start + 5 * HOUR, to: start + 5.5 * HOUR };
+    for (let ts = start; ts < start + 12 * HOUR; ts += 120_000) {
+      const knocked = ts >= bump.from && ts <= bump.to;
+      t.store.addReading(id, {
+        ts,
+        sg: knocked ? 1.06 : 1.04,
+        temp: knocked ? 25 : 20,
+        velocity: null,
+        battery: 80,
+        rssi: -70,
+        x: 0,
+        y: 0,
+        z: 1000,
+        flags: 0,
+      });
+    }
+    const model = { ...DEFAULT_PILL_MODEL, velocitySource: 'computed' as const, velocityHours: 6, smoothing: 'strong' as const };
+    const opts = { gapMs: 600_000, offsets: { gravity: 0, temperature: 0 }, model };
+    const at = (h: History, ts: number) => h.ts.findIndex((x) => x >= ts);
+    const clean = (h: History) =>
+      h.gravity.every((g) => g === null || Math.abs(g - 1.04) < 1e-6) && h.temperature.every((v) => v === null || Math.abs(v - 20) < 1e-6);
+    const emptyInBump = (h: History) =>
+      h.ts.some((ts, i) => ts >= bump.from && ts <= bump.to && h.gravity[i] === null && h.temperature[i] === null);
+
+    // Raw readings: the knock spreads into the smoothed gravity and the velocity after it, unless it's left out.
+    const raw = t.store.history(id, start, start + 12 * HOUR, { ...opts, maxPoints: 800 });
+    expect(raw.bucketMs).toBe(0);
+    expect(raw.gravity[at(raw, start + 7 * HOUR)]).toBeGreaterThan(1.041);
+    expect(Math.abs(raw.velocity[at(raw, start + 9 * HOUR)]!)).toBeGreaterThan(1);
+    const left = t.store.history(id, start, start + 12 * HOUR, { ...opts, maxPoints: 800, exclude: [bump] });
+    expect(left.ts).toEqual(raw.ts);
+    expect(clean(left)).toBe(true);
+    expect(emptyInBump(left)).toBe(true);
+    expect(left.velocity[at(left, start + 9 * HOUR)]).toBeCloseTo(0, 6);
+
+    // Averaged over buckets of readings, and over the 15-minute rollups.
+    for (const maxPoints of [60, 12]) {
+      expect(clean(t.store.history(id, start, start + 12 * HOUR, { ...opts, maxPoints }))).toBe(false);
+      const h = t.store.history(id, start, start + 12 * HOUR, { ...opts, maxPoints, exclude: [bump] });
+      expect(h.bucketMs).toBe(maxPoints === 60 ? 12 * 60_000 : HOUR);
+      expect(clean(h)).toBe(true);
+      expect(emptyInBump(h)).toBe(true);
+    }
   });
 });
 

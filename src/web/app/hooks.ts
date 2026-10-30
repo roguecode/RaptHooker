@@ -50,13 +50,21 @@ const transient = (err: unknown) => !(err instanceof ApiError) || err.status ===
 
 /**
  * A pill's history for a range, kept up to date with live readings when the range runs to now. A different
- * `reloadKey` fetches it again (e.g. when the pill's calibration changes). A null range clears it.
+ * `reloadKey` fetches it again (e.g. when the pill's calibration changes). A null range clears it. With `exclude`, the
+ * pill's excluded ranges count towards nothing (averages, smoothing, velocity) and come back empty.
  *
  * Readings sent while the live connection was down never arrive, so a live range is fetched again when the hub says
  * hello on a new connection and has newer readings. A failed load is tried again after a while, and straight away when
  * the hub is back.
  */
-export function useHistory(pillId: string | null, range: HistoryRange | null, points = 800, gapMs = 30 * 60_000, reloadKey = '') {
+export function useHistory(
+  pillId: string | null,
+  range: HistoryRange | null,
+  points = 800,
+  gapMs = 30 * 60_000,
+  reloadKey = '',
+  exclude = false,
+) {
   const [history, setHistory] = useState<History | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -80,7 +88,7 @@ export function useHistory(pillId: string | null, range: HistoryRange | null, po
     try {
       // A live range runs to now, however long ago it was worked out.
       const to = range.live ? Math.max(range.to, Date.now()) : range.to;
-      const h = await api.history(pillId, range.from, to, points);
+      const h = await api.history(pillId, range.from, to, points, exclude);
       if (mine === seq.current) {
         setHistory(h);
         setError(null);
@@ -97,7 +105,7 @@ export function useHistory(pillId: string | null, range: HistoryRange | null, po
     } finally {
       if (mine === seq.current) setLoading(false);
     }
-  }, [pillId, range?.from, range?.to, range?.live, hasRange, points, reloadKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pillId, range?.from, range?.to, range?.live, hasRange, points, reloadKey, exclude]); // eslint-disable-line react-hooks/exhaustive-deps
   latest.current = load;
 
   useEffect(() => {
@@ -180,17 +188,18 @@ export function useZoomableHistory(
   pillId: string | null,
   range: HistoryRange,
   view: TimeWindow | null,
-  opts: { points?: number; gapMs?: number; reloadKey?: string } = {},
+  opts: { points?: number; gapMs?: number; reloadKey?: string; exclude?: boolean } = {},
 ) {
   const points = opts.points ?? 1500;
-  const base = useHistory(pillId, range, points, opts.gapMs, opts.reloadKey);
+  const exclude = opts.exclude ?? false;
+  const base = useHistory(pillId, range, points, opts.gapMs, opts.reloadKey, exclude);
   const bounds = useMemo<TimeWindow>(
     () => ({ from: range.from, to: Math.max(range.to, base.history?.to ?? 0) }),
     [range.from, range.to, base.history?.to],
   );
   const wanted = base.history ? detailRange(view, bounds, base.history.bucketMs, range.live) : null;
   const settled = useSettled(wanted, wanted ? `${wanted.from}-${wanted.to}-${wanted.live}` : '', wanted ? 350 : 0);
-  const detail = useHistory(pillId, settled, points, opts.gapMs, opts.reloadKey);
+  const detail = useHistory(pillId, settled, points, opts.gapMs, opts.reloadKey, exclude);
   const zoomedIn = settled !== null;
   const history = useMemo(() => mergeHistory(base.history, zoomedIn ? detail.history : null), [base.history, zoomedIn, detail.history]);
   return {

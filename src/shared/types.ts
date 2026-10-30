@@ -112,6 +112,17 @@ export interface PillLive {
   caught: CatchRate | null;
 }
 
+/**
+ * A stretch of a device's history left out of its charts (the pill knocked while adding hops, say), with a curve from
+ * the readings either side drawn instead. Only what the charts show changes: the readings are kept.
+ */
+export interface ChartExclusion {
+  id: string;
+  from: number;
+  to: number;
+  createdAt: number;
+}
+
 export interface Pill {
   id: string;
   kind: DeviceKind;
@@ -129,6 +140,8 @@ export interface Pill {
   /** Position on the dashboard (lowest first). */
   order: number;
   info: PillInfo;
+  /** Ranges left out of the charts, oldest first. Always sent by the hub; missing from data saved by older versions. */
+  exclusions?: ChartExclusion[];
   live: PillLive;
   /** The brew running on this pill, if any. */
   brew: Brew | null;

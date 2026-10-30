@@ -1,5 +1,6 @@
 import {
   adoptPillSchema,
+  chartExclusionSchema,
   csvExportQuerySchema,
   historyQuerySchema,
   nearbyIgnoreSchema,
@@ -43,6 +44,16 @@ export function pillRoutes({ app, s, owner }: RouteContext): void {
     return reply.code(204).send();
   });
 
+  app.post('/api/pills/:id/exclusions', owner, async (req) => {
+    const { id } = req.params as { id: string };
+    return pills.addExclusion(id, chartExclusionSchema.parse(req.body));
+  });
+
+  app.delete('/api/pills/:id/exclusions/:exclusionId', owner, async (req) => {
+    const { id, exclusionId } = req.params as { id: string; exclusionId: string };
+    return pills.removeExclusion(id, exclusionId);
+  });
+
   app.post('/api/nearby/ignore', owner, async (req) => {
     const body = nearbyIgnoreSchema.parse(req.body);
     pills.ignore(body.address, body.ignored);
@@ -60,6 +71,7 @@ export function pillRoutes({ app, s, owner }: RouteContext): void {
       offsets: pills.offsets(id),
       model: pills.model(id),
       rawFrom: config.rawRetentionDays > 0 ? Date.now() - config.rawRetentionDays * 86_400_000 : undefined,
+      exclude: q.exclude === '1' ? pills.exclusions(id) : undefined,
     });
   });
 

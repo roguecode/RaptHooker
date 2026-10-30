@@ -256,6 +256,7 @@
   },
   "{from} to {to}": {
     "files": [
+      "components/Chart.tsx",
       "components/OverviewStrip.tsx"
     ]
   },
@@ -301,6 +302,7 @@
   },
   "{n} h": {
     "files": [
+      "components/ChartSmoothing.tsx",
       "format.ts"
     ]
   },
@@ -312,6 +314,7 @@
   },
   "{n} min": {
     "files": [
+      "components/ChartSmoothing.tsx",
       "format.ts"
     ]
   },
@@ -1993,6 +1996,11 @@
       "pages/pill/BrewPanel.tsx"
     ]
   },
+  "Couldn't exclude the range": {
+    "files": [
+      "components/ExclusionControls.tsx"
+    ]
+  },
   "Couldn't import": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
@@ -2068,6 +2076,11 @@
       "pages/pill/PillSettings.tsx"
     ]
   },
+  "Couldn't remove the exclusion": {
+    "files": [
+      "components/ExclusionControls.tsx"
+    ]
+  },
   "Couldn't restart": {
     "files": [
       "pages/settings/SystemSection.tsx"
@@ -2121,11 +2134,6 @@
     "files": [
       "pages/webhooks/Preview.tsx",
       "pages/webhooks/WebhookEditor.tsx"
-    ]
-  },
-  "Couldn't set the OG": {
-    "files": [
-      "pages/pill/HistoryPanel.tsx"
     ]
   },
   "Couldn't start the brew": {
@@ -2467,11 +2475,6 @@
       "pages/dashboard/FirstRunGuide.tsx"
     ]
   },
-  "Dotted lines: the pill's own values, to compare with RaptHooker's. Tap them in the legend to hide them.": {
-    "files": [
-      "pages/pill/HistoryPanel.tsx"
-    ]
-  },
   "Down to 2 °C": {
     "files": [
       "pages/brews/brewText.ts"
@@ -2507,6 +2510,11 @@
   "Drag to move": {
     "files": [
       "pages/dashboard/ArrangeList.tsx"
+    ]
+  },
+  "Drawn as a curve from the readings either side. The readings themselves are kept.": {
+    "files": [
+      "components/Chart.tsx"
     ]
   },
   "Dry hop": {
@@ -2697,11 +2705,6 @@
       "validation.tsx"
     ]
   },
-  "Enter picks a reading to {action}.": {
-    "files": [
-      "components/Chart.tsx"
-    ]
-  },
   "Enter the access key ID": {
     "files": [
       "pages/settings/BackupSection.tsx"
@@ -2815,6 +2818,56 @@
   "Example": {
     "files": [
       "pages/settings/TokensSection.tsx"
+    ]
+  },
+  "Exclude range": {
+    "files": [
+      "components/ExclusionControls.tsx"
+    ]
+  },
+  "Exclude this range": {
+    "files": [
+      "components/ExclusionControls.tsx"
+    ]
+  },
+  "Exclude this range?": {
+    "files": [
+      "components/ExclusionControls.tsx"
+    ]
+  },
+  "Excluded": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Excluded (estimated)": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Excluded range": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Excluded range: {range}": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Excluded ranges are drawn as curves. Turn off to see the readings.": {
+    "files": [
+      "components/ExclusionControls.tsx"
+    ]
+  },
+  "Exclusion removed": {
+    "files": [
+      "components/ExclusionControls.tsx"
+    ]
+  },
+  "Exclusions": {
+    "files": [
+      "components/ExclusionControls.tsx"
     ]
   },
   "Exit TV mode": {
@@ -3139,11 +3192,6 @@
       "pages/brews/BrewPage.tsx"
     ]
   },
-  "From the reading at {date}": {
-    "files": [
-      "pages/pill/HistoryPanel.tsx"
-    ]
-  },
   "from the tilt {gravity}": {
     "files": [
       "pages/pill/DataSources.tsx"
@@ -3386,11 +3434,6 @@
   "Gravity: {from} → {to}": {
     "files": [
       "pages/pill/calibration.ts"
-    ]
-  },
-  "Grey dots: readings where the pill didn't look like it was floating. They're left out of the line, brew stats and gravity alerts.": {
-    "files": [
-      "pages/pill/HistoryPanel.tsx"
     ]
   },
   "HD TV (720p)": {
@@ -4095,6 +4138,11 @@
       "pages/brews/EditBrewModal.tsx"
     ]
   },
+  "Less smoothing": {
+    "files": [
+      "components/ChartSmoothing.tsx"
+    ]
+  },
   "Less than {count} point change in {hours} h|Less than {count} points change in {hours} h": {
     "files": [
       "pages/alerts/AlertsPage.tsx"
@@ -4122,8 +4170,14 @@
       "pages/pill/calibration.ts"
     ]
   },
+  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": {
+    "files": [
+      "components/ChartSmoothing.tsx"
+    ]
+  },
   "Lines on the chart": {
     "files": [
+      "pages/brews/BrewPage.tsx",
       "pages/pill/HistoryPanel.tsx"
     ]
   },
@@ -4268,6 +4322,11 @@
   "mock": {
     "files": [
       "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "More smoothing": {
+    "files": [
+      "components/ChartSmoothing.tsx"
     ]
   },
   "Most of the drop is in: a fair guess.": {
@@ -4451,11 +4510,6 @@
   "next {when}": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
-    ]
-  },
-  "Next reading": {
-    "files": [
-      "components/Chart.tsx"
     ]
   },
   "Next screen every": {
@@ -4853,11 +4907,6 @@
       "../../server/screen/render.ts",
       "components/Chart.tsx",
       "components/Ferment.tsx"
-    ]
-  },
-  "OG set to {gravity}": {
-    "files": [
-      "pages/pill/HistoryPanel.tsx"
     ]
   },
   "OG: {gravity}": {
@@ -5413,6 +5462,11 @@
       "pages/pill/CalibrationWizard.tsx"
     ]
   },
+  "Point at it on the chart, or tap it, to put the readings back.": {
+    "files": [
+      "components/ExclusionControls.tsx"
+    ]
+  },
   "Point deleted": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
@@ -5488,11 +5542,6 @@
   "Preview of the picture": {
     "files": [
       "components/ImageLink.tsx"
-    ]
-  },
-  "Previous reading": {
-    "files": [
-      "components/Chart.tsx"
     ]
   },
   "Print / Save as PDF": {
@@ -5578,6 +5627,11 @@
       "pages/brews/BrewPage.tsx"
     ]
   },
+  "Range excluded": {
+    "files": [
+      "components/ExclusionControls.tsx"
+    ]
+  },
   "RaptHooker {version} is available.": {
     "files": [
       "components/UpdateBanner.tsx"
@@ -5640,7 +5694,6 @@
   },
   "Reading": {
     "files": [
-      "components/Chart.tsx",
       "pages/webhooks/strings.ts"
     ]
   },
@@ -5813,6 +5866,11 @@
   "Remove {name}?": {
     "files": [
       "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Remove exclusion": {
+    "files": [
+      "components/Chart.tsx"
     ]
   },
   "Remove header": {
@@ -6472,6 +6530,7 @@
   },
   "Smoothing": {
     "files": [
+      "components/ChartSmoothing.tsx",
       "pages/pill/DataSources.tsx"
     ]
   },
@@ -6764,11 +6823,6 @@
   "Talk to @BotFather": {
     "files": [
       "pages/alerts/strings.ts"
-    ]
-  },
-  "Tap or click a reading (or focus the chart and press Enter) to use it as the brew's OG.": {
-    "files": [
-      "pages/pill/HistoryPanel.tsx"
     ]
   },
   "target {gravity}": {
@@ -7203,9 +7257,19 @@
       "pages/pill/Tiles.tsx"
     ]
   },
+  "The readings as they are": {
+    "files": [
+      "components/ChartSmoothing.tsx"
+    ]
+  },
   "The readings follow the curve closely and it's nearly there.": {
     "files": [
       "pages/brews/Prediction.tsx"
+    ]
+  },
+  "The readings from {from} to {to} are back on the chart.": {
+    "files": [
+      "components/ExclusionControls.tsx"
     ]
   },
   "The same payload as the RAPT portal integration": {
@@ -7404,6 +7468,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "This will exclude from {start} to {end} from the graph and replace it with extrapolated data in the view. This doesn't delete the data, and you can remove this exclusion at any time.": {
+    "files": [
+      "components/ExclusionControls.tsx"
+    ]
+  },
   "Threshold": {
     "files": [
       "pages/alerts/RuleModal.tsx"
@@ -7554,6 +7623,11 @@
   "Turn on": {
     "files": [
       "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "Turn on to leave the excluded ranges out.": {
+    "files": [
+      "components/ExclusionControls.tsx"
     ]
   },
   "TV mode": {
@@ -7740,12 +7814,6 @@
   "Use a whole number": {
     "files": [
       "validation.tsx"
-    ]
-  },
-  "Use as OG": {
-    "files": [
-      "components/Chart.tsx",
-      "pages/pill/HistoryPanel.tsx"
     ]
   },
   "Use at least {count} character|Use at least {count} characters": {

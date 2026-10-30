@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import { randomUUID } from 'node:crypto';
 import {
   DEFAULT_PILL_MODEL,
   PILL_COLORS,
@@ -12,6 +13,7 @@ import {
   tiltGravity,
   type Brew,
   type CatchRate,
+  type ChartExclusion,
   type DeviceKind,
   type NearbyPill,
   type Offsets,
@@ -35,6 +37,7 @@ interface PillConfig {
   model: PillModel;
   order: number;
   info: PillInfo;
+  exclusions: ChartExclusion[];
 }
 
 /** Values RaptHooker works out from the stored readings, refreshed with each new reading. */
@@ -117,6 +120,8 @@ const GAPS = 15;
 const NEARBY_EXPIRY_MS = 15 * 60_000;
 const IGNORED_KEY = 'ignoredAddresses';
 const MAX_PENDING = 2000;
+/** Ranges left out of one device's charts. */
+const MAX_EXCLUSIONS = 200;
 /** A thermometer broadcasts about once a second; one reading a minute is recorded. */
 export const THERMOMETER_SAMPLE_MS = 60_000;
 
@@ -262,7 +267,14 @@ export function calibrate(
 /** Fills in what older saved configs don't have. */
 function upgradeConfig(c: Partial<PillConfig> & Pick<PillConfig, 'name' | 'color' | 'offsets' | 'info'>, order: number): PillConfig {
   const model = { ...DEFAULT_PILL_MODEL, ...c.model };
-  return { kind: 'pill', archived: false, ...c, model: { ...model, tiltPoly: fitTilt(model.tiltPoints) }, order: c.order ?? order };
+  return {
+    kind: 'pill',
+    archived: false,
+    ...c,
+    model: { ...model, tiltPoly: fitTilt(model.tiltPoints) },
+    order: c.order ?? order,
+    exclusions: Array.isArray(c.exclusions) ? c.exclusions : [],
+  };
 }
 
 /**
@@ -374,6 +386,11 @@ export class PillService extends EventEmitter {
     return this.pills.get(id)?.config.model ?? DEFAULT_PILL_MODEL;
   }
 
+  /** Ranges left out of the pill's charts. */
+  exclusions(id: string): ChartExclusion[] {
+    return this.pills.get(id)?.config.exclusions ?? [];
+  }
+
   latest(id: string): Reading | null {
     const s = this.pills.get(id);
     return s?.latest ? calibrate(s.latest, s.config.offsets, s.config.model, s.derived) : null;
@@ -429,6 +446,7 @@ export class PillService extends EventEmitter {
       model: s.config.model,
       order: s.config.order,
       info: s.config.info,
+      exclusions: s.config.exclusions,
       live: {
         lastHeardAt: s.lastHeardAt,
         lastReadingAt: s.lastReadingAt,
@@ -525,6 +543,7 @@ export class PillService extends EventEmitter {
       model: { ...DEFAULT_PILL_MODEL },
       order: Math.max(-1, ...[...this.pills.values()].map((p) => p.config.order)) + 1,
       info: near?.info ?? NO_INFO,
+      exclusions: [],
     };
     const state: PillState = {
       id,
@@ -594,6 +613,45 @@ export class PillService extends EventEmitter {
     if (recalculated) this.refreshDerived(s);
     this.emitPill(s);
     if (recalculated) this.emit('offsets', id);
+    return this.view(s);
+  }
+
+  /**
+   * Leaves a range out of the pill's charts. Ranges it overlaps or touches become one with it, so no reading is under
+   * two exclusions. The readings themselves are kept.
+   */
+  addExclusion(id: string, range: { from: number; to: number }): Pill {
+    const s = this.pills.get(id);
+    if (!s) throw new PillError('Unknown pill', 404);
+    if (!(range.to > range.from)) throw new PillError('The end of the range has to be after its start');
+    const existing = s.config.exclusions;
+    if (existing.some((e) => e.from <= range.from && e.to >= range.to)) return this.view(s);
+    let merged = { from: range.from, to: range.to };
+    let rest = existing;
+    for (;;) {
+      const touching = rest.filter((e) => e.from <= merged.to && e.to >= merged.from);
+      if (touching.length === 0) break;
+      merged = {
+        from: Math.min(merged.from, ...touching.map((e) => e.from)),
+        to: Math.max(merged.to, ...touching.map((e) => e.to)),
+      };
+      rest = rest.filter((e) => !touching.includes(e));
+    }
+    if (rest.length >= MAX_EXCLUSIONS) throw new PillError(`A device can have up to ${MAX_EXCLUSIONS} excluded ranges: remove one first`);
+    s.config.exclusions = [...rest, { id: randomUUID(), ...merged, createdAt: this.now() }].sort((a, b) => a.from - b.from);
+    this.save(s);
+    this.emitPill(s);
+    return this.view(s);
+  }
+
+  /** Puts an excluded range back on the pill's charts. */
+  removeExclusion(id: string, exclusionId: string): Pill {
+    const s = this.pills.get(id);
+    if (!s) throw new PillError('Unknown pill', 404);
+    if (!s.config.exclusions.some((e) => e.id === exclusionId)) throw new PillError('Unknown excluded range', 404);
+    s.config.exclusions = s.config.exclusions.filter((e) => e.id !== exclusionId);
+    this.save(s);
+    this.emitPill(s);
     return this.view(s);
   }
 

@@ -533,12 +533,22 @@ export class Store {
    * rollups for long ranges). Gaps longer than `gapMs` (e.g. the hub was off) become a row of nulls so charts break
    * the line there. The pill's model decides where the gravity and velocity come from. Whatever a device doesn't
    * measure (a thermometer's gravity, battery and tilt) is null.
+   *
+   * Readings in `exclude` (ranges left out of the charts) count towards nothing: not averages, smoothing or velocity.
+   * Rows made only of them are null, timed inside the range; with rollups, a whole bucket that touches a range is.
    */
   history(
     pillId: string,
     from: number,
     to: number,
-    opts: { maxPoints: number; gapMs: number; offsets: Offsets; model?: PillModel; rawFrom?: number },
+    opts: {
+      maxPoints: number;
+      gapMs: number;
+      offsets: Offsets;
+      model?: PillModel;
+      rawFrom?: number;
+      exclude?: readonly { from: number; to: number }[];
+    },
   ): History {
     const model = opts.model ?? DEFAULT_PILL_MODEL;
     const span = Math.max(1, to - from);
@@ -549,6 +559,13 @@ export class Store {
     const velocityMs = model.velocitySource === 'computed' ? model.velocityHours * 3_600_000 : 0;
     const lookback = Math.max(velocityMs, SMOOTHING_MS[model.smoothing]);
     const qFrom = from - lookback;
+    const excluded = (opts.exclude ?? [])
+      .filter((w) => Number.isFinite(w.from) && Number.isFinite(w.to) && w.to >= qFrom && w.from <= to)
+      .map((w) => ({ from: Math.floor(w.from), to: Math.ceil(w.to) }));
+    const excludedAt = (t: number) => excluded.find((w) => t >= w.from && t <= w.to);
+    // Whole numbers checked above, so they can go in the SQL as they are.
+    const keep = excluded.length ? `NOT (${excluded.map((w) => `ts BETWEEN ${w.from} AND ${w.to}`).join(' OR ')})` : null;
+    const avg = (col: string) => (keep ? `AVG(CASE WHEN ${keep} THEN ${col} END)` : `AVG(${col})`);
     type P = {
       ts: number;
       sg: number | null;
@@ -561,6 +578,18 @@ export class Store {
       z: number | null;
       flags: number;
     };
+    const empty = (r: P, ts = r.ts): P => ({
+      ...r,
+      ts,
+      sg: null,
+      temp: null,
+      velocity: null,
+      battery: null,
+      rssi: null,
+      x: null,
+      y: null,
+      z: null,
+    });
     let rows: P[];
 
     if (bucket <= 60_000) {
@@ -570,12 +599,14 @@ export class Store {
           'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? ORDER BY ts LIMIT ?',
         )
         .all(pillId, qFrom, to, opts.maxPoints * 4 + Math.ceil(lookback / 60_000)) as unknown as P[];
+      if (excluded.length) rows = rows.map((r) => (excludedAt(r.ts) ? empty(r) : r));
     } else if (bucket < ROLLUP_MS) {
       rows = this.db
         .prepare(
-          `SELECT CAST(AVG(ts) AS INTEGER) AS ts, COALESCE(AVG(CASE WHEN flags & 1 = 0 THEN sg END), AVG(sg)) AS sg, AVG(temp) AS temp,
-                  AVG(velocity) AS velocity, AVG(battery) AS battery, AVG(rssi) AS rssi, AVG(x) AS x, AVG(y) AS y, AVG(z) AS z,
-                  MIN(flags & 1) AS flags
+          `SELECT CAST(${keep ? `COALESCE(${avg('ts')}, AVG(ts))` : 'AVG(ts)'} AS INTEGER) AS ts,
+                  COALESCE(AVG(CASE WHEN flags & 1 = 0${keep ? ` AND ${keep}` : ''} THEN sg END), ${avg('sg')}) AS sg, ${avg('temp')} AS temp,
+                  ${avg('velocity')} AS velocity, ${avg('battery')} AS battery, ${avg('rssi')} AS rssi, ${avg('x')} AS x, ${avg('y')} AS y,
+                  ${avg('z')} AS z, ${keep ? `MIN(CASE WHEN ${keep} THEN flags & 1 END)` : 'MIN(flags & 1)'} AS flags
            FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? GROUP BY ts / ${Math.floor(bucket)} ORDER BY 1`,
         )
         .all(pillId, qFrom, to) as unknown as P[];
@@ -597,6 +628,14 @@ export class Store {
            FROM rollups WHERE pill_id = ? AND bucket BETWEEN ? AND ? GROUP BY bucket / ${Math.floor(bucket)} ORDER BY 1`,
         )
         .all(pillId, qFrom - (qFrom % ROLLUP_MS), to) as unknown as P[];
+      // A group's rollups start in [k·bucket, (k+1)·bucket); its time is their weighted start plus half a rollup.
+      if (excluded.length) {
+        rows = rows.map((r) => {
+          const start = Math.floor((r.ts - ROLLUP_MS / 2) / bucket) * bucket;
+          const w = excluded.find((x) => x.from < start + bucket && x.to >= start);
+          return w ? empty(r, Math.min(Math.max(r.ts, w.from), w.to)) : r;
+        });
+      }
     }
 
     // Model the whole fetched span, then keep the requested range.

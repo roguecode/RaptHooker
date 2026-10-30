@@ -32,6 +32,9 @@ switch.
 **Off (default)**, **Light** (gravity averaged over the last hour) or **Strong** (the last 4 hours). It averages out
 wobbles from bubbles and knocks, and is used for what's shown, sent to webhooks and MQTT, and alerted on.
 
+To calm a chart down without changing any numbers, use **Smoothing − / +** under the chart instead: it only changes
+how the lines are drawn, in this browser (0 shows the readings as they are).
+
 ## What changes when you switch
 
 The tiles, the charts (worked out again from the stored readings), brew stats, alerts, webhooks and MQTT all follow
@@ -83,9 +86,3 @@ Aim for **3–6 points spread from water up to the highest OG you brew**. RaptHo
 points, a curve through three, and a cubic through four or more (up to 20 points). The wizard shows the fitted curve
 and how far each point is from it; re-measure (or delete) any that are far out. When you're happy, press **Use it** to
 switch the gravity to RaptHooker's.
-
-## Using a reading as the OG
-
-While a brew is running, the owner can tap or click a reading on the pill's chart (or focus the chart and press
-Enter) and choose **Use as OG**. The arrows step to the reading before or after. See
-[brewing.md](brewing.md#original-gravity-og).

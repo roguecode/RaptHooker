@@ -16,61 +16,8 @@
   align-items: flex-start;
 }
 
-.history-lines {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  min-width: 0;
-}
-
-.history-lines > .chip {
-  flex-shrink: 0;
-}
-
 .pill-chart {
   position: relative;
-}
-
-.chart-notes {
-  list-style: none;
-  margin: 0.8rem 0 0;
-  padding: 0;
-  display: grid;
-  gap: 0.35rem;
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.chart-notes li {
-  display: flex;
-  gap: 0.55rem;
-  align-items: baseline;
-}
-
-.chart-key {
-  flex: none;
-  display: inline-block;
-  width: 0.95rem;
-  height: 0;
-  border-top: 2px solid var(--muted);
-  transform: translateY(-0.2rem);
-}
-
-.chart-key.faded {
-  width: 0.6rem;
-  height: 0.6rem;
-  border: 1px solid var(--muted);
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--muted) 25%, transparent);
-  transform: none;
-}
-
-.chart-key.dotted {
-  border-top: 2px dotted var(--violet-2);
-}
-
-.chart-key.og {
-  border-top: 2px dashed var(--violet-2);
 }
 
 @media (max-width: 640px) {
@@ -81,7 +28,7 @@
 
   .pill-history > .panel-head,
   .pill-history > .panel-body > .chart-toolbar,
-  .pill-history > .panel-body > .chart-notes,
+  .pill-history > .panel-body > .chart-controls,
   .pill-history > .panel-body > .notice {
     margin-inline: 0.45rem;
   }
@@ -94,20 +41,6 @@
 
   .pill-history .chart-toolbar > * {
     min-width: 0;
-  }
-
-  .pill-history .history-lines {
-    overflow-x: auto;
-    scrollbar-width: none;
-    padding-bottom: 0.1rem;
-  }
-
-  .pill-history .history-lines::-webkit-scrollbar {
-    display: none;
-  }
-
-  .pill-history .history-lines .chips {
-    flex-wrap: nowrap;
   }
 }
 

@@ -8,32 +8,32 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type Ref,
 } from 'react';
-import uPlot, { type AlignedData, type Options, type Series } from 'uplot';
+import uPlot, { type AlignedData, type Options, type Range, type Series } from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import './Chart.css';
-import type { History } from '@rapthooker/shared';
+import type { ChartExclusion, History } from '@rapthooker/shared';
 import { useUnits } from '../units';
 import { useTheme } from '../theme';
-import { dateTime, fixed } from '../format';
-import { currentLocale, t, tk } from '../i18n';
+import { dateTime, fixed, timeOnly } from '../format';
+import { t, tk } from '../i18n';
 import { Icon } from './Icon';
 import type { ChartAnnotation } from './annotations';
 import {
   clampWindow,
   isZoomed,
   MIN_SPAN_MS,
-  nearestIndex,
   panWindow,
   pinchWindow,
   skipImplausible,
+  smoothColumn,
   splitImplausible,
   stackLabels,
-  stepIndex,
   windowFromSelection,
   zoomWindow,
   type TimeWindow,
 } from './chartMath';
 import { exportChartPng, type PngLegendItem } from './pngExport';
+import { bridgeAt, excludeColumn, mergeWindows, type Bridge } from './exclusions';
 
 export type { ChartAnnotation } from './annotations';
 export type { TimeWindow } from './chartMath';
@@ -81,9 +81,15 @@ export interface ChartProps {
   og?: number | null;
   /** Dashed vertical lines with small labels (brew events...). */
   annotations?: ChartAnnotation[];
-  /** Lets the user click or tap a gravity reading and press `pickLabel`; gets the reading's time (Unix ms) and SG. */
-  onPickPoint?: (ts: number, gravity: number) => void;
-  pickLabel?: string;
+  /**
+   * Smooths the lines as drawn: a moving average over this many ms, centred on each reading (0: the readings as they
+   * are). Only the drawing changes; the legend still shows the readings.
+   */
+  smoothMs?: number;
+  /** Ranges left out: their readings are hidden, and a curve from the readings either side is drawn instead. */
+  exclusions?: ChartExclusion[];
+  /** Lets the user put an excluded range back, from its label on the chart. */
+  onRemoveExclusion?: (exclusion: ChartExclusion) => void;
   /** For screen readers, e.g. "History of Pill 1". */
   label?: string;
   ref?: Ref<ChartHandle>;
@@ -96,15 +102,25 @@ interface Col {
   values: (number | null | undefined)[];
   /** Values to show in the legend when `values` were moved (implausible readings pulled into range). */
   raw?: (number | null)[];
+  /** The readings as they are, for the legend, when `values` are smoothed. */
+  actual?: (number | null | undefined)[];
+  /** Curves standing in for the readings in excluded ranges. */
+  bridges?: Bridge[];
 }
 
-interface Pick {
-  idx: number;
-  ts: number;
-  left: number;
-  top: number;
+/** An excluded range's label on the chart, CSS px within the chart. */
+interface BandLabel {
+  id: string;
+  /** Middle of the visible part of the range. */
+  x: number;
+  /** The label's top (`below` false: it sits at the top of the plot) or bottom edge. */
+  y: number;
+  narrow: boolean;
   below: boolean;
 }
+
+/** Lines with curves through excluded ranges; the pill's own values (dotted, for comparison) just break there. */
+const BRIDGED: ReadonlySet<ColKey> = new Set<ColKey>(['gravity', 'temperature', 'velocity', 'battery', 'rssi', 'tilt']);
 
 const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#a78bfa';
 
@@ -177,8 +193,9 @@ export function Chart({
   targetFg,
   og,
   annotations,
-  onPickPoint,
-  pickLabel = t('Use as OG'),
+  smoothMs = 0,
+  exclusions,
+  onRemoveExclusion,
   label = t('Chart'),
   ref,
 }: ChartProps) {
@@ -189,13 +206,20 @@ export function Chart({
   const ignoreSelect = useRef(true);
   const commitRef = useRef<((win: TimeWindow) => void) | null>(null);
   const resetRef = useRef<() => void>(() => {});
-  const pickAt = useRef<(idx: number) => void>(() => {});
   const hintId = useId();
   const u = useUnits();
-  const [pick, setPick] = useState<Pick | null>(null);
+  const [bandLabels, setBandLabels] = useState<BandLabel[]>([]);
+  const [openBand, setOpenBand] = useState<string | null>(null);
+  /** Excluded ranges shown in full (shaded, with their label): pointed at, tapped, focused or open. */
+  const [hot, setHot] = useState<string[]>([]);
   const zoomable = !compact && onZoom !== undefined;
 
   const active = useMemo(() => SERIES.filter((s) => series.includes(s.key)).map((s) => s.key), [series]);
+
+  // Live updates bring a new pill (and array) with every reading: only a change to the ranges counts.
+  const exclusionKey = (exclusions ?? []).map((e) => `${e.id}:${e.from}-${e.to}`).join(',');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const excluded = useMemo(() => [...(exclusions ?? [])].sort((a, b) => a.from - b.from), [exclusionKey]);
 
   const cols = useMemo<Col[]>(() => {
     const h = history;
@@ -222,8 +246,26 @@ export function Chart({
           out.push({ key, values: h[key] });
       }
     }
-    return out;
-  }, [history, active, u]);
+    // Excluded readings go first, so they neither show nor smear into their neighbours when smoothed; the curves
+    // through them are worked out from the lines as drawn.
+    const windows = mergeWindows(excluded);
+    const smoothing = smoothMs > 0;
+    if (windows.length === 0 && !smoothing) return out;
+    return out.map((c) => {
+      let values = c.values;
+      let raw = c.raw;
+      if (windows.length) {
+        const r = excludeColumn(h.ts, values, windows, false);
+        values = r.values;
+        raw = raw?.map((v, i) => (r.hidden[i] ? null : v));
+      }
+      const smooth = smoothing && c.key !== 'implausible';
+      const actual = smooth ? values : undefined;
+      if (smooth) values = smoothColumn(h.ts, values, smoothMs);
+      const bridges = windows.length && BRIDGED.has(c.key) ? excludeColumn(h.ts, values, windows).bridges : [];
+      return { ...c, values, raw, actual, bridges: bridges.length ? bridges : undefined };
+    });
+  }, [history, active, u, excluded, smoothMs]);
 
   const data = useMemo<AlignedData>(
     () => [history ? history.ts.map((t) => t / 1000) : [], ...cols.map((c) => c.values)] as AlignedData,
@@ -231,7 +273,6 @@ export function Chart({
   );
   const hasData = (history?.ts.length ?? 0) > 0;
   const hasG = active.includes('gravity');
-  const gIdx = cols.findIndex((c) => c.key === 'gravity');
   const fadedAuto = useMemo(
     () => cols.some((c) => c.key === 'implausible') && !cols.find((c) => c.key === 'gravity')?.values.some(finite),
     [cols],
@@ -245,12 +286,19 @@ export function Chart({
     bounds: bounds ?? { from, to },
     onZoom,
     onResetZoom,
-    onPickPoint,
     liveZoom: bounds !== undefined,
     zoomable,
     lines: { og: null as number | null, target: null as number | null },
     annotations: [] as ChartAnnotation[],
-    pick: null as Pick | null,
+    excluded: [] as ChartExclusion[],
+    bandKey: '',
+    // Which excluded range the pointer is over (on the plot or on its label), has keyboard focus, or is open.
+    hoverId: null as string | null,
+    labelId: null as string | null,
+    focusId: null as string | null,
+    openBand: null as string | null,
+    hot: [] as string[],
+    refreshHot: () => {},
   });
   const L = latest.current;
   L.data = data;
@@ -258,7 +306,6 @@ export function Chart({
   L.bounds = bounds ?? { from, to };
   L.onZoom = onZoom;
   L.onResetZoom = onResetZoom;
-  L.onPickPoint = onPickPoint;
   L.liveZoom = bounds !== undefined;
   L.zoomable = zoomable;
   L.lines = {
@@ -266,7 +313,8 @@ export function Chart({
     target: targetFg != null && hasG ? u.gravityValue(targetFg) : null,
   };
   L.annotations = annotations ?? [];
-  L.pick = pick;
+  L.excluded = excluded;
+  L.openBand = openBand;
 
   // Colours come from CSS variables, so a theme or palette change rebuilds the chart too.
   const { look } = useTheme();
@@ -297,8 +345,14 @@ export function Chart({
 
     const seriesFor = (c: Col, i: number): { s: Series; png: PngLegendItem } => {
       const value = (_p: uPlot, v: number | null, _s: number, idx: number | null) => {
-        const raw = latest.current.cols[i]?.raw;
-        const shown = raw && idx !== null ? (raw[idx] ?? null) : v;
+        const col = latest.current.cols[i];
+        const real = col?.raw ?? col?.actual;
+        const shown = real && idx !== null ? (real[idx] ?? null) : v;
+        if (shown == null && idx !== null && col?.bridges) {
+          const at = (latest.current.data[0] as number[])[idx];
+          const b = at === undefined ? undefined : bridgeAt(col.bridges, at * 1000);
+          if (b && at !== undefined) return `≈ ${fmt[c.key](b.at(at * 1000))}`;
+        }
         return shown == null ? '–' : fmt[c.key](shown);
       };
       const base: Series = { spanGaps: false, points: { show: false }, value };
@@ -382,16 +436,225 @@ export function Chart({
     };
     const built = colsNow.map(seriesFor);
     legendItems.current = built.map((b) => b.png);
+    // A line's curve through an excluded range: its own colour, dashed.
+    const curveStyle = built.map((b) => ({ color: typeof b.s.stroke === 'string' ? b.s.stroke : gColor, width: b.s.width ?? 1.4 }));
+
+    /** Widens a scale's data range to take in the curves through excluded ranges in view. */
+    const widen = (p: uPlot, scale: string, min: number | null, max: number | null): [number | null, number | null] => {
+      const { cols: cs, view } = latest.current;
+      let lo = min;
+      let hi = max;
+      cs.forEach((c, i) => {
+        const s = p.series[i + 1];
+        if (!c.bridges || !s || s.show === false || s.scale !== scale) return;
+        for (const b of c.bridges) {
+          const a = Math.max(b.from, view.from);
+          const z = Math.min(b.to, view.to);
+          if (z < a) continue;
+          for (let k = 0; k <= 24; k++) {
+            const v = b.at(a + ((z - a) * k) / 24);
+            lo = lo === null || v < lo ? v : lo;
+            hi = hi === null || v > hi ? v : hi;
+          }
+        }
+      });
+      return [lo, hi];
+    };
+    const numRange =
+      (scale: string): Range.Function =>
+      (p, min, max) => {
+        const [lo, hi] = widen(p, scale, min, max);
+        return lo === null || hi === null ? [null, null] : uPlot.rangeNum(lo, hi, 0.1, true);
+      };
+
+    /** The excluded range under `left` (CSS px across the plot), with narrow ones widened so they can be pointed at. */
+    const bandAt = (p: uPlot, left: number): string | null => {
+      if (compact || left < 0) return null;
+      for (const e of latest.current.excluded) {
+        let a = p.valToPos(e.from / 1000, 'x');
+        let b = p.valToPos(e.to / 1000, 'x');
+        if (b - a < 12) {
+          const mid = (a + b) / 2;
+          a = mid - 6;
+          b = mid + 6;
+        }
+        if (left >= a && left <= b) return e.id;
+      }
+      return null;
+    };
+
+    /** Follows the pointer (or a tap) over excluded ranges; only the one it's on is shown in full. */
+    const trackHover = (p: uPlot) => {
+      const l = latest.current;
+      if (l.excluded.length === 0 && l.hoverId === null) return;
+      const id = bandAt(p, p.cursor.left ?? -1);
+      p.over.style.cursor = id ? 'pointer' : '';
+      if (id === l.hoverId) return;
+      l.hoverId = id;
+      l.refreshHot();
+    };
+
+    /** Excluded ranges being pointed at (see `hot`): shaded and hatched, under the grid and the lines. */
+    const drawBands = (p: uPlot) => {
+      const { excluded: all, hot: shown } = latest.current;
+      const ex = all.filter((e) => shown.includes(e.id));
+      if (ex.length === 0) return;
+      const dpr = devicePixelRatio;
+      const ctx = p.ctx;
+      const { left, top, width, height } = p.bbox;
+      const xMin = p.scales.x?.min ?? -Infinity;
+      const xMax = p.scales.x?.max ?? Infinity;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(left, top, width, height);
+      ctx.clip();
+      ctx.fillStyle = muted;
+      ctx.strokeStyle = muted;
+      ctx.lineWidth = dpr;
+      for (const e of ex) {
+        if (e.to / 1000 < xMin || e.from / 1000 > xMax) continue;
+        let x0 = p.valToPos(e.from / 1000, 'x', true);
+        let x1 = p.valToPos(e.to / 1000, 'x', true);
+        if (x1 - x0 < 3 * dpr) {
+          const mid = (x0 + x1) / 2;
+          x0 = mid - 1.5 * dpr;
+          x1 = mid + 1.5 * dpr;
+        }
+        const a = Math.max(x0, left);
+        const b = Math.min(x1, left + width);
+        ctx.globalAlpha = 0.07;
+        ctx.fillRect(a, top, b - a, height);
+        // Hatching, fixed to the range so it moves with it.
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(a, top, b - a, height);
+        ctx.clip();
+        ctx.globalAlpha = 0.13;
+        ctx.beginPath();
+        const step = 7 * dpr;
+        let x = x0 - height;
+        if (x < a - height) x += Math.ceil((a - height - x) / step) * step;
+        for (; x < b; x += step) {
+          ctx.moveTo(x, top + height);
+          ctx.lineTo(x + height, top);
+        }
+        ctx.stroke();
+        ctx.restore();
+        ctx.globalAlpha = 0.45;
+        ctx.setLineDash([3 * dpr, 3 * dpr]);
+        ctx.beginPath();
+        for (const edge of [x0, x1]) {
+          if (edge < left || edge > left + width) continue;
+          ctx.moveTo(Math.round(edge) + 0.5, top);
+          ctx.lineTo(Math.round(edge) + 0.5, top + height);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      ctx.restore();
+    };
+
+    /** Curves standing in for the readings in excluded ranges, dashed: estimates, not readings. */
+    const drawBridges = (p: uPlot) => {
+      const cs = latest.current.cols;
+      if (!cs.some((c) => c.bridges)) return;
+      const dpr = devicePixelRatio;
+      const ctx = p.ctx;
+      const { top, height } = p.bbox;
+      const xMin = p.scales.x?.min ?? -Infinity;
+      const xMax = p.scales.x?.max ?? Infinity;
+      cs.forEach((c, i) => {
+        const s = p.series[i + 1];
+        const style = curveStyle[i];
+        if (!c.bridges || !s || s.show === false || !s.scale || !style) return;
+        const scale = s.scale;
+        // uPlot nudges each line (its fill and gaps too) by half its odd part of a pixel to keep strokes crisp; the curve
+        // takes the same nudge so its fill meets the line's without a seam.
+        const lineWidth = Math.round((s.width ?? 1) * uPlot.pxRatio * 1000) / 1000;
+        const nudge = s.pxAlign === 0 ? 0 : (lineWidth % 2) / 2;
+        ctx.translate(nudge, nudge);
+        for (const b of c.bridges) {
+          const t0 = Math.max(b.from / 1000, xMin);
+          const t1 = Math.min(b.to / 1000, xMax);
+          if (!(t1 > t0)) continue;
+          const n = Math.max(2, Math.min(600, Math.ceil((p.valToPos(t1, 'x', true) - p.valToPos(t0, 'x', true)) / (2 * dpr))));
+          const pts: [number, number][] = [];
+          for (let k = 0; k <= n; k++) {
+            const x = t0 + ((t1 - t0) * k) / n;
+            pts.push([p.valToPos(x, 'x', true), p.valToPos(b.at(x * 1000), scale, true)]);
+          }
+          if (c.key === 'gravity') {
+            // The same fill as the line's, so only the dashes set the range apart until it's pointed at.
+            const grad = ctx.createLinearGradient(0, top, 0, top + height);
+            grad.addColorStop(0, alpha(style.color, 0.28));
+            grad.addColorStop(1, alpha(style.color, 0));
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            // Whole pixels at the ends, as uPlot draws the line's own fill, so no seam shows where they meet.
+            ctx.moveTo(Math.round(pts[0]![0]), top + height);
+            ctx.lineTo(Math.round(pts[0]![0]), pts[0]![1]);
+            for (const [x, y] of pts) ctx.lineTo(x, y);
+            ctx.lineTo(Math.round(pts[n]![0]), pts[n]![1]);
+            ctx.lineTo(Math.round(pts[n]![0]), top + height);
+            ctx.closePath();
+            ctx.fill();
+          }
+          ctx.strokeStyle = style.color;
+          ctx.lineWidth = style.width * dpr;
+          ctx.setLineDash([5 * dpr, 4 * dpr]);
+          ctx.lineCap = 'round';
+          ctx.globalAlpha = 0.85;
+          ctx.beginPath();
+          pts.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+          ctx.lineCap = 'butt';
+          ctx.setLineDash([]);
+        }
+        ctx.translate(-nudge, -nudge);
+      });
+    };
+
+    /** Puts each visible excluded range's label at the bottom of the plot, or the top when a curve runs low there. */
+    const placeBands = (p: uPlot) => {
+      const l = latest.current;
+      const w = wrap.current;
+      if (compact || !w) return;
+      const xMin = p.scales.x?.min ?? -Infinity;
+      const xMax = p.scales.x?.max ?? Infinity;
+      const o = p.over.getBoundingClientRect();
+      const r = w.getBoundingClientRect();
+      const labels: BandLabel[] = [];
+      for (const e of l.excluded) {
+        if (e.to / 1000 < xMin || e.from / 1000 > xMax) continue;
+        const a = Math.max(0, p.valToPos(e.from / 1000, 'x'));
+        const b = Math.min(o.width, p.valToPos(e.to / 1000, 'x'));
+        const mid = (a + b) / 2;
+        const at = p.posToVal(mid, 'x') * 1000;
+        const low = l.cols.some((c, i) => {
+          const s = p.series[i + 1];
+          const br = s?.show !== false && s?.scale ? bridgeAt(c.bridges, at) : undefined;
+          return br !== undefined && p.valToPos(br.at(at), s!.scale!) > o.height - 40;
+        });
+        labels.push({ id: e.id, x: o.left - r.left + mid, y: o.top - r.top + (low ? 6 : o.height - 6), below: low, narrow: b - a < 96 });
+      }
+      const k = labels.map((x) => `${x.id}:${Math.round(x.x)}:${Math.round(x.y)}:${x.narrow}`).join('|');
+      if (k !== l.bandKey) {
+        l.bandKey = k;
+        setBandLabels(labels);
+      }
+    };
 
     const drawExtras = (p: uPlot) => {
       const dpr = devicePixelRatio;
       const ctx = p.ctx;
       const { left, top, width, height } = p.bbox;
-      const { lines, annotations: anns, pick: picked, cols: cs, data: d } = latest.current;
+      const { lines, annotations: anns } = latest.current;
       ctx.save();
       ctx.beginPath();
       ctx.rect(left, top, width, height);
       ctx.clip();
+      drawBridges(p);
       ctx.font = `${11 * dpr}px system-ui, sans-serif`;
       const hline = (v: number | null, color: string, dash: number[], text: string, right: boolean) => {
         if (v === null || !has('gravity')) return;
@@ -457,27 +720,14 @@ export function Chart({
           ctx.textBaseline = 'alphabetic';
         });
       }
-
-      if (picked) {
-        const v = cs.find((c) => c.key === 'gravity')?.values[picked.idx];
-        const t = (d[0] as number[])[picked.idx];
-        if (finite(v) && t !== undefined) {
-          ctx.setLineDash([]);
-          ctx.strokeStyle = cssVar('--text');
-          ctx.lineWidth = 2 * dpr;
-          ctx.beginPath();
-          ctx.arc(p.valToPos(t, 'x', true), p.valToPos(v, 'g', true), 6 * dpr, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-      }
       ctx.restore();
+      placeBands(p);
     };
 
-    let pickTimer = 0;
+    let tapTimer = 0;
     const reset = () => {
       const l = latest.current;
-      window.clearTimeout(pickTimer);
-      setPick(null);
+      window.clearTimeout(tapTimer);
       if (!l.zoomable) return;
       if (l.onResetZoom) l.onResetZoom();
       else if (l.liveZoom) l.onZoom?.(l.bounds.from, l.bounds.to);
@@ -507,8 +757,23 @@ export function Chart({
       legend: { show: !compact, live: true },
       scales: {
         x: { time: true },
-        g: { auto: true, range: (_p, min, max) => padRange(min, max, 0.08, plato ? 0.8 : 0.003, plato ? [0, 12] : [1, 1.05]) },
-        t: { auto: true, range: (_p, min, max) => padRange(min, max, 0.15, 1, [15, 25]) },
+        g: {
+          auto: true,
+          range: (p, min, max) => {
+            const [lo, hi] = widen(p, 'g', min, max);
+            return padRange(lo, hi, 0.08, plato ? 0.8 : 0.003, plato ? [0, 12] : [1, 1.05]);
+          },
+        },
+        t: {
+          auto: true,
+          range: (p, min, max) => {
+            const [lo, hi] = widen(p, 't', min, max);
+            return padRange(lo, hi, 0.15, 1, [15, 25]);
+          },
+        },
+        ...Object.fromEntries(
+          (['velocity', 'battery', 'rssi', 'tilt'] as const).filter(has).map((k) => [k, { auto: true, range: numRange(k) }]),
+        ),
       },
       axes: [
         { ...axisBase, space: 70 },
@@ -548,8 +813,9 @@ export function Chart({
             commit(win);
           },
         ],
+        drawClear: [drawBands],
         draw: [drawExtras],
-        setCursor: [legendToLatest],
+        setCursor: [legendToLatest, trackHover],
       },
     };
 
@@ -560,6 +826,23 @@ export function Chart({
     plot.current = chart;
     const ready = window.setTimeout(() => (ignoreSelect.current = false));
 
+    // Which excluded ranges are shown in full, worked out a frame later: moving from the plot onto a range's label
+    // leaves one and enters the other, and it should stay shown throughout.
+    let hotRaf = 0;
+    cur.refreshHot = () => {
+      if (hotRaf) return;
+      hotRaf = window.requestAnimationFrame(() => {
+        hotRaf = 0;
+        const l = latest.current;
+        const ids = l.excluded.map((e) => e.id);
+        const next = ids.filter((id) => id === l.hoverId || id === l.labelId || id === l.focusId || id === l.openBand);
+        if (next.join() === l.hot.join()) return;
+        l.hot = next;
+        setHot(next);
+        chart.redraw(false, false);
+      });
+    };
+
     // Zooming and panning: the plot follows straight away; the parent hears about it as it goes (when it zooms on the
     // client) or once the gesture ends.
     let raf = 0;
@@ -568,7 +851,6 @@ export function Chart({
     const show = (win: TimeWindow) => {
       latest.current.view = win;
       chart.setScale('x', { min: win.from / 1000, max: win.to / 1000 });
-      if (latest.current.pick) setPick(null);
     };
     const preview = (win: TimeWindow) => {
       pending = win;
@@ -598,33 +880,16 @@ export function Chart({
       return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height };
     };
 
-    /** Shows the picker for a reading, above or below `anchorY` (CSS px in the plot) so it doesn't cover the pointer. */
-    const placePick = (idx: number, anchorY?: number) => {
-      const l = latest.current;
-      const v = l.cols.find((c) => c.key === 'gravity')?.values[idx];
-      const t = (l.data[0] as number[])[idx];
-      const w = wrap.current;
-      if (!finite(v) || t === undefined || !w) return;
-      const o = over.getBoundingClientRect();
-      const r = w.getBoundingClientRect();
-      const y = anchorY ?? chart.valToPos(v, 'g');
-      setPick({ idx, ts: Math.round(t * 1000), left: o.left - r.left + chart.valToPos(t, 'x'), top: o.top - r.top + y, below: y < 90 });
-    };
-    pickAt.current = placePick;
-    const openPick = (x: number, y: number) => {
-      const l = latest.current;
-      const g = l.cols.find((c) => c.key === 'gravity');
-      if (!l.onPickPoint || !g) return;
-      const idx = nearestIndex(l.data[0] as number[], g.values, chart.posToVal(x, 'x'));
-      if (idx >= 0) placePick(idx, y);
-    };
-    // Waits a moment, so a double click or tap zooms out without the picker popping up first.
-    const schedulePick = (x: number, y: number, ms: number) => {
-      window.clearTimeout(pickTimer);
-      if (latest.current.onPickPoint) pickTimer = window.setTimeout(() => openPick(x, y), ms);
+    // A click or tap on an excluded range opens its details (the only way in on a touch screen); anywhere else closes
+    // them. It waits a moment, so a double click or tap zooms out without anything popping up first.
+    const scheduleTap = (x: number, ms: number) => {
+      window.clearTimeout(tapTimer);
+      const band = bandAt(chart, x);
+      if (band) tapTimer = window.setTimeout(() => setOpenBand(band), ms);
+      else setOpenBand(null);
     };
 
-    // Mouse: uPlot handles drag-to-zoom; a plain click picks a reading.
+    // Mouse: uPlot handles drag-to-zoom; a plain click is a tap.
     let downAt: { x: number; y: number } | null = null;
     let lastTouchUp = 0;
     const onMouseDown = (e: MouseEvent) => {
@@ -632,10 +897,9 @@ export function Chart({
     };
     const onClick = (e: MouseEvent) => {
       if (performance.now() - lastTouchUp < 800) return;
-      if (e.detail > 1) return window.clearTimeout(pickTimer);
+      if (e.detail > 1) return window.clearTimeout(tapTimer);
       if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 4) return;
-      const p = local(e);
-      schedulePick(p.x, p.y, 250);
+      scheduleTap(local(e).x, 250);
     };
 
     // Touch: one finger across the plot selects a range to zoom to (up and down still scrolls the page), two fingers
@@ -716,7 +980,7 @@ export function Chart({
         } else {
           lastTap = { t: now, x: p.x };
           chart.setCursor({ left: p.x, top: p.y });
-          schedulePick(p.x, p.y, 360);
+          scheduleTap(p.x, 360);
         }
       }
       if (!touches.size) mode = 'none';
@@ -743,17 +1007,15 @@ export function Chart({
 
     const ro = new ResizeObserver(() => {
       const w = Math.max(260, el.clientWidth);
-      if (w !== chart.width) {
-        chart.setSize({ width: w, height: plotHeight(compact) });
-        if (latest.current.pick) setPick(null);
-      }
+      if (w !== chart.width) chart.setSize({ width: w, height: plotHeight(compact) });
     });
     ro.observe(el);
     return () => {
       window.clearTimeout(ready);
       window.clearTimeout(wheelTimer);
-      window.clearTimeout(pickTimer);
+      window.clearTimeout(tapTimer);
       window.cancelAnimationFrame(raf);
+      window.cancelAnimationFrame(hotRaf);
       ro.disconnect();
       over.removeEventListener('mousedown', onMouseDown);
       over.removeEventListener('click', onClick);
@@ -766,7 +1028,12 @@ export function Chart({
       chart.destroy();
       plot.current = null;
       commitRef.current = null;
-      setPick(null);
+      cur.bandKey = '';
+      setBandLabels([]);
+      cur.refreshHot = () => {};
+      cur.hoverId = null;
+      cur.hot = [];
+      setHot([]);
       window.requestAnimationFrame(() => (el.style.minHeight = ''));
     };
     // The plot is rebuilt only when its series change; data and the window go through the effects below.
@@ -782,7 +1049,6 @@ export function Chart({
     chart.setScale('x', { min: v.from / 1000, max: v.to / 1000 });
     const last = (data[0] as number[]).length - 1;
     if (last >= 0 && chart.cursor.left !== undefined && chart.cursor.left < 0) chart.setLegend({ idx: last });
-    setPick(null);
     const t = window.setTimeout(() => (ignoreSelect.current = false));
     return () => window.clearTimeout(t);
   }, [data]);
@@ -792,13 +1058,25 @@ export function Chart({
     if (sameWindow(next, latest.current.view)) return;
     latest.current.view = next;
     plot.current?.setScale('x', { min: from / 1000, max: to / 1000 });
-    setPick(null);
   }, [from, to]);
 
   const annKey = (annotations ?? []).map((a) => `${a.ts}:${a.label}:${a.color ?? ''}`).join('|');
   useEffect(() => {
     plot.current?.redraw(false, false);
-  }, [og, targetFg, annKey, pick?.idx]);
+  }, [og, targetFg, annKey]);
+
+  // The excluded range's popover closes on a click or tap anywhere else (on the plot, the tap handler decides).
+  useEffect(() => {
+    latest.current.refreshHot();
+    if (!openBand) return;
+    const onDown = (e: PointerEvent) => {
+      if (!(e.target instanceof Element) || e.target.closest('.chart-band-pop, .chart-band-label')) return;
+      if (wrap.current?.contains(e.target) && e.target.closest('.u-over')) return;
+      setOpenBand(null);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [openBand]);
 
   useImperativeHandle(
     ref,
@@ -806,10 +1084,8 @@ export function Chart({
       exportPng: async ({ title, subtitle, fileName }) => {
         const chart = plot.current;
         if (!chart) throw new Error(t('The chart is still loading'));
-        setPick(null);
-        latest.current.pick = null;
-        chart.redraw(false, false);
         const legend = legendItems.current.filter((_l, i) => chart.series[i + 1]?.show !== false);
+        if (latest.current.bandKey) legend.push({ label: t('Excluded (estimated)'), color: cssVar('--muted'), dash: true });
         await exportChartPng(chart, { title, subtitle, legend, fileName });
       },
     }),
@@ -834,12 +1110,7 @@ export function Chart({
   const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget || e.altKey || e.ctrlKey || e.metaKey) return;
     let handled = true;
-    if (e.key === 'Escape' && pick) setPick(null);
-    else if (e.key === 'Enter' && onPickPoint && gIdx >= 0) {
-      const i = nearestIndex(data[0] as number[], cols[gIdx]!.values, latest.current.view.to / 1000);
-      if (i >= 0) pickAt.current(i);
-    } else if (!zoomable) handled = false;
-    else if (e.key === 'ArrowLeft') panBy(-0.25);
+    if (e.key === 'ArrowLeft') panBy(-0.25);
     else if (e.key === 'ArrowRight') panBy(0.25);
     else if (e.key === '+' || e.key === '=') zoomBy(0.5);
     else if (e.key === '-' || e.key === '_') zoomBy(2);
@@ -853,33 +1124,28 @@ export function Chart({
     }
   };
 
-  const pickedValue = pick && history ? (history.gravity[pick.idx] ?? null) : null;
-  const step = (dir: 1 | -1) => {
-    if (!pick || gIdx < 0) return;
-    const i = stepIndex(cols[gIdx]!.values, pick.idx, dir);
-    if (i >= 0) pickAt.current(i);
-  };
-
-  const interactive = zoomable || onPickPoint !== undefined;
+  const openLabel = bandLabels.find((b) => b.id === openBand);
+  const openExclusion = openLabel ? excluded.find((e) => e.id === openLabel.id) : undefined;
+  const rangeText = (e: ChartExclusion) =>
+    t('{from} to {to}', {
+      from: dateTime(e.from),
+      to: new Date(e.from).toDateString() === new Date(e.to).toDateString() ? timeOnly(e.to) : dateTime(e.to),
+    });
   return (
     <div
       ref={wrap}
-      className={`chart-wrap${interactive ? ' interactive' : ''}${zoomable && hasData ? ' zoomable' : ''}`}
-      tabIndex={interactive ? 0 : undefined}
+      className={`chart-wrap${zoomable ? ' interactive' : ''}${zoomable && hasData ? ' zoomable' : ''}`}
+      tabIndex={zoomable ? 0 : undefined}
       role="group"
       aria-label={label}
-      aria-describedby={interactive ? hintId : undefined}
-      onKeyDown={interactive ? onKeyDown : undefined}
+      aria-describedby={zoomable ? hintId : undefined}
+      onKeyDown={zoomable ? onKeyDown : undefined}
     >
       <div ref={box} />
       {!hasData && <div className="chart-empty">{t('No readings in this range yet')}</div>}
-      {interactive && (
+      {zoomable && (
         <span id={hintId} className="chart-sr">
-          {zoomable ? t('Arrow keys move along the chart, plus and minus zoom, 0 shows it all.') : ''}
-          {/* i18n: {action} is a button label such as "Use as OG" */}
-          {onPickPoint
-            ? ` ${t('Enter picks a reading to {action}.', { action: currentLocale() === 'en' ? pickLabel.toLowerCase() : pickLabel })}`
-            : ''}
+          {t('Arrow keys move along the chart, plus and minus zoom, 0 shows it all.')}
         </span>
       )}
       {zoomable && hasData && (
@@ -910,46 +1176,76 @@ export function Chart({
           )}
         </div>
       )}
-      {pick && onPickPoint && pickedValue !== null && (
+      {bandLabels.map((b) => {
+        const e = excluded.find((x) => x.id === b.id);
+        if (!e) return null;
+        const open = openBand === b.id;
+        const mark = (key: 'labelId' | 'focusId', on: boolean) => {
+          const l = latest.current;
+          if (on) l[key] = b.id;
+          else if (l[key] === b.id) l[key] = null;
+          l.refreshHot();
+        };
+        return (
+          <button
+            key={b.id}
+            type="button"
+            className={`chart-band-label${b.narrow ? ' narrow' : ''}${b.below ? ' top' : ''}${open ? ' open' : ''}${hot.includes(b.id) ? ' shown' : ''}`}
+            style={{ left: b.x, top: b.y }}
+            aria-label={t('Excluded range: {range}', { range: rangeText(e) })}
+            title={t('Excluded range: {range}', { range: rangeText(e) })}
+            aria-expanded={open}
+            onPointerEnter={() => mark('labelId', true)}
+            onPointerLeave={() => mark('labelId', false)}
+            onFocus={() => mark('focusId', true)}
+            onBlur={() => mark('focusId', false)}
+            onClick={() => setOpenBand(open ? null : b.id)}
+          >
+            <Icon name="eyeOff" size={12} />
+            {!b.narrow && <span>{t('Excluded')}</span>}
+          </button>
+        );
+      })}
+      {openLabel && openExclusion && (
         <div
-          className={`chart-pick${pick.below ? ' below' : ''}`}
-          style={{ left: `clamp(6.5rem, ${pick.left}px, calc(100% - 6.5rem))`, top: pick.top }}
+          className={`chart-pick chart-band-pop${openLabel.below ? ' below' : ''}`}
+          style={{
+            left: `clamp(8.5rem, ${openLabel.x}px, calc(100% - 8.5rem))`,
+            top: openLabel.below ? openLabel.y + 22 : openLabel.y - 22,
+          }}
           role="dialog"
-          aria-label={t('Reading')}
+          aria-label={t('Excluded range')}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
               e.stopPropagation();
-              setPick(null);
+              setOpenBand(null);
               wrap.current?.focus();
             }
           }}
         >
           <div className="chart-pick-head">
-            <strong className="num">{u.gravityText(pickedValue)}</strong>
-            <span>{dateTime(pick.ts)}</span>
-            <button type="button" className="icon-btn" aria-label={t('Close')} onClick={() => setPick(null)}>
+            <strong>{t('Excluded range')}</strong>
+            <button type="button" className="icon-btn" aria-label={t('Close')} onClick={() => setOpenBand(null)}>
               <Icon name="x" size={14} />
             </button>
           </div>
-          <div className="chart-pick-actions">
-            <button type="button" className="icon-btn" aria-label={t('Previous reading')} onClick={() => step(-1)}>
-              <Icon name="left" size={15} />
-            </button>
-            <button
-              type="button"
-              className="btn small primary"
-              autoFocus
-              onClick={() => {
-                onPickPoint(pick.ts, pickedValue);
-                setPick(null);
-              }}
-            >
-              {pickLabel}
-            </button>
-            <button type="button" className="icon-btn" aria-label={t('Next reading')} onClick={() => step(1)}>
-              <Icon name="right" size={15} />
-            </button>
-          </div>
+          <p className="chart-band-when">{rangeText(openExclusion)}</p>
+          <p className="chart-band-what">{t('Drawn as a curve from the readings either side. The readings themselves are kept.')}</p>
+          {onRemoveExclusion && (
+            <div className="chart-pick-actions">
+              <button
+                type="button"
+                className="btn small"
+                autoFocus
+                onClick={() => {
+                  setOpenBand(null);
+                  onRemoveExclusion(openExclusion);
+                }}
+              >
+                <Icon name="undo" size={14} /> {t('Remove exclusion')}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -3,7 +3,6 @@ import type { Pill } from '@rapthooker/shared';
 import { api, errorText } from '../../api';
 import { historyGapMs, useHistoryRange, useZoomableHistory } from '../../hooks';
 import { useLive } from '../../live';
-import { useUnits } from '../../units';
 import { dateTime } from '../../format';
 import { Icon } from '../../components/Icon';
 import { CollapsiblePanel, usePanelOpen } from '../../components/CollapsiblePanel';
@@ -12,7 +11,10 @@ import { Chart, SERIES, type ChartHandle, type SeriesKey } from '../../component
 import { OverviewStrip } from '../../components/OverviewStrip';
 import { RangePicker } from '../../components/RangePicker';
 import { brewAnnotations } from '../../components/annotations';
-import { clampWindow, isZoomed, pngFileName, type TimeWindow } from '../../components/chartMath';
+import { clampWindow, isZoomed, pngFileName, SMOOTHING_STEPS_MS, type TimeWindow } from '../../components/chartMath';
+import { contextWindow, fillHistory, windowsIn } from '../../components/exclusions';
+import { ExcludeRangeButton, ExclusionsToggle, useRemoveExclusion, useShowExclusions } from '../../components/ExclusionControls';
+import { SmoothingStepper, useChartSmoothing } from '../../components/ChartSmoothing';
 import './pill.css';
 
 const SERIES_KEY = 'rapthooker.series';
@@ -32,8 +34,7 @@ const loadSeries = (thermometer: boolean): SeriesKey[] => {
 };
 
 export function HistoryPanel({ pill }: { pill: Pill }) {
-  const { isOwner, toast, upsertPill } = useLive();
-  const u = useUnits();
+  const { isOwner, toast } = useLive();
   const [open, toggleOpen] = usePanelOpen('pill.history', true);
   const brew = pill.brew;
   const thermometer = pill.kind === 'thermometer';
@@ -61,6 +62,9 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
 
   const gapMs = historyGapMs(pill.live.intervalSec);
   const m = pill.model;
+  const [showExclusions, setShowExclusions] = useShowExclusions();
+  // With exclusions shown, the hub leaves the excluded readings out of averages, smoothing and velocity too.
+  const leaveOut = showExclusions && (pill.exclusions?.length ?? 0) > 0;
   const reloadKey = [
     pill.offsets.gravity,
     pill.offsets.temperature,
@@ -69,18 +73,26 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
     m.velocitySource,
     m.velocityHours,
     m.smoothing,
+    leaveOut ? (pill.exclusions ?? []).map((e) => `${e.from}-${e.to}`).join(',') : '',
   ].join('|');
   const { overview, history, bounds, loading, error } = useZoomableHistory(open ? pill.id : null, range, view, {
     points: 1500,
     gapMs,
     reloadKey,
+    exclude: leaveOut,
   });
   const win = view ? clampWindow(view, bounds) : bounds;
   const zoomed = view !== null && isZoomed(win, bounds);
 
   const annotations = useMemo(() => brewAnnotations(brew), [brew]);
-  const anyImplausible = useMemo(() => history?.implausible?.some((v) => v === true) ?? false, [history]);
-  const canPick = isOwner && brew !== null && brew.endedAt === null;
+  const [smoothing, setSmoothing] = useChartSmoothing();
+
+  const removeExclusion = useRemoveExclusion(pill);
+  const exclusionsHere = windowsIn(pill.exclusions, bounds);
+  const excluding = showExclusions && exclusionsHere.length > 0;
+  const exclusionKey = excluding ? exclusionsHere.map((e) => `${e.from}-${e.to}`).join(',') : '';
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const overviewShown = useMemo(() => (excluding ? fillHistory(overview, exclusionsHere) : overview), [overview, exclusionKey]);
 
   const onZoom = useCallback(
     (from: number, to: number) => {
@@ -110,22 +122,6 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
       toast({ tone: 'error', title: t("Couldn't save the image"), body: errorText(err) });
     } finally {
       setExporting(false);
-    }
-  };
-
-  const setOgFrom = async (ts: number, gravity: number) => {
-    if (!brew) return;
-    const og = Math.round(gravity * 10000) / 10000;
-    try {
-      const updated = await api.updateBrew(brew.id, { og });
-      upsertPill({ ...pill, brew: updated });
-      toast({
-        tone: 'success',
-        title: t('OG set to {gravity}', { gravity: u.gravityText(og) }),
-        body: t('From the reading at {date}', { date: dateTime(ts) }),
-      });
-    } catch (err) {
-      toast({ tone: 'error', title: t("Couldn't set the OG"), body: errorText(err) });
     }
   };
 
@@ -168,26 +164,6 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
             setCustom(w);
           }}
         />
-        <div className="history-lines">
-          {zoomed && (
-            <button type="button" className="chip on" onClick={resetZoom}>
-              <Icon name="x" size={12} /> {t('Show it all')}
-            </button>
-          )}
-          <div className="chips" role="group" aria-label={t('Lines on the chart')}>
-            {offered.map((s) => (
-              <button
-                key={s.key}
-                type="button"
-                className={`chip${series.includes(s.key) ? ' on' : ''}`}
-                aria-pressed={series.includes(s.key)}
-                onClick={() => toggle(s.key)}
-              >
-                <span className="swatch" style={{ background: s.key === 'gravity' ? pill.color : `var(${s.color})` }} /> {t(s.label)}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
       {error && !history && (
         <div className="notice danger" role="alert">
@@ -209,13 +185,14 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
           targetFg={brew?.targetFg}
           og={brew ? brew.stats.og : null}
           annotations={annotations}
-          onPickPoint={canPick ? (ts, g) => void setOgFrom(ts, g) : undefined}
-          pickLabel={t('Use as OG')}
+          smoothMs={SMOOTHING_STEPS_MS[smoothing]}
+          exclusions={excluding ? exclusionsHere : undefined}
+          onRemoveExclusion={isOwner ? removeExclusion : undefined}
           label={t('History of {name}', { name: pill.name })}
         />
         {(overview?.ts.length ?? 0) > 1 && (
           <OverviewStrip
-            history={overview}
+            history={overviewShown}
             bounds={bounds}
             view={view}
             color={pill.color}
@@ -224,30 +201,41 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
           />
         )}
       </div>
-      {(anyImplausible || history?.pillGravity || history?.pillVelocity || canPick) && (
-        <ul className="chart-notes">
-          {anyImplausible && (
-            <li>
-              <span className="chart-key faded" aria-hidden="true" />{' '}
-              {t(
-                "Grey dots: readings where the pill didn't look like it was floating. They're left out of the line, brew stats and gravity alerts.",
-              )}
-            </li>
-          )}
-          {(history?.pillGravity || history?.pillVelocity) && (
-            <li>
-              <span className="chart-key dotted" aria-hidden="true" />{' '}
-              {t("Dotted lines: the pill's own values, to compare with RaptHooker's. Tap them in the legend to hide them.")}
-            </li>
-          )}
-          {canPick && (
-            <li>
-              <span className="chart-key og" aria-hidden="true" />{' '}
-              {t("Tap or click a reading (or focus the chart and press Enter) to use it as the brew's OG.")}
-            </li>
-          )}
-        </ul>
-      )}
+      <div className="chart-controls">
+        {zoomed && (
+          <button type="button" className="chip on" onClick={resetZoom}>
+            <Icon name="x" size={12} /> {t('Show it all')}
+          </button>
+        )}
+        {zoomed && isOwner && (
+          <ExcludeRangeButton
+            pill={pill}
+            range={win}
+            onExcluded={(r) => {
+              setShowExclusions(true);
+              setView(contextWindow(r, bounds));
+            }}
+          />
+        )}
+        <div className="chips" role="group" aria-label={t('Lines on the chart')}>
+          {offered.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              className={`chip${series.includes(s.key) ? ' on' : ''}`}
+              aria-pressed={series.includes(s.key)}
+              onClick={() => toggle(s.key)}
+            >
+              <span className="swatch" style={{ background: s.key === 'gravity' ? pill.color : `var(${s.color})` }} /> {t(s.label)}
+            </button>
+          ))}
+        </div>
+        <span className="chip-option">
+          <span className="chips-divider" aria-hidden="true" />
+          {exclusionsHere.length > 0 && <ExclusionsToggle on={showExclusions} onChange={setShowExclusions} />}
+          <SmoothingStepper step={smoothing} onChange={setSmoothing} />
+        </span>
+      </div>
     </CollapsiblePanel>
   );
 }

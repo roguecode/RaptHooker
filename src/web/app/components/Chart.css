@@ -134,6 +134,83 @@
   justify-content: center;
 }
 
+/* Excluded ranges: a small label on each, shown with the range's shading when it's pointed at (the curve is always drawn) */
+
+.chart-band-label {
+  position: absolute;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  height: 1.4rem;
+  padding: 0 0.55rem;
+  border-radius: 999px;
+  border: 1px dashed var(--border-strong);
+  background: color-mix(in srgb, var(--surface-solid) 86%, transparent);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+  transition:
+    opacity 0.15s var(--ease),
+    color 0.15s var(--ease),
+    border-color 0.15s var(--ease);
+}
+
+/* Only the dashed curve shows until the range is pointed at, tapped or reached with the keyboard. */
+.chart-band-label:not(.shown):not(.open):not(:focus-visible) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chart-band-label.top {
+  transform: translateX(-50%);
+}
+
+.chart-band-label.narrow {
+  width: 1.4rem;
+  padding: 0;
+}
+
+.chart-band-label:hover,
+.chart-band-label.open {
+  color: var(--text);
+  border-style: solid;
+  border-color: var(--violet-2);
+}
+
+.chart-band-label:focus-visible {
+  outline: 2px solid var(--violet-2);
+  outline-offset: 2px;
+}
+
+.chart-band-pop {
+  min-width: 15rem;
+  max-width: 17rem;
+}
+
+.chart-band-pop .chart-pick-head strong {
+  font-size: 0.9rem;
+}
+
+.chart-band-when {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chart-band-what {
+  margin: 0.3rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
 /* Overview strip */
 
 .overview {

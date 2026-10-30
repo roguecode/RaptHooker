@@ -403,6 +403,7 @@ describe('a database from a newer version', () => {
     pills.load();
     try {
       // A pill's saved settings come back with everything they had, plus what's new.
+      expect(pills.get(PILL)?.exclusions).toEqual([]);
       pills.update(PILL, { name: 'Hazy IPA (renamed)' });
       const saved = JSON.parse(store.listPillRows().find((r) => r.id === PILL)!.json) as Record<string, unknown>;
       expect(saved).toMatchObject({ kind: 'pill', name: 'Hazy IPA (renamed)', info: { firmware: '20250319_055542_b3788ba' } });

@@ -34,6 +34,57 @@ test('the pill page draws its history and changes the range', async ({ page, req
   await expect(chart.locator('canvas').first()).toBeVisible();
 });
 
+test('a range is left out of the chart, shown again and put back', async ({ page, request }) => {
+  const pill = await ensurePill(request, SIMULATED.water, 'Water test');
+  // A retry starts from a chart with nothing left out.
+  for (const e of pill.exclusions ?? []) await request.delete(`/api/pills/${pill.id}/exclusions/${e.id}`);
+  await page.goto(`/#/pill/${pill.id}`);
+  const chart = page.getByRole('group', { name: 'History of Water test' });
+  await expect(chart.locator('canvas').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Exclude this range' })).toHaveCount(0);
+
+  await chart.focus();
+  await page.keyboard.press('+');
+  await page.getByRole('button', { name: 'Exclude this range' }).click();
+  const confirm = page.getByRole('dialog', { name: 'Exclude this range?' });
+  await expect(confirm).toContainText(
+    "from the graph and replace it with extrapolated data in the view. This doesn't delete the data, and you can remove this exclusion at any time.",
+  );
+  await confirm.getByRole('button', { name: 'Exclude range' }).click();
+  await expect(confirm).toHaveCount(0);
+  await page.mouse.move(0, 0);
+
+  // Only the dashed curve shows until the range is pointed at (or tapped).
+  const label = chart.getByRole('button', { name: /^Excluded range: / });
+  await expect(label).toHaveCount(1);
+  await expect(label).toHaveCSS('opacity', '0');
+  const toggle = page.getByRole('button', { name: 'Exclusions' });
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(label).toHaveCount(0);
+  await toggle.click();
+  await page.mouse.move(0, 0);
+
+  await chart.scrollIntoViewIfNeeded();
+  const plot = (await chart.locator('.u-over').boundingBox())!;
+  const box = (await label.boundingBox())!;
+  const at = { x: box.x + box.width / 2, y: plot.y + plot.height / 2 };
+  if (test.info().project.name === 'phone') {
+    await page.touchscreen.tap(at.x, at.y);
+  } else {
+    await page.mouse.move(at.x, at.y);
+    await expect(label).toHaveCSS('opacity', '1');
+    await page.mouse.click(at.x, at.y);
+  }
+  await expect(label).toHaveCSS('opacity', '1');
+  await chart.getByRole('dialog', { name: 'Excluded range' }).getByRole('button', { name: 'Remove exclusion' }).click();
+  await expect(label).toHaveCount(0);
+  await expect(toggle).toHaveCount(0);
+  const saved = (await (await request.get('/api/pills')).json()) as { id: string; exclusions: unknown[] }[];
+  expect(saved.find((p) => p.id === pill.id)?.exclusions).toEqual([]);
+});
+
 test('a brew starts on a pill, shows on the Brews page and ends', async ({ page, request }) => {
   const pill = await ensurePill(request, SIMULATED.lager, 'Czech Pils');
   const name = `Pils ${test.info().project.name}`;

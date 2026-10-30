@@ -8,8 +8,11 @@ import { href, navigate } from '../../router';
 import { dateTime, days, fixed, num, useNow } from '../../format';
 import { Icon } from '../../components/Icon';
 import { Chart, type SeriesKey } from '../../components/Chart';
-import { clampWindow, isZoomed, type TimeWindow } from '../../components/chartMath';
+import { clampWindow, isZoomed, SMOOTHING_STEPS_MS, type TimeWindow } from '../../components/chartMath';
 import { brewAnnotations } from '../../components/annotations';
+import { contextWindow, windowsIn } from '../../components/exclusions';
+import { ExcludeRangeButton, ExclusionsToggle, useRemoveExclusion, useShowExclusions } from '../../components/ExclusionControls';
+import { SmoothingStepper, useChartSmoothing } from '../../components/ChartSmoothing';
 import { FermentBar } from '../../components/Ferment';
 import { Confirm } from '../../components/ui';
 import { t } from '../../i18n';
@@ -56,9 +59,13 @@ export function BrewPage({ id }: { id: string }) {
     [brew?.startedAt, brew?.endedAt], // eslint-disable-line react-hooks/exhaustive-deps
   );
   // The whole brew, zoomed on the client (with the zoomed-in part fetched in more detail), like a pill's chart.
+  const [showExclusions, setShowExclusions] = useShowExclusions();
+  const leaveOut = showExclusions && (pill?.exclusions?.length ?? 0) > 0;
   const { history, bounds } = useZoomableHistory(brew?.pillId ?? null, range, zoom, {
     points: 900,
     gapMs: historyGapMs(pill?.live.intervalSec),
+    reloadKey: leaveOut ? (pill?.exclusions ?? []).map((e) => `${e.from}-${e.to}`).join(',') : '',
+    exclude: leaveOut,
   });
   const win = zoom ? clampWindow(zoom, bounds) : bounds;
   const zoomed = zoom !== null && isZoomed(win, bounds);
@@ -71,6 +78,9 @@ export function BrewPage({ id }: { id: string }) {
   );
   const resetZoom = useCallback(() => setZoom(null), []);
   const annotations = useMemo(() => brewAnnotations(brew), [brew]);
+  const removeExclusion = useRemoveExclusion(pill);
+  const exclusionsHere = brew ? windowsIn(pill?.exclusions, bounds) : [];
+  const [smoothing, setSmoothing] = useChartSmoothing();
 
   if (brew === undefined)
     return loadError ? <LoadFailed error={loadError} onRetry={reload} /> : <div className="skeleton" style={{ height: '20rem' }} />;
@@ -201,23 +211,6 @@ export function BrewPage({ id }: { id: string }) {
       <section className="panel">
         <div className="chart-toolbar">
           <h2 style={{ margin: 0, fontSize: '1.1rem' }}>{t('Fermentation')}</h2>
-          <div className="chips">
-            {zoomed && (
-              <button type="button" className="chip on" onClick={resetZoom}>
-                <Icon name="x" size={12} /> {t('Reset zoom')}
-              </button>
-            )}
-            {(['gravity', 'temperature', 'velocity'] as const).map((k) => (
-              <button
-                key={k}
-                type="button"
-                className={`chip${series.includes(k) ? ' on' : ''}`}
-                onClick={() => setSeries((cur) => (cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]))}
-              >
-                {seriesLabel[k]}
-              </button>
-            ))}
-          </div>
         </div>
         <Chart
           history={history}
@@ -230,7 +223,45 @@ export function BrewPage({ id }: { id: string }) {
           annotations={annotations}
           onZoom={onZoom}
           onResetZoom={resetZoom}
+          smoothMs={SMOOTHING_STEPS_MS[smoothing]}
+          exclusions={showExclusions && exclusionsHere.length > 0 ? exclusionsHere : undefined}
+          onRemoveExclusion={isOwner ? removeExclusion : undefined}
         />
+        <div className="chart-controls">
+          {zoomed && (
+            <button type="button" className="chip on" onClick={resetZoom}>
+              <Icon name="x" size={12} /> {t('Reset zoom')}
+            </button>
+          )}
+          {zoomed && isOwner && pill && (
+            <ExcludeRangeButton
+              pill={pill}
+              range={win}
+              onExcluded={(r) => {
+                setShowExclusions(true);
+                setZoom(contextWindow(r, bounds));
+              }}
+            />
+          )}
+          <div className="chips" role="group" aria-label={t('Lines on the chart')}>
+            {(['gravity', 'temperature', 'velocity'] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                className={`chip${series.includes(k) ? ' on' : ''}`}
+                aria-pressed={series.includes(k)}
+                onClick={() => setSeries((cur) => (cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]))}
+              >
+                {seriesLabel[k]}
+              </button>
+            ))}
+          </div>
+          <span className="chip-option">
+            <span className="chips-divider" aria-hidden="true" />
+            {exclusionsHere.length > 0 && <ExclusionsToggle on={showExclusions} onChange={setShowExclusions} />}
+            <SmoothingStepper step={smoothing} onChange={setSmoothing} />
+          </span>
+        </div>
       </section>
 
       <section className="panel">

@@ -164,6 +164,31 @@ describe('API', () => {
     expect(ended.json().endedAt).toBeTypeOf('number');
   });
 
+  it("lets the owner leave ranges out of a pill's charts and put them back", async () => {
+    const { app } = await setup();
+    const id = (await app.inject({ method: 'POST', url: '/api/pills', headers: owner, payload: { address: '08:B6:1F:00:00:66' } })).json()
+      .id as string;
+    const url = `/api/pills/${id}/exclusions`;
+    const range = { from: Date.UTC(2026, 9, 1, 12), to: Date.UTC(2026, 9, 1, 13) };
+    expect((await app.inject({ method: 'POST', url, payload: range })).statusCode).toBe(403);
+    expect((await app.inject({ method: 'POST', url, headers: owner, payload: { from: range.to, to: range.from } })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'POST', url: '/api/pills/nope/exclusions', headers: owner, payload: range })).statusCode).toBe(404);
+
+    const added = await app.inject({ method: 'POST', url, headers: owner, payload: range });
+    expect(added.statusCode).toBe(200);
+    const [exclusion] = added.json().exclusions as { id: string; from: number; to: number }[];
+    expect(exclusion).toMatchObject(range);
+    expect((await app.inject({ url: '/api/pills' })).json()[0].exclusions).toHaveLength(1);
+    const history = `/api/pills/${id}/history?from=${range.from - 3_600_000}&to=${range.to + 3_600_000}`;
+    expect((await app.inject({ url: `${history}&exclude=1` })).statusCode).toBe(200);
+    expect((await app.inject({ url: `${history}&exclude=yes` })).statusCode).toBe(400);
+
+    expect((await app.inject({ method: 'DELETE', url: `${url}/${exclusion!.id}` })).statusCode).toBe(403);
+    const removed = await app.inject({ method: 'DELETE', url: `${url}/${exclusion!.id}`, headers: owner });
+    expect(removed.json().exclusions).toEqual([]);
+    expect((await app.inject({ method: 'DELETE', url: `${url}/${exclusion!.id}`, headers: owner })).statusCode).toBe(404);
+  });
+
   it("won't switch on a webhook with unfilled placeholders, and hides secrets from viewers", async () => {
     const { app } = await setup();
     const hook = {

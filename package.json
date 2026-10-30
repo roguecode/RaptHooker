@@ -1,7 +1,7 @@
 {
   "name": "rapthooker",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Local-first RAPT Pill hydrometer dashboard, brew recorder and webhook forwarder for the Raspberry Pi",
   "license": "GPL-3.0-only",
   "type": "module",

@@ -5,6 +5,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-30
+
 ### Added
 
 - **Leave a bump out of the charts.** Knocked the pill while adding hops, and the chart shows a big spike? Zoom in on it
@@ -155,7 +157,8 @@ The first release.
 - **Translations**: Deutsch, Español, Français, Italiano, Nederlands, Polski and Português (Brasil).
 - **Docker** image for Linux hosts with Bluetooth.
 
-[Unreleased]: https://github.com/roguecode/RaptHooker/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/roguecode/RaptHooker/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/roguecode/RaptHooker/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/roguecode/RaptHooker/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/roguecode/RaptHooker/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/roguecode/RaptHooker/compare/v0.3.0...v0.4.0

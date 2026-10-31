@@ -1731,5 +1731,10 @@
   "Less smoothing": "Suavizar menos",
   "More smoothing": "Suavizar mais",
   "The readings as they are": "As leituras como s?o",
-  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": "Linhas com m?dia de {time}. S? o gr?fico muda: as leituras continuam como s?o."
+  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": "Linhas com m?dia de {time}. S? o gr?fico muda: as leituras continuam como s?o.",
+  "Scales": "Escalas",
+  "Scales (some set by you)": "Escalas (algumas definidas por voc?)",
+  "{name}: drag to set the scale, double-click to scale it automatically": "{name}: arraste para definir a escala, clique duas vezes para deix?-la autom?tica",
+  "{name} scale": "Escala ({name})",
+  "{range} (automatic)": "{range} (autom?tica)"
 }

@@ -1698,5 +1698,10 @@
   "Less smoothing": "Weniger gl?tten",
   "More smoothing": "St?rker gl?tten",
   "The readings as they are": "Die Messwerte, wie sie sind",
-  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": "Linien ?ber {time} gemittelt. Nur das Diagramm ?ndert sich: Die Messwerte bleiben, wie sie sind."
+  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": "Linien ?ber {time} gemittelt. Nur das Diagramm ?ndert sich: Die Messwerte bleiben, wie sie sind.",
+  "Scales": "Skalen",
+  "Scales (some set by you)": "Skalen (einige von dir festgelegt)",
+  "{name}: drag to set the scale, double-click to scale it automatically": "{name}: ziehen, um die Skala festzulegen, Doppelklick f?r automatische Skalierung",
+  "{name} scale": "Skala ({name})",
+  "{range} (automatic)": "{range} (automatisch)"
 }

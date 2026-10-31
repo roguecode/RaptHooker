@@ -38,9 +38,12 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
 - **Charts you can explore:** drag across them or pinch to zoom, pan with the overview strip, double-tap to see it
   all; ranges from 6 hours to everything (or pick dates), brew events marked, the pill's own values as a dotted line
   when RaptHooker's are in use, smoothing for the eye (**Smoothing − / +**, which changes only the drawing) and PNG
-  export. Knocked the pill while adding hops? Zoom in on the spike and **Exclude this range**: the charts draw a dashed
-  curve through it from the readings either side (point at it to see the range, or put it back), while the readings
-  themselves are kept. **Exclusions** under the chart switches back to the readings.
+  export. Every line has its own scale in its colour (gravity on the left, temperature on the right, the others
+  alternating); the cog next to the zoom buttons puts a range picker beside each scale, so you can fix it where you
+  want it (double-click it to go back to automatic), remembered per pill and per brew in that browser. Knocked the pill
+  while adding hops? Zoom in on the spike and **Exclude this range**: the charts draw a dashed curve through it from the
+  readings either side (point at it to see the range, or put it back), while the readings themselves are kept.
+  **Exclusions** under the chart switches back to the readings.
 - **Kind to Wi-Fi, with room to reach further.** The hub listens passively (BlueZ advertisement monitor), which leaves
   a Pi's shared Wi-Fi/Bluetooth radio far more time for Wi-Fi than ordinary scanning. It can listen with several
   adapters at once (a USB dongle closer to the fermenter) and take adverts from ESP32 relays running ESPHome, and shows

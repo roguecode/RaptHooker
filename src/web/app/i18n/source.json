@@ -257,7 +257,8 @@
   "{from} to {to}": {
     "files": [
       "components/Chart.tsx",
-      "components/OverviewStrip.tsx"
+      "components/OverviewStrip.tsx",
+      "components/ScaleStrip.tsx"
     ]
   },
   "{gravity} and {temperature}": {
@@ -392,6 +393,11 @@
       "pages/pill/PillSettings.tsx"
     ]
   },
+  "{name} scale": {
+    "files": [
+      "components/ScaleStrip.tsx"
+    ]
+  },
   "{name} started": {
     "files": [
       "pages/pill/StartBrewModal.tsx"
@@ -400,6 +406,11 @@
   "{name} temperature": {
     "files": [
       "components/CompareChart.tsx"
+    ]
+  },
+  "{name}: drag to set the scale, double-click to scale it automatically": {
+    "files": [
+      "components/ScaleStrip.tsx"
     ]
   },
   "{name}: home": {
@@ -426,6 +437,11 @@
   "{percent}% used": {
     "files": [
       "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "{range} (automatic)": {
+    "files": [
+      "components/ScaleStrip.tsx"
     ]
   },
   "{received} of the {count} reading expected since {date}|{received} of the {count} readings expected since {date}": {
@@ -6123,6 +6139,16 @@
     "files": [
       "pages/settings/BackupSection.tsx",
       "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Scales": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Scales (some set by you)": {
+    "files": [
+      "components/Chart.tsx"
     ]
   },
   "scanning": {

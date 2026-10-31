@@ -39,7 +39,7 @@
   border: 0;
 }
 
-/* Zoom buttons sit at the right of the legend row; phones pinch instead. */
+/* Zoom and scale buttons sit at the right of the legend row; phones pinch instead of using the zoom buttons. */
 .chart-zoom {
   position: absolute;
   right: 0;
@@ -53,17 +53,35 @@
   border: 1px solid var(--border);
 }
 
+.chart-zoom-btns {
+  display: flex;
+  gap: 2px;
+}
+
+.chart-wrap.scalable .u-legend {
+  padding-right: 2.8rem;
+}
+
 .chart-wrap.zoomable .u-legend {
   padding-right: 6.8rem;
 }
 
+.chart-wrap.zoomable.scalable .u-legend {
+  padding-right: 8.8rem;
+}
+
 @media (pointer: coarse) {
-  .chart-zoom {
+  .chart-zoom-btns {
     display: none;
   }
 
   .chart-wrap.zoomable .u-legend {
     padding-right: 0;
+  }
+
+  .chart-wrap.scalable .u-legend,
+  .chart-wrap.zoomable.scalable .u-legend {
+    padding-right: 2.8rem;
   }
 }
 
@@ -78,6 +96,119 @@
   opacity: 0.35;
   cursor: default;
   background: transparent;
+}
+
+.chart-scales-btn {
+  position: relative;
+}
+
+.chart-zoom .chart-scales-btn[aria-pressed='true'] {
+  color: var(--text);
+  background: color-mix(in srgb, var(--violet) 22%, transparent);
+}
+
+/* Some scale is set by hand, so it doesn't follow the readings. */
+.chart-scales-btn.custom::after {
+  content: '';
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--violet-2);
+}
+
+/* A scale's selector, beside its numbers: the whole range of readings, with the part shown highlighted. */
+.scale-strip {
+  position: absolute;
+  z-index: 3;
+  width: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  animation: chart-pop 0.18s var(--ease);
+}
+
+.scale-strip-window {
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  min-height: 14px;
+  border: 1.5px dashed var(--strip);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--strip) 14%, transparent);
+  cursor: grab;
+}
+
+.scale-strip.custom .scale-strip-window {
+  border-style: solid;
+  background: color-mix(in srgb, var(--strip) 26%, transparent);
+}
+
+.scale-strip-window:active {
+  cursor: grabbing;
+}
+
+.scale-strip-window:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+/* An end to drag: easy to catch a little outside the range, with its grip drawn inside it like the overview strip's. */
+.scale-strip-handle {
+  position: absolute;
+  left: -5px;
+  right: -5px;
+  top: -6px;
+  height: 18px;
+  cursor: ns-resize;
+}
+
+.scale-strip-handle.end {
+  top: auto;
+  bottom: -6px;
+}
+
+.scale-strip-handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 9px;
+  width: 8px;
+  height: 3px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: var(--strip);
+  pointer-events: none;
+}
+
+.scale-strip-handle.end::after {
+  top: auto;
+  bottom: 9px;
+}
+
+@media (pointer: coarse) {
+  .scale-strip-handle {
+    top: -12px;
+    height: 26px;
+  }
+
+  .scale-strip-handle.end {
+    bottom: -12px;
+  }
+
+  .scale-strip-handle::after {
+    top: 15px;
+  }
+
+  .scale-strip-handle.end::after {
+    bottom: 15px;
+  }
 }
 
 .chart-pick {

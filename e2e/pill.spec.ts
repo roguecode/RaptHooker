@@ -85,6 +85,44 @@ test('a range is left out of the chart, shown again and put back', async ({ page
   expect(saved.find((p) => p.id === pill.id)?.exclusions).toEqual([]);
 });
 
+test("the chart's scales are set beside it, remembered and put back", async ({ page, request }) => {
+  const pill = await ensurePill(request, SIMULATED.water, 'Water test');
+  const storageKey = `rapthooker.scales.pill.${pill.id}`;
+  const stored = () => page.evaluate((k) => localStorage.getItem(k), storageKey);
+  await page.goto(`/#/pill/${pill.id}`);
+  await page.evaluate((k) => localStorage.removeItem(k), storageKey);
+  const chart = page.getByRole('group', { name: 'History of Water test' });
+  await expect(chart.locator('canvas').first()).toBeVisible();
+  const scales = chart.getByRole('button', { name: 'Scales' });
+  await expect(scales).toHaveAttribute('aria-pressed', 'false');
+  await expect(chart.getByRole('scrollbar')).toHaveCount(0);
+
+  await scales.click();
+  await expect(scales).toHaveAttribute('aria-pressed', 'true');
+  const gravity = chart.getByRole('scrollbar', { name: 'Gravity (SG) scale' });
+  await expect(gravity).toHaveAttribute('aria-valuetext', / \(automatic\)$/);
+  await expect(chart.getByRole('scrollbar', { name: 'Temperature scale' })).toHaveAttribute('aria-valuetext', / \(automatic\)$/);
+
+  await gravity.focus();
+  await page.keyboard.press('+');
+  await expect(gravity).not.toHaveAttribute('aria-valuetext', /automatic/);
+  const set = (await gravity.getAttribute('aria-valuetext'))!;
+  expect(JSON.parse((await stored())!)).toHaveProperty('gravity');
+
+  // Remembered in this browser; the temperature still follows the readings.
+  await page.reload();
+  await chart.getByRole('button', { name: 'Scales' }).click();
+  await expect(gravity).toHaveAttribute('aria-valuetext', set);
+  await expect(chart.getByRole('scrollbar', { name: 'Temperature scale' })).toHaveAttribute('aria-valuetext', / \(automatic\)$/);
+
+  if (test.info().project.name === 'phone') {
+    await gravity.focus();
+    await page.keyboard.press('0');
+  } else await gravity.dblclick();
+  await expect(gravity).toHaveAttribute('aria-valuetext', / \(automatic\)$/);
+  expect(await stored()).toBeNull();
+});
+
 test('a brew starts on a pill, shows on the Brews page and ends', async ({ page, request }) => {
   const pill = await ensurePill(request, SIMULATED.lager, 'Czech Pils');
   const name = `Pils ${test.info().project.name}`;

@@ -13,6 +13,7 @@ import { brewAnnotations } from '../../components/annotations';
 import { contextWindow, windowsIn } from '../../components/exclusions';
 import { ExcludeRangeButton, ExclusionsToggle, useRemoveExclusion, useShowExclusions } from '../../components/ExclusionControls';
 import { SmoothingStepper, useChartSmoothing } from '../../components/ChartSmoothing';
+import { useScaleRanges } from '../../components/chartScales';
 import { FermentBar } from '../../components/Ferment';
 import { Confirm } from '../../components/ui';
 import { t } from '../../i18n';
@@ -81,6 +82,7 @@ export function BrewPage({ id }: { id: string }) {
   const removeExclusion = useRemoveExclusion(pill);
   const exclusionsHere = brew ? windowsIn(pill?.exclusions, bounds) : [];
   const [smoothing, setSmoothing] = useChartSmoothing();
+  const [scaleRanges, setScaleRanges] = useScaleRanges(`brew.${id}`);
 
   if (brew === undefined)
     return loadError ? <LoadFailed error={loadError} onRetry={reload} /> : <div className="skeleton" style={{ height: '20rem' }} />;
@@ -226,6 +228,8 @@ export function BrewPage({ id }: { id: string }) {
           smoothMs={SMOOTHING_STEPS_MS[smoothing]}
           exclusions={showExclusions && exclusionsHere.length > 0 ? exclusionsHere : undefined}
           onRemoveExclusion={isOwner ? removeExclusion : undefined}
+          scaleRanges={scaleRanges}
+          onScaleRangesChange={setScaleRanges}
         />
         <div className="chart-controls">
           {zoomed && (

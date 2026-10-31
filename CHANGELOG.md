@@ -5,6 +5,23 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Set the chart's scales yourself.** Every line on a pill's and a brew's chart now has its own numbers, in the line's
+  colour: gravity on the left, temperature on the right, and velocity, battery, signal and tilt taking turns left and
+  right. The new cog next to the zoom buttons puts a range picker beside each scale, like the overview strip under the
+  chart but upright: drag it up or down, drag its ends to stretch it, or use the arrow keys and + / −. A scale you set
+  stays put as you zoom and pan; double-click (or double-tap) it to have it follow the readings again. The cog shows a
+  dot while any scale is set. Each browser remembers the scales per pill and per brew. On a phone only the gravity and
+  temperature numbers show until the cog is pressed, and the plot always keeps its room: with many lines on, the last
+  scales may not fit beside it.
+
+### Changed
+
+- **No more look-alike lines.** Gravity is drawn in the pill's colour, which could be the colour another line uses (a
+  cyan pill's gravity and the cyan velocity, say). That other line now takes a different colour, on the chart and on its
+  button under it.
+
 ## [0.6.0] - 2026-10-30
 
 ### Added

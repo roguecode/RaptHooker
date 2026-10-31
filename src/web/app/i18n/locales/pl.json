@@ -1764,5 +1764,10 @@
   "Less smoothing": "Mniej wyg?adzania",
   "More smoothing": "Wi?cej wyg?adzania",
   "The readings as they are": "Odczyty bez zmian",
-  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": "Linie u?rednione z {time}. Zmienia si? tylko wykres: odczyty pozostaj? bez zmian."
+  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": "Linie u?rednione z {time}. Zmienia si? tylko wykres: odczyty pozostaj? bez zmian.",
+  "Scales": "Skale",
+  "Scales (some set by you)": "Skale (niekt?re ustawione przez ciebie)",
+  "{name}: drag to set the scale, double-click to scale it automatically": "{name}: przeci?gnij, aby ustawi? skal?; kliknij dwukrotnie, aby skalowa?a si? automatycznie",
+  "{name} scale": "Skala ({name})",
+  "{range} (automatic)": "{range} (automatycznie)"
 }

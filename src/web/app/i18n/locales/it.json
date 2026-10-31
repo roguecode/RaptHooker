@@ -1698,5 +1698,10 @@
   "Less smoothing": "Meno smussatura",
   "More smoothing": "Pi? smussatura",
   "The readings as they are": "Le letture cos? come sono",
-  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": "Linee mediate su {time}. Cambia solo il grafico: le letture restano come sono."
+  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": "Linee mediate su {time}. Cambia solo il grafico: le letture restano come sono.",
+  "Scales": "Scale",
+  "Scales (some set by you)": "Scale (alcune impostate da te)",
+  "{name}: drag to set the scale, double-click to scale it automatically": "{name}: trascina per impostare la scala, doppio clic per renderla automatica",
+  "{name} scale": "Scala ({name})",
+  "{range} (automatic)": "{range} (automatica)"
 }

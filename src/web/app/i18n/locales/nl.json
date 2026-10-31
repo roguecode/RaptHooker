@@ -1698,5 +1698,10 @@
   "Less smoothing": "Minder vloeiend",
   "More smoothing": "Vloeiender",
   "The readings as they are": "De metingen zoals ze zijn",
-  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": "Lijnen gemiddeld over {time}. Alleen de grafiek verandert: de metingen blijven zoals ze zijn."
+  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": "Lijnen gemiddeld over {time}. Alleen de grafiek verandert: de metingen blijven zoals ze zijn.",
+  "Scales": "Schalen",
+  "Scales (some set by you)": "Schalen (sommige door jou ingesteld)",
+  "{name}: drag to set the scale, double-click to scale it automatically": "{name}: sleep om de schaal in te stellen, dubbelklik voor een automatische schaal",
+  "{name} scale": "Schaal ({name})",
+  "{range} (automatic)": "{range} (automatisch)"
 }

@@ -2,6 +2,7 @@ import {
   useEffect,
   useId,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -34,9 +35,25 @@ import {
 } from './chartMath';
 import { exportChartPng, type PngLegendItem } from './pngExport';
 import { bridgeAt, excludeColumn, mergeWindows, type Bridge } from './exclusions';
+import {
+  axisDecimals,
+  axisLayout,
+  axisWidth,
+  extentOf,
+  labelGap,
+  pickLineColors,
+  STRIP_GAP,
+  STRIP_W,
+  unionRange,
+  type AxisPlan,
+  type ScaleRange,
+  type ScaleRanges,
+} from './chartScales';
+import { ScaleStrip } from './ScaleStrip';
 
 export type { ChartAnnotation } from './annotations';
 export type { TimeWindow } from './chartMath';
+export type { ScaleRanges } from './chartScales';
 
 export type SeriesKey = 'gravity' | 'temperature' | 'velocity' | 'battery' | 'rssi' | 'tilt';
 
@@ -90,6 +107,10 @@ export interface ChartProps {
   exclusions?: ChartExclusion[];
   /** Lets the user put an excluded range back, from its label on the chart. */
   onRemoveExclusion?: (exclusion: ChartExclusion) => void;
+  /** Scales the user has set (gravity in SG, temperature in °C); the others scale themselves to the readings in view. */
+  scaleRanges?: ScaleRanges;
+  /** Lets the user set the scales, with a button next to the zoom buttons. */
+  onScaleRangesChange?: (next: ScaleRanges) => void;
   /** For screen readers, e.g. "History of Pill 1". */
   label?: string;
   ref?: Ref<ChartHandle>;
@@ -122,6 +143,36 @@ interface BandLabel {
 /** Lines with curves through excluded ranges; the pill's own values (dotted, for comparison) just break there. */
 const BRIDGED: ReadonlySet<ColKey> = new Set<ColKey>(['gravity', 'temperature', 'velocity', 'battery', 'rssi', 'tilt']);
 
+/** A scale's selector beside its numbers, CSS px within the chart. */
+interface AxisBox {
+  key: SeriesKey;
+  x: number;
+  top: number;
+  height: number;
+  /** The scale's range now. */
+  min: number;
+  max: number;
+}
+
+/** uPlot's layout of an axis: `_pos` is its edge nearest the plot, CSS px from the canvas's left. */
+type AxisInternals = { _pos?: number; _size?: number; _show?: boolean };
+
+/** The uPlot scale each line uses. */
+const SCALE_OF: Record<SeriesKey, string> = {
+  gravity: 'g',
+  temperature: 't',
+  velocity: 'velocity',
+  battery: 'battery',
+  rssi: 'rssi',
+  tilt: 'tilt',
+};
+
+const lineOf = (k: ColKey): SeriesKey => (k === 'pillGravity' || k === 'implausible' ? 'gravity' : k === 'pillVelocity' ? 'velocity' : k);
+
+/** Phones: only the first scale on each side shows its numbers, until the scales are being set. */
+const isNarrow = () => window.matchMedia?.('(max-width: 639px)').matches ?? false;
+const axesSignature = (plan: AxisPlan[]) => plan.map((a) => `${a.key}:${a.side}:${a.numbers}:${a.strip}`).join(',');
+
 const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#a78bfa';
 
 /** A canvas colour from any CSS colour, including var(--name). */
@@ -138,6 +189,27 @@ function alpha(color: string, a: number): string {
   if (!hex) return color;
   const n = parseInt(hex[1]!, 16);
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+
+/**
+ * Each line's colour (canvas-ready). Gravity is the pill's colour; with gravity on the chart, a line that would look
+ * like it gets another colour.
+ */
+export function lineColors(gravityColor: string | undefined, withGravity: boolean): Record<SeriesKey, string> {
+  const themeGravity = cssVar('--series-gravity');
+  const gravity = resolveColor(gravityColor, themeGravity);
+  const theme = Object.fromEntries(SERIES.map((s) => [s.key, s.key === 'gravity' ? gravity : cssVar(s.color)])) as Record<
+    SeriesKey,
+    string
+  >;
+  return withGravity ? pickLineColors(gravity, theme, themeGravity) : theme;
+}
+
+/** lineColors, following the theme and palette. */
+export function useLineColors(gravityColor: string | undefined, withGravity: boolean): Record<SeriesKey, string> {
+  const { look } = useTheme();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => lineColors(gravityColor, withGravity), [gravityColor, withGravity, look]);
 }
 
 const plotHeight = (compact: boolean) => (compact ? 180 : window.innerWidth < 640 ? 260 : 360);
@@ -196,6 +268,8 @@ export function Chart({
   smoothMs = 0,
   exclusions,
   onRemoveExclusion,
+  scaleRanges,
+  onScaleRangesChange,
   label = t('Chart'),
   ref,
 }: ChartProps) {
@@ -213,8 +287,33 @@ export function Chart({
   /** Excluded ranges shown in full (shaded, with their label): pointed at, tapped, focused or open. */
   const [hot, setHot] = useState<string[]>([]);
   const zoomable = !compact && onZoom !== undefined;
+  const scalable = !compact && onScaleRangesChange !== undefined;
+  /** The scales' selectors are open (the cog). */
+  const [editing, setEditing] = useState(false);
+  const [axisBoxes, setAxisBoxes] = useState<AxisBox[]>([]);
+  /** A scale being dragged, in the units shown, until it's let go. */
+  const [draft, setDraft] = useState<{ key: SeriesKey; range: ScaleRange } | null>(null);
+  /** Bumped when a resize changes which scales fit, to rebuild the plot. */
+  const [relayout, setRelayout] = useState(0);
+  const editingScales = scalable && editing;
 
   const active = useMemo(() => SERIES.filter((s) => series.includes(s.key)).map((s) => s.key), [series]);
+  const colors = useLineColors(gravityColor, active.includes('gravity'));
+
+  // Custom scales in the units shown.
+  const ranges = useMemo<ScaleRanges>(() => {
+    const out: ScaleRanges = {};
+    for (const k of active) {
+      const r = scaleRanges?.[k];
+      if (!r) continue;
+      if (k === 'gravity') out[k] = [u.gravityValue(r[0]), u.gravityValue(r[1])];
+      else if (k === 'temperature') out[k] = [u.tempValue(r[0]), u.tempValue(r[1])];
+      else out[k] = r;
+    }
+    if (draft && active.includes(draft.key)) out[draft.key] = draft.range;
+    return out;
+  }, [active, scaleRanges, draft, u]);
+  const rangesKey = JSON.stringify(ranges);
 
   // Live updates bring a new pill (and array) with every reading: only a change to the ranges counts.
   const exclusionKey = (exclusions ?? []).map((e) => `${e.id}:${e.from}-${e.to}`).join(',');
@@ -277,6 +376,40 @@ export function Chart({
     () => cols.some((c) => c.key === 'implausible') && !cols.find((c) => c.key === 'gravity')?.values.some(finite),
     [cols],
   );
+  const ogShown = og != null && hasG ? u.gravityValue(og) : null;
+  const targetShown = targetFg != null && hasG ? u.gravityValue(targetFg) : null;
+
+  // How far each scale's selector reaches: all the readings loaded (and the OG and target lines), padded like the
+  // automatic scale, so showing all of them is one end-to-end drag.
+  const tracks = useMemo(() => {
+    const out: Partial<Record<SeriesKey, TimeWindow>> = {};
+    if (!editingScales) return out;
+    const plato = u.gravity === 'plato';
+    for (const key of active) {
+      const columns: ArrayLike<number | null | undefined>[] = [];
+      for (const c of cols) {
+        if (lineOf(c.key) !== key) continue;
+        if (c.key === 'implausible') {
+          if (fadedAuto) columns.push(c.values);
+          continue;
+        }
+        columns.push(c.values);
+        if (c.actual) columns.push(c.actual);
+        for (const b of c.bridges ?? []) columns.push(Array.from({ length: 25 }, (_, k) => b.at(b.from + ((b.to - b.from) * k) / 24)));
+      }
+      if (key === 'gravity') columns.push([ogShown, targetShown]);
+      const e = extentOf(columns);
+      if (!e) continue;
+      const [lo, hi] =
+        key === 'gravity'
+          ? padRange(e[0], e[1], 0.08, plato ? 0.8 : 0.003, [e[0], e[1]])
+          : key === 'temperature'
+            ? padRange(e[0], e[1], 0.15, 1, [e[0], e[1]])
+            : uPlot.rangeNum(e[0], e[1], 0.1, true);
+      if (finite(lo) && finite(hi) && hi > lo) out[key] = { from: lo, to: hi };
+    }
+    return out;
+  }, [editingScales, active, cols, fadedAuto, ogShown, targetShown, u.gravity]);
 
   // What the uPlot hooks and gesture handlers need, without rebuilding the plot.
   const latest = useRef({
@@ -299,6 +432,11 @@ export function Chart({
     openBand: null as string | null,
     hot: [] as string[],
     refreshHot: () => {},
+    ranges: {} as ScaleRanges,
+    axisPlan: [] as AxisPlan[],
+    editing: false,
+    axisKey: '',
+    colors: {} as Record<SeriesKey, string>,
   });
   const L = latest.current;
   L.data = data;
@@ -308,17 +446,17 @@ export function Chart({
   L.onResetZoom = onResetZoom;
   L.liveZoom = bounds !== undefined;
   L.zoomable = zoomable;
-  L.lines = {
-    og: og != null && hasG ? u.gravityValue(og) : null,
-    target: targetFg != null && hasG ? u.gravityValue(targetFg) : null,
-  };
+  L.lines = { og: ogShown, target: targetShown };
   L.annotations = annotations ?? [];
   L.excluded = excluded;
   L.openBand = openBand;
+  L.ranges = ranges;
+  L.editing = editingScales;
+  L.colors = colors;
 
   // Colours come from CSS variables, so a theme or palette change rebuilds the chart too.
   const { look } = useTheme();
-  const key = `${cols.map((c) => c.key).join(',')}|${fadedAuto}|${u.gravity}|${u.temperature}|${gravityColor ?? ''}|${compact}|${zoomable}|${look}`;
+  const key = `${cols.map((c) => c.key).join(',')}|${fadedAuto}|${u.gravity}|${u.temperature}|${gravityColor ?? ''}|${compact}|${zoomable}|${look}|${editingScales}|${relayout}|${Object.values(colors).join(',')}`;
 
   useEffect(() => {
     const el = box.current;
@@ -326,6 +464,7 @@ export function Chart({
     const muted = cssVar('--muted');
     const grid = cssVar('--grid');
     const gColor = gravityColor ?? cssVar('--series-gravity');
+    const colorOf = latest.current.colors;
     const plato = u.gravity === 'plato';
     const gText = (v: number) => (plato ? `${fixed(v, 2)} °P` : fixed(v, 4));
     const fmt: Record<ColKey, (v: number) => string> = {
@@ -403,12 +542,12 @@ export function Chart({
             png: { label: t('Pill not floating? (left out)'), color: muted, dots: true },
           };
         case 'temperature': {
-          const color = cssVar('--series-temp');
+          const color = colorOf.temperature;
           const name = t('Temperature');
           return { s: { ...base, label: name, scale: 't', stroke: color, width: 1.8 }, png: { label: name, color } };
         }
         case 'velocity': {
-          const color = cssVar('--series-velocity');
+          const color = colorOf.velocity;
           const name = has('pillVelocity') ? t('Velocity (RaptHooker)') : t('Velocity');
           return {
             s: { ...base, label: name, scale: 'velocity', stroke: color, width: 1.4, dash: [5, 4] },
@@ -416,7 +555,7 @@ export function Chart({
           };
         }
         case 'pillVelocity': {
-          const color = alpha(cssVar('--series-velocity'), 0.8);
+          const color = alpha(colorOf.velocity, 0.8);
           const name = t("Pill's own velocity");
           return {
             s: { ...base, label: name, scale: 'velocity', stroke: color, width: 1.1, dash: [2, 4] },
@@ -425,7 +564,7 @@ export function Chart({
         }
         default: {
           const meta = SERIES.find((x) => x.key === c.key)!;
-          const color = cssVar(meta.color);
+          const color = colorOf[meta.key];
           const name = t(meta.label);
           return {
             s: { ...base, label: name, scale: c.key, stroke: color, width: 1.4, dash: [5, 4] },
@@ -466,6 +605,70 @@ export function Chart({
         const [lo, hi] = widen(p, scale, min, max);
         return lo === null || hi === null ? [null, null] : uPlot.rangeNum(lo, hi, 0.1, true);
       };
+    /** A scale the user has set stays put; the others follow the readings in view. */
+    const userRange =
+      (key: SeriesKey, auto: Range.Function): Range.Function =>
+      (p, min, max, scale) => {
+        const r = latest.current.ranges[key];
+        return r ? [r[0], r[1]] : auto(p, min, max, scale);
+      };
+
+    const editingNow = latest.current.editing;
+    const plotWidth = () => Math.max(260, el.clientWidth);
+    const planFor = (width: number) =>
+      axisLayout(SERIES.map((s) => s.key).filter(has), { narrow: compact || isNarrow(), editing: editingNow, width });
+    const plan = planFor(plotWidth());
+    latest.current.axisPlan = plan;
+    const lineColor = (key: SeriesKey) => (key === 'gravity' ? gColor : colorOf[key]);
+    const tickText: Record<SeriesKey, (v: number, incr: number) => string> = {
+      gravity: (v, incr) => (plato ? fixed(v, incr < 0.1 ? 2 : 1) : fixed(v, incr < 0.001 ? 4 : 3)),
+      // As it always was; the 2 decimals are only for a range set very small.
+      temperature: (v, incr) => `${fixed(v, incr < 0.1 ? 2 : incr < 1 ? 1 : 0)}°`,
+      velocity: (v, incr) => fixed(v, axisDecimals(incr)),
+      battery: (v, incr) => `${fixed(v, axisDecimals(incr))}%`,
+      rssi: (v, incr) => fixed(v, axisDecimals(incr)),
+      tilt: (v, incr) => `${fixed(v, axisDecimals(incr))}°`,
+    };
+    /** Each line's numbers, in its colour; while the scales are being set, its selector sits between them and the plot. */
+    const yAxis = (a: AxisPlan): uPlot.Axis => ({
+      ...axisBase,
+      scale: SCALE_OF[a.key],
+      side: a.side === 'left' ? 3 : 1,
+      show: a.numbers || a.strip,
+      size: axisWidth(a),
+      gap: labelGap(a),
+      stroke: lineColor(a.key),
+      grid: a.grid ? axisBase.grid : { show: false },
+      values: (_p: uPlot, vals: number[], _a: number, _s: number, incr: number) =>
+        vals.map((v) => (a.numbers ? tickText[a.key](v, incr) : '')),
+    });
+
+    /** Puts each scale's selector next to the plot side of its numbers. */
+    const placeAxes = (p: uPlot) => {
+      const l = latest.current;
+      const w = wrap.current;
+      if (!w) return;
+      const boxes: AxisBox[] = [];
+      if (l.editing) {
+        const r = w.getBoundingClientRect();
+        const o = p.over.getBoundingClientRect();
+        const left = p.ctx.canvas.getBoundingClientRect().left - r.left;
+        l.axisPlan.forEach((plan, i) => {
+          const a = p.axes[i + 1] as (uPlot.Axis & AxisInternals) | undefined;
+          const sc = a?.scale ? p.scales[a.scale] : undefined;
+          const min = sc?.min;
+          const max = sc?.max;
+          if (!plan.strip || !a?._show || a._pos == null || a._size == null || !finite(min) || !finite(max)) return;
+          const x = plan.side === 'left' ? left + a._pos - STRIP_GAP - STRIP_W : left + a._pos + STRIP_GAP;
+          boxes.push({ key: plan.key, x, top: o.top - r.top, height: o.height, min, max });
+        });
+      }
+      const k = boxes.map((b) => `${b.key}:${Math.round(b.x)}:${Math.round(b.top)}:${Math.round(b.height)}:${b.min}:${b.max}`).join('|');
+      if (k !== l.axisKey) {
+        l.axisKey = k;
+        setAxisBoxes(boxes);
+      }
+    };
 
     /** The excluded range under `left` (CSS px across the plot), with narrow ones widened so they can be pointed at. */
     const bandAt = (p: uPlot, left: number): string | null => {
@@ -741,7 +944,7 @@ export function Chart({
     };
 
     const opts: Options = {
-      width: Math.max(260, el.clientWidth),
+      width: plotWidth(),
       height: plotHeight(compact),
       padding: [12, 8, 0, 4],
       cursor: {
@@ -759,49 +962,23 @@ export function Chart({
         x: { time: true },
         g: {
           auto: true,
-          range: (p, min, max) => {
+          range: userRange('gravity', (p, min, max) => {
             const [lo, hi] = widen(p, 'g', min, max);
             return padRange(lo, hi, 0.08, plato ? 0.8 : 0.003, plato ? [0, 12] : [1, 1.05]);
-          },
+          }),
         },
         t: {
           auto: true,
-          range: (p, min, max) => {
+          range: userRange('temperature', (p, min, max) => {
             const [lo, hi] = widen(p, 't', min, max);
             return padRange(lo, hi, 0.15, 1, [15, 25]);
-          },
+          }),
         },
         ...Object.fromEntries(
-          (['velocity', 'battery', 'rssi', 'tilt'] as const).filter(has).map((k) => [k, { auto: true, range: numRange(k) }]),
+          (['velocity', 'battery', 'rssi', 'tilt'] as const).filter(has).map((k) => [k, { auto: true, range: userRange(k, numRange(k)) }]),
         ),
       },
-      axes: [
-        { ...axisBase, space: 70 },
-        ...(has('gravity')
-          ? [
-              {
-                ...axisBase,
-                scale: 'g',
-                size: 52,
-                values: (_p: uPlot, vals: number[], _a: number, _s: number, incr: number) =>
-                  vals.map((v) => (plato ? fixed(v, incr < 0.1 ? 2 : 1) : fixed(v, incr < 0.001 ? 4 : 3))),
-              },
-            ]
-          : []),
-        ...(has('temperature')
-          ? [
-              {
-                ...axisBase,
-                scale: 't',
-                side: 1,
-                size: 48,
-                grid: { show: false },
-                values: (_p: uPlot, vals: number[], _a: number, _s: number, incr: number) =>
-                  vals.map((v) => `${fixed(v, incr < 1 ? 1 : 0)}°`),
-              },
-            ]
-          : []),
-      ],
+      axes: [{ ...axisBase, space: 70 }, ...plan.map(yAxis)],
       series: [{ value: (_p, v) => (v == null ? '–' : dateTime(v * 1000)) }, ...built.map((b) => b.s)],
       hooks: {
         setSelect: [
@@ -814,7 +991,7 @@ export function Chart({
           },
         ],
         drawClear: [drawBands],
-        draw: [drawExtras],
+        draw: [drawExtras, placeAxes],
         setCursor: [legendToLatest, trackHover],
       },
     };
@@ -1006,8 +1183,11 @@ export function Chart({
     over.addEventListener('wheel', onWheel, { passive: false });
 
     const ro = new ResizeObserver(() => {
-      const w = Math.max(260, el.clientWidth);
-      if (w !== chart.width) chart.setSize({ width: w, height: plotHeight(compact) });
+      const w = plotWidth();
+      if (w === chart.width) return;
+      // Wider or narrower, more or fewer scales may fit beside the plot.
+      if (axesSignature(planFor(w)) !== axesSignature(plan)) setRelayout((n) => n + 1);
+      else chart.setSize({ width: w, height: plotHeight(compact) });
     });
     ro.observe(el);
     return () => {
@@ -1030,6 +1210,8 @@ export function Chart({
       commitRef.current = null;
       cur.bandKey = '';
       setBandLabels([]);
+      cur.axisKey = '';
+      setAxisBoxes([]);
       cur.refreshHot = () => {};
       cur.hoverId = null;
       cur.hot = [];
@@ -1064,6 +1246,56 @@ export function Chart({
   useEffect(() => {
     plot.current?.redraw(false, false);
   }, [og, targetFg, annKey]);
+
+  // A scale set, dragged or put back to automatic: setting the time scale again re-ranges the others.
+  useLayoutEffect(() => {
+    const chart = plot.current;
+    if (!chart) return;
+    const v = latest.current.view;
+    chart.setScale('x', { min: v.from / 1000, max: v.to / 1000 });
+  }, [rangesKey]);
+
+  const changeScale = (key: SeriesKey, w: TimeWindow, done: boolean) => {
+    if (!done) {
+      setDraft({ key, range: [w.from, w.to] });
+      return;
+    }
+    setDraft(null);
+    const stored: ScaleRange =
+      key === 'gravity'
+        ? [u.gravityFromDisplay(w.from), u.gravityFromDisplay(w.to)]
+        : key === 'temperature'
+          ? [u.tempFromDisplay(w.from), u.tempFromDisplay(w.to)]
+          : [w.from, w.to];
+    onScaleRangesChange?.({ ...scaleRanges, [key]: stored });
+  };
+  const resetScale = (key: SeriesKey) => {
+    setDraft(null);
+    if (!scaleRanges?.[key]) return;
+    const next = { ...scaleRanges };
+    delete next[key];
+    onScaleRangesChange?.(next);
+  };
+  const scaleName = (key: SeriesKey) =>
+    key === 'gravity' ? t('Gravity ({unit})', { unit: u.gravityLabel }) : t(SERIES.find((s) => s.key === key)!.label);
+  const scaleColor = (key: SeriesKey) => colors[key];
+  const scaleText = (key: SeriesKey, v: number) => {
+    switch (key) {
+      case 'gravity':
+        return u.gravity === 'plato' ? `${fixed(v, 1)} °P` : fixed(v, 3);
+      case 'temperature':
+        return `${fixed(v, 1)} ${u.tempLabel}`;
+      case 'velocity':
+        return t('{n} pts/day', { n: fixed(v, 1) });
+      case 'battery':
+        return `${fixed(v, 0)}%`;
+      case 'rssi':
+        return `${fixed(v, 0)} dBm`;
+      case 'tilt':
+        return `${fixed(v, 1)}°`;
+    }
+  };
+  const anyCustom = Object.keys(ranges).length > 0;
 
   // The excluded range's popover closes on a click or tap anywhere else (on the plot, the tap handler decides).
   useEffect(() => {
@@ -1134,7 +1366,7 @@ export function Chart({
   return (
     <div
       ref={wrap}
-      className={`chart-wrap${zoomable ? ' interactive' : ''}${zoomable && hasData ? ' zoomable' : ''}`}
+      className={`chart-wrap${zoomable ? ' interactive' : ''}${zoomable && hasData ? ' zoomable' : ''}${scalable && hasData ? ' scalable' : ''}`}
       tabIndex={zoomable ? 0 : undefined}
       role="group"
       aria-label={label}
@@ -1148,34 +1380,77 @@ export function Chart({
           {t('Arrow keys move along the chart, plus and minus zoom, 0 shows it all.')}
         </span>
       )}
-      {zoomable && hasData && (
-        <div className="chart-zoom" role="group" aria-label={t('Zoom')}>
-          <button type="button" className="icon-btn" aria-label={t('Zoom in')} title={t('Zoom in (+)')} onClick={() => zoomBy(0.5)}>
-            <Icon name="plus" size={15} />
-          </button>
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label={t('Zoom out')}
-            title={t('Zoom out (−)')}
-            disabled={!zoomed}
-            onClick={() => zoomBy(2)}
-          >
-            <MinusIcon />
-          </button>
-          {zoomed && (
+      {(zoomable || scalable) && hasData && (
+        <div className="chart-zoom">
+          {zoomable && (
+            <span className="chart-zoom-btns" role="group" aria-label={t('Zoom')}>
+              <button type="button" className="icon-btn" aria-label={t('Zoom in')} title={t('Zoom in (+)')} onClick={() => zoomBy(0.5)}>
+                <Icon name="plus" size={15} />
+              </button>
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label={t('Zoom out')}
+                title={t('Zoom out (−)')}
+                disabled={!zoomed}
+                onClick={() => zoomBy(2)}
+              >
+                <MinusIcon />
+              </button>
+              {zoomed && (
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label={t('Show it all')}
+                  title={t('Show it all (0)')}
+                  onClick={() => resetRef.current()}
+                >
+                  <Icon name="refresh" size={14} />
+                </button>
+              )}
+            </span>
+          )}
+          {scalable && (
             <button
               type="button"
-              className="icon-btn"
-              aria-label={t('Show it all')}
-              title={t('Show it all (0)')}
-              onClick={() => resetRef.current()}
+              className={`icon-btn chart-scales-btn${anyCustom ? ' custom' : ''}`}
+              aria-label={t('Scales')}
+              title={anyCustom ? t('Scales (some set by you)') : t('Scales')}
+              aria-pressed={editing}
+              onClick={() => {
+                setDraft(null);
+                setEditing((on) => !on);
+              }}
             >
-              <Icon name="refresh" size={14} />
+              <Icon name="settings" size={15} />
             </button>
           )}
         </div>
       )}
+      {editingScales &&
+        axisBoxes.map((b) => {
+          const r = ranges[b.key];
+          const value = r ? { from: r[0], to: r[1] } : { from: b.min, to: b.max };
+          const track = unionRange(tracks[b.key], value);
+          if (!track || !(track.to > track.from)) return null;
+          return (
+            <ScaleStrip
+              key={b.key}
+              name={scaleName(b.key)}
+              color={scaleColor(b.key)}
+              track={track}
+              value={value}
+              custom={r !== undefined}
+              left={b.x}
+              top={b.top}
+              height={b.height}
+              format={(v) => scaleText(b.key, v)}
+              onChange={(w, done) => changeScale(b.key, w, done)}
+              onCancel={() => setDraft(null)}
+              onReset={() => resetScale(b.key)}
+            />
+          );
+        })}
       {bandLabels.map((b) => {
         const e = excluded.find((x) => x.id === b.id);
         if (!e) return null;

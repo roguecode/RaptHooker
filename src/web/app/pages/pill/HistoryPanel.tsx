@@ -7,7 +7,7 @@ import { dateTime } from '../../format';
 import { Icon } from '../../components/Icon';
 import { CollapsiblePanel, usePanelOpen } from '../../components/CollapsiblePanel';
 import { t } from '../../i18n';
-import { Chart, SERIES, type ChartHandle, type SeriesKey } from '../../components/Chart';
+import { Chart, SERIES, useLineColors, type ChartHandle, type SeriesKey } from '../../components/Chart';
 import { OverviewStrip } from '../../components/OverviewStrip';
 import { RangePicker } from '../../components/RangePicker';
 import { brewAnnotations } from '../../components/annotations';
@@ -15,6 +15,7 @@ import { clampWindow, isZoomed, pngFileName, SMOOTHING_STEPS_MS, type TimeWindow
 import { contextWindow, fillHistory, windowsIn } from '../../components/exclusions';
 import { ExcludeRangeButton, ExclusionsToggle, useRemoveExclusion, useShowExclusions } from '../../components/ExclusionControls';
 import { SmoothingStepper, useChartSmoothing } from '../../components/ChartSmoothing';
+import { useScaleRanges } from '../../components/chartScales';
 import './pill.css';
 
 const SERIES_KEY = 'rapthooker.series';
@@ -46,6 +47,7 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
   });
   const [view, setView] = useState<TimeWindow | null>(null);
   const [series, setSeries] = useState<SeriesKey[]>(() => loadSeries(thermometer));
+  const lineColors = useLineColors(pill.color, series.includes('gravity'));
   const [exporting, setExporting] = useState(false);
   const chart = useRef<ChartHandle>(null);
   const offered = thermometer ? SERIES.filter((s) => THERMOMETER_SERIES.includes(s.key)) : SERIES;
@@ -86,6 +88,7 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
 
   const annotations = useMemo(() => brewAnnotations(brew), [brew]);
   const [smoothing, setSmoothing] = useChartSmoothing();
+  const [scaleRanges, setScaleRanges] = useScaleRanges(`pill.${pill.id}`);
 
   const removeExclusion = useRemoveExclusion(pill);
   const exclusionsHere = windowsIn(pill.exclusions, bounds);
@@ -188,6 +191,8 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
           smoothMs={SMOOTHING_STEPS_MS[smoothing]}
           exclusions={excluding ? exclusionsHere : undefined}
           onRemoveExclusion={isOwner ? removeExclusion : undefined}
+          scaleRanges={scaleRanges}
+          onScaleRangesChange={setScaleRanges}
           label={t('History of {name}', { name: pill.name })}
         />
         {(overview?.ts.length ?? 0) > 1 && (
@@ -226,7 +231,7 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
               aria-pressed={series.includes(s.key)}
               onClick={() => toggle(s.key)}
             >
-              <span className="swatch" style={{ background: s.key === 'gravity' ? pill.color : `var(${s.color})` }} /> {t(s.label)}
+              <span className="swatch" style={{ background: lineColors[s.key] }} /> {t(s.label)}
             </button>
           ))}
         </div>

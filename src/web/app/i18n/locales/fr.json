@@ -1731,5 +1731,10 @@
   "Less smoothing": "Moins lisser",
   "More smoothing": "Lisser davantage",
   "The readings as they are": "Les mesures telles quelles",
-  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": "Courbes moyenn?es sur {time}. Seul le graphique change : les mesures restent telles quelles."
+  "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": "Courbes moyenn?es sur {time}. Seul le graphique change : les mesures restent telles quelles.",
+  "Scales": "?chelles",
+  "Scales (some set by you)": "?chelles (certaines r?gl?es par vous)",
+  "{name}: drag to set the scale, double-click to scale it automatically": "{name} : faites glisser pour r?gler l’?chelle, double-cliquez pour la rendre automatique",
+  "{name} scale": "?chelle ({name})",
+  "{range} (automatic)": "{range} (automatique)"
 }

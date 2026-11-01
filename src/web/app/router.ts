@@ -9,6 +9,7 @@ export type Route =
   | { name: 'webhooks' }
   | { name: 'webhook'; id: string | null }
   | { name: 'alerts' }
+  | { name: 'screens' }
   | { name: 'settings' }
   | { name: 'kiosk' };
 
@@ -27,6 +28,8 @@ function parse(): Route {
       return parts[1] ? { name: 'webhook', id: parts[1] === 'new' ? null : parts[1] } : { name: 'webhooks' };
     case 'alerts':
       return { name: 'alerts' };
+    case 'screens':
+      return { name: 'screens' };
     case 'settings':
       return { name: 'settings' };
     case 'kiosk':

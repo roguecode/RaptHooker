@@ -50,6 +50,42 @@ const snapshot: LiveSnapshot = {
   ble,
   clockSynced: true,
   hub: { ...DEFAULT_HUB_SETTINGS, name: 'Garage hub', units: { gravity: 'plato', temperature: 'F' } },
+  screens: [
+    {
+      id: '025248000001',
+      name: 'Kitchen',
+      model: 'sdpro-240',
+      mac: '02:52:48:00:00:01',
+      hostname: 'rh-screen-000001',
+      ip: '192.168.1.50',
+      pillId: 'a',
+      look: {
+        theme: 'dark',
+        palette: 'violet',
+        show: ['gravity', 'temperature'],
+        range: 'brew',
+        gravity: 'sg',
+        temperature: 'C',
+        lang: 'en',
+        tz: null,
+        brewing: false,
+      },
+      interval: 60,
+      brightness: 80,
+      firmware: '1.0.3',
+      createdAt: NOW - 86_400_000,
+      status: {
+        state: 'online',
+        lastSeenAt: NOW - 20_000,
+        rssi: -58,
+        uptime: 3600,
+        failures: 0,
+        update: null,
+        updating: false,
+        error: null,
+      },
+    },
+  ],
 };
 
 describe('live cache', () => {
@@ -85,5 +121,7 @@ describe('live cache', () => {
     expect(back?.nearby).toEqual([]);
     expect(back?.ble).toBeNull();
     expect(back?.clockSynced).toBe(true);
+    // Saved before screens.
+    expect(back?.screens).toEqual([]);
   });
 });

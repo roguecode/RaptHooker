@@ -1,5 +1,7 @@
 /** Types shared by the server and the web app. All values are stored and sent in SI-ish units: SG and °C. */
 
+import type { FoundScreen, ScreenDevice, ScreenSetupProgress } from './screens.js';
+
 export type GravityUnit = 'sg' | 'plato';
 export type TemperatureUnit = 'C' | 'F';
 
@@ -714,7 +716,16 @@ export interface HubStatus {
 }
 
 export type LiveMessage =
-  | { type: 'hello'; pills: Pill[]; nearby: NearbyPill[]; ble: BleStatus; clockSynced: boolean; hub: HubSettings }
+  | {
+      type: 'hello';
+      pills: Pill[];
+      nearby: NearbyPill[];
+      ble: BleStatus;
+      clockSynced: boolean;
+      hub: HubSettings;
+      /** Not sent by hubs from before screens. */
+      screens?: ScreenDevice[];
+    }
   | { type: 'pill'; pill: Pill }
   | { type: 'pill-removed'; pillId: string }
   | { type: 'reading'; pillId: string; reading: Reading }
@@ -726,4 +737,8 @@ export type LiveMessage =
   | { type: 'alert'; event: AlertEvent }
   | { type: 'hub'; hub: HubSettings }
   | { type: 'update'; update: UpdateInfo }
+  | { type: 'screen'; screen: ScreenDevice }
+  | { type: 'screen-removed'; screenId: string }
+  | { type: 'screen-setup'; setup: ScreenSetupProgress }
+  | { type: 'screens-found'; found: FoundScreen[] }
   | { type: 'ping'; at: number };

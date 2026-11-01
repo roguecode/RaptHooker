@@ -5,6 +5,26 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Screens.** RaptHooker can now turn a **Geekmagic Ultra/Smart weather clock** (a little 240 × 240 Wi-Fi desk screen) into a display
+  for your pills. Plug it in, open the new **Screens** tab and press **Add a screen**: the hub finds the screen's own
+  Wi-Fi, puts RaptHooker's firmware on it, connects it to your network and shows the details once it's there. From then
+  on the screen fetches a picture of a pill (or of every pill) from the hub, designed with the same choices as an image
+  link, as often as you like; when something's wrong it says so in a line under the picture. The **Screens** page shows
+  how each one is doing, offers new screen firmware (**Update all**), finds screens on the network again (adding one
+  takes the code it shows), and can put a screen's original firmware back. A pill's page shows the screens showing it,
+  and the **Image link** dialog can send its picture to a screen. A hub that can't switch Wi-Fi networks (in Docker, say)
+  sets screens up from a browser instead. See [docs/rapthooker-screens.md](docs/rapthooker-screens.md).
+  - Stored in a new `screens` table (schema 5), which older versions leave alone.
+  - On a Pi, setting up again (or updating) adds a polkit rule that lets the service switch Wi-Fi networks through
+    NetworkManager for this.
+  - New config keys `screens.wifi` and `screens.hubUrl`; the Docker config sets screens up from a browser.
+
+### Changed
+
+- The live updates' `hello` message also has the hub's screens.
+
 ## [0.6.0] - 2026-10-30
 
 ### Added

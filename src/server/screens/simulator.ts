@@ -1,0 +1,496 @@
+import { createHash, randomInt } from 'node:crypto';
+import { EventEmitter } from 'node:events';
+import http, { type IncomingMessage, type ServerResponse } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { screenHotspot, type WifiNetwork, type WifiStatus } from '@rapthooker/shared';
+import { request, screenProof } from './client.js';
+import { imageMarker } from './firmware.js';
+import { tidyNetworks, type HotspotLink, type WifiController } from './wifi/types.js';
+
+/**
+ * A pretend screen and a pretend Wi-Fi, for tests, the end-to-end tests and the development server: a "Smart weather
+ * clock" that starts on its stock firmware and becomes a RaptHooker screen when it's sent the firmware, then fetches
+ * its picture from the hub like a real one. Its web server answers like both firmwares do.
+ */
+
+interface FakeSettings {
+  ssid: string;
+  pass: string;
+  token: string;
+  hub: string;
+  name: string;
+  imageUrl: string;
+  interval: number;
+  brightness: number;
+}
+
+const EMPTY: FakeSettings = { ssid: '', pass: '', token: '', hub: '', name: '', imageUrl: '', interval: 60, brightness: 80 };
+
+export interface FakeScreenOptions {
+  mac?: string;
+  /** Starts on the stock firmware (default) or already on RaptHooker's. */
+  stock?: boolean;
+  firmware?: string;
+  /** Wi-Fi networks it can join, with their passwords. */
+  networks?: Record<string, string>;
+  /** Milliseconds a restart takes. */
+  restartMs?: number;
+  /** Fetch the picture (once set up); off in unit tests that drive fetches themselves. */
+  fetchPictures?: boolean;
+  /**
+   * What the stock firmware's update page does with RaptHooker's firmware: takes it and says OK; takes it and
+   * restarts without answering (as real screens sometimes do); refuses it (FAIL); or refuses it without answering.
+   */
+  stockOta?: 'ok' | 'no-reply' | 'refuse' | 'refuse-quietly';
+  /** Firmware from before "proof": it can't prove it has its key. */
+  legacy?: boolean;
+}
+
+export class FakeScreen extends EventEmitter {
+  readonly mac: string;
+  readonly id: string;
+  stock: boolean;
+  firmware: string;
+  settings: FakeSettings = { ...EMPTY };
+  /** Restarting: the hotspot and web server don't answer. */
+  down = false;
+  trial: { state: 'idle' | 'testing' | 'connected' | 'failed'; error: string; ip?: string; saved: boolean } = {
+    state: 'idle',
+    error: '',
+    saved: false,
+  };
+  /** Things that happened, for tests to check. */
+  readonly events: string[] = [];
+  /** Every Authorization header it was sent, for tests to check where keys went. */
+  readonly keysSeen: string[] = [];
+  pairingCode: string | null = null;
+  /** MD5 of the firmware it was last sent, which it reports as its sketch's. */
+  sketchMd5 = 'stock';
+  private server: http.Server | null = null;
+  private timer: NodeJS.Timeout | null = null;
+  port = 0;
+  private readonly opts: Required<Omit<FakeScreenOptions, 'mac' | 'stock' | 'firmware' | 'legacy'>>;
+  legacy: boolean;
+
+  constructor(opts: FakeScreenOptions = {}) {
+    super();
+    // Locally administered (02:?), so it can't be taken for a real screen on the network.
+    this.mac = (opts.mac ?? '02:52:48:00:00:01').toUpperCase();
+    this.id = this.mac.replace(/:/g, '').toLowerCase();
+    this.stock = opts.stock ?? true;
+    this.firmware = opts.firmware ?? '1.0.0';
+    this.legacy = opts.legacy ?? false;
+    this.opts = {
+      networks: opts.networks ?? {},
+      restartMs: opts.restartMs ?? 300,
+      fetchPictures: opts.fetchPictures ?? true,
+      stockOta: opts.stockOta ?? 'ok',
+    };
+  }
+
+  get address(): string {
+    return `127.0.0.1:${this.port}`;
+  }
+
+  /** The hotspot it has open now, or null (on its network, or restarting). */
+  get hotspot(): string | null {
+    if (this.down) return null;
+    if (this.stock) return 'Smart weather clock';
+    return this.settings.ssid && this.trial.state !== 'connected' ? null : screenHotspot(this.mac);
+  }
+
+  /** On the LAN (set up and online). */
+  get online(): boolean {
+    return !this.down && !this.stock && !!this.settings.ssid;
+  }
+
+  async start(): Promise<void> {
+    this.server = http.createServer((req, res) => void this.handle(req, res));
+    await new Promise<void>((r) => this.server!.listen(0, '127.0.0.1', r));
+    this.port = (this.server.address() as AddressInfo).port;
+    this.schedule();
+  }
+
+  async stop(): Promise<void> {
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    await new Promise<void>((r) => (this.server ? this.server.close(() => r()) : r()));
+    this.server = null;
+  }
+
+  private restart(then: () => void = () => undefined): void {
+    this.down = true;
+    setTimeout(() => {
+      then();
+      this.down = false;
+      this.trial = { state: 'idle', error: '', saved: false };
+      this.events.push('restarted');
+      this.emit('restarted');
+      this.schedule(1);
+    }, this.opts.restartMs);
+  }
+
+  /** Fetches its picture like the firmware does, with the same headers. */
+  async fetchPicture(): Promise<number> {
+    const url = new URL(this.settings.imageUrl);
+    const res = await request(url.host, url.pathname + url.search, {
+      headers: {
+        'X-Screen-Id': this.id,
+        'X-Screen-Firmware': `sdpro-240/${this.firmware}`,
+        'X-Screen-Status': `rssi=-58;up=${Math.round(process.uptime())};heap=36000;fail=0`,
+      },
+    });
+    this.events.push(`picture ${res.status}`);
+    return res.status;
+  }
+
+  private schedule(seconds?: number): void {
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    if (!this.opts.fetchPictures || !this.online || !this.settings.imageUrl) return;
+    this.timer = setTimeout(
+      () => {
+        void this.fetchPicture()
+          .catch(() => undefined)
+          .finally(() => this.schedule());
+      },
+      (seconds ?? this.settings.interval) * 1000,
+    );
+    this.timer.unref();
+  }
+
+  private send(res: ServerResponse, status: number, body: unknown, type = 'application/json'): void {
+    const text = typeof body === 'string' ? body : JSON.stringify(body);
+    res.writeHead(status, { 'Content-Type': type, 'Content-Length': Buffer.byteLength(text), 'Access-Control-Allow-Origin': '*' });
+    res.end(text);
+  }
+
+  private async body(req: IncomingMessage): Promise<Buffer> {
+    const chunks: Buffer[] = [];
+    for await (const c of req) chunks.push(c as Buffer);
+    return Buffer.concat(chunks);
+  }
+
+  private authorized(req: IncomingMessage): boolean {
+    return !this.settings.token || req.headers.authorization === `Bearer ${this.settings.token}`;
+  }
+
+  /** The file part of a multipart body. */
+  private filePart(body: Buffer, type: string | undefined): Buffer | null {
+    const boundary = /boundary=(.+)$/.exec(type ?? '')?.[1];
+    if (!boundary) return null;
+    const start = body.indexOf('\r\n\r\n');
+    const end = body.lastIndexOf(`\r\n--${boundary}`);
+    return start < 0 || end < start ? null : body.subarray(start + 4, end);
+  }
+
+  private async handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    if (this.down) {
+      req.socket.destroy();
+      return;
+    }
+    const url = new URL(req.url ?? '/', 'http://screen');
+    const path = url.pathname;
+    const body = await this.body(req);
+    if (req.headers.authorization) this.keysSeen.push(req.headers.authorization);
+    if (this.stock) return this.handleStock(path, req, res, body);
+    const json = (): Record<string, unknown> => {
+      try {
+        return JSON.parse(body.toString('utf8')) as Record<string, unknown>;
+      } catch {
+        return {};
+      }
+    };
+    if (path === '/api/info') {
+      const challenge = url.searchParams.get('challenge');
+      return this.send(res, 200, {
+        firmware: 'rapthooker-screen',
+        version: this.firmware,
+        api: 1,
+        model: 'sdpro-240',
+        id: this.id,
+        mac: this.mac,
+        hostname: `rh-screen-${this.id.slice(-6)}`,
+        name: this.settings.name,
+        hub: this.settings.hub,
+        claimed: !!this.settings.token,
+        state: this.settings.ssid ? 'online' : 'setup',
+        safeMode: false,
+        updating: false,
+        features: ['ota', 'setup', 'settings', 'adopt', ...(this.legacy ? [] : ['proof'])],
+        proof: challenge && this.settings.token && !this.legacy ? screenProof(this.settings.token, this.id, challenge) : undefined,
+        wifi: {
+          ssid: this.settings.ssid,
+          ip: this.online ? '127.0.0.1' : undefined,
+          rssi: -58,
+          channel: 1,
+          hotspot: screenHotspot(this.mac),
+          hotspotOn: !this.settings.ssid,
+          reason: '',
+        },
+        image: {
+          url: this.settings.imageUrl,
+          interval: this.settings.interval,
+          shown: true,
+          ageMs: 1000,
+          failures: 0,
+          error: '',
+          bytes: 15000,
+        },
+        setup: { trial: this.trial.state, error: this.trial.error, ip: this.trial.ip, saved: this.trial.saved },
+        system: {
+          uptime: 10,
+          heap: 36000,
+          sketchSize: 419840,
+          freeSketch: 600000,
+          sketchMd5: this.sketchMd5,
+          resetReason: 'Software/System restart',
+        },
+      });
+    }
+    if (path === '/api/setup' && req.method === 'GET') {
+      return this.send(res, 200, {
+        trial: this.trial.state,
+        error: this.trial.error,
+        ip: this.trial.ip,
+        saved: this.trial.saved,
+        channel: 1,
+      });
+    }
+    if (path === '/api/adopt' && req.method === 'POST') {
+      const b = json();
+      if (!b.code) {
+        this.pairingCode = String(randomInt(0, 1_000_000)).padStart(6, '0');
+        this.events.push('pairing code');
+        return this.send(res, 202, { ok: true, expiresIn: 120 });
+      }
+      if (b.code !== this.pairingCode) return this.send(res, 403, { ok: false, error: 'wrong code' });
+      this.pairingCode = null;
+      this.settings = {
+        ...this.settings,
+        token: String(b.token),
+        hub: String(b.hub ?? this.settings.hub),
+        name: String(b.name ?? this.settings.name),
+      };
+      if (typeof b.imageUrl === 'string') this.settings.imageUrl = b.imageUrl;
+      this.events.push('adopted');
+      this.schedule(1);
+      return this.send(res, 200, { ok: true });
+    }
+    if (!this.authorized(req)) return this.send(res, 401, { ok: false, error: 'not allowed' });
+    if (path === '/api/setup' && req.method === 'POST') {
+      const b = json();
+      const ssid = String(b.ssid ?? '');
+      this.trial = { state: 'testing', error: '', saved: false };
+      this.events.push(`setup ${ssid}`);
+      setTimeout(() => {
+        if (!(ssid in this.opts.networks)) this.trial = { state: 'failed', error: 'network not found', saved: false };
+        else if (this.opts.networks[ssid] !== b.password) this.trial = { state: 'failed', error: 'wrong password', saved: false };
+        else {
+          this.settings = {
+            ssid,
+            pass: String(b.password),
+            token: String(b.token),
+            hub: String(b.hub ?? ''),
+            name: String(b.name ?? ''),
+            imageUrl: String(b.imageUrl ?? ''),
+            interval: Number(b.interval ?? 60),
+            brightness: Number(b.brightness ?? 80),
+          };
+          this.trial = { state: 'connected', error: '', ip: this.address, saved: true };
+        }
+      }, 50);
+      return this.send(res, 202, { ok: true, trial: 'testing', channel: Number(b.channel ?? 0) });
+    }
+    if (path === '/api/setup/finish') {
+      if (!this.trial.saved) return this.send(res, 409, { ok: false, error: 'not joined a network yet' });
+      this.events.push('finish');
+      this.send(res, 200, { ok: true });
+      return this.restart();
+    }
+    if (path === '/api/settings') {
+      if (req.method === 'POST') {
+        const b = json();
+        const network = typeof b.ssid === 'string' && (b.ssid !== this.settings.ssid || b.password !== this.settings.pass);
+        for (const k of ['name', 'hub', 'imageUrl', 'token'] as const) if (typeof b[k] === 'string') this.settings[k] = b[k];
+        for (const k of ['interval', 'brightness'] as const) if (typeof b[k] === 'number') this.settings[k] = b[k];
+        if (typeof b.ssid === 'string') {
+          this.settings.ssid = b.ssid;
+          this.settings.pass = String(b.password ?? '');
+        }
+        this.events.push(`settings ${Object.keys(b).sort().join(',')}`);
+        this.send(res, 200, { ok: true, ...this.settings, pass: undefined, token: undefined, reboot: network });
+        if (network) this.restart();
+        else this.schedule(1);
+        return;
+      }
+      return this.send(res, 200, { ok: true, ...this.settings, pass: undefined, token: undefined });
+    }
+    if (path === '/api/ota') {
+      const data = this.filePart(body, req.headers['content-type']);
+      const md5 = createHash('md5')
+        .update(data ?? Buffer.alloc(0))
+        .digest('hex');
+      if (!data || md5 !== url.searchParams.get('md5') || data.length !== Number(url.searchParams.get('size'))) {
+        return this.send(res, 400, { ok: false, error: 'MD5 verification failed' });
+      }
+      const marker = imageMarker(data);
+      if (!marker && url.searchParams.get('force') !== '1')
+        return this.send(res, 400, { ok: false, error: 'not RaptHooker firmware for this screen' });
+      this.events.push(`ota ${marker?.version ?? 'stock'}`);
+      this.sketchMd5 = md5;
+      this.send(res, 200, { ok: true });
+      return this.restart(() => {
+        if (marker) this.firmware = marker.version;
+        else {
+          // Like the firmware: other firmware going on wipes RaptHooker's settings.
+          this.stock = true;
+          this.settings = { ...EMPTY };
+        }
+      });
+    }
+    if (path === '/api/reset') {
+      this.events.push('reset');
+      this.send(res, 200, { ok: true });
+      return this.restart(() => (this.settings = { ...EMPTY }));
+    }
+    if (['/api/identify', '/api/refresh', '/api/reboot'].includes(path)) {
+      this.events.push(path.slice(5));
+      this.send(res, 200, { ok: true });
+      if (path === '/api/reboot') this.restart();
+      if (path === '/api/refresh') this.schedule(0);
+      return;
+    }
+    if (path === '/api/log') return this.send(res, 200, `[0:00:01] fake screen ${this.id}\n`, 'text/plain');
+    return this.send(res, 404, { ok: false, error: 'not found' });
+  }
+
+  private handleStock(path: string, req: IncomingMessage, res: ServerResponse, body: Buffer): void {
+    if (path === '/mac') return this.send(res, 200, this.mac, 'text/plain');
+    if (path === '/config') {
+      return this.send(res, 200, { gifnum: 4, theme: 0, brightness: 52, ssid: 'K500', weatherkey: 'x', freespace: 1253376 });
+    }
+    if (path === '/update_ota' && req.method === 'POST') {
+      const data = this.filePart(body, req.headers['content-type']);
+      const marker = data ? imageMarker(data) : null;
+      const how = this.opts.stockOta;
+      if (!data || !marker || data.length > 0x80000 || how === 'refuse' || how === 'refuse-quietly') {
+        if (how === 'refuse-quietly') res.socket?.destroy();
+        else this.send(res, 500, 'FAIL', 'text/plain');
+        return this.restart();
+      }
+      this.events.push(`stock ota ${marker.version}`);
+      this.sketchMd5 = createHash('md5').update(data).digest('hex');
+      // RaptHooker's settings, if it was on this screen before, are still in their flash sector.
+      if (how === 'no-reply') res.socket?.destroy();
+      else this.send(res, 200, 'OK', 'text/plain');
+      return this.restart(() => {
+        this.stock = false;
+        this.firmware = marker.version;
+      });
+    }
+    return this.send(
+      res,
+      200,
+      '<!DOCTYPE html><html><head><title>Smart Weather Clock - WiFi Setup</title></head><body></body></html>',
+      'text/html',
+    );
+  }
+}
+
+/**
+ * A pretend Wi-Fi for FakeScreens: their hotspots show up in scans, joining one returns the fake screen's address,
+ * and the hub's own network is always there to go back to.
+ */
+export class MockWifi implements WifiController {
+  readonly name = 'mock';
+  /** The network the hub is on now. */
+  current: string | null;
+  readonly joins: string[] = [];
+  private previous: string | null | undefined;
+
+  constructor(
+    private readonly screens: () => FakeScreen[],
+    readonly home: { ssid: string; password: string; channel: number } = { ssid: 'Brewery', password: 'hops-and-barley', channel: 6 },
+    private readonly opts: { goesOffline?: boolean; knowsPassword?: boolean } = {},
+  ) {
+    this.current = home.ssid;
+  }
+
+  async status(): Promise<WifiStatus> {
+    return {
+      canSetUp: true,
+      reason: null,
+      ssid: this.current,
+      channel: this.current === this.home.ssid ? this.home.channel : 1,
+      goesOffline: this.opts.goesOffline ?? true,
+      knowsPassword: this.current === this.home.ssid && (this.opts.knowsPassword ?? true),
+    };
+  }
+
+  async scan(): Promise<WifiNetwork[]> {
+    const nets: WifiNetwork[] = [
+      {
+        ssid: this.home.ssid,
+        bssid: '02:00:00:00:00:01',
+        signal: 82,
+        channel: this.home.channel,
+        band: 2.4,
+        secure: true,
+        kind: null,
+        current: this.current === this.home.ssid,
+      },
+      { ssid: 'Neighbours', bssid: '02:00:00:00:00:02', signal: 35, channel: 11, band: 2.4, secure: true, kind: null, current: false },
+    ];
+    for (const s of this.screens()) {
+      const h = s.hotspot;
+      if (h)
+        nets.push({
+          ssid: h,
+          bssid: `02:00:00:00:01:${s.id.slice(-2)}`,
+          signal: 70,
+          channel: 1,
+          band: 2.4,
+          secure: false,
+          kind: null,
+          current: this.current === h,
+        });
+    }
+    return tidyNetworks(
+      nets.map((n) => ({
+        ...n,
+        kind: n.secure ? null : n.ssid.startsWith('Smart') ? 'sdpro' : n.ssid.startsWith('RaptHooker') ? 'rapthooker' : null,
+      })),
+    );
+  }
+
+  async join(ssid: string, timeoutMs: number): Promise<HotspotLink> {
+    if (this.previous === undefined) this.previous = this.current;
+    this.joins.push(ssid);
+    const until = Date.now() + timeoutMs;
+    while (Date.now() < until) {
+      const screen = this.screens().find((s) => s.hotspot === ssid);
+      if (screen) {
+        this.current = ssid;
+        return { address: '127.0.0.1', screen: screen.address };
+      }
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    this.current = null;
+    throw new Error(`Timed out joining ${ssid}`);
+  }
+
+  async restore(): Promise<boolean> {
+    if (this.previous !== undefined) this.current = this.previous;
+    this.previous = undefined;
+    return true;
+  }
+
+  async password(ssid: string): Promise<string | null> {
+    return ssid === this.home.ssid && (this.opts.knowsPassword ?? true) ? this.home.password : null;
+  }
+
+  async recover(): Promise<void> {
+    if (this.current !== this.home.ssid) this.current = this.home.ssid;
+  }
+}

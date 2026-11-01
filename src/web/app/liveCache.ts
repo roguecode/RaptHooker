@@ -1,4 +1,4 @@
-import { DEFAULT_HUB_SETTINGS, type BleStatus, type HubSettings, type NearbyPill, type Pill } from '@rapthooker/shared';
+import { DEFAULT_HUB_SETTINGS, type BleStatus, type HubSettings, type NearbyPill, type Pill, type ScreenDevice } from '@rapthooker/shared';
 
 /** The last live state, kept in this browser so the app can show something when the hub can't be reached. */
 export interface LiveSnapshot {
@@ -7,6 +7,7 @@ export interface LiveSnapshot {
   ble: BleStatus | null;
   clockSynced: boolean;
   hub: HubSettings;
+  screens: ScreenDevice[];
 }
 
 export interface CachedLive extends LiveSnapshot {
@@ -19,7 +20,16 @@ const VERSION = 1;
 export const LIVE_CACHE_MAX_AGE_MS = 60 * 86_400_000;
 
 export function serializeLive(s: LiveSnapshot, savedAt: number): string {
-  return JSON.stringify({ v: VERSION, savedAt, pills: s.pills, nearby: s.nearby, ble: s.ble, clockSynced: s.clockSynced, hub: s.hub });
+  return JSON.stringify({
+    v: VERSION,
+    savedAt,
+    pills: s.pills,
+    nearby: s.nearby,
+    ble: s.ble,
+    clockSynced: s.clockSynced,
+    hub: s.hub,
+    screens: s.screens,
+  });
 }
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -30,6 +40,10 @@ function isPill(v: unknown): v is Pill {
 
 function isNearby(v: unknown): v is NearbyPill {
   return isObject(v) && typeof v.address === 'string' && typeof v.lastHeardAt === 'number';
+}
+
+function isScreen(v: unknown): v is ScreenDevice {
+  return isObject(v) && typeof v.id === 'string' && typeof v.name === 'string' && isObject(v.look) && isObject(v.status);
 }
 
 function hubFrom(v: unknown): HubSettings {
@@ -68,6 +82,8 @@ export function parseLive(raw: string | null, now: number): CachedLive | null {
     ble: isObject(d.ble) && typeof d.ble.state === 'string' ? (d.ble as unknown as BleStatus) : null,
     clockSynced: d.clockSynced !== false,
     hub: hubFrom(d.hub),
+    // Saved before screens, there were none.
+    screens: Array.isArray(d.screens) ? d.screens.filter(isScreen) : [],
   };
 }
 

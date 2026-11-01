@@ -19,7 +19,7 @@ import { SystemService } from '../system.js';
 import { TokenService } from '../tokens.js';
 import { LogBuffer } from '../logbuffer.js';
 import type { Store } from '../db.js';
-import { silent, tempStore } from './helpers.js';
+import { silent, tempStore, testScreens } from './helpers.js';
 
 const ADDR = '08:B6:1F:00:00:66';
 const MIN = 60_000;
@@ -293,6 +293,7 @@ async function api() {
     updates: new UpdateService('t', settings, silent),
     system: new SystemService(config, t.store, silent),
     tokens: new TokenService(t.store),
+    screens: testScreens(t.store, settings),
     logs: new LogBuffer(),
     version: 't',
     startedAt: Date.now(),

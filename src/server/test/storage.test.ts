@@ -228,6 +228,29 @@ describe('upgrading the database', () => {
     }
   });
 
+  it('adds an empty screens table and nothing else changes for the version from before', () => {
+    const file = join(tempDir(), 'rapthooker.db');
+    schema3Database(file);
+    const store = new Store(file);
+    try {
+      const cols = (store.db.prepare('PRAGMA table_info(screens)').all() as { name: string }[]).map((c) => c.name);
+      expect(cols).toEqual(['id', 'json', 'created_at']);
+      expect(store.db.prepare('SELECT COUNT(*) AS n FROM screens').get()).toEqual({ n: 0 });
+      store.db
+        .prepare('INSERT INTO screens (id, json, created_at) VALUES (?, ?, ?)')
+        .run('f008d11c1802', '{"name":"Kitchen","token":"k"}', T0);
+    } finally {
+      store.close();
+    }
+    // A version from before (schema 4) doesn't know the table: opening and recording works as before.
+    const db = new DatabaseSync(file);
+    db.prepare(
+      'INSERT OR IGNORE INTO readings (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run(PILL, T0 + 5000, 1.05, 20, 0, 90, -60, 1, 2, 3, 0);
+    expect(db.prepare('SELECT json FROM screens').get()).toEqual({ json: '{"name":"Kitchen","token":"k"}' });
+    db.close();
+  });
+
   it('stays right when the version from before is put back and records into it', () => {
     const file = join(tempDir(), 'rapthooker.db');
     schema3Database(file);

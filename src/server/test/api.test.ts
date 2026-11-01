@@ -17,7 +17,7 @@ import { UpdateService } from '../updates.js';
 import { SystemService } from '../system.js';
 import { TokenService } from '../tokens.js';
 import { LogBuffer } from '../logbuffer.js';
-import { CAPTURED, silent, tempStore } from './helpers.js';
+import { CAPTURED, silent, tempStore, testScreens } from './helpers.js';
 
 let cleanup: (() => void) | undefined;
 afterEach(() => cleanup?.());
@@ -42,6 +42,7 @@ async function setup() {
   } as unknown as PushService;
   const settings = new Settings(t.store);
   const alerts = new AlertService(t.store, { pills, brews, units: () => settings.units() }, push, silent);
+  const screens = testScreens(t.store, settings);
   const app = await buildServer({
     config,
     store: t.store,
@@ -59,6 +60,7 @@ async function setup() {
     updates: new UpdateService('t', settings, silent),
     system: new SystemService(config, t.store, silent),
     tokens: new TokenService(t.store),
+    screens,
     logs: new LogBuffer(),
     version: 't',
     startedAt: Date.now(),
@@ -67,7 +69,7 @@ async function setup() {
     void app.close();
     t.cleanup();
   };
-  return { app, pills, store: t.store };
+  return { app, pills, store: t.store, screens };
 }
 
 const owner = { 'tailscale-user-login': 'me@example.com' };
@@ -239,5 +241,54 @@ describe('API', () => {
     const b = { ...DEFAULT_BACKUP_SETTINGS, usb: true };
     expect((await app.inject({ method: 'PUT', url: '/api/settings/backups', headers: owner, payload: b })).statusCode).toBe(200);
     expect(JSON.parse(store.getMeta('backups')!)).toEqual({ ...b, s3: { ...b.s3, storageClass: 'STANDARD_IA' }, keepMonthly: 6 });
+  });
+
+  it('lists screens to anyone and leaves setting them up to the owner', async () => {
+    const { app } = await setup();
+    expect((await app.inject({ url: '/api/screens' })).json()).toEqual([]);
+    expect((await app.inject({ url: '/api/screens/wifi' })).statusCode).toBe(403);
+    expect((await app.inject({ url: '/api/screens/wifi', headers: owner })).json()).toMatchObject({ canSetUp: false, reason: 'off' });
+    // Nothing set up since the hub started: null, which the app reads as such.
+    const none = await app.inject({ url: '/api/screens/setup', headers: owner });
+    expect(none.statusCode).toBe(200);
+    expect(none.json()).toBeNull();
+    const setupBody = { hotspot: 'Smart weather clock', ssid: 'Brewery', name: 'Kitchen' };
+    expect((await app.inject({ method: 'POST', url: '/api/screens/setup', payload: setupBody })).statusCode).toBe(403);
+    expect(
+      (await app.inject({ method: 'POST', url: '/api/screens/setup', headers: owner, payload: { ...setupBody, name: '' } })).statusCode,
+    ).toBe(400);
+    expect((await app.inject({ url: '/api/screens/f008d11c1802' })).statusCode).toBe(404);
+    expect((await app.inject({ url: '/api/screens/f008d11c1802/image.jpg' })).statusCode).toBe(404);
+    expect(
+      (await app.inject({ method: 'PATCH', url: '/api/screens/f008d11c1802', headers: owner, payload: { name: 'x' } })).statusCode,
+    ).toBe(404);
+  });
+
+  it("draws a screen's picture with its options and tells it when to come back", async () => {
+    const { app, store, screens } = await setup();
+    store.db
+      .prepare('INSERT INTO screens (id, json, created_at) VALUES (?, ?, ?)')
+      .run('f008d11c1802', JSON.stringify({ name: 'Kitchen', token: 'k', interval: 90, look: { theme: 'light' } }), Date.now());
+    screens.load();
+    const listed = (await app.inject({ url: '/api/screens' })).json();
+    expect(listed).toMatchObject([
+      { id: 'f008d11c1802', name: 'Kitchen', interval: 90, look: { theme: 'light' }, status: { state: 'unknown' } },
+    ]);
+    expect(JSON.stringify(listed)).not.toContain('"token"');
+    const preview = await app.inject({ url: '/api/screens/f008d11c1802/image.jpg' });
+    expect(preview.statusCode).toBe(200);
+    expect(preview.headers['content-type']).toBe('image/jpeg');
+    expect(preview.headers['x-refresh']).toBe('90');
+    expect(screens.get('f008d11c1802')!.status.state).toBe('unknown');
+    await app.inject({
+      url: '/api/screens/f008d11c1802/image.jpg',
+      headers: {
+        'x-screen-id': 'f008d11c1802',
+        'x-screen-firmware': 'sdpro-240/1.0.0',
+        'x-screen-status': 'rssi=-60;up=30;heap=35000;fail=0',
+      },
+    });
+    expect(screens.get('f008d11c1802')!.status).toMatchObject({ state: 'online', rssi: -60, uptime: 30, failures: 0 });
+    expect(screens.get('f008d11c1802')!.firmware).toBe('1.0.0');
   });
 });

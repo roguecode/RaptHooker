@@ -29,6 +29,11 @@
       "pages/webhooks/DeliveryLog.tsx"
     ]
   },
+  "(if the screen is out of the hub's reach)": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
   "(looks wrong: is the pill floating?)": {
     "files": [
       "pages/dashboard/PillRow.tsx"
@@ -143,6 +148,12 @@
     ],
     "plural": true
   },
+  "{count} other network|{count} other networks": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ],
+    "plural": true
+  },
   "{count} pill in one request|{count} pills in one request": {
     "files": [
       "pages/webhooks/Preview.tsx"
@@ -189,6 +200,12 @@
     "files": [
       "pages/settings/BackupSection.tsx",
       "pages/settings/StatusSection.tsx"
+    ],
+    "plural": true
+  },
+  "{count} screen can be updated.|{count} screens can be updated.": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
     ],
     "plural": true
   },
@@ -303,7 +320,8 @@
   "{n} h": {
     "files": [
       "components/ChartSmoothing.tsx",
-      "format.ts"
+      "format.ts",
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "{n} h ago": {
@@ -315,7 +333,8 @@
   "{n} min": {
     "files": [
       "components/ChartSmoothing.tsx",
-      "format.ts"
+      "format.ts",
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "{n} min ago": {
@@ -338,7 +357,8 @@
   "{n} s": {
     "files": [
       "format.ts",
-      "pages/kiosk/Kiosk.tsx"
+      "pages/kiosk/Kiosk.tsx",
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "{n} s ago": {
@@ -357,9 +377,20 @@
       "components/ImageLink.tsx"
     ]
   },
+  "{name} (archived)": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "{name} (the hub's)": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
   "{name} added": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/Dashboard.tsx",
+      "pages/screens/FoundScreens.tsx"
     ]
   },
   "{name} documentation": {
@@ -382,6 +413,34 @@
       "pages/webhooks/ScheduleFields.tsx"
     ]
   },
+  "{name} is going back to its original firmware": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "{name} is restarting": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "{name} is set up": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx",
+      "pages/screens/SetupPanel.tsx"
+    ]
+  },
+  "{name} is showing its name": {
+    "files": [
+      "pages/screens/ScreenCard.tsx",
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "{name} is up to date": {
+    "files": [
+      "pages/screens/ScreenCard.tsx",
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "{name} moved to position {n} of {total}.": {
     "files": [
       "pages/dashboard/ArrangeList.tsx"
@@ -392,6 +451,16 @@
       "pages/pill/PillSettings.tsx"
     ]
   },
+  "{name} saved": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "{name} shows this now": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
   "{name} started": {
     "files": [
       "pages/pill/StartBrewModal.tsx"
@@ -400,6 +469,11 @@
   "{name} temperature": {
     "files": [
       "components/CompareChart.tsx"
+    ]
+  },
+  "{name}, as it came": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
     ]
   },
   "{name}: home": {
@@ -493,9 +567,14 @@
       "pages/pill/calibration.ts"
     ]
   },
+  "{version} available": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "{width} × {height} px": {
     "files": [
-      "components/ImageLink.tsx"
+      "components/PictureDesigner.tsx"
     ]
   },
   "°C, Celsius": {
@@ -637,6 +716,11 @@
       "pages/settings/SystemSection.tsx"
     ]
   },
+  "A network RaptHooker doesn't recognise": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
   "A number (group chats start with -), or @name for a public channel.": {
     "files": [
       "pages/alerts/strings.ts"
@@ -655,6 +739,12 @@
   "A picture of the readings for a small screen": {
     "files": [
       "components/ImageLink.tsx"
+    ]
+  },
+  "A removed pill": {
+    "files": [
+      "pages/screens/ScreenCard.tsx",
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "A retained message: anything that subscribes later (like Home Assistant after a restart) gets it straight away.": {
@@ -787,7 +877,8 @@
     "files": [
       "pages/alerts/ChannelEditor.tsx",
       "pages/alerts/ChannelsPanel.tsx",
-      "pages/brews/events.tsx"
+      "pages/brews/events.tsx",
+      "pages/screens/FoundScreens.tsx"
     ]
   },
   "Add {service}": {
@@ -799,6 +890,12 @@
     "files": [
       "../../server/screen/render.ts",
       "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Add a screen": {
+    "files": [
+      "pages/screens/AddScreen.tsx",
+      "pages/screens/ScreensPage.tsx"
     ]
   },
   "Add a service to get alerts even when this app is closed.": {
@@ -864,7 +961,8 @@
   },
   "Added": {
     "files": [
-      "pages/pill/CalibrationWizard.tsx"
+      "pages/pill/CalibrationWizard.tsx",
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "Added to every reading, including history and webhooks.": {
@@ -990,6 +1088,10 @@
     "files": [
       "pages/alerts/RuleModal.tsx",
       "pages/pill/PillPage.tsx",
+      "pages/screens/AddScreen.tsx",
+      "pages/screens/BrowserSetup.tsx",
+      "pages/screens/ScreenCard.tsx",
+      "pages/screens/ScreenEditor.tsx",
       "pages/webhooks/ScheduleFields.tsx",
       "pages/webhooks/WebhooksPage.tsx"
     ]
@@ -1025,6 +1127,11 @@
       "pages/pill/CalibrationWizard.tsx"
     ]
   },
+  "Also reset the screen, so it opens its own Wi-Fi for setting up again": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Alternative (better for strong beers)": {
     "files": [
       "pages/brews/strings.ts",
@@ -1049,6 +1156,16 @@
   "Angle from vertical, degrees": {
     "files": [
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "Another network…": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
+  "Another screen is being set up. Wait for it to finish.": {
+    "files": [
+      "pages/screens/strings.ts"
     ]
   },
   "any moment": {
@@ -1232,6 +1349,16 @@
       "pages/pill/DataSources.tsx"
     ]
   },
+  "Back": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
+  "Back on the hub's network": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
   "Back to one pill": {
     "files": [
       "pages/webhooks/ScheduleFields.tsx"
@@ -1250,6 +1377,11 @@
   "Back to the pill's own values": {
     "files": [
       "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Back to your Wi-Fi": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
     ]
   },
   "Back up now": {
@@ -1510,6 +1642,11 @@
       "pages/brews/BrewsPage.tsx"
     ]
   },
+  "Brightness: {percent}%": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Broker address": {
     "files": [
       "pages/settings/MqttSection.tsx"
@@ -1607,7 +1744,8 @@
   },
   "Can't reach the hub. Check the connection and try again.": {
     "files": [
-      "api.ts"
+      "api.ts",
+      "pages/screens/screensApi.ts"
     ]
   },
   "Can't tell yet": {
@@ -1624,6 +1762,7 @@
       "pages/brews/EditBrewModal.tsx",
       "pages/brews/events.tsx",
       "pages/pill/StartBrewModal.tsx",
+      "pages/screens/ScreenEditor.tsx",
       "pages/settings/BackupSection.tsx",
       "pages/settings/OwnerSection.tsx",
       "pages/webhooks/WebhookEditor.tsx"
@@ -1701,9 +1840,24 @@
       "pages/settings/UpdateSection.tsx"
     ]
   },
+  "Check this device is on the screen's Wi-Fi (\"Smart weather clock\"), then try again.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "Checking it's a good RaptHooker backup": {
     "files": [
       "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Checking the screen": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "Checking the screen…": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
     ]
   },
   "Cheers! 🍻": {
@@ -1719,6 +1873,16 @@
   "Choose one pill": {
     "files": [
       "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Choose the file": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "Choose what it shows": {
+    "files": [
+      "pages/screens/SetupPanel.tsx"
     ]
   },
   "Choose where your readings should go. Everything can be changed afterwards.": {
@@ -1767,6 +1931,11 @@
   "Cloud storage (S3)": {
     "files": [
       "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Code on the screen": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
     ]
   },
   "Cold crash": {
@@ -1831,6 +2000,16 @@
   "Connecting": {
     "files": [
       "App.tsx"
+    ]
+  },
+  "Connecting the screen to {name}…": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "Connecting the screen to your Wi-Fi": {
+    "files": [
+      "pages/screens/strings.ts"
     ]
   },
   "Connecting to the broker…": {
@@ -1920,6 +2099,16 @@
       "pages/Dashboard.tsx"
     ]
   },
+  "Couldn't add the screen": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
+    ]
+  },
+  "Couldn't add the screen to the hub": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "Couldn't add the thermometer": {
     "files": [
       "pages/Dashboard.tsx"
@@ -1933,6 +2122,11 @@
   "Couldn't change it": {
     "files": [
       "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Couldn't change the screen": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Couldn't check for updates": {
@@ -2001,6 +2195,21 @@
       "components/ExclusionControls.tsx"
     ]
   },
+  "Couldn't forget the screen": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "Couldn't get ready": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "Couldn't get the screen's log": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Couldn't import": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
@@ -2043,7 +2252,7 @@
   },
   "Couldn't load the preview": {
     "files": [
-      "components/ImageLink.tsx"
+      "components/PictureDesigner.tsx"
     ]
   },
   "Couldn't load the webhook": {
@@ -2061,6 +2270,11 @@
       "pages/alerts/AlertsPage.tsx"
     ]
   },
+  "Couldn't look for screens": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
+    ]
+  },
   "Couldn't make the image": {
     "files": [
       "components/pngExport.ts"
@@ -2069,6 +2283,11 @@
   "Couldn't pause": {
     "files": [
       "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "Couldn't put the original firmware back": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "Couldn't remove it": {
@@ -2125,6 +2344,11 @@
       "pages/Dashboard.tsx"
     ]
   },
+  "Couldn't save the screen": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Couldn't send a test": {
     "files": [
       "pages/alerts/ChannelEditor.tsx"
@@ -2134,6 +2358,11 @@
     "files": [
       "pages/webhooks/Preview.tsx",
       "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Couldn't start setting the screen up": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
     ]
   },
   "Couldn't start the brew": {
@@ -2170,6 +2399,22 @@
   "Couldn't turn on notifications": {
     "files": [
       "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "Couldn't update {names}": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
+    ]
+  },
+  "Couldn't update the screen": {
+    "files": [
+      "pages/screens/ScreenCard.tsx",
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "Couldn't update the screens": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
     ]
   },
   "Create a Pushover application": {
@@ -2234,7 +2479,7 @@
   },
   "Custom": {
     "files": [
-      "components/ImageLink.tsx",
+      "components/PictureDesigner.tsx",
       "components/RangePicker.tsx"
     ]
   },
@@ -2255,7 +2500,7 @@
   },
   "Dark": {
     "files": [
-      "components/ImageLink.tsx",
+      "components/PictureDesigner.tsx",
       "theme.ts"
     ]
   },
@@ -2407,7 +2652,8 @@
     "files": [
       "App.tsx",
       "components/HubWarnings.tsx",
-      "components/UpdateBanner.tsx"
+      "components/UpdateBanner.tsx",
+      "pages/screens/SetupPanel.tsx"
     ]
   },
   "Dismiss this warning": {
@@ -2447,6 +2693,9 @@
       "pages/brews/brewText.ts",
       "pages/dashboard/FirstRunGuide.tsx",
       "pages/pill/CalibrationWizard.tsx",
+      "pages/screens/BrowserSetup.tsx",
+      "pages/screens/SetupPanel.tsx",
+      "pages/screens/strings.ts",
       "pages/settings/TokensSection.tsx"
     ]
   },
@@ -2574,6 +2823,11 @@
       "pages/webhooks/ScheduleFields.tsx"
     ]
   },
+  "Each restarts once, for about half a minute, and keeps its settings.": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
+    ]
+  },
   "Each step stands on its own: do the ones you need. Values update as the pill sends readings, so keep this open while it floats.": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
@@ -2589,6 +2843,7 @@
       "pages/alerts/AlertsPage.tsx",
       "pages/alerts/ChannelsPanel.tsx",
       "pages/brews/BrewPage.tsx",
+      "pages/screens/ScreenCard.tsx",
       "pages/webhooks/WebhooksPage.tsx"
     ]
   },
@@ -2599,7 +2854,8 @@
   },
   "Edit {name}": {
     "files": [
-      "pages/alerts/ChannelEditor.tsx"
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/screens/ScreenCard.tsx"
     ]
   },
   "Edit alert": {
@@ -2735,6 +2991,11 @@
       "pages/settings/BackupSection.tsx"
     ]
   },
+  "Enter the Wi-Fi password: the hub doesn't know it.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
   "error": {
     "files": [
       "pages/settings/StatusSection.tsx"
@@ -2752,6 +3013,7 @@
   },
   "every {interval}": {
     "files": [
+      "pages/screens/ScreenCard.tsx",
       "pages/webhooks/WebhooksPage.tsx"
     ]
   },
@@ -3010,9 +3272,20 @@
       "pages/brews/Prediction.tsx"
     ]
   },
+  "Find on network": {
+    "files": [
+      "pages/screens/ScreensPage.tsx",
+      "pages/screens/SetupPanel.tsx"
+    ]
+  },
   "Find your API key in Brewer's Friend under Profile → Integrations.": {
     "files": [
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "Finding the screen on your network": {
+    "files": [
+      "pages/screens/strings.ts"
     ]
   },
   "Finished": {
@@ -3040,7 +3313,19 @@
   },
   "Firmware": {
     "files": [
-      "pages/pill/Tiles.tsx"
+      "pages/pill/Tiles.tsx",
+      "pages/screens/ScreenEditor.tsx",
+      "pages/screens/SetupPanel.tsx"
+    ]
+  },
+  "firmware {version}": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
+    ]
+  },
+  "Firmware {version} is available (it has {current})": {
+    "files": [
+      "pages/screens/ScreenCard.tsx"
     ]
   },
   "Firmware version": {
@@ -3108,6 +3393,16 @@
       "pages/settings/SystemSection.tsx"
     ]
   },
+  "Forget": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "Forget {name}?": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Form (urlencoded)": {
     "files": [
       "pages/webhooks/RequestFields.tsx"
@@ -3133,6 +3428,11 @@
   "Found a RAPT Thermometer nearby": {
     "files": [
       "pages/Dashboard.tsx"
+    ]
+  },
+  "Found on your network": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
     ]
   },
   "Free push notifications through the ntfy app, no account needed": {
@@ -3275,6 +3575,11 @@
   "Gmail, Outlook and most others want an app password here, not your normal password.": {
     "files": [
       "pages/alerts/strings.ts"
+    ]
+  },
+  "Got a {name}? RaptHooker can set it up to show this by itself.": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Got it": {
@@ -3426,7 +3731,7 @@
   },
   "Gravity unit": {
     "files": [
-      "components/ImageLink.tsx",
+      "components/PictureDesigner.tsx",
       "pages/webhooks/ScheduleFields.tsx",
       "units.tsx"
     ]
@@ -3608,6 +3913,11 @@
       "pages/settings/BackupSection.tsx"
     ]
   },
+  "I've joined it": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "Icon licence": {
     "files": [
       "pages/settings/SettingsPage.tsx"
@@ -3628,9 +3938,24 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "If the device says the network has no internet, choose to stay connected. Don't reload this page.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "If the new version doesn't start, the hub goes back to {version} by itself. Your brews and settings stay.": {
     "files": [
       "components/UpdateBanner.tsx"
+    ]
+  },
+  "If this device left the screen's network, join \"{name}\" again.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "If your screen's network has another name, pick it here. RaptHooker checks it's a screen it knows before changing anything.": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
     ]
   },
   "Ignore": {
@@ -3769,6 +4094,16 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Installing RaptHooker firmware": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "Installing RaptHooker firmware. Keep the screen plugged in and this page open…": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "Interval": {
     "files": [
       "pages/pill/Tiles.tsx"
@@ -3786,7 +4121,9 @@
   },
   "IP address": {
     "files": [
-      "components/ImageLink.tsx"
+      "components/ImageLink.tsx",
+      "pages/screens/ScreenEditor.tsx",
+      "pages/screens/SetupPanel.tsx"
     ]
   },
   "iSpindel-format services expect the battery in volts; RAPT Pills report a percentage, which is sent as it is.": {
@@ -3830,6 +4167,18 @@
       "pages/webhooks/WebhookEditor.tsx"
     ]
   },
+  "It shows": {
+    "files": [
+      "pages/screens/AddScreen.tsx",
+      "pages/screens/BrowserSetup.tsx",
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "It shows its first picture in a moment.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "It shows up below as “{heading}” after its next reading. Pills only send every few minutes, so give it a little while.": {
     "files": [
       "pages/dashboard/FirstRunGuide.tsx"
@@ -3870,6 +4219,16 @@
       "pages/brews/BrewPage.tsx"
     ]
   },
+  "Join the screen's Wi-Fi on this device": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "Joining the screen's Wi-Fi": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
   "just now": {
     "files": [
       "../../server/screen/strings.ts",
@@ -3879,6 +4238,11 @@
   "Just the readings, as big as they go": {
     "files": [
       "components/imageLinkOptions.ts"
+    ]
+  },
+  "Keep it plugged in while it restarts. It opens its own Wi-Fi again once done.": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "Keep it somewhere private.": {
@@ -4013,6 +4377,16 @@
     ],
     "plural": true
   },
+  "last picture {ago}": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "Last picture {ago}": {
+    "files": [
+      "pages/screens/ScreenCard.tsx"
+    ]
+  },
   "Last pill heard": {
     "files": [
       "pages/settings/BluetoothSection.tsx"
@@ -4078,6 +4452,11 @@
       "pages/settings/TokensSection.tsx"
     ]
   },
+  "Late": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
   "Latest reading": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
@@ -4138,6 +4517,11 @@
       "pages/brews/EditBrewModal.tsx"
     ]
   },
+  "Leave the password empty to use the one the hub has.": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
   "Less smoothing": {
     "files": [
       "components/ChartSmoothing.tsx"
@@ -4161,7 +4545,7 @@
   },
   "Light": {
     "files": [
-      "components/ImageLink.tsx",
+      "components/PictureDesigner.tsx",
       "theme.ts"
     ]
   },
@@ -4201,6 +4585,11 @@
       "pages/Dashboard.tsx"
     ]
   },
+  "Little Wi-Fi screens that show your pills. The hub sets them up, sends them pictures and keeps them up to date.": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
+    ]
+  },
   "Live": {
     "files": [
       "App.tsx"
@@ -4231,9 +4620,19 @@
       "pages/Dashboard.tsx"
     ]
   },
+  "Log": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Log copied": {
     "files": [
       "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Log from {name}": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "Logs": {
@@ -4243,7 +4642,12 @@
   },
   "Look": {
     "files": [
-      "components/ImageLink.tsx"
+      "components/PictureDesigner.tsx"
+    ]
+  },
+  "Look again": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
     ]
   },
   "Look up your mail provider's SMTP settings: server, port and security.": {
@@ -4251,9 +4655,25 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Looking for Wi-Fi networks…": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
+  "Looking…": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
+    ]
+  },
   "low confidence": {
     "files": [
       "pages/brews/brewText.ts"
+    ]
+  },
+  "MAC address": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx",
+      "pages/screens/SetupPanel.tsx"
     ]
   },
   "Made \"{name}\"": {
@@ -4304,6 +4724,11 @@
       "pages/webhooks/ScheduleFields.tsx"
     ]
   },
+  "Missed pictures": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Missing quite a few: try the hub (or a relay) closer to the pill.": {
     "files": [
       "pages/pill/Tiles.tsx"
@@ -4322,6 +4747,11 @@
   "mock": {
     "files": [
       "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Model": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "More smoothing": {
@@ -4413,6 +4843,9 @@
       "pages/brews/EditBrewModal.tsx",
       "pages/pill/PillSettings.tsx",
       "pages/pill/StartBrewModal.tsx",
+      "pages/screens/AddScreen.tsx",
+      "pages/screens/BrowserSetup.tsx",
+      "pages/screens/ScreenEditor.tsx",
       "pages/settings/TokensSection.tsx",
       "pages/webhooks/RequestFields.tsx",
       "pages/webhooks/WebhookEditor.tsx"
@@ -4433,6 +4866,12 @@
       "pages/Dashboard.tsx"
     ]
   },
+  "Name on the network": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx",
+      "pages/screens/SetupPanel.tsx"
+    ]
+  },
   "Name, gravity and temperature": {
     "files": [
       "components/imageLinkOptions.ts"
@@ -4441,6 +4880,11 @@
   "Needs a tilt calibration first: at least 2 points.": {
     "files": [
       "pages/pill/DataSources.tsx"
+    ]
+  },
+  "Network name": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
     ]
   },
   "never": {
@@ -4480,9 +4924,24 @@
       "pages/settings/OwnerSection.tsx"
     ]
   },
+  "New picture every": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "New picture now": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "New PIN": {
     "files": [
       "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "New screen firmware: {version}": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
     ]
   },
   "New versions of RaptHooker, and what changed.": {
@@ -4499,7 +4958,8 @@
   "Next": {
     "files": [
       "pages/Dashboard.tsx",
-      "pages/dashboard/ThermometerCard.tsx"
+      "pages/dashboard/ThermometerCard.tsx",
+      "pages/screens/BrowserSetup.tsx"
     ]
   },
   "Next {time}": {
@@ -4575,6 +5035,16 @@
       "pages/brews/BrewPage.tsx"
     ]
   },
+  "No other RaptHooker screens on your network": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
+    ]
+  },
+  "No picture fetched since the hub started": {
+    "files": [
+      "pages/screens/ScreenCard.tsx"
+    ]
+  },
   "No pills": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
@@ -4599,6 +5069,16 @@
   "No readings yet.": {
     "files": [
       "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "No screens found yet. A new screen's network can take a minute to appear after it's plugged in. A screen that was set up before only opens its own network after 5 minutes away from its Wi-Fi.": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
+  "No screens yet": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
     ]
   },
   "No spaces, # or +": {
@@ -4698,6 +5178,11 @@
       "pages/webhooks/ScheduleFields.tsx"
     ]
   },
+  "Not heard from yet": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
   "not known yet": {
     "files": [
       "pages/pill/DataSources.tsx"
@@ -4706,6 +5191,11 @@
   "Not listening: {error}": {
     "files": [
       "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "not needed": {
+    "files": [
+      "pages/screens/SetupPanel.tsx"
     ]
   },
   "Not plugged in": {
@@ -4878,7 +5368,8 @@
       "App.tsx",
       "pages/dashboard/PillRow.tsx",
       "pages/kiosk/Kiosk.tsx",
-      "pages/pill/PillPage.tsx"
+      "pages/pill/PillPage.tsx",
+      "pages/screens/strings.ts"
     ]
   },
   "Offline: data from {ago}": {
@@ -4971,6 +5462,11 @@
       "pages/settings/StatusSection.tsx"
     ]
   },
+  "On this device, join the Wi-Fi network called \"Smart weather clock\" (or \"RaptHooker-Screen-…\" for a screen that already has RaptHooker). Then come back to this page.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "On your network": {
     "files": [
       "pages/settings/SystemSection.tsx"
@@ -5010,7 +5506,8 @@
     "files": [
       "../../server/screen/render.ts",
       "pages/dashboard/PillRow.tsx",
-      "pages/pill/PillPage.tsx"
+      "pages/pill/PillPage.tsx",
+      "pages/screens/strings.ts"
     ]
   },
   "Online and last reading": {
@@ -5045,7 +5542,7 @@
   },
   "Only pills with a brew running": {
     "files": [
-      "components/ImageLink.tsx"
+      "components/PictureDesigner.tsx"
     ]
   },
   "Only send new readings": {
@@ -5137,6 +5634,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "Other screens": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
   "Other services": {
     "files": [
       "pages/alerts/ChannelEditor.tsx"
@@ -5185,6 +5687,11 @@
   "Passive: only listens for RAPT broadcasts, which is kinder to the Wi-Fi": {
     "files": [
       "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "password": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
     ]
   },
   "Password": {
@@ -5457,6 +5964,11 @@
       "pages/pill/CalibrationWizard.tsx"
     ]
   },
+  "Plug the screen in near the hub. A new one opens its own Wi-Fi network, called \"Smart weather clock\": the hub joins it for a minute to put RaptHooker on the screen and connect it to your Wi-Fi.": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
   "Point added: {tilt}° = {gravity}": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
@@ -5531,7 +6043,7 @@
   },
   "Presets": {
     "files": [
-      "components/ImageLink.tsx"
+      "components/PictureDesigner.tsx"
     ]
   },
   "Preview": {
@@ -5541,7 +6053,7 @@
   },
   "Preview of the picture": {
     "files": [
-      "components/ImageLink.tsx"
+      "components/PictureDesigner.tsx"
     ]
   },
   "Print / Save as PDF": {
@@ -5551,6 +6063,7 @@
   },
   "Problem": {
     "files": [
+      "pages/screens/ScreenEditor.tsx",
       "pages/settings/UpdateSection.tsx"
     ]
   },
@@ -5597,6 +6110,16 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "Put it back": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "Put the original firmware back": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Put the pill and a thermometer you trust in the same liquid (a jug of water, or the fermenter).": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
@@ -5637,6 +6160,11 @@
       "components/UpdateBanner.tsx"
     ]
   },
+  "RaptHooker can turn a {name}, a little 240 × 240 Wi-Fi screen, into a display for your pills. Plug one in and add it here: the hub does the rest, including its updates.": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
+    ]
+  },
   "RaptHooker has been updated to {version}.": {
     "files": [
       "components/UpdateBanner.tsx"
@@ -5657,9 +6185,24 @@
       "pages/settings/SettingsPage.tsx"
     ]
   },
+  "RaptHooker is on the screen now, and it joined your network by itself with a set-up from before. Add it from Found on your network.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
   "RaptHooker needs a few hours of readings": {
     "files": [
       "pages/pill/Tiles.tsx"
+    ]
+  },
+  "RaptHooker puts its own firmware on the screen in place of the one it came with. Keep the screen plugged in until it's done. You can put the original back later from the screen's details.": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
+  "RaptHooker screen, waiting to be set up": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
     ]
   },
   "RaptHooker turns the pill's tilt into gravity using your tilt calibration points.": {
@@ -5950,6 +6493,11 @@
       "validation.tsx"
     ]
   },
+  "Reset it from that hub, or add it from Found on your network.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "Reset zoom": {
     "files": [
       "pages/brews/BrewPage.tsx"
@@ -5962,6 +6510,7 @@
   },
   "Restart": {
     "files": [
+      "pages/screens/ScreenEditor.tsx",
       "pages/settings/SystemSection.tsx"
     ]
   },
@@ -6068,6 +6617,7 @@
   },
   "Running for": {
     "files": [
+      "pages/screens/ScreenEditor.tsx",
       "pages/settings/StatusSection.tsx"
     ]
   },
@@ -6088,6 +6638,7 @@
       "pages/brews/events.tsx",
       "pages/pill/DataSources.tsx",
       "pages/pill/PillSettings.tsx",
+      "pages/screens/ScreenEditor.tsx",
       "pages/settings/BackupSection.tsx",
       "pages/settings/HubSection.tsx",
       "pages/settings/MqttSection.tsx"
@@ -6125,6 +6676,11 @@
       "pages/settings/MqttSection.tsx"
     ]
   },
+  "Scan again": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
   "scanning": {
     "files": [
       "pages/settings/StatusSection.tsx"
@@ -6132,7 +6688,9 @@
   },
   "Screen": {
     "files": [
-      "components/ImageLink.tsx"
+      "components/ImageLink.tsx",
+      "pages/screens/AddScreen.tsx",
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "Screen {n} of {total}": {
@@ -6140,9 +6698,37 @@
       "pages/kiosk/Kiosk.tsx"
     ]
   },
+  "Screen details": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "Screen firmware update available": {
+    "files": [
+      "App.tsx"
+    ]
+  },
   "Screen size": {
     "files": [
       "components/ImageLink.tsx"
+    ]
+  },
+  "Screens": {
+    "files": [
+      "App.tsx",
+      "pages/screens/AddScreen.tsx",
+      "pages/screens/ScreensPage.tsx"
+    ]
+  },
+  "Screens found on your network": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
+    ]
+  },
+  "Screens only use 2.4 GHz Wi-Fi. They need to reach the hub on that network.": {
+    "files": [
+      "pages/screens/AddScreen.tsx",
+      "pages/screens/BrowserSetup.tsx"
     ]
   },
   "Secret access key": {
@@ -6227,6 +6813,7 @@
   "Sending…": {
     "files": [
       "pages/alerts/ChannelEditor.tsx",
+      "pages/screens/ScreenEditor.tsx",
       "pages/webhooks/Preview.tsx"
     ]
   },
@@ -6255,6 +6842,16 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Set it up": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
+  "Set it up from this device instead": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
   "Set the offset": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
@@ -6263,6 +6860,21 @@
   "Set the offset to {offset}": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Set the screen up": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "Set up": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
+  "Set up a screen": {
+    "files": [
+      "components/ImageLink.tsx"
     ]
   },
   "Set up a tilt calibration": {
@@ -6275,6 +6887,11 @@
       "pages/dashboard/FirstRunGuide.tsx"
     ]
   },
+  "set up by another hub": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
+    ]
+  },
   "Setting up {name}": {
     "files": [
       "pages/webhooks/PresetGrid.tsx"
@@ -6285,9 +6902,19 @@
       "pages/alerts/ChannelEditor.tsx"
     ]
   },
+  "Setting up a screen": {
+    "files": [
+      "pages/screens/SetupPanel.tsx"
+    ]
+  },
   "Setting up Home Assistant": {
     "files": [
       "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Setting up the screen didn't work": {
+    "files": [
+      "pages/screens/SetupPanel.tsx"
     ]
   },
   "Settings": {
@@ -6354,9 +6981,40 @@
       "components/Chart.tsx"
     ]
   },
+  "Show it on {name}": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
+  "Show it there": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
+  "Show its name": {
+    "files": [
+      "pages/screens/ScreenCard.tsx",
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "Show this on a screen": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
   "Shown in the top bar and the browser tab.": {
     "files": [
       "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Shown on {name}": {
+    "files": [
+      "pages/screens/ScreenCard.tsx"
+    ]
+  },
+  "Shown on {name} ({state})": {
+    "files": [
+      "pages/screens/ScreenCard.tsx"
     ]
   },
   "Sign in": {
@@ -6404,6 +7062,11 @@
       "pages/dashboard/ThermometerCard.tsx",
       "pages/kiosk/Kiosk.tsx",
       "pages/pill/Tiles.tsx"
+    ]
+  },
+  "signal {percent}%": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
     ]
   },
   "Signal unknown": {
@@ -6569,6 +7232,11 @@
       "App.tsx"
     ]
   },
+  "Something went wrong.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
   "Specific gravity, e.g. 1.0465": {
     "files": [
       "pages/webhooks/strings.ts"
@@ -6688,6 +7356,11 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Status": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Stay quiet when a pill is just sitting in a cupboard.": {
     "files": [
       "pages/webhooks/ScheduleFields.tsx"
@@ -6764,6 +7437,11 @@
       "pages/brews/SummaryPage.tsx"
     ]
   },
+  "Supported Screens: {names}": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
+    ]
+  },
   "Swap width and height": {
     "files": [
       "components/ImageLink.tsx"
@@ -6825,6 +7503,11 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Talking to the screen": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
   "target {gravity}": {
     "files": [
       "pages/brews/Prediction.tsx",
@@ -6872,6 +7555,11 @@
   "Telegram bot tutorial": {
     "files": [
       "pages/alerts/strings.ts"
+    ]
+  },
+  "Tell the hub about the screen": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
     ]
   },
   "tell us on GitHub": {
@@ -6951,7 +7639,7 @@
   },
   "Temperature unit": {
     "files": [
-      "components/ImageLink.tsx",
+      "components/PictureDesigner.tsx",
       "pages/webhooks/ScheduleFields.tsx",
       "units.tsx"
     ]
@@ -7005,6 +7693,11 @@
     "files": [
       "pages/settings/BackupSection.tsx",
       "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "That code isn't the one on the screen": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
     ]
   },
   "That didn't work.": {
@@ -7102,6 +7795,11 @@
       "components/Chart.tsx"
     ]
   },
+  "The code on the screen": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
+    ]
+  },
   "The current data isn't deleted: it's kept on the hub as a \"before restore\" copy you can download or restore. The hub then restarts, which takes about half a minute; recording carries on after that.": {
     "files": [
       "pages/settings/BackupSection.tsx"
@@ -7122,9 +7820,24 @@
       "pages/webhooks/WebhooksPage.tsx"
     ]
   },
+  "The firmware didn't install, so the screen still has its own. Unplug it, plug it back in and try again.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "The firmware from the hub didn't arrive whole. Try again.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "The firmware on the screen isn't the one sent.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "The graph shows": {
     "files": [
-      "components/ImageLink.tsx"
+      "components/PictureDesigner.tsx"
     ]
   },
   "The gravity has stopped moving (less than a point in 48 hours).": {
@@ -7147,6 +7860,31 @@
       "pages/pill/DataSources.tsx"
     ]
   },
+  "The hub can't switch Wi-Fi networks on this system.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "The hub can't switch Wi-Fi networks.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "The hub checks the file is firmware for this screen before sending it. Keep the screen plugged in until it's back.": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "The hub couldn't join the screen's Wi-Fi. Check the screen is on and near the hub, then scan again.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "The hub couldn't talk to the screen on its Wi-Fi.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
   "The hub downloads release {version}, installs it in place of this development build and restarts. From then on it updates from releases like any other hub.": {
     "files": [
       "components/UpdateBanner.tsx"
@@ -7155,6 +7893,21 @@
   "The hub downloads the new version, installs it and restarts. That takes a few minutes; recording carries on straight after (a reading or two may be missed while it restarts).": {
     "files": [
       "components/UpdateBanner.tsx"
+    ]
+  },
+  "The hub had trouble getting back on its network. If it's unreachable, restart it.": {
+    "files": [
+      "pages/screens/SetupPanel.tsx"
+    ]
+  },
+  "The hub has no firmware for this screen.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "The hub has no Wi-Fi adapter.": {
+    "files": [
+      "pages/screens/strings.ts"
     ]
   },
   "The hub hasn't come back yet": {
@@ -7167,6 +7920,11 @@
       "pages/settings/BackupSection.tsx"
     ]
   },
+  "The hub is away talking to the screen. This page reconnects by itself when it's back.": {
+    "files": [
+      "pages/screens/SetupPanel.tsx"
+    ]
+  },
   "The hub is listening now.": {
     "files": [
       "pages/dashboard/FirstRunGuide.tsx"
@@ -7175,6 +7933,11 @@
   "The hub is restarting. This page reconnects by itself.": {
     "files": [
       "components/UpdateBanner.tsx"
+    ]
+  },
+  "The hub isn't allowed to switch Wi-Fi networks. Run the Pi set-up again to allow it.": {
+    "files": [
+      "pages/screens/strings.ts"
     ]
   },
   "The hub keeps trying in the background. Recording carries on either way.": {
@@ -7187,6 +7950,11 @@
       "pages/settings/HubSection.tsx"
     ]
   },
+  "The hub only sees this network on 5 GHz, which the screen can't use.": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
   "The hub restarts by itself when the new version is in; this page reconnects when it is back.": {
     "files": [
       "components/UpdateBanner.tsx"
@@ -7195,6 +7963,21 @@
   "The hub sent an answer this page can't read": {
     "files": [
       "api.ts"
+    ]
+  },
+  "The hub stops looking after it and it goes from the list.": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "The hub's only connection is Wi-Fi, so it's off your network for a minute or two while it talks to the screen. This page reconnects by itself.": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
+  "The hub's system doesn't use NetworkManager, which the hub needs to switch Wi-Fi networks.": {
+    "files": [
+      "pages/screens/strings.ts"
     ]
   },
   "The last 8 weeks are kept.": {
@@ -7210,6 +7993,11 @@
   "The latest reading doesn't look like the pill is floating": {
     "files": [
       "pages/pill/PillPage.tsx"
+    ]
+  },
+  "The log is empty.": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "The MAC address the RAPT app shows": {
@@ -7277,6 +8065,74 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "The screen can't see that network. Screens only use 2.4 GHz Wi-Fi: check the name, and that it's in range.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "The screen couldn't join the network.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "The screen couldn't join: the Wi-Fi password is wrong.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "The screen didn't answer": {
+    "files": [
+      "pages/screens/FoundScreens.tsx",
+      "pages/screens/ScreenCard.tsx",
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "The screen didn't come back after installing. Give it a minute: if it shows the RaptHooker logo, scan again; if it stays blank, unplug it and plug it back in.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "The screen is on {name}. Now switch this device back to {name}.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "The screen is on your network, but the hub can't find it there yet. It may turn up under Found on your network.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "The screen is restarting with RaptHooker. When the network \"{name}\" appears, join it on this device.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "The screen joined the network but the router gave it no IP address.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "The screen keeps its own size, and changes to the new picture straight away.": {
+    "files": [
+      "components/ImageLink.tsx"
+    ]
+  },
+  "The screen may not have got the whole firmware. If its network is still called \"Smart weather clock\", try again.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "The screen no longer accepts this hub (it was reset or set up again).": {
+    "files": [
+      "pages/screens/ScreenCard.tsx",
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "The screen shows its name for a moment": {
+    "files": [
+      "pages/screens/ScreenCard.tsx"
+    ]
+  },
   "The start has to be before the end": {
     "files": [
       "components/chartMath.ts"
@@ -7329,7 +8185,7 @@
   },
   "Theme": {
     "files": [
-      "components/ImageLink.tsx",
+      "components/PictureDesigner.tsx",
       "components/ThemeSwitch.tsx",
       "pages/settings/HubSection.tsx"
     ]
@@ -7357,6 +8213,11 @@
       "pages/alerts/RuleModal.tsx"
     ]
   },
+  "These RaptHooker screens aren't this hub's yet.": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
+    ]
+  },
   "They all go in one request.": {
     "files": [
       "pages/webhooks/ScheduleFields.tsx"
@@ -7365,6 +8226,11 @@
   "They are switched off: check each one, then switch it on.": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "They keep the firmware they had.": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
     ]
   },
   "This browser": {
@@ -7390,6 +8256,16 @@
   "This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)": {
     "files": [
       "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "This device can't see a screen RaptHooker knows.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "This device does the setting up: it joins the screen's Wi-Fi itself for a few minutes, so it needs Wi-Fi, and this page has to stay open until the end.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
     ]
   },
   "This device will get alerts.": {
@@ -7418,9 +8294,19 @@
       "pages/settings/UpdateSection.tsx"
     ]
   },
+  "This isn't a screen RaptHooker can set up.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
   "this page": {
     "files": [
       "components/ImageLink.tsx"
+    ]
+  },
+  "This page is on https, and browsers won't let it talk to the screen, which only has http. Open the hub at its address on your network instead:": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
     ]
   },
   "This pill has been removed.": {
@@ -7431,6 +8317,11 @@
   "This pill is recording, but no brew is running. Start one to track a batch from pitch to packaging.": {
     "files": [
       "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "This puts the firmware the screen came with back on it, and the hub forgets it. You need the firmware file from the screen's maker (for this screen, a file like SDPro_V1.0.6.bin).": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "This reading doesn't look like the pill is floating. Check it's upright in the liquid.": {
@@ -7461,6 +8352,16 @@
   "This replaces everything on the hub with the backup.": {
     "files": [
       "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "This screen belongs to another hub.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "This screen belongs to another hub. Reset it from that hub, or add it from Found on your network.": {
+    "files": [
+      "pages/screens/SetupPanel.tsx"
     ]
   },
   "This webhook's interval, seconds": {
@@ -7612,7 +8513,9 @@
   "Try again": {
     "files": [
       "components/UpdateBanner.tsx",
-      "pages/brews/BrewPage.tsx"
+      "pages/brews/BrewPage.tsx",
+      "pages/screens/BrowserSetup.tsx",
+      "pages/screens/SetupPanel.tsx"
     ]
   },
   "Turn off": {
@@ -7724,6 +8627,17 @@
       "pages/settings/UpdateSection.tsx"
     ]
   },
+  "Update": {
+    "files": [
+      "pages/screens/ScreenCard.tsx",
+      "pages/screens/ScreensPage.tsx"
+    ]
+  },
+  "Update all": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
+    ]
+  },
   "Update available": {
     "files": [
       "pages/settings/UpdateSection.tsx"
@@ -7734,10 +8648,21 @@
       "components/UpdateBanner.tsx"
     ]
   },
+  "Update to {version}": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Update to RaptHooker {version}?": {
     "files": [
       "components/UpdateBanner.tsx"
     ]
+  },
+  "Updated {count} screen|Updated {count} screens": {
+    "files": [
+      "pages/screens/ScreensPage.tsx"
+    ],
+    "plural": true
   },
   "Updates": {
     "files": [
@@ -7756,7 +8681,9 @@
   },
   "Updating…": {
     "files": [
-      "components/ImageLink.tsx",
+      "components/PictureDesigner.tsx",
+      "pages/screens/ScreenCard.tsx",
+      "pages/screens/ScreensPage.tsx",
       "pages/settings/UpdateSection.tsx"
     ]
   },
@@ -7986,6 +8913,11 @@
       "pages/pill/CalibrationWizard.tsx"
     ]
   },
+  "Waiting for the screen to restart": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
   "Warnings": {
     "files": [
       "pages/settings/SystemSection.tsx"
@@ -8078,6 +9010,11 @@
       "pages/brews/events.tsx"
     ]
   },
+  "What {name} shows": {
+    "files": [
+      "pages/screens/ScreenCard.tsx"
+    ]
+  },
   "What changes": {
     "files": [
       "pages/pill/DataSources.tsx"
@@ -8085,7 +9022,7 @@
   },
   "What doesn't fit at a readable size is left out, so check the preview.": {
     "files": [
-      "components/ImageLink.tsx"
+      "components/PictureDesigner.tsx"
     ]
   },
   "What gets published": {
@@ -8110,7 +9047,7 @@
   },
   "What to show": {
     "files": [
-      "components/ImageLink.tsx"
+      "components/PictureDesigner.tsx"
     ]
   },
   "What's in {version} (this version)": {
@@ -8205,6 +9142,28 @@
       "pages/settings/BluetoothSection.tsx"
     ]
   },
+  "Wi-Fi for the screen": {
+    "files": [
+      "pages/screens/AddScreen.tsx",
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "Wi-Fi password": {
+    "files": [
+      "pages/screens/AddScreen.tsx",
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "Wi-Fi set-up is switched off in the hub's config.": {
+    "files": [
+      "pages/screens/strings.ts"
+    ]
+  },
+  "Wi-Fi signal": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Width (px)": {
     "files": [
       "components/ImageLink.tsx"
@@ -8275,6 +9234,11 @@
   "Yeast, hops, dry hop schedule…": {
     "files": [
       "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "You can set the screen up from this device instead: it needs Wi-Fi and to stay on this page.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
     ]
   },
   "You have {version}.": {
@@ -8355,6 +9319,11 @@
   "Your thermometer reads ({unit})": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "your Wi-Fi": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
     ]
   },
   "Zoom": {

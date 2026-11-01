@@ -18,8 +18,8 @@ const BASE_PORT = Number(process.env.RAPTHOOKER_E2E_PORT ?? 18080);
 process.env.RAPTHOOKER_E2E_DIR ||= mkdtempSync(join(tmpdir(), 'rapthooker-e2e-'));
 const RUN_DIR = process.env.RAPTHOOKER_E2E_DIR;
 
-// The development defaults (simulated pills, localhost is the owner), but without waiting for the clock to be set
-// from the network, which a CI machine might not report.
+// The development defaults (simulated pills and screens, localhost is the owner), but without waiting for the clock to
+// be set from the network, which a CI machine might not report.
 const CONFIG = join(RUN_DIR, 'rapthooker.config.json');
 if (!existsSync(CONFIG)) {
   writeFileSync(
@@ -29,6 +29,7 @@ if (!existsSync(CONFIG)) {
       bluetooth: { mock: true },
       auth: { trustLocalhost: true },
       clock: { maxSyncWaitMin: 0 },
+      screens: { wifi: 'mock' },
     }),
   );
 }

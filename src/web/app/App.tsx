@@ -10,6 +10,7 @@ import { PillPage } from './pages/pill';
 import { BrewPage, BrewsPage, BrewSummaryPage } from './pages/brews';
 import { WebhookEditor, WebhooksPage } from './pages/webhooks';
 import { AlertsPage } from './pages/alerts';
+import { ScreensPage } from './pages/screens';
 import { SettingsPage } from './pages/settings';
 import { PinNotice } from './pages/settings/OwnerSection';
 import { Kiosk } from './pages/kiosk/Kiosk';
@@ -37,6 +38,7 @@ export function App() {
 const NAV: { id: string; href: string; label: string; icon: IconName; match: Route['name'][] }[] = [
   { id: 'dashboard', href: '#/', label: tk('Pills'), icon: 'gauge', match: ['dashboard', 'pill'] },
   { id: 'brews', href: '#/brews', label: tk('Brews'), icon: 'beer', match: ['brews', 'brew', 'brew-summary'] },
+  { id: 'screens', href: '#/screens', label: tk('Screens'), icon: 'screen', match: ['screens'] },
   { id: 'webhooks', href: '#/webhooks', label: tk('Webhooks'), icon: 'webhook', match: ['webhooks', 'webhook'] },
   { id: 'alerts', href: '#/alerts', label: tk('Alerts'), icon: 'bell', match: ['alerts'] },
   { id: 'settings', href: '#/settings', label: tk('Settings'), icon: 'sliders', match: ['settings'] },
@@ -51,6 +53,7 @@ const TITLES: Partial<Record<Route['name'], string>> = {
   webhooks: tk('Webhooks'),
   webhook: tk('Webhook'),
   alerts: tk('Alerts'),
+  screens: tk('Screens'),
   settings: tk('Settings'),
   kiosk: tk('TV mode'),
 };
@@ -89,7 +92,7 @@ function OfflineNotice({ cachedAt }: { cachedAt: number | null }) {
 
 function Shell() {
   const route = useRoute();
-  const { connection, toasts, dismiss, session, hub, pills, cachedAt } = useLive();
+  const { connection, toasts, dismiss, session, hub, pills, cachedAt, screens, isOwner } = useLive();
   const key = 'id' in route ? `${route.name}:${route.id}` : route.name;
   const offline = useOffline(connection);
   const main = useRef<HTMLElement | null>(null);
@@ -160,10 +163,16 @@ function Shell() {
         <nav className="nav" aria-label={t('Main')}>
           {NAV.map((n) => {
             const active = n.match.includes(route.name);
+            // New screen firmware is waiting: the owner can install it from the Screens page.
+            const badge = n.id === 'screens' && isOwner && screens.some((s) => s.status.update && !s.status.updating);
             return (
               <a key={n.id} href={n.href} className={active ? 'active' : ''} aria-current={active ? 'page' : undefined}>
-                <Icon name={n.icon} size={19} />
+                <span className="nav-icon">
+                  <Icon name={n.icon} size={19} />
+                  {badge && <i className="nav-badge" aria-hidden="true" />}
+                </span>
                 <span>{t(n.label)}</span>
+                {badge && <span className="sr-only">{t('Screen firmware update available')}</span>}
               </a>
             );
           })}
@@ -207,6 +216,7 @@ function Shell() {
           {route.name === 'webhooks' && <WebhooksPage />}
           {route.name === 'webhook' && <WebhookEditor id={route.id} />}
           {route.name === 'alerts' && <AlertsPage />}
+          {route.name === 'screens' && <ScreensPage />}
           {route.name === 'settings' && <SettingsPage />}
         </ErrorBoundary>
       </main>

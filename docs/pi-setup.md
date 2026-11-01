@@ -62,6 +62,8 @@ which:
   helper that switches Bluetooth off and on if it ever [gets stuck](#troubleshooting)
 - makes sure network time is on (the Pi has no clock battery), keeps logs in RAM to spare the SD card, and turns off
   Wi-Fi power saving
+- lets the service switch Wi-Fi networks through NetworkManager for a minute at a time, to set up
+  [screens](rapthooker-screens.md) ([50-screens.sh](../deploy/pi/setup.d/50-screens.sh))
 - installs the `rapthooker` systemd service, which starts at boot and restarts itself if it ever stops, and lets the
   app update itself ([docs/updating.md](updating.md))
 
@@ -113,6 +115,9 @@ tiles: gravity, temperature, ABV, velocity, battery, when it was last heard and 
 all fit, it rotates through them (every 10 to 60 seconds; move the mouse or tap for the controls). Browsers only keep
 the screen awake for pages served over HTTPS (such as through Tailscale, below) or opened on the Pi itself as
 `http://localhost:8080/#/kiosk`; otherwise turn off screen blanking on the device showing it.
+
+For something smaller, RaptHooker can take over a **Geekmagic Ultra/Smart weather clock** desk screen and show a pill (or all of them)
+on it, looking after it from the **Screens** page: see [RaptHooker screens](rapthooker-screens.md).
 
 ## 5. HTTPS and access away from home (Tailscale)
 

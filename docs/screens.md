@@ -123,3 +123,6 @@ display:
 GeekMagic's small desk screens (240 × 240) run on an ESP8266, which decodes JPEG but not PNG: pick the **GeekMagic mini
 screen** preset. What their own firmware can do with an image from a web address differs between models and versions;
 community firmware (ESPHome among it) can load one on a timer.
+
+The **Geekmagic Ultra/Smart weather clock** can do better: RaptHooker puts its own firmware on it and looks after it from the
+**Screens** page, with no link to copy. See [RaptHooker screens](./rapthooker-screens.md).

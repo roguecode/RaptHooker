@@ -10,8 +10,11 @@ export type LiveSockets = Map<WebSocket, boolean>;
 export function broadcaster(sockets: LiveSockets): Broadcast {
   return (msg, forViewers = msg) => {
     const data = JSON.stringify(msg);
-    const viewerData = forViewers === msg ? data : JSON.stringify(forViewers);
-    for (const [ws, owner] of sockets) if (ws.readyState === ws.OPEN) ws.send(owner ? data : viewerData);
+    const viewerData = forViewers === null ? null : forViewers === msg ? data : JSON.stringify(forViewers);
+    for (const [ws, owner] of sockets) {
+      const send = owner ? data : viewerData;
+      if (send !== null && ws.readyState === ws.OPEN) ws.send(send);
+    }
   };
 }
 
@@ -28,6 +31,7 @@ export function liveRoutes({ app, s, isOwner, broadcast }: RouteContext, sockets
         ble: s.scanner.status,
         clockSynced: s.clock.trusted,
         hub: s.settings.hub(),
+        screens: s.screens.list(),
       } satisfies LiveMessage),
     );
     const forget = () => sockets.delete(socket);

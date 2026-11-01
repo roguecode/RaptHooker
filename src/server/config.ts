@@ -65,6 +65,25 @@ export const configSchema = z.object({
       maxSyncWaitMin: z.number().min(0).default(10),
     })
     .default({ maxSyncWaitMin: 10 }),
+  screens: z
+    .object({
+      /**
+       * How the hub switches to a screen's hotspot to set it up: 'auto' (NetworkManager on Linux, netsh on Windows),
+       * one of those, 'mock' (pretend screens, for development and tests) or 'off'.
+       */
+      wifi: z.enum(['auto', 'networkmanager', 'netsh', 'mock', 'off']).default('auto'),
+      /**
+       * Where screens fetch their pictures from, e.g. http://192.168.1.20:8080, when the hub can't work it out (in a
+       * container with its own network). Screens only fetch over http. Empty: the hub's own address on the network.
+       */
+      hubUrl: z
+        .string()
+        .trim()
+        .regex(/^(http:\/\/[^/?#\s]+\/?)?$/, 'screens.hubUrl must be like http://192.168.1.20:8080 (screens only fetch over http)')
+        .transform((s) => s.replace(/\/$/, ''))
+        .default(''),
+    })
+    .default({ wifi: 'auto', hubUrl: '' }),
 });
 
 export type Config = z.infer<typeof configSchema> & { webDir: string };
@@ -96,8 +115,8 @@ export function applyEnv(config: Config, env: NodeJS.ProcessEnv = process.env): 
   return config;
 }
 
-/** Without a config file: simulated pills, data in ./data and this machine trusted as the owner. */
-export const DEV_CONFIG = { bluetooth: { mock: true }, auth: { trustLocalhost: true } };
+/** Without a config file: simulated pills and screens, data in ./data and this machine trusted as the owner. */
+export const DEV_CONFIG = { bluetooth: { mock: true }, auth: { trustLocalhost: true }, screens: { wifi: 'mock' } };
 
 /** Loads RAPTHOOKER_CONFIG or ./rapthooker.config.json, or the development defaults. */
 export function loadConfig(defaultWebDir: string): { config: Config; path: string | null } {

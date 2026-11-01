@@ -272,6 +272,15 @@ const PATHS = {
       <path d="m2 2 20 20" />
     </>
   ),
+  wifi: <path d="M12 20h.01M2 8.82a15 15 0 0 1 20 0M5 12.86a10 10 0 0 1 14 0M8.5 16.43a5 5 0 0 1 7 0" />,
+  // A little desktop screen, like the ones RaptHooker sets up.
+  screen: (
+    <>
+      <rect x="4" y="2" width="16" height="15" rx="2" />
+      <rect x="7.5" y="5.5" width="9" height="8" rx="1" />
+      <path d="M9 22h6M12 17v5" />
+    </>
+  ),
   circle: <circle cx="12" cy="12" r="10" />,
   circleCheck: (
     <>

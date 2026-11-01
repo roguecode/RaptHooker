@@ -12,7 +12,8 @@ RaptHooker - A fully local dashboard for Kegland Rapt devices that runs on a Ras
 - All data is stored on your own hardware and can't be accessed by arbitrary employees
 - Only requires a cheap Raspberry Pi with SD card and power, and a PC to install it for the first time
 - Anytime-calibration, even when the Pill is in a fermenter
-- TV/Kiosk mode for an always-on brewery screen, [image endpoint for simple screens](docs/screens.md), predictions, backups and exports, etc.
+- TV/Kiosk mode for an always-on brewery screen, [image endpoint for simple screens](docs/screens.md),
+  [RaptHooker screens](docs/rapthooker-screens.md) (turn a Geekmagic Ultra/Smart weather clock into a display for your pills), predictions, backups and exports, etc.
 
 (Click to play quick description video)
 

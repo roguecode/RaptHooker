@@ -33,7 +33,7 @@ import { TextMeasure, type FontWeight } from '../screen/assets.js';
 import { loadScreenAssets } from '../screen/assets-files.js';
 import { CSS_VARS, SCREEN_COLORS, gradientStops, parseColor } from '../screen/palette.js';
 import { encodeBmp } from '../screen/raster.js';
-import { silent, tempStore } from './helpers.js';
+import { silent, tempStore, testScreens } from './helpers.js';
 
 const NOW = Date.UTC(2026, 9, 27, 12, 0);
 const DAY = 86_400_000;
@@ -491,6 +491,7 @@ async function setup() {
     updates: new UpdateService('t', settings, silent),
     system: new SystemService(config, t.store, silent),
     tokens: new TokenService(t.store),
+    screens: testScreens(t.store, settings),
     logs: new LogBuffer(),
     version: 't',
     startedAt: Date.now(),

@@ -67,6 +67,7 @@ can show a picture from a web address can use an [image link](docs/screens.md) i
 - ❔ **Brewfather**
 - ❔ **Brewer's Friend**
 - ❔ **Bricks (BierBot)**
+- ❔ **MeadTools**
 - ❔ **Fermentrack**
 - ❔ **Ubidots**
 - ❔ **ThingSpeak**

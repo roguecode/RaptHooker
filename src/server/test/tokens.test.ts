@@ -218,4 +218,16 @@ describe('webhook routes', () => {
     });
     expect(ok.statusCode).toBe(200);
   });
+
+  it('still takes a batch webhook for a service that takes one reading per request (the editor steers away from it)', async () => {
+    const { app } = await setup();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/webhooks',
+      headers: owner,
+      payload: { ...hook, preset: 'meadtools', batch: true, batchBody: '{"readings": [{{items}}]}' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json<Webhook>()).toMatchObject({ preset: 'meadtools', enabled: true, batch: true });
+  });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PRESETS } from './presets.js';
+import { PRESETS, unsupportedBatch } from './presets.js';
 import { renderRequest, renderTemplate } from './template.js';
 import { buildContext, sampleReading, VARIABLES } from './variables.js';
 import { abv, attenuation, platoToSg, sgToPlato } from './units.js';
@@ -135,10 +135,56 @@ describe('presets', () => {
     expect(renderRequest(custom, ctx).warnings.some((w) => w.includes('Authorization header'))).toBe(true);
   });
 
+  it('keeps one request for all pills away from services that take one reading per request', () => {
+    const meadtools = PRESETS.find((p) => p.id === 'meadtools');
+    expect(unsupportedBatch(meadtools, true)).toBe(true);
+    expect(unsupportedBatch(meadtools, false)).toBe(false);
+    expect(
+      unsupportedBatch(
+        PRESETS.find((p) => p.id === 'homeassistant'),
+        true,
+      ),
+    ).toBe(false);
+    expect(unsupportedBatch(undefined, true)).toBe(false);
+    // A service that can't tell pills apart can't take several in one request either.
+    for (const p of PRESETS) if (p.onePillPerWebhook) expect(p.oneReadingPerRequest, p.id).toBe(true);
+  });
+
   it('Brewfather gets SG with unit G', () => {
     const bf = PRESETS.find((p) => p.id === 'brewfather')!;
     const body = JSON.parse(renderRequest(bf, ctx).body!);
     expect(body).toMatchObject({ name: 'Hazy "IPA"', gravity: 1.0213, gravity_unit: 'G', temp: 19.6, temp_unit: 'C' });
+  });
+
+  it('MeadTools gets SG whatever the unit, and always the temperature unit', () => {
+    const mt = { ...PRESETS.find((p) => p.id === 'meadtools')!, gravityUnit: 'plato' as const, temperatureUnit: 'F' as const };
+    const fahrenheit = buildContext({
+      pill: {
+        id: 'p1',
+        name: 'Hazy "IPA"',
+        address: '08:B6:1F:00:00:66',
+        raptId: '08:B6:1F:00:00:64',
+        info: { firmware: 'fw', deviceType: 'PillG1', payloadVersion: 2 },
+      },
+      reading: sampleReading(Date.UTC(2026, 9, 1)),
+      brew: null,
+      gravityUnit: 'plato',
+      temperatureUnit: 'F',
+      intervalSec: 900,
+      now: Date.UTC(2026, 9, 1),
+      appVersion: '1.0.0',
+    });
+    const body = JSON.parse(renderRequest(mt, fahrenheit).body!);
+    expect(body).toEqual({
+      token: '<MEADTOOLS_TOKEN>',
+      name: 'Hazy "IPA"',
+      gravity: 1.0213,
+      temperature: 67.28,
+      temp_units: 'F',
+      battery: fahrenheit.battery,
+      angle: fahrenheit.tilt,
+      interval: 900,
+    });
   });
 });
 

@@ -12,6 +12,7 @@ const PUBLIC_HOSTS = new Set([
   'log.brewersfriend.com',
   'brew-spy.com',
   'brewbricks.com',
+  'meadtools.com',
   'industrial.api.ubidots.com',
   'api.thingspeak.com',
   'discord.com',

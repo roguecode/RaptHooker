@@ -5,6 +5,20 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **MeadTools webhook preset.** Send your pills' readings to [MeadTools](https://meadtools.com)' wireless hydrometer
+  logging: paste the hydrometer token from MeadTools into the body, and each pill shows up there under its own name,
+  ready to start a brew for. Untested for now, so please report back if you try it.
+
+### Changed
+
+- **Send all pills in one request** is only offered for destinations that can read several pills from one request
+  (your own server, Home Assistant, Discord, Everything (JSON) and Custom). Brewfather, Grainfather, Brewer's Friend,
+  BrewSpy, Bricks, MeadTools, Fermentrack, Ubidots and ThingSpeak take one reading per request, so a webhook for all
+  pills sends each one on its own. A webhook already saved with it on for one of them still sends as before; its card
+  and the editor warn about it.
+
 ## [0.7.0] - 2026-11-02
 
 ### Added

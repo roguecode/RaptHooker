@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { mixesPills, presetById, type Webhook } from '@rapthooker/shared';
+import { mixesPills, presetById, unsupportedBatch, type Webhook } from '@rapthooker/shared';
 import { api, errorText } from '../../api';
 import { useLive, useLiveMessages } from '../../live';
 import { href, navigate } from '../../router';
@@ -12,6 +12,7 @@ import { Confirm, Switch } from '../../components/ui';
 import { PresetGrid } from './PresetGrid';
 import { SparkleLine } from './SparkleLine';
 import { PauseButton } from './PauseButton';
+import { ONE_READING_BATCH } from './RequestFields';
 import { isPausedNow, pausedText, webhookApi } from './webhookApi';
 import './webhooks.css';
 
@@ -224,7 +225,14 @@ export function WebhooksPage() {
                         <Icon name="alert" size={12} /> {t('Several pills on one {name} device', { name: preset!.name })}
                       </span>
                     )}
-                    {h.batch && <span className="chip">{t('One request for all')}</span>}
+                    {h.batch &&
+                      (unsupportedBatch(preset, h.batch) ? (
+                        <span className="chip warning" title={t(ONE_READING_BATCH, { name: preset!.name })}>
+                          <Icon name="alert" size={12} /> {t('One request for all')}
+                        </span>
+                      ) : (
+                        <span className="chip">{t('One request for all')}</span>
+                      ))}
                     {h.onlyDuringBrew && <span className="chip">{t('While brewing')}</span>}
                     {(h.minChangeGravity !== null || h.minChangeTemp !== null) && <span className="chip">{t('On change')}</span>}
                     {h.catchUp && <span className="chip">{t('Catches up')}</span>}

@@ -30,11 +30,21 @@ export interface WebhookPreset {
    * be mixed together. The editor asks for one pill unless the owner allows several anyway.
    */
   onePillPerWebhook: boolean;
+  /**
+   * The service takes one reading per request, so "Send all pills in one request" isn't offered. Several pills still
+   * work (unless onePillPerWebhook): each goes in its own request, and the service tells them apart by name or token.
+   */
+  oneReadingPerRequest: boolean;
 }
 
 /** True when a webhook sends (or will send) several pills to a service that can only tell one apart. */
 export function mixesPills(preset: Pick<WebhookPreset, 'onePillPerWebhook'> | undefined, pillIds: string[] | 'all'): boolean {
   return preset?.onePillPerWebhook === true && (pillIds === 'all' || pillIds.length > 1);
+}
+
+/** True when a webhook sends all pills in one request to a service that takes one reading per request. */
+export function unsupportedBatch(preset: Pick<WebhookPreset, 'oneReadingPerRequest'> | undefined, batch: boolean): boolean {
+  return preset?.oneReadingPerRequest === true && batch;
 }
 
 /** 'verified' or 'untested' for presets that talk to a service; null for your own endpoint (nothing to test). */
@@ -103,6 +113,7 @@ export const PRESETS: WebhookPreset[] = [
     ],
     verified: false,
     onePillPerWebhook: false,
+    oneReadingPerRequest: true,
   },
   {
     id: 'grainfather',
@@ -130,6 +141,7 @@ export const PRESETS: WebhookPreset[] = [
     ],
     verified: true,
     onePillPerWebhook: true,
+    oneReadingPerRequest: true,
   },
   {
     id: 'brewersfriend',
@@ -166,6 +178,7 @@ export const PRESETS: WebhookPreset[] = [
     notes: ["Brewer's Friend allows one post every 15 minutes per API key and brew session (more gets HTTP 429)."],
     verified: false,
     onePillPerWebhook: false,
+    oneReadingPerRequest: true,
   },
   {
     id: 'brewspy',
@@ -189,6 +202,7 @@ export const PRESETS: WebhookPreset[] = [
     notes: ['If BrewSpy shows odd gravity values, switch the gravity unit to °P.', ISPINDEL_BATTERY_NOTE],
     verified: true,
     onePillPerWebhook: true,
+    oneReadingPerRequest: true,
   },
   {
     id: 'bricks',
@@ -222,6 +236,42 @@ export const PRESETS: WebhookPreset[] = [
     notes: [],
     verified: false,
     onePillPerWebhook: false,
+    oneReadingPerRequest: true,
+  },
+  {
+    id: 'meadtools',
+    name: 'MeadTools',
+    tagline: 'Hydrometer logging for your mead brews',
+    badge: '🍯',
+    docsUrl: 'https://meadtools.com/api#tag/hydrometer-logging/POST/hydrometer/rapt-pill',
+    url: 'https://meadtools.com/api/hydrometer/rapt-pill',
+    method: 'POST',
+    headers: [],
+    bodyFormat: 'json',
+    // MeadTools only takes SG, so gravity_sg rather than the webhook's unit. Without temp_units it assumes °F.
+    body: `{
+  "token": "<MEADTOOLS_TOKEN>",
+  "name": "{{name}}",
+  "gravity": {{gravity_sg}},
+  "temperature": {{temperature}},
+  "temp_units": "{{temp_unit}}",
+  "battery": {{battery}},
+  "angle": {{tilt|0}},
+  "interval": {{interval}}
+}`,
+    intervalMin: 15,
+    minIntervalMin: null,
+    gravityUnit: 'sg',
+    temperatureUnit: 'C',
+    setup: [
+      "In MeadTools open the Wireless Hydrometer Dashboard's Setup page and copy your hydrometer token. Only press Generate Token if there isn't one: a new token replaces the old one.",
+      'Replace <MEADTOOLS_TOKEN> in the body with it. One token covers all your pills.',
+      'After the first reading, the pill appears in the Device List in MeadTools: start a brew for it there.',
+    ],
+    notes: ['MeadTools identifies the device by its name, so renaming the pill creates a new device there.'],
+    verified: false,
+    onePillPerWebhook: false,
+    oneReadingPerRequest: true,
   },
   {
     id: 'fermentrack',
@@ -245,6 +295,7 @@ export const PRESETS: WebhookPreset[] = [
     notes: [ISPINDEL_BATTERY_NOTE],
     verified: false,
     onePillPerWebhook: false,
+    oneReadingPerRequest: true,
   },
   {
     id: 'homeassistant',
@@ -280,6 +331,7 @@ export const PRESETS: WebhookPreset[] = [
     notes: ['Allow the webhook to be called from your local network in the trigger settings.'],
     verified: true,
     onePillPerWebhook: false,
+    oneReadingPerRequest: false,
   },
   {
     id: 'ubidots',
@@ -307,6 +359,7 @@ export const PRESETS: WebhookPreset[] = [
     notes: ['Each pill becomes an Ubidots device named after it.'],
     verified: false,
     onePillPerWebhook: false,
+    oneReadingPerRequest: true,
   },
   {
     id: 'thingspeak',
@@ -335,6 +388,7 @@ export const PRESETS: WebhookPreset[] = [
     notes: ['Fields: 1 gravity, 2 temperature, 3 battery, 4 velocity, 5 tilt, 6 signal.'],
     verified: false,
     onePillPerWebhook: true,
+    oneReadingPerRequest: true,
   },
   {
     id: 'discord',
@@ -358,6 +412,7 @@ export const PRESETS: WebhookPreset[] = [
     notes: [],
     verified: true,
     onePillPerWebhook: false,
+    oneReadingPerRequest: false,
   },
   {
     id: 'generic',
@@ -411,6 +466,7 @@ export const PRESETS: WebhookPreset[] = [
     notes: [],
     verified: false,
     onePillPerWebhook: false,
+    oneReadingPerRequest: false,
   },
   {
     id: 'custom',
@@ -435,6 +491,7 @@ export const PRESETS: WebhookPreset[] = [
     notes: [],
     verified: false,
     onePillPerWebhook: false,
+    oneReadingPerRequest: false,
   },
 ];
 

@@ -35,6 +35,8 @@ The presets in [src/shared/presets.ts](src/shared/presets.ts) follow each servic
 - [Brewer's Friend device streams](https://docs.brewersfriend.com/api/stream) and
   [iSpindel notes](https://docs.brewersfriend.com/devices/ispindel)
 - [Bricks / BierBot: RaptPill](https://docs.bierbot.com/hardware/hardware/raptpill)
+- [MeadTools API: RAPT Pill log](https://meadtools.com/api#tag/hydrometer-logging/POST/hydrometer/rapt-pill), and the
+  fields its [server](https://github.com/ljreaux/MeadTools) stores. No code was copied.
 - [BrewSpy: setting up iSpindel](https://brewspy.app/)
 - [Home Assistant webhook triggers](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger),
   [Ubidots HTTP API](https://docs.ubidots.com/reference/http), [ThingSpeak](https://www.mathworks.com/help/thingspeak/writedata.html),

@@ -1,6 +1,6 @@
 import { Fragment, useRef } from 'react';
-import { BATCH_FORMATS, BATCH_VARIABLES, VARIABLES, type FieldErrors, type WebhookInput } from '@rapthooker/shared';
-import { t } from '../../i18n';
+import { BATCH_FORMATS, BATCH_VARIABLES, presetById, VARIABLES, type FieldErrors, type WebhookInput } from '@rapthooker/shared';
+import { t, tk } from '../../i18n';
 import { Trans } from '../../i18n/Trans';
 import { Icon } from '../../components/Icon';
 import { NumberInput } from '../../components/NumberInput';
@@ -20,6 +20,11 @@ const DEFAULT_BATCH_BODY: Record<string, string> = {
   json: '{\n  "hub": "{{hub_name}}",\n  "readings": [{{items}}]\n}',
   text: '{{items}}',
 };
+
+/** Why a webhook saved with batch mode on shouldn't keep it (the editor and the webhook's card both say it). */
+export const ONE_READING_BATCH = tk(
+  "{name} takes one reading per request, so it can't use all pills sent together. Switch this off and each pill is sent on its own.",
+);
 
 /** Where the webhook goes and what it sends. */
 export function RequestFields({ draft, set, errors }: FieldsProps) {
@@ -43,7 +48,11 @@ export function RequestFields({ draft, set, errors }: FieldsProps) {
   };
   const groups = ['Pill', 'Reading', 'Brew', 'Time', 'Other'] as const;
   const hasBody = draft.method !== 'GET' && draft.bodyFormat !== 'none';
-  const canBatch = draft.method !== 'GET' && BATCH_FORMATS.includes(draft.bodyFormat);
+  const batchFormat = draft.method !== 'GET' && BATCH_FORMATS.includes(draft.bodyFormat);
+  const preset = presetById(draft.preset);
+  // Such a service isn't offered batch mode; a webhook saved with it on keeps it (and a warning) until switched off.
+  const oneReading = preset?.oneReadingPerRequest === true;
+  const canBatch = batchFormat && !oneReading;
 
   return (
     <section className="panel stack">
@@ -215,10 +224,14 @@ export function RequestFields({ draft, set, errors }: FieldsProps) {
               </span>
             </div>
           )}
-          {draft.batch && !canBatch && (
+          {draft.batch && oneReading && <span className="field-error">{t(ONE_READING_BATCH, { name: preset.name })}</span>}
+          {draft.batch && !batchFormat && (
             <span className="field-error">{t('Sending all pills in one request needs a JSON or plain-text body (and not GET).')}</span>
           )}
         </div>
+      )}
+      {hasBody && oneReading && !draft.batch && (
+        <span className="hint">{t('{name} takes one reading per request, so each pill is sent on its own.', { name: preset.name })}</span>
       )}
       <div className="field">
         <span>{t('Variables: click to insert')}</span>

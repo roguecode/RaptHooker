@@ -472,6 +472,16 @@
       "pages/pill/StartBrewModal.tsx"
     ]
   },
+  "{name} takes one reading per request, so each pill is sent on its own.": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "{name} takes one reading per request, so it can't use all pills sent together. Switch this off and each pill is sent on its own.": {
+    "files": [
+      "pages/webhooks/RequestFields.tsx"
+    ]
+  },
   "{name} temperature": {
     "files": [
       "components/CompareChart.tsx"
@@ -1018,6 +1028,11 @@
     ]
   },
   "After the first reading, pick the device in your brew session under Fermentation.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "After the first reading, the pill appears in the Device List in MeadTools: start a brew for it there.": {
     "files": [
       "pages/webhooks/strings.ts"
     ]
@@ -3975,6 +3990,11 @@
       "components/HubWarnings.tsx"
     ]
   },
+  "Hydrometer logging for your mead brews": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
   "I understand the hub's current data will be replaced": {
     "files": [
       "pages/settings/BackupSection.tsx"
@@ -4122,6 +4142,11 @@
     ]
   },
   "In Fermentrack add a gravity sensor of type iSpindel, named exactly like the pill.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "In MeadTools open the Wireless Hydrometer Dashboard's Setup page and copy your hydrometer token. Only press Generate Token if there isn't one: a new token replaces the old one.": {
     "files": [
       "pages/webhooks/strings.ts"
     ]
@@ -4774,6 +4799,11 @@
   "Make up a liquid of known gravity (sugar or malt extract in water works) and measure it with a hydrometer or refractometer. Plain water is {gravity}.": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "MeadTools identifies the device by its name, so renaming the pill creates a new device there.": {
+    "files": [
+      "pages/webhooks/strings.ts"
     ]
   },
   "medium confidence": {
@@ -6604,6 +6634,11 @@
     ]
   },
   "Replace <HOME_ASSISTANT> and <WEBHOOK_ID> above. Use trigger.json.gravity etc. in the automation.": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
+  "Replace <MEADTOOLS_TOKEN> in the body with it. One token covers all your pills.": {
     "files": [
       "pages/webhooks/strings.ts"
     ]

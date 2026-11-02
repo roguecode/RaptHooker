@@ -195,4 +195,45 @@ describe('webhooks UI', () => {
     await screen.findByRole('heading', { name: 'Brewfather' });
     expect(screen.queryByText(/Several pills on one/)).toBeNull();
   });
+
+  const batchBox = () => screen.queryByRole('checkbox', { name: /^Send all pills in one request/ }) as HTMLInputElement | null;
+
+  it('offers one request for all pills only to services that can take one', () => {
+    expect(PRESETS.filter((p) => !p.oneReadingPerRequest).map((p) => p.id)).toEqual(['homeassistant', 'discord', 'generic', 'custom']);
+    live.pills = [pill('p1', 'Kveik'), pill('p2', 'Lager')];
+    render(createElement(WebhookEditor, { id: null }));
+    fireEvent.click(screen.getByRole('button', { name: /MeadTools/ }));
+    // One token takes every pill, each in its own request.
+    expect(radio(/^All pills/).checked).toBe(true);
+    expect(batchBox()).toBeNull();
+    expect(screen.getByText('MeadTools takes one reading per request, so each pill is sent on its own.')).toBeTruthy();
+    cleanup();
+
+    render(createElement(WebhookEditor, { id: null }));
+    fireEvent.click(screen.getByRole('button', { name: /Home Assistant/ }));
+    expect(batchBox()!.checked).toBe(false);
+    expect(screen.queryByText(/takes one reading per request/)).toBeNull();
+  });
+
+  it('warns about a saved webhook sending all pills in one request to such a service, and lets it be switched off', async () => {
+    const batch = { batch: true, batchBody: '{"readings": [{{items}}]}' };
+    hooks = [
+      webhook({ name: 'MeadTools', preset: 'meadtools', url: 'https://meadtools.com/api/hydrometer/rapt-pill', ...batch }),
+      webhook({ id: 'w2', name: 'Home Assistant', preset: 'homeassistant', url: 'http://ha:8123/api/webhook/x', ...batch }),
+    ];
+    render(createElement(WebhooksPage));
+    await screen.findByRole('heading', { name: 'MeadTools' });
+    const chips = screen.getAllByText('One request for all');
+    expect(chips.map((c) => c.className)).toEqual(['chip warning', 'chip']);
+    expect(chips[0]!.getAttribute('title')).toMatch(/^MeadTools takes one reading per request, so it can't use all pills sent together/);
+    cleanup();
+
+    render(createElement(WebhookEditor, { id: 'w1' }));
+    await screen.findByRole('heading', { name: 'Edit webhook' });
+    expect(batchBox()!.checked).toBe(true);
+    expect(screen.getByText(/^MeadTools takes one reading per request, so it can't use all pills sent together/)).toBeTruthy();
+    fireEvent.click(batchBox()!);
+    expect(batchBox()).toBeNull();
+    expect(screen.getByText('MeadTools takes one reading per request, so each pill is sent on its own.')).toBeTruthy();
+  });
 });

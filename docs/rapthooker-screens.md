@@ -8,6 +8,8 @@ screen's firmware up to date and shows how each screen is doing under **Screens*
 The picture fills the whole screen while all is well. When something's wrong (it can't reach the hub, it's
 reconnecting to Wi-Fi, it hasn't had a new picture for a while) the screen says so in a line under the picture.
 
+<a href="https://www.youtube.com/watch?v=fDbjZTbI-Ks"><img src="images/video-screens.jpg" alt="RaptHooker - Adding support for secondary screens" width="480"></a>
+
 > **Experimental.** Screens are new. They've been tested with the screens below only, and how they're set up and
 > looked after may still change. The **Screens** page says so too, and lists the same screens.
 

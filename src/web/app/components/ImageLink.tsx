@@ -297,7 +297,9 @@ function ShowOnScreen({ pill, design }: { pill: Pill | null; design: PictureDesi
     return (
       <p className="hint image-link-screens">
         <Icon name="screen" size={14} />{' '}
-        {t('Got a {name}? RaptHooker can set it up to show this by itself.', { name: SCREEN_MODELS[0]!.name })}{' '}
+        {t('Got a screen RaptHooker supports ({names})? It can set it up to show this by itself.', {
+          names: SCREEN_MODELS.map((m) => m.name).join(', '),
+        })}{' '}
         <a href="#/screens">{t('Set up a screen')}</a>
       </p>
     );

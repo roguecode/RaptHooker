@@ -1,7 +1,7 @@
 #pragma once
 
 #define FW_NAME "rapthooker-screen"
-#define FW_VERSION "1.0.3"
+#define FW_VERSION "1.1.1"
 // Bump when the HTTP API gains something RaptHooker needs to know about. A newer level only ever adds:
 // nothing an older level offered is removed or changes meaning.
 #define FW_API 1

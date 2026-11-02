@@ -1,9 +1,10 @@
 {
   "model": "sdpro-240",
-  "version": "1.0.3",
+  "chip": "esp8266",
+  "version": "1.1.1",
   "api": 1,
   "file": "sdpro-240.bin",
-  "size": 423744,
-  "md5": "a6acd8543f5dbb5aea7773c780f9557c",
-  "sha256": "f5a3825eb2fd35cd003d86b6ed8dcdb6b121b6a634c9a5fac3dbc57e4125f7fe"
+  "size": 428512,
+  "md5": "102c89527f0ad29e175bc4c08c881c12",
+  "sha256": "8fac8c507519587bae0db7439e72054519b3d6b902e697f28a2761cb9fdfea61"
 }

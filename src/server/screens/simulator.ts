@@ -2,15 +2,26 @@ import { createHash, randomInt } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { screenHotspot, type WifiNetwork, type WifiStatus } from '@rapthooker/shared';
+import {
+  screenHotspot,
+  screenModel,
+  type UsbBoardId,
+  type UsbPort,
+  type UsbStatus,
+  type WifiNetwork,
+  type WifiStatus,
+} from '@rapthooker/shared';
 import { request, screenProof } from './client.js';
-import { imageMarker } from './firmware.js';
+import { ESP32_APP_AT, ESP32_SETTINGS_AT, imageMarker } from './firmware.js';
+import { readSettingsSector } from './usb/sector.js';
+import { UsbError, type FlashRegion, type UsbBoard, type UsbFlasher } from './usb/types.js';
 import { tidyNetworks, type HotspotLink, type WifiController } from './wifi/types.js';
 
 /**
  * A pretend screen and a pretend Wi-Fi, for tests, the end-to-end tests and the development server: a "Smart weather
  * clock" that starts on its stock firmware and becomes a RaptHooker screen when it's sent the firmware, then fetches
- * its picture from the hub like a real one. Its web server answers like both firmwares do.
+ * its picture from the hub like a real one. Its web server answers like both firmwares do. MockUsb is a pretend ESP32
+ * board plugged into the hub, which becomes a FakeScreen when it's written to.
  */
 
 interface FakeSettings {
@@ -22,12 +33,15 @@ interface FakeSettings {
   imageUrl: string;
   interval: number;
   brightness: number;
+  panel: number;
 }
 
-const EMPTY: FakeSettings = { ssid: '', pass: '', token: '', hub: '', name: '', imageUrl: '', interval: 60, brightness: 80 };
+const EMPTY: FakeSettings = { ssid: '', pass: '', token: '', hub: '', name: '', imageUrl: '', interval: 60, brightness: 80, panel: 0 };
 
 export interface FakeScreenOptions {
   mac?: string;
+  /** Its ScreenModel (default the "Smart weather clock"). */
+  model?: string;
   /** Starts on the stock firmware (default) or already on RaptHooker's. */
   stock?: boolean;
   firmware?: string;
@@ -49,11 +63,14 @@ export interface FakeScreenOptions {
 export class FakeScreen extends EventEmitter {
   readonly mac: string;
   readonly id: string;
+  readonly model: string;
   stock: boolean;
   firmware: string;
   settings: FakeSettings = { ...EMPTY };
   /** Restarting: the hotspot and web server don't answer. */
   down = false;
+  /** Set up, but can't join its network (a wrong password, written over USB). */
+  lost = false;
   trial: { state: 'idle' | 'testing' | 'connected' | 'failed'; error: string; ip?: string; saved: boolean } = {
     state: 'idle',
     error: '',
@@ -69,7 +86,7 @@ export class FakeScreen extends EventEmitter {
   private server: http.Server | null = null;
   private timer: NodeJS.Timeout | null = null;
   port = 0;
-  private readonly opts: Required<Omit<FakeScreenOptions, 'mac' | 'stock' | 'firmware' | 'legacy'>>;
+  private readonly opts: Required<Omit<FakeScreenOptions, 'mac' | 'model' | 'stock' | 'firmware' | 'legacy'>>;
   legacy: boolean;
 
   constructor(opts: FakeScreenOptions = {}) {
@@ -77,6 +94,7 @@ export class FakeScreen extends EventEmitter {
     // Locally administered (02:?), so it can't be taken for a real screen on the network.
     this.mac = (opts.mac ?? '02:52:48:00:00:01').toUpperCase();
     this.id = this.mac.replace(/:/g, '').toLowerCase();
+    this.model = opts.model ?? 'sdpro-240';
     this.stock = opts.stock ?? true;
     this.firmware = opts.firmware ?? '1.0.0';
     this.legacy = opts.legacy ?? false;
@@ -101,7 +119,7 @@ export class FakeScreen extends EventEmitter {
 
   /** On the LAN (set up and online). */
   get online(): boolean {
-    return !this.down && !this.stock && !!this.settings.ssid;
+    return !this.down && !this.stock && !!this.settings.ssid && !this.lost;
   }
 
   async start(): Promise<void> {
@@ -116,6 +134,15 @@ export class FakeScreen extends EventEmitter {
     this.timer = null;
     await new Promise<void>((r) => (this.server ? this.server.close(() => r()) : r()));
     this.server = null;
+  }
+
+  get restartMs(): number {
+    return this.opts.restartMs;
+  }
+
+  /** Starts again, as after being written to over USB. */
+  powerCycle(): void {
+    this.restart();
   }
 
   private restart(then: () => void = () => undefined): void {
@@ -136,7 +163,7 @@ export class FakeScreen extends EventEmitter {
     const res = await request(url.host, url.pathname + url.search, {
       headers: {
         'X-Screen-Id': this.id,
-        'X-Screen-Firmware': `sdpro-240/${this.firmware}`,
+        'X-Screen-Firmware': `${this.model}/${this.firmware}`,
         'X-Screen-Status': `rssi=-58;up=${Math.round(process.uptime())};heap=36000;fail=0`,
       },
     });
@@ -207,7 +234,7 @@ export class FakeScreen extends EventEmitter {
         firmware: 'rapthooker-screen',
         version: this.firmware,
         api: 1,
-        model: 'sdpro-240',
+        model: this.model,
         id: this.id,
         mac: this.mac,
         hostname: `rh-screen-${this.id.slice(-6)}`,
@@ -217,7 +244,14 @@ export class FakeScreen extends EventEmitter {
         state: this.settings.ssid ? 'online' : 'setup',
         safeMode: false,
         updating: false,
-        features: ['ota', 'setup', 'settings', 'adopt', ...(this.legacy ? [] : ['proof'])],
+        features: [
+          'ota',
+          'setup',
+          'settings',
+          'adopt',
+          ...(this.legacy ? [] : ['proof']),
+          ...(screenModel(this.model)?.panel ? ['panel', 'test-pattern'] : []),
+        ],
         proof: challenge && this.settings.token && !this.legacy ? screenProof(this.settings.token, this.id, challenge) : undefined,
         wifi: {
           ssid: this.settings.ssid,
@@ -238,6 +272,12 @@ export class FakeScreen extends EventEmitter {
           bytes: 15000,
         },
         setup: { trial: this.trial.state, error: this.trial.error, ip: this.trial.ip, saved: this.trial.saved },
+        display: {
+          width: screenModel(this.model)?.width ?? 240,
+          height: screenModel(this.model)?.height ?? 240,
+          brightness: this.settings.brightness,
+          ...(screenModel(this.model)?.panel ? { controller: '8181b3', profile: '8181b3', panel: this.settings.panel } : {}),
+        },
         system: {
           uptime: 10,
           heap: 36000,
@@ -296,6 +336,7 @@ export class FakeScreen extends EventEmitter {
             imageUrl: String(b.imageUrl ?? ''),
             interval: Number(b.interval ?? 60),
             brightness: Number(b.brightness ?? 80),
+            panel: 0,
           };
           this.trial = { state: 'connected', error: '', ip: this.address, saved: true };
         }
@@ -313,7 +354,7 @@ export class FakeScreen extends EventEmitter {
         const b = json();
         const network = typeof b.ssid === 'string' && (b.ssid !== this.settings.ssid || b.password !== this.settings.pass);
         for (const k of ['name', 'hub', 'imageUrl', 'token'] as const) if (typeof b[k] === 'string') this.settings[k] = b[k];
-        for (const k of ['interval', 'brightness'] as const) if (typeof b[k] === 'number') this.settings[k] = b[k];
+        for (const k of ['interval', 'brightness', 'panel'] as const) if (typeof b[k] === 'number') this.settings[k] = b[k];
         if (typeof b.ssid === 'string') {
           this.settings.ssid = b.ssid;
           this.settings.pass = String(b.password ?? '');
@@ -353,6 +394,10 @@ export class FakeScreen extends EventEmitter {
       this.events.push('reset');
       this.send(res, 200, { ok: true });
       return this.restart(() => (this.settings = { ...EMPTY }));
+    }
+    if (path === '/api/test-pattern' && screenModel(this.model)?.panel) {
+      this.events.push('test-pattern');
+      return this.send(res, 200, { ok: true });
     }
     if (['/api/identify', '/api/refresh', '/api/reboot'].includes(path)) {
       this.events.push(path.slice(5));
@@ -492,5 +537,147 @@ export class MockWifi implements WifiController {
 
   async recover(): Promise<void> {
     if (this.current !== this.home.ssid) this.current = this.home.ssid;
+  }
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * A pretend ESP32 board plugged into the hub (for tests, the end-to-end tests and the development server). Writing
+ * RaptHooker's firmware and settings to it turns it into a FakeScreen with those settings, on the pretend network if
+ * the Wi-Fi details are right; watching it start prints what the firmware would.
+ */
+export class MockUsb implements UsbFlasher {
+  static readonly PORT = '/dev/ttyUSB0';
+  readonly name = 'mock';
+  plugged = true;
+  /** What each write wrote, for tests to check. */
+  readonly writes: string[] = [];
+  screen: FakeScreen | null = null;
+  private written: { model: string; version: string; settings: Record<string, unknown> | null } | null = null;
+
+  constructor(
+    private readonly add: (screen: FakeScreen) => Promise<void>,
+    private readonly opts: {
+      networks?: Record<string, string>;
+      mac?: string;
+      chip?: string;
+      esptool?: boolean;
+      fetchPictures?: boolean;
+      /** The firmware never says it's online (as if the hub couldn't read the board): set-up goes by mDNS. */
+      quiet?: boolean;
+    } = {},
+  ) {}
+
+  private get mac(): string {
+    return (this.opts.mac ?? '02:52:48:00:00:32').toLowerCase();
+  }
+
+  async status(): Promise<UsbStatus> {
+    const ok = this.opts.esptool ?? true;
+    return { canSetUp: ok, reason: ok ? null : 'no-esptool', esptool: ok ? '5.0.0' : null, ports: await this.ports() };
+  }
+
+  async ports(): Promise<UsbPort[]> {
+    return this.plugged
+      ? [{ path: MockUsb.PORT, name: 'QinHeng Electronics USB Serial (pretend)', vid: '1a86', pid: '7523', likely: true }]
+      : [];
+  }
+
+  private check(port: string): void {
+    if (!this.plugged || port !== MockUsb.PORT) throw new UsbError('no-board', 'Failed to connect to ESP32: No serial data received.');
+  }
+
+  async identify(port: string): Promise<UsbBoard> {
+    this.check(port);
+    const chip = this.opts.chip ?? 'esp32';
+    return { chip, description: chip === 'esp32' ? 'ESP32-D0WD-V3 (revision v3.1)' : chip.toUpperCase(), mac: this.mac, flashMb: 4 };
+  }
+
+  async write(port: string, regions: FlashRegion[], onProgress: (percent: number) => void): Promise<void> {
+    this.check(port);
+    for (const p of [0, 30, 60, 100]) {
+      onProgress(p);
+      await sleep(5);
+    }
+    const app = regions.find((r) => r.at === ESP32_APP_AT);
+    const sector = regions.find((r) => r.at === ESP32_SETTINGS_AT);
+    const marker = app ? imageMarker(app.data) : null;
+    this.writes.push(regions.map((r) => r.name).join(', '));
+    this.written = marker ? { ...marker, settings: sector ? readSettingsSector(sector.data) : null } : null;
+  }
+
+  async whois(ports: string[]): Promise<Map<string, UsbBoardId>> {
+    const s = this.screen;
+    if (!this.plugged || !s || !ports.includes(MockUsb.PORT)) return new Map();
+    const board = {
+      id: s.id,
+      model: s.model,
+      firmware: s.firmware,
+      name: s.settings.name,
+      hub: s.settings.hub,
+      claimed: !!s.settings.token,
+    };
+    return new Map([[MockUsb.PORT, board]]);
+  }
+
+  async watch(port: string, _ms: number, onLine: (line: string) => boolean): Promise<boolean> {
+    this.check(port);
+    const w = this.written;
+    if (!w) return true;
+    const lines = [
+      `[0:00:00] RHSCREEN-FW:${w.model}:${w.version}`,
+      w.settings ? '[0:00:00] store: loaded 240 bytes' : '[0:00:00] store: empty',
+    ];
+    if (!this.screen) {
+      this.screen = new FakeScreen({
+        mac: this.mac,
+        model: w.model,
+        stock: false,
+        firmware: w.version,
+        fetchPictures: this.opts.fetchPictures,
+      });
+      await this.add(this.screen);
+    }
+    const screen = this.screen;
+    const str = (k: string, d = '') => (typeof w.settings?.[k] === 'string' ? (w.settings[k] as string) : d);
+    const num = (k: string, d: number) => (typeof w.settings?.[k] === 'number' ? (w.settings[k] as number) : d);
+    screen.firmware = w.version;
+    screen.settings = {
+      ssid: str('ssid'),
+      pass: str('pass'),
+      token: str('token'),
+      hub: str('hub'),
+      name: str('name'),
+      imageUrl: str('imageUrl'),
+      interval: num('interval', 60),
+      brightness: num('brightness', 80),
+      panel: num('panel', 0),
+    };
+    const networks = this.opts.networks ?? {};
+    const ssid = screen.settings.ssid;
+    const joins = ssid in networks && networks[ssid] === screen.settings.pass;
+    screen.lost = !joins;
+    screen.powerCycle();
+    if (w.settings) lines.push(`[0:00:00] net: joining ${ssid}`);
+    if (joins) {
+      if (!this.opts.quiet) {
+        lines.push(
+          `[0:00:01] net: joined ${ssid} on channel 6, waiting for an address`,
+          `[0:00:01] net: online ${screen.address}, -52 dBm, channel 6, 802.11n`,
+        );
+      }
+    } else if (ssid in networks) {
+      lines.push('[0:00:02] net: station disconnected, reason 15 (wrong password)', `[0:00:15] net: still joining ${ssid}: wrong password`);
+    } else if (ssid) {
+      lines.push(
+        '[0:00:03] net: station disconnected, reason 201 (network not found)',
+        `[0:00:15] net: still joining ${ssid}: network not found`,
+      );
+    }
+    for (const line of lines) if (onLine(line)) break;
+    // A board that doesn't say it's online still gets there, a moment later.
+    if (joins && this.opts.quiet) await sleep(screen.restartMs + 50);
+    return !this.opts.quiet;
   }
 }

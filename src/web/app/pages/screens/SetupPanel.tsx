@@ -1,25 +1,29 @@
 import type { ReactNode } from 'react';
-import { SCREEN_SETUP_STEPS, type ScreenSetupProgress, type ScreenSetupStep } from '@rapthooker/shared';
+import { SCREEN_SETUP_STEPS, SCREEN_USB_STEPS, type ScreenSetupProgress, type ScreenSetupStep } from '@rapthooker/shared';
 import { useLive } from '../../live';
 import { duration, useNow } from '../../format';
 import { t } from '../../i18n';
 import { Icon } from '../../components/Icon';
+import { PanelFix } from './PanelFix';
 import { ScreenThumb } from './ScreenCard';
-import { SETUP_ERRORS, STEP_LABELS } from './strings';
+import { SETUP_ERRORS, STEP_LABELS, USB_REASONS } from './strings';
 
 type Mark = 'done' | 'on' | 'failed' | 'skipped' | 'todo';
 
 /** How each step stands: reached ones are done, ones jumped over (a screen that already has RaptHooker) skipped. */
 function marks(p: ScreenSetupProgress): { step: ScreenSetupStep; mark: Mark }[] {
   const reached = new Set(p.steps.map((s) => s.step));
-  const at = SCREEN_SETUP_STEPS.indexOf(p.step);
-  return SCREEN_SETUP_STEPS.filter((s) => s !== 'done').map((step, i) => {
-    let mark: Mark;
-    if (i < at || p.state === 'done') mark = reached.has(step) ? 'done' : 'skipped';
-    else if (i === at) mark = p.state === 'failed' ? 'failed' : 'on';
-    else mark = 'todo';
-    return { step, mark };
-  });
+  const all = p.via === 'usb' ? SCREEN_USB_STEPS : SCREEN_SETUP_STEPS;
+  const at = all.indexOf(p.step);
+  return all
+    .filter((s) => s !== 'done')
+    .map((step, i) => {
+      let mark: Mark;
+      if (i < at || p.state === 'done') mark = reached.has(step) ? 'done' : 'skipped';
+      else if (i === at) mark = p.state === 'failed' ? 'failed' : 'on';
+      else mark = 'todo';
+      return { step, mark };
+    });
 }
 
 const MARK_ICON: Record<Mark, ReactNode> = {
@@ -50,6 +54,7 @@ export function SetupPanel({
   const running = progress.state === 'running';
   const screen = progress.screenId ? screens.find((s) => s.id === progress.screenId) : undefined;
   const elapsed = (running ? now : progress.updatedAt) - progress.startedAt;
+  const usb = progress.via === 'usb';
 
   return (
     <section className={`panel setup-panel ${progress.state}`} aria-live="polite">
@@ -64,12 +69,12 @@ export function SetupPanel({
                 : t('Setting up a screen')}
           </h2>
           <p>
-            {progress.hotspot} · {duration(Math.max(0, elapsed))}
+            {usb ? t('USB: {port}', { port: progress.hotspot }) : progress.hotspot} · {duration(Math.max(0, elapsed))}
           </p>
         </div>
       </div>
 
-      {running && connection !== 'open' && (
+      {running && !usb && connection !== 'open' && (
         <div className="notice warning">
           <Icon name="wifiOff" />
           <p>{t("The hub is away talking to the screen. This page reconnects by itself when it's back.")}</p>
@@ -81,6 +86,7 @@ export function SetupPanel({
           <li key={step} className={mark} aria-current={mark === 'on' ? 'step' : undefined}>
             <span className="setup-step-mark">{MARK_ICON[mark]}</span>
             {t(STEP_LABELS[step])}
+            {mark === 'on' && progress.percent != null && <span className="muted num"> {progress.percent}%</span>}
             {mark === 'skipped' && <span className="sr-only"> ({t('not needed')})</span>}
           </li>
         ))}
@@ -94,10 +100,14 @@ export function SetupPanel({
               <strong>
                 {progress.error === 'not-supported' && progress.detail === 'claimed'
                   ? t('This screen belongs to another hub. Reset it from that hub, or add it from Found on your network.')
-                  : t(SETUP_ERRORS[progress.error])}
+                  : progress.error === 'no-usb' && progress.detail && USB_REASONS[progress.detail]
+                    ? t(USB_REASONS[progress.detail]!)
+                    : t(SETUP_ERRORS[progress.error])}
               </strong>
             </p>
-            {progress.detail && progress.detail !== 'claimed' && <p className="small">{progress.detail}</p>}
+            {progress.detail && progress.detail !== 'claimed' && !(progress.error === 'no-usb' && USB_REASONS[progress.detail]) && (
+              <p className="small">{progress.detail}</p>
+            )}
           </div>
         </div>
       )}
@@ -123,6 +133,7 @@ export function SetupPanel({
           </dl>
         </div>
       )}
+      {progress.state === 'done' && screen && screen.panel !== null && <PanelFix screen={screen} compact />}
 
       {!running && (
         <div className="row" style={{ justifyContent: 'flex-end' }}>

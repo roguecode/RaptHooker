@@ -14,7 +14,7 @@ npm run build        # src/web/dist and src/server/dist/rapthooker.cjs (one file
 
 Without a `rapthooker.config.json`, the server runs in development mode: simulated pills (they behave like real ones,
 including re-sending their previous reading), a simulated "Smart weather clock" on its stock firmware to set up as a
-screen (with pretend Wi-Fi: `screens.wifi` is `mock`), data in `./data`, and this computer treated as the owner.
+screen (with pretend Wi-Fi: `screens.wifi` is `mock`) and a pretend ESP32 board on USB (`screens.usb` is `mock`), data in `./data`, and this computer treated as the owner.
 
 | Path                                  | What                                                                                                                |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |

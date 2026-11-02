@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import pino from 'pino';
 import { Store } from '../db.js';
 import { ScreenManager } from '../screens/manager.js';
+import { NoUsb } from '../screens/usb/types.js';
 import { NoWifi } from '../screens/wifi/types.js';
 import type { Settings } from '../settings.js';
 
@@ -16,6 +17,7 @@ export function testScreens(store: Store, settings: Settings): ScreenManager {
     settings,
     log: silent,
     wifi: new NoWifi('off'),
+    usb: new NoUsb('off'),
     firmware: new Map(),
     addresses: async () => [],
     lookup: async () => null,

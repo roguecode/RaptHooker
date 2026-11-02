@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { SCREEN_ITEMS, SCREEN_PALETTES, SCREEN_RANGES, SCREEN_THEMES, type ScreenOptions } from './screen.js';
 
 /**
- * Screens: small Wi-Fi displays RaptHooker sets up (it puts its own firmware on them over their hotspot) and then
- * looks after over the network. Each shows a picture from /api/screens/:id/image.jpg, drawn the same way as an image
- * link, and fetches it again every `interval` seconds.
+ * Screens: small Wi-Fi displays RaptHooker sets up (it puts its own firmware on them, over their hotspot or over USB)
+ * and then looks after over the network. Each shows a picture from /api/screens/:id/image.jpg, drawn the same way as
+ * an image link, and fetches it again every `interval` seconds.
  */
 
 export interface ScreenModel {
@@ -12,11 +12,44 @@ export interface ScreenModel {
   name: string;
   width: number;
   height: number;
+  /** The chip its firmware is built for. */
+  chip: 'esp8266' | 'esp32';
+  /**
+   * How RaptHooker first puts its firmware on: 'hotspot' over the screen's own Wi-Fi and its stock firmware's update
+   * page; 'usb' plugged into the hub (ESP32 boards, which come with no firmware worth keeping).
+   */
+  install: 'hotspot' | 'usb';
+  /** Its panel can be turned, mirrored and have its colours fixed from RaptHooker (boards whose panels vary). */
+  panel: boolean;
+  /**
+   * Shop listings users have bought one from that then worked with RaptHooker. Shown as just that: not endorsements,
+   * and a listing can change what it sends.
+   */
+  confirmed: readonly { url: string; site: string }[];
 }
 
 /** The screens RaptHooker can set up. `id` is the firmware's model (RH_MODEL); `name` is shown as it is (not translated). */
 export const SCREEN_MODELS: readonly ScreenModel[] = [
-  { id: 'sdpro-240', name: 'Geekmagic Ultra/Smart weather clock', width: 240, height: 240 },
+  {
+    id: 'sdpro-240',
+    name: 'Geekmagic Ultra/Smart weather clock',
+    width: 240,
+    height: 240,
+    chip: 'esp8266',
+    install: 'hotspot',
+    panel: false,
+    confirmed: [{ url: 'https://www.aliexpress.com/item/1005011924447121.html', site: 'AliExpress' }],
+  },
+  {
+    id: 'esp32-2432s028',
+    name: 'ESP32-2432S028 2.8" (Cheap Yellow Display)',
+    width: 320,
+    height: 240,
+    chip: 'esp32',
+    install: 'usb',
+    panel: true,
+    confirmed: [{ url: 'https://www.aliexpress.com/item/1005010399042230.html', site: 'AliExpress' }],
+  },
 ];
 
 export const screenModel = (id: string): ScreenModel | undefined => SCREEN_MODELS.find((m) => m.id === id);
@@ -65,9 +98,14 @@ export interface ScreenDevice {
   brightness: number;
   /** The firmware version it last reported. */
   firmware: string | null;
+  /** Corrections to its panel (SCREEN_PANEL bits), or null for a model that has none. */
+  panel: number | null;
   createdAt: number;
   status: ScreenStatus;
 }
+
+/** The "panel" setting's bits, on top of what the firmware picked for the panel it found. */
+export const SCREEN_PANEL = { flip: 1, mirror: 2, swap: 4, invert: 8 } as const;
 
 /** What it is, going by a Wi-Fi network's name: a screen's own hotspot, or nothing RaptHooker knows. */
 export type HotspotKind = 'sdpro' | 'rapthooker';
@@ -118,6 +156,7 @@ export interface WifiStatus {
 
 export type ScreenSetupStep = 'hotspot' | 'identify' | 'install' | 'restart' | 'screen' | 'wifi' | 'back' | 'find' | 'done';
 
+/** The steps of a set-up over the screen's hotspot. */
 export const SCREEN_SETUP_STEPS: readonly ScreenSetupStep[] = [
   'hotspot',
   'identify',
@@ -129,6 +168,9 @@ export const SCREEN_SETUP_STEPS: readonly ScreenSetupStep[] = [
   'find',
   'done',
 ];
+
+/** The steps of a set-up over USB. */
+export const SCREEN_USB_STEPS: readonly ScreenSetupStep[] = ['identify', 'install', 'restart', 'wifi', 'find', 'done'];
 
 /** Why a set-up failed, for the app to explain in its own words. `detail` has the specifics. */
 export type ScreenSetupError =
@@ -146,6 +188,10 @@ export type ScreenSetupError =
   | 'wifi-failed'
   | 'not-found'
   | 'no-password'
+  | 'no-usb'
+  | 'usb-failed'
+  | 'usb-busy'
+  | 'wrong-board'
   | 'failed';
 
 /** What a screen's failed try at joining a network (its /api/setup "error") means. */
@@ -158,7 +204,9 @@ export function screenTrialError(error: string): ScreenSetupError {
 
 export interface ScreenSetupProgress {
   id: string;
-  /** The hotspot it started from. */
+  /** Over the screen's hotspot, or over USB. Missing from hubs before USB set-up: 'wifi'. */
+  via?: 'wifi' | 'usb';
+  /** The hotspot it started from, or the USB port. */
   hotspot: string;
   step: ScreenSetupStep;
   state: 'running' | 'done' | 'failed';
@@ -173,6 +221,48 @@ export interface ScreenSetupProgress {
   updatedAt: number;
   /** The steps reached, in order. */
   steps: { step: ScreenSetupStep; at: number }[];
+  /** How far the current step has got, when it's a long one (installing over USB), else null. */
+  percent?: number | null;
+}
+
+/** A serial port on the hub: where a board plugged into its USB turns up. */
+export interface UsbPort {
+  /** COM7, /dev/ttyUSB0 */
+  path: string;
+  /** What the system calls it: "USB-SERIAL CH340 (COM7)", "CP2102 USB to UART Bridge Controller". */
+  name: string;
+  /** USB vendor and product ids (hex), when the system says. */
+  vid: string | null;
+  pid: string | null;
+  /** A USB-to-serial chip ESP32 boards use: very likely a board. */
+  likely: boolean;
+  /**
+   * What the board on it says it is, asked over the port without restarting it (RaptHooker firmware 1.1.1 and later),
+   * or null when it didn't answer (other firmware, older firmware, busy).
+   */
+  board?: UsbBoardId | null;
+}
+
+/** A RaptHooker screen on one of the hub's USB ports, as it answers "?RHSCREEN". */
+export interface UsbBoardId {
+  /** Its MAC address, lower-case hex without colons: a ScreenDevice id. */
+  id: string;
+  model: string;
+  firmware: string;
+  name: string;
+  /** The hub it was set up by. */
+  hub: string;
+  claimed: boolean;
+}
+
+export interface UsbStatus {
+  /** The hub can put firmware on a board over USB (it has esptool and pyserial). */
+  canSetUp: boolean;
+  /** Why not, when it can't: 'off', 'no-python', 'no-esptool', 'no-pyserial'. */
+  reason: string | null;
+  /** The esptool version the hub would use. */
+  esptool: string | null;
+  ports: UsbPort[];
 }
 
 /** A RaptHooker screen heard on the network (mDNS) that this hub doesn't have. */
@@ -228,6 +318,8 @@ export const screenPatchSchema = z.object({
   look: screenLookSchema.optional(),
   interval: z.number().int().min(15).max(86_400).optional(),
   brightness: z.number().int().min(1).max(100).optional(),
+  /** SCREEN_PANEL bits, for models with `panel`. */
+  panel: z.number().int().min(0).max(15).optional(),
 });
 export type ScreenPatch = z.infer<typeof screenPatchSchema>;
 
@@ -243,6 +335,21 @@ export const screenSetupSchema = z.object({
   look: screenLookSchema.default({}),
 });
 export type ScreenSetupInput = z.infer<typeof screenSetupSchema>;
+
+/** Setting up a board plugged into the hub's USB. */
+export const screenUsbSetupSchema = z.object({
+  /** The serial port it's on (a UsbPort's path). */
+  port: z.string().min(1).max(128),
+  /** A ScreenModel id with install 'usb'. */
+  model: z.string().min(1).max(32),
+  ssid: z.string().min(1).max(32),
+  /** Empty: the hub's own saved one (when ssid is the hub's network). */
+  password: z.string().max(64).default(''),
+  name: z.string().trim().min(1).max(32),
+  pillId: z.string().min(1).max(64).nullable().default(null),
+  look: screenLookSchema.default({}),
+});
+export type ScreenUsbSetupInput = z.infer<typeof screenUsbSetupSchema>;
 
 export const screenAdoptSchema = z.object({
   id: z.string().regex(/^[0-9a-f]{12}$/),

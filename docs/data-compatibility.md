@@ -106,6 +106,9 @@ People's own setups depend on these, and changes break them silently:
   call, a new field, a new name in `features`); nothing changes meaning or goes away, and `FW_API` goes up when the hub
   needs to know. The hub checks `api` or `features` before using anything newer, and the firmware ignores what it
   doesn't know in a request. Screens' settings (in their own flash) keep keys an older firmware doesn't know.
+- **ESP32 boards' flash layout** ([partitions-esp32.csv](../firmware/screen/partitions-esp32.csv)) is written once,
+  over USB, and can't be changed by an update: every later firmware has to fit its app partitions and read its
+  settings from the `rhscreen` partition, in the same sector format the hub writes.
 
 ## Tests
 

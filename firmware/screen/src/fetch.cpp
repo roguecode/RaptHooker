@@ -1,7 +1,11 @@
 #include "fetch.h"
 
+#include "platform.h"
+#if defined(ESP8266)
 #include <ESP8266HTTPClient.h>
-#include <ESP8266WiFi.h>
+#else
+#include <HTTPClient.h>
+#endif
 
 #include "app.h"
 #include "display.h"
@@ -10,8 +14,13 @@
 #include "store.h"
 #include "version.h"
 
+#if defined(ESP8266)
 static const size_t MAX_PICTURE = 64 * 1024;
 static const size_t HEAP_SPARE = 6 * 1024;
+#else
+static const size_t MAX_PICTURE = 160 * 1024;
+static const size_t HEAP_SPARE = 24 * 1024;
+#endif
 
 static String screenId, lastError, lastBrief;
 static bool paused = false, pictureShown = false;
@@ -106,7 +115,7 @@ static void run() {
     http.end();
     return;
   }
-  if ((size_t)len + HEAP_SPARE > ESP.getMaxFreeBlockSize()) {
+  if ((size_t)len + HEAP_SPARE > plat::maxBlock()) {
     fail(String("not enough memory for ") + (len / 1024) + " KB", "picture too big");
     http.end();
     return;
@@ -118,7 +127,11 @@ static void run() {
     return;
   }
   WiFiClient* stream = http.getStreamPtr();
+#if defined(ESP32)
+  stream->setTimeout(10);  // the ESP32's WiFiClient takes seconds
+#else
   stream->setTimeout(10000);
+#endif
   size_t got = stream->readBytes(buf, len);
   uint32_t read = millis();
   http.end();

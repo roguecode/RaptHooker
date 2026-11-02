@@ -37,3 +37,18 @@ EOF
 else
   echo "No polkit found: screens can still be set up from a browser"
 fi
+
+# Screens that plug into the hub over USB (ESP32 boards) are set up with esptool, run from a Python environment of
+# its own: Debian's esptool package leaves out the loader it needs for the ESP32. The app looks for it at
+# /usr/local/lib/rapthooker/esptool/bin/python3 (screens.python in the config overrides that).
+step "Screens (USB set-up)"
+ESPTOOL_VENV=/usr/local/lib/rapthooker/esptool
+if apt-get install -y python3-venv >/dev/null &&
+  { [[ -x "$ESPTOOL_VENV/bin/python3" ]] || python3 -m venv "$ESPTOOL_VENV"; } &&
+  "$ESPTOOL_VENV/bin/pip" install --quiet --upgrade --disable-pip-version-check 'esptool>=4.7,<6' pyserial; then
+  echo "esptool $("$ESPTOOL_VENV/bin/python3" -c 'import esptool; print(esptool.__version__)') is ready to set screens up over USB"
+else
+  echo "Couldn't install esptool: screens that plug in over USB can't be set up from this hub (the rest works)"
+fi
+# A board's serial port belongs to the dialout group.
+usermod -aG dialout rapthooker

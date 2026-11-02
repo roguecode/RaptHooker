@@ -5,6 +5,8 @@ import type {
   ScreenManualStart,
   ScreenPatch,
   ScreenSetupProgress,
+  ScreenUsbSetupInput,
+  UsbStatus,
   WifiNetwork,
   WifiStatus,
 } from '@rapthooker/shared';
@@ -50,6 +52,9 @@ export const screensApi = {
     pillId: string | null;
     look: Partial<ScreenLook>;
   }) => http.post<ScreenSetupProgress>('/api/screens/setup', input),
+  usb: () => http.get<UsbStatus>('/api/screens/usb'),
+  startUsbSetup: (input: Omit<ScreenUsbSetupInput, 'look'> & { look: Partial<ScreenLook> }) =>
+    http.post<ScreenSetupProgress>('/api/screens/usb/setup', input),
   found: () => http.get<FoundScreen[]>('/api/screens/found'),
   discover: () => http.post<FoundScreen[]>('/api/screens/discover'),
   adopt: (input: { id: string; code?: string; name?: string; look?: Partial<ScreenLook> }) =>
@@ -62,7 +67,7 @@ export const screensApi = {
   updateAll: () => http.post<{ updated: string[]; failed: string[] }>('/api/screens/update-all'),
   patch: (id: string, patch: ScreenPatch) => http.patch<ScreenDevice>(one(id), patch),
   remove: (id: string, reset: boolean) => http.del(`${one(id)}${reset ? '?reset=1' : ''}`),
-  action: (id: string, what: 'identify' | 'refresh' | 'reboot') => http.post<{ ok: boolean }>(`${one(id)}/${what}`),
+  action: (id: string, what: 'identify' | 'refresh' | 'reboot' | 'test-pattern') => http.post<{ ok: boolean }>(`${one(id)}/${what}`),
   update: (id: string) => http.post<ScreenDevice>(`${one(id)}/update`),
   log: (id: string) => raw('GET', `${one(id)}/log`),
   restore: (id: string, file: Blob) => raw('POST', `${one(id)}/restore`, file),

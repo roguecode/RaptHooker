@@ -31,5 +31,7 @@ If the hub doesn't start afterwards, `journalctl -u rapthooker -n 30` says which
 | `clock.maxSyncWaitMin`         | `10`                            | How long to hold readings waiting for network time after boot                                                                                                                                |
 | `screens.wifi`                 | `auto`                          | How the hub joins a [screen](./rapthooker-screens.md)'s Wi-Fi to set it up: `auto` (NetworkManager on Linux), `networkmanager`, `netsh` (Windows), or `off` to set screens up from a browser |
 | `screens.hubUrl`               | `""` (the hub's own address)    | Where screens fetch pictures from, e.g. `http://192.168.1.20:8080`, for a hub that can't see its own address (in Docker)                                                                     |
+| `screens.usb`                  | `auto`                          | Setting up ESP32 screen boards plugged into the hub's USB: `auto` (when esptool is installed) or `off`                                                                                       |
+| `screens.python`               | `""` (look for one)             | The Python that has esptool and pyserial, for USB set-up. Empty: the Pi installer's, then `python3`, then `python`                                                                           |
 
 Environment variables `RAPTHOOKER_CONFIG`, `RAPTHOOKER_PORT` and `RAPTHOOKER_DATA_DIR` override the file.

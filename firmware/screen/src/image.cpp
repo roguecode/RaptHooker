@@ -1,3 +1,4 @@
+#if defined(ESP8266)  // the ESP32's own update code checks its images (esp_image_verify)
 #include "image.h"
 
 #include <coredecls.h>
@@ -140,3 +141,4 @@ bool ImageCheck::finish(String& error) {
   else return true;
   return false;
 }
+#endif

@@ -1,7 +1,15 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { SCREEN_SETUP_STEPS, type FoundScreen, type ScreenSetupProgress, type WifiNetwork, type WifiStatus } from '@rapthooker/shared';
+import {
+  SCREEN_SETUP_STEPS,
+  SCREEN_USB_STEPS,
+  type FoundScreen,
+  type ScreenSetupProgress,
+  type UsbStatus,
+  type WifiNetwork,
+  type WifiStatus,
+} from '@rapthooker/shared';
 import { makePill, makeScreen, renderWithHub, settle, toastTexts, type FakeRequest } from '../../test/render';
 import { ImageLinkButton } from '../../components/ImageLink';
 import { ScreensPage } from './ScreensPage';
@@ -268,6 +276,141 @@ describe('screens page', () => {
     expect(toastTexts()).toContain('Kitchen saved');
   });
 
+  it('sets up a board plugged into the hub over USB, then checks its panel', async () => {
+    const usb: UsbStatus = {
+      canSetUp: true,
+      reason: null,
+      esptool: '5.6.0',
+      ports: [
+        { path: 'COM7', name: 'USB-SERIAL CH340 (COM7)', vid: '1a86', pid: '7523', likely: true },
+        { path: 'COM1', name: 'Communications Port (COM1)', vid: null, pid: null, likely: false },
+      ],
+    };
+    const usbProgress = (over: Partial<ScreenSetupProgress> = {}) =>
+      progress({ via: 'usb', hotspot: 'COM7', step: 'identify', steps: [{ step: 'identify', at: Date.now() }], ...over });
+    const board = makeScreen({ id: '20500d33960c', name: 'Bar', model: 'esp32-2432s028', panel: 0 });
+    const view = await renderWithHub(<ScreensPage />, {
+      routes: {
+        ...BASE,
+        'GET /api/screens/wifi': WIFI,
+        'POST /api/screens/wifi/scan': NETS,
+        'GET /api/screens/usb': usb,
+        'POST /api/screens/usb/setup': () => usbProgress(),
+        'PATCH /api/screens/*': (req: FakeRequest) => ({ ...board, ...(req.body as object) }),
+        'POST /api/screens/*/test-pattern': { ok: true },
+      },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add a screen' })[0]!);
+    const dialog = await screen.findByRole('dialog', { name: 'Add a screen' });
+    // A board is plugged in, so that's what's being added: no Wi-Fi scan.
+    const usbTab = await within(dialog).findByRole('button', { name: 'Plugged into the hub (USB)' });
+    await waitFor(() => expect(usbTab.getAttribute('aria-pressed')).toBe('true'));
+    expect(within(dialog).getByText(/ESP32-2432S028/)).toBeTruthy();
+    const row = within(dialog).getByText('USB-SERIAL CH340 (COM7)').closest('li')!;
+    expect(row.className).toContain('likely');
+    expect(within(dialog).getByText('1 other port')).toBeTruthy();
+    expect(view.calls('POST /api/screens/wifi/scan')).toHaveLength(0);
+    fireEvent.click(within(row).getByRole('button', { name: 'Set up' }));
+    // The networks around, for the board's Wi-Fi.
+    await waitFor(() => expect(within(dialog).getByRole('option', { name: 'Neighbours' })).toBeTruthy());
+    expect(view.calls('POST /api/screens/wifi/scan')).toHaveLength(1);
+    expect((within(dialog).getByRole('combobox', { name: 'Board' }) as HTMLSelectElement).value).toBe('esp32-2432s028');
+    expect(within(dialog).queryByText(/off your network for a minute or two/)).toBeNull();
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), { target: { value: 'Bar' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Set it up' }));
+    await settle();
+    expect(view.calls('POST /api/screens/usb/setup')[0]!.body).toMatchObject({
+      port: 'COM7',
+      model: 'esp32-2432s028',
+      ssid: 'Brewery',
+      password: '',
+      name: 'Bar',
+    });
+
+    // Its own steps, and how far the install has got.
+    await view.push({
+      type: 'screen-setup',
+      setup: usbProgress({ step: 'install', percent: 42, steps: SCREEN_USB_STEPS.slice(0, 2).map((s) => ({ step: s, at: 1 })) }),
+    });
+    expect(screen.getByText('USB: COM7', { exact: false })).toBeTruthy();
+    expect(step('Installing RaptHooker firmware').textContent).toContain('42%');
+    expect(screen.queryByText("Joining the screen's Wi-Fi")).toBeNull();
+
+    await view.push({ type: 'screen', screen: board });
+    await view.push({
+      type: 'screen-setup',
+      setup: usbProgress({ state: 'done', step: 'done', screenId: board.id, steps: SCREEN_USB_STEPS.map((s) => ({ step: s, at: 1 })) }),
+    });
+    expect(screen.getByRole('heading', { name: 'Bar is set up' })).toBeTruthy();
+    expect(screen.getByText('Does the screen look right?')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Swap red and blue' }));
+    await settle();
+    expect(view.calls('PATCH /api/screens/*')[0]!.body).toEqual({ panel: 4 });
+    expect(view.calls('POST /api/screens/*/test-pattern')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Swap red and blue' }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it("says why the hub can't set boards up over USB", async () => {
+    await renderWithHub(<ScreensPage />, {
+      routes: {
+        ...BASE,
+        'GET /api/screens/wifi': WIFI,
+        'POST /api/screens/wifi/scan': NETS,
+        'GET /api/screens/usb': { canSetUp: false, reason: 'no-esptool', esptool: null, ports: [] },
+      },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add a screen' })[0]!);
+    const dialog = await screen.findByRole('dialog', { name: 'Add a screen' });
+    // Nothing plugged in: Wi-Fi screens first.
+    await within(dialog).findByText('Smart weather clock');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Plugged into the hub (USB)' }));
+    expect(within(dialog).getByText(/needs esptool/)).toBeTruthy();
+    expect(within(dialog).getByText(/No boards plugged in/)).toBeTruthy();
+  });
+
+  it('sets boards that are already screens apart, and opens on Wi-Fi when no new board is plugged in', async () => {
+    const known = makeScreen({ id: '20500d33960c', name: 'Bar', model: 'esp32-2432s028', panel: 0 });
+    const board = { id: known.id, model: known.model, firmware: '1.1.1', name: 'Bar', hub: 'hub-1', claimed: true };
+    await renderWithHub(<ScreensPage />, {
+      screens: [known],
+      routes: {
+        ...BASE,
+        'GET /api/screens/wifi': WIFI,
+        'POST /api/screens/wifi/scan': NETS,
+        'GET /api/screens/usb': {
+          canSetUp: true,
+          reason: null,
+          esptool: '5.6.0',
+          ports: [{ path: '/dev/ttyUSB0', name: 'QinHeng USB Serial', vid: '1a86', pid: '7523', likely: true, board }],
+        },
+      },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add a screen' })[0]!);
+    const dialog = await screen.findByRole('dialog', { name: 'Add a screen' });
+    await within(dialog).findByText('Smart weather clock');
+    expect(within(dialog).getByRole('button', { name: 'Wi-Fi screen' }).getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Plugged into the hub (USB)' }));
+    expect(within(dialog).getByText(/Every board plugged in is one of your screens already/)).toBeTruthy();
+    expect(within(dialog).getByRole('heading', { name: 'Already set up' })).toBeTruthy();
+    const row = within(dialog).getByText('Bar').closest('li')!;
+    expect(within(row).getByText(/firmware 1\.1\.1/)).toBeTruthy();
+    fireEvent.click(within(row).getByRole('button', { name: 'Set up again' }));
+    expect((within(dialog).getByRole('textbox', { name: 'Name' }) as HTMLInputElement).value).toBe('Bar');
+    expect(within(dialog).getByText(/This board is Bar/)).toBeTruthy();
+  });
+
+  it('offers no original firmware for a USB board, and a panel check instead', async () => {
+    await renderWithHub(<ScreensPage />, {
+      screens: [makeScreen({ model: 'esp32-2432s028', panel: 0 })],
+      routes: BASE,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    const dialog = screen.getByRole('dialog', { name: 'Kitchen' });
+    expect(within(dialog).getByText('Does the screen look right?')).toBeTruthy();
+    expect(within(dialog).queryByRole('button', { name: 'Put the original firmware back' })).toBeNull();
+  });
+
   it("doesn't offer changes to someone who isn't the owner", async () => {
     await renderWithHub(<ScreensPage />, {
       session: { role: 'viewer' },
@@ -278,6 +421,38 @@ describe('screens page', () => {
     expect(screen.queryByRole('button', { name: 'Add a screen' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
     expect(screen.queryByText(/can be updated/)).toBeNull();
+  });
+
+  it('says screens are experimental, and which screens work, with where working ones were bought', async () => {
+    await renderWithHub(<ScreensPage />, { session: { role: 'viewer' }, routes: BASE });
+    const note = screen.getByRole('note');
+    expect(within(note).getByText('Screens are experimental.')).toBeTruthy();
+
+    const panel = screen.getByRole('region', { name: /Supported screens/ });
+    const scrolled: Element[] = [];
+    panel.scrollIntoView = function (this: Element) {
+      scrolled.push(this);
+    };
+    fireEvent.click(within(note).getByRole('button', { name: 'Which screens work' }));
+    expect(scrolled).toEqual([panel]);
+
+    expect(within(panel).getByText('Experimental')).toBeTruthy();
+    expect(within(panel).getByText('Geekmagic Ultra/Smart weather clock')).toBeTruthy();
+    expect(within(panel).getByText('ESP32-2432S028 2.8" (Cheap Yellow Display)')).toBeTruthy();
+    const links = within(panel).getAllByRole('link', { name: 'Where a working one was bought (AliExpress)' });
+    expect(links.map((a) => a.getAttribute('href'))).toEqual([
+      'https://www.aliexpress.com/item/1005011924447121.html',
+      'https://www.aliexpress.com/item/1005010399042230.html',
+    ]);
+    for (const a of links) {
+      expect(a.getAttribute('target')).toBe('_blank');
+      expect(a.getAttribute('rel')).toContain('noopener');
+    }
+    expect(within(panel).getByText(/They aren't endorsements/)).toBeTruthy();
+    expect(within(panel).getByText('Might work')).toBeTruthy();
+    expect(within(panel).getAllByText("Won't work")).toHaveLength(2);
+    // The one-line list it replaces is gone.
+    expect(screen.queryByText(/Supported Screens:/)).toBeNull();
   });
 });
 

@@ -16,6 +16,11 @@
     var(--shadow);
 }
 
+/* Landscape screens (320 ? 240): as tall as a square one, so cards line up. */
+.screen-thumb.wide {
+  width: 10rem;
+}
+
 .screen-thumb img {
   display: block;
   width: 100%;
@@ -344,4 +349,99 @@
   overflow: auto;
   white-space: pre-wrap;
   font-size: 0.75rem;
+}
+
+/* The screens RaptHooker supports, at the foot of the page. */
+.screens-experimental > svg {
+  color: var(--warning);
+}
+
+.supported-screens h2 .chip {
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+.supported-models {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 0.8rem;
+  margin: 0.8rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.supported-model {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--surface-2);
+}
+
+.supported-model p {
+  margin: 0;
+}
+
+.supported-model-head {
+  gap: 0.6rem;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+}
+
+.supported-model-head > svg {
+  color: var(--violet-2);
+  flex-shrink: 0;
+}
+
+.supported-model-head .grow {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.supported-model-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--violet-2);
+}
+
+.supported-disclaimer {
+  margin: 0 0 0.6rem;
+}
+
+/* One column of chips, as wide as the widest (in any language), then what each means. */
+.supported-others {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.55rem 0.7rem;
+  align-items: baseline;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.supported-others li {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+}
+
+.supported-others .chip {
+  justify-self: start;
+}
+
+@media (max-width: 560px) {
+  .supported-others {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+
+  .supported-others li {
+    gap: 0.3rem;
+  }
 }

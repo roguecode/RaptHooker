@@ -116,7 +116,8 @@ all fit, it rotates through them (every 10 to 60 seconds; move the mouse or tap 
 the screen awake for pages served over HTTPS (such as through Tailscale, below) or opened on the Pi itself as
 `http://localhost:8080/#/kiosk`; otherwise turn off screen blanking on the device showing it.
 
-For something smaller, RaptHooker can take over a **Geekmagic Ultra/Smart weather clock** desk screen and show a pill (or all of them)
+For something smaller, RaptHooker can take over a **Geekmagic Ultra/Smart weather clock** desk screen, or an
+**ESP32-2432S028** 2.8" board plugged into the Pi's USB, and show a pill (or all of them)
 on it, looking after it from the **Screens** page: see [RaptHooker screens](rapthooker-screens.md).
 
 ## 5. HTTPS and access away from home (Tailscale)
@@ -255,4 +256,9 @@ over Wi-Fi. See [relay.md](relay.md).
 - **Wi-Fi slow while the hub runs:** check Settings → Bluetooth says **Passive**. If it says active because BlueZ's
   experimental features are off, run setup again (`sudo bash /opt/rapthooker/deploy/pi/setup.sh --keep-hostname`), or
   use Ethernet.
+- **Off the network after the router restarted:** NetworkManager stops trying a Wi-Fi network after a few failures,
+  and can decide the password is wrong while a router is still starting. A hub on Wi-Fi alone (no Ethernet) notices
+  when it has been disconnected for 2 minutes and asks NetworkManager to connect it again, every 2 minutes until it's
+  back, so it returns by itself a few minutes after the router. Its log says `asked NetworkManager to connect it
+again` when that happens. It leaves the Wi-Fi alone while it's setting up a screen.
 - **Gaps in the chart** are times nothing was recorded: the Pi was off, restarting, or the pill was out of range.

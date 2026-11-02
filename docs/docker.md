@@ -37,4 +37,6 @@ The config is [deploy/docker/rapthooker.config.json](../deploy/docker/rapthooker
 - [Screens](./rapthooker-screens.md) are set up from a browser (`screens.wifi` is `off` in the container's config), and
   the hub can't see the host's address from inside the container: set `screens.hubUrl` to it, e.g.
   `"screens": { "wifi": "off", "hubUrl": "http://192.168.1.20:8080" }`, so screens know where to fetch their pictures.
-  Finding screens on the network (mDNS) needs `network_mode: host`.
+  Finding screens on the network (mDNS) needs `network_mode: host`. Setting ESP32 boards up over USB is off in the
+  container (`screens.usb`): set one up from a Pi or a computer running RaptHooker, then add it from **Found on your
+  network**.

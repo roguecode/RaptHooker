@@ -16,6 +16,7 @@ import { ScreenClient } from '../screens/client.js';
 import { flashStock, identifyStock } from '../screens/stock.js';
 import { ScreenManager, upgradeScreen } from '../screens/manager.js';
 import { FakeScreen, MockWifi, type FakeScreenOptions } from '../screens/simulator.js';
+import { NoUsb } from '../screens/usb/types.js';
 import { NoWifi } from '../screens/wifi/types.js';
 import { parseNetworks } from '../screens/wifi/netsh.js';
 import { silent, tempStore } from './helpers.js';
@@ -137,6 +138,7 @@ async function world(
     settings,
     log: silent,
     wifi,
+    usb: new NoUsb('off'),
     firmware,
     addresses: async () => [{ kind: 'lan', url: 'http://192.168.50.104:8080' }],
     lookup: async (hostname) => (fake.online && hostname === `rh-screen-${fake.id.slice(-6)}` ? fake.address : null),
@@ -312,6 +314,7 @@ describe('setting a screen up', () => {
       settings: new Settings(t.store),
       log: silent,
       wifi: new NoWifi('no-networkmanager'),
+      usb: new NoUsb('off'),
       firmware,
       addresses: async () => [],
       lookup: async () => null,
@@ -417,7 +420,7 @@ describe('looking after screens', () => {
     const start = await screens.manualStart({ name: 'Bar', pillId: null, look: {} });
     expect(start).toMatchObject({ hub: screens.hubId(), imageBase: 'http://192.168.50.104:8080/api/screens/' });
     expect(start.token).toMatch(/^[0-9a-f]{32}$/);
-    expect(start.firmware).toEqual([{ model: 'sdpro-240', version: fw.version, size: fw.size, md5: fw.md5 }]);
+    expect(start.firmware).toContainEqual({ model: 'sdpro-240', version: fw.version, size: fw.size, md5: fw.md5 });
     const d = screens.manualDone({ pending: start.pending, id: 'f008d11c1802', model: 'sdpro-240', ip: null });
     expect(d).toMatchObject({ id: 'f008d11c1802', name: 'Bar', mac: 'F0:08:D1:1C:18:02', hostname: 'rh-screen-1c1802' });
     expect(() => screens.manualDone({ pending: start.pending, id: 'f008d11c1802', model: 'sdpro-240', ip: null })).toThrow('expired');
@@ -438,8 +441,10 @@ describe('looking after screens', () => {
 describe('screens in the config', () => {
   it('takes the address screens fetch pictures from, for a hub that can see its own', () => {
     const at = (screens: unknown) => parseConfig({ screens }, '/tmp', '/tmp').screens;
-    expect(at(undefined)).toEqual({ wifi: 'auto', hubUrl: '' });
-    expect(at({ wifi: 'off', hubUrl: ' http://192.168.1.20:8080/ ' })).toEqual({ wifi: 'off', hubUrl: 'http://192.168.1.20:8080' });
+    expect(at(undefined)).toEqual({ wifi: 'auto', hubUrl: '', usb: 'auto', python: '' });
+    expect(at({ wifi: 'off', hubUrl: ' http://192.168.1.20:8080/ ' })).toMatchObject({ wifi: 'off', hubUrl: 'http://192.168.1.20:8080' });
+    expect(at({ usb: 'off', python: ' /opt/py/bin/python3 ' })).toMatchObject({ usb: 'off', python: '/opt/py/bin/python3' });
+    expect(() => at({ usb: 'serial' })).toThrow();
     expect(() => at({ hubUrl: '192.168.1.20' })).toThrow('screens.hubUrl');
     expect(() => at({ hubUrl: 'http://192.168.1.20:8080/api' })).toThrow('screens.hubUrl');
     // Screens can't fetch over https.

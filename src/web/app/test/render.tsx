@@ -180,6 +180,7 @@ export function makeScreen(over: ScreenOverrides = {}): ScreenDevice {
     interval: 60,
     brightness: 80,
     firmware: '1.0.0',
+    panel: null,
     createdAt: Date.now() - DAY,
     ...rest,
     status: {

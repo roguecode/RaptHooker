@@ -22,7 +22,19 @@ export interface ScreenInfo {
   wifi: { ssid: string; ip?: string; rssi?: number; channel: number; hotspot: string; hotspotOn: boolean; reason: string };
   image: { url: string; interval: number; shown: boolean; ageMs: number; failures: number; error: string; bytes: number };
   setup: { trial: 'idle' | 'testing' | 'connected' | 'failed'; error: string; ip?: string; saved: boolean };
-  system: { uptime: number; heap: number; sketchSize: number; freeSketch: number; sketchMd5: string; resetReason: string };
+  /** Firmware with "panel": the controller it found, the profile it picked and the corrections on top. */
+  display?: { width: number; height: number; brightness: number; controller?: string; profile?: string; panel?: number };
+  system: {
+    uptime: number;
+    heap: number;
+    sketchSize: number;
+    freeSketch: number;
+    sketchMd5: string;
+    resetReason: string;
+    chip?: string;
+    /** ESP32: new firmware not yet proved good (it goes back to the old one if it isn't). */
+    trial?: boolean;
+  };
 }
 
 export interface ScreenSetupBody {
@@ -54,6 +66,8 @@ export interface ScreenSettingsBody {
   token?: string;
   ssid?: string;
   password?: string;
+  /** Firmware with "panel": corrections to the panel (SCREEN_PANEL bits). */
+  panel?: number;
 }
 
 export class ScreenRequestError extends Error {
@@ -213,6 +227,11 @@ export class ScreenClient {
 
   identify(): Promise<unknown> {
     return this.call('POST', '/api/identify');
+  }
+
+  /** Firmware with "test-pattern": colour bars and words to check the panel by; 0 seconds takes them away. */
+  testPattern(seconds = 60): Promise<unknown> {
+    return this.call('POST', '/api/test-pattern', { seconds });
   }
 
   refresh(): Promise<unknown> {

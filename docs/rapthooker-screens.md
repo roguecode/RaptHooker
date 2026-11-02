@@ -1,29 +1,63 @@
 # RaptHooker screens
 
-RaptHooker can turn a **Geekmagic Ultra/Smart weather clock**, a little 240 × 240 Wi-Fi desk screen, into a display for your pills. The
-hub puts its own firmware on the screen and connects it to your Wi-Fi. From then on the screen fetches a picture from
-the hub every minute (or as often as you like), drawn like an [image link](./screens.md): one pill or all of them, in
-the look you choose. The hub keeps the screen's firmware up to date and shows how each screen is doing under
-**Screens**.
+RaptHooker can turn a small screen into a display for your pills. The hub puts its own firmware on the screen and
+connects it to your Wi-Fi. From then on the screen fetches a picture from the hub every minute (or as often as you
+like), drawn like an [image link](./screens.md): one pill or all of them, in the look you choose. The hub keeps the
+screen's firmware up to date and shows how each screen is doing under **Screens**.
 
 The picture fills the whole screen while all is well. When something's wrong (it can't reach the hub, it's
 reconnecting to Wi-Fi, it hasn't had a new picture for a while) the screen says so in a line under the picture.
 
+> **Experimental.** Screens are new. They've been tested with the screens below only, and how they're set up and
+> looked after may still change. The **Screens** page says so too, and lists the same screens.
+
+## Supported screens
+
+| Screen                                           | Picture   | How the hub sets it up                         | Confirmed working                                                           |
+| ------------------------------------------------ | --------- | ---------------------------------------------- | --------------------------------------------------------------------------- |
+| **Geekmagic Ultra/Smart weather clock**          | 240 × 240 | Over its own Wi-Fi, from its original firmware | [AliExpress listing](https://www.aliexpress.com/item/1005011924447121.html) |
+| **ESP32-2432S028 2.8" ("Cheap Yellow Display")** | 320 × 240 | Plugged into the hub's USB                     | [AliExpress listing](https://www.aliexpress.com/item/1005010399042230.html) |
+
+The listings only show where users bought a screen that then worked with RaptHooker. **They aren't endorsements**:
+RaptHooker has nothing to do with the sellers, and a listing can change what it sends, so check the model in its
+pictures before you buy.
+
+### Other screens
+
+- **Might work (untested):** ESP32-2432S028 boards with two USB sockets (USB-C and micro USB). They usually have another
+  display chip, which RaptHooker tries; check it with [Does the screen look right?](#does-the-screen-look-right) after
+  setting one up.
+- **Won't work:** other GeekMagic screens, and weather clocks on other firmware. The hub checks a screen before it
+  changes anything, so trying one does no harm.
+- **Won't work:** other ESP32 boards and sizes (2.4", 3.5", ESP32-S3 boards). Their displays are wired differently and
+  would stay blank. Don't set one up as an ESP32-2432S028: that replaces what's on the board.
+- **Any screen** that can show a picture from a web address can use an [image link](./screens.md) instead, with no new
+  firmware.
+
 ## What you need
 
-- A **Geekmagic Ultra/Smart weather clock** on its original "SD Pro" firmware. When it's new it opens a Wi-Fi network called
-  **Smart weather clock** (or **Smart weather clock Pro**) and shows set-up instructions with a QR code. Other screens
-  aren't supported yet.
-- A **2.4 GHz** Wi-Fi network for the screen, on which it can reach the hub. The screen doesn't do 5 GHz.
-- A hub that can leave its Wi-Fi for a minute to talk to the screen. A Raspberry Pi set up with the installer can (see
-  [Permissions](#permissions)). Otherwise, a phone or laptop with Wi-Fi does the setting up instead (see
-  [From a browser](#from-a-browser)).
+- One of the screens above:
+  - a **Geekmagic Ultra/Smart weather clock** on its original "SD Pro" firmware. When it's new it opens a Wi-Fi network
+    called **Smart weather clock** (or **Smart weather clock Pro**) and shows set-up instructions with a QR code.
+  - an **ESP32-2432S028** board (sold as the "Cheap Yellow Display", with a 2.8" 320 × 240 touch screen), and a USB
+    cable that carries data, not just power. Whatever it came with is replaced.
+- A **2.4 GHz** Wi-Fi network for the screen, on which it can reach the hub. The screens don't do 5 GHz.
+- For a Geekmagic: a hub that can leave its Wi-Fi for a minute to talk to the screen. A Raspberry Pi set up with the
+  installer can (see [Permissions](#permissions)). Otherwise, a phone or laptop with Wi-Fi does the setting up instead
+  (see [From a browser](#from-a-browser)).
+- For an ESP32 board: a hub with esptool, which the Pi installer adds (see [Permissions](#permissions)). The hub never
+  leaves its own network for these.
 
 ## Adding a screen
 
+**Add a screen** has two tabs: **Wi-Fi screen** for a Geekmagic, and **Plugged into the hub (USB)** for an ESP32 board.
+It opens on the USB tab when a board is plugged in.
+
+### A Geekmagic, over Wi-Fi
+
 1. Plug the screen in, near the hub.
-2. In the app, open **Screens** and press **Add a screen**. The hub looks for Wi-Fi networks and picks out the screens'
-   own; the rest are tucked away under **other networks** in case yours has another name.
+2. In the app, open **Screens**, press **Add a screen** and pick **Wi-Fi screen**. The hub looks for Wi-Fi networks and
+   picks out the screens' own; the rest are tucked away under **other networks** in case yours has another name.
 3. Press **Set up** next to the screen. Give it a name, choose what it shows, and the Wi-Fi network it should join. The
    hub's own network is filled in, and on a Pi the hub knows its password, so you can leave that empty.
 4. Press **Set it up**. The hub then:
@@ -59,6 +93,39 @@ Keep the page open (don't reload it) until it's done. It needs the hub's `http:/
 `https://` (through Tailscale, say) isn't allowed to talk to the screen, and says so. If your phone warns that the
 screen's network has no internet, choose to stay connected.
 
+### An ESP32 board, over USB
+
+1. Plug the board into one of the hub's USB ports.
+2. In the app, open **Screens** and press **Add a screen**. The **Plugged into the hub (USB)** tab lists the hub's
+   serial ports, with ones that look like a board (their USB chip is one ESP32 boards use) picked out. Press **Look
+   again** after plugging one in.
+3. Press **Set up** next to the board. Check the board's model, give it a name, choose what it shows, and the Wi-Fi
+   network it should join (with its password, unless it's the hub's own network on a Pi).
+4. Press **Set it up**. The hub then:
+   - asks the board what it is, and checks it's the chip the firmware is for, with enough flash,
+   - writes RaptHooker's firmware and its settings (your Wi-Fi, its key, where to fetch pictures) in one go,
+   - restarts it and reads what it prints as it starts: whether it joined your Wi-Fi, and if not, why (a wrong
+     password, a network it can't see),
+   - finds it on your network and saves it.
+
+It takes about a minute, most of it writing the firmware (the page shows how far it has got). Setting a board up
+again (with another Wi-Fi network, say) rewrites everything, and keeps its key and display corrections.
+
+Once it's set up the board needs only power: unplug it from the hub and put it wherever you like, on any USB charger,
+within reach of your Wi-Fi. If you leave it powered from the hub, the USB tab knows it: the hub asks each board which
+screen it is (without restarting it), lists your screens under **Already set up** (with **Set up again**), and only
+opens on the USB tab by itself when a board isn't one of your screens yet. Boards on firmware older than 1.1.1 don't
+answer, so they're listed as new until they're updated.
+
+### Does the screen look right?
+
+Boards sold under one name come with different display panels, some mounted the other way round. RaptHooker recognises
+the panels it knows, and when an ESP32 board is set up, asks **Does the screen look right?** **Show the test pattern**
+puts up red, green and blue bars with their names, and words. It's right when red is at the top, the words read left to
+right and the band at the bottom is black. If it isn't, **Turn it upside down**, **Mirror it**, **Swap red and blue** or
+**Invert the colours**: each shows straight away and the screen keeps it. The same buttons are in the screen's
+settings.
+
 ## What it shows
 
 Press **Edit** on a screen (or its picture) to choose:
@@ -84,6 +151,10 @@ screen keeps its own size.
 | Set-up instructions and its network's name                  | Waiting to be set up                                                                                                   |
 | A six-digit code                                            | A hub asked to add it: type the code into the app                                                                      |
 | Its name, big                                               | **Show its name** was pressed                                                                                          |
+| Red, green and blue bars with their names                   | The test pattern, for **Does the screen look right?**                                                                  |
+
+To see a screen's own details over its picture for half a minute, press the button on a Geekmagic's back, or tap an
+ESP32 board's screen (or press its **BOOT** button).
 
 A screen that has been away from its Wi-Fi for 5 minutes opens its own network again (**RaptHooker-Screen-…**) while it
 keeps trying, so it can be given new Wi-Fi details: it shows up under **Add a screen**. A screen that keeps crashing
@@ -95,6 +166,10 @@ Each version of RaptHooker comes with the screens' firmware. When it has newer f
 tab gets a dot and the page offers **Update** (or **Update all**). Each screen checks the new firmware before
 installing it, restarts once (about half a minute) and keeps its settings. The hub checks it came back with the new
 version.
+
+An ESP32 board is safer still: it keeps the firmware it had alongside the new one, and the new one only stays once it
+has joined your Wi-Fi and drawn a picture. If it crashes, or hasn't managed that within 10 minutes, the board goes back
+to the firmware it had by itself (and the hub says the update didn't finish).
 
 Newer firmware only ever adds to what the screens understand, so an older hub keeps working with a screen that has
 been updated by a newer one, and the other way round.
@@ -116,9 +191,13 @@ network, MAC address, Wi-Fi signal and how long it has been running, and:
 - **Update to …**, when there's newer firmware,
 - **Forget**: the hub stops looking after it. Tick **Also reset the screen** to have it forget its Wi-Fi and open its
   own network for setting up again.
-- **Put the original firmware back**: sends the screen's original firmware back to it, from the firmware file its maker
-  provides (`SDPro_V1.0.6.bin`, say). The hub checks the file is firmware for this screen first. The screen restarts on
-  its own firmware with its own settings as they were, RaptHooker's are wiped, and the hub forgets it.
+- **Put the original firmware back** (a Geekmagic): sends the screen's original firmware back to it, from the
+  firmware file its maker provides (`SDPro_V1.0.6.bin`, say). The hub checks the file is firmware for this screen first.
+  The screen restarts on its own firmware with its own settings as they were, RaptHooker's are wiped, and the hub
+  forgets it. ESP32 boards don't have this: the demo they came with isn't kept. To keep it, copy the board's flash
+  before setting it up (`python -m esptool --port COM7 read_flash 0 0x400000 backup.bin`) and write it back the same
+  way (`write_flash 0 backup.bin`).
+- **Does the screen look right?** (an ESP32 board): the test pattern and the display corrections.
 
 ## Permissions
 
@@ -127,9 +206,16 @@ Raspberry Pi the installer (`deploy/pi/setup.d/50-screens.sh`) adds a polkit rul
 just that: change networks, scan for them, add the temporary connection, and read the saved password of the hub's own
 network to give to the screen. Older systems without NetworkManager set screens up from a browser.
 
+For ESP32 boards the installer puts [esptool](https://github.com/espressif/esptool) (and pyserial, which it uses to
+read what a board prints) in a Python environment of its own, `/usr/local/lib/rapthooker/esptool`, as Debian's esptool
+package leaves out a part the ESP32 needs. It also adds the `rapthooker` user to the `dialout` group, which owns the
+serial ports boards turn up on. On another system, install esptool with `pip install esptool`; the hub finds a Python
+that has it (`python3`, `python`), or set `screens.python` in the [config](./configuration.md).
+
 In [Docker](./docker.md) the hub sets screens up from a browser, and needs to be told the address screens should
 fetch pictures from: set `screens.hubUrl` in the [config](./configuration.md) to the host's address, e.g.
-`http://192.168.1.20:8080`.
+`http://192.168.1.20:8080`. USB set-up is off there (`screens.usb`): set an ESP32 board up from a Pi, or from
+RaptHooker running on a computer, then add it to the Docker hub from **Found on your network**.
 
 ## Troubleshooting
 
@@ -143,6 +229,12 @@ fetch pictures from: set `screens.hubUrl` in the [config](./configuration.md) to
   screen. **Find on network** follows a screen that has a new address.
 - **It says it belongs to another hub.** Add it from **Found on your network** with the code it shows, or reset it from
   the hub that has it.
+- **No boards on the USB tab.** Some USB cables only carry power: try another. The board's USB chip (a CH340 or
+  CP2102) may need a driver on Windows or macOS; a Pi has them.
+- **The hub couldn't talk to the board.** Unplug it and plug it back in. If it still won't, hold the board's **BOOT**
+  button while the hub starts writing to it. Close anything else using the port (a serial monitor).
+- **The picture is upside down, mirrored or the wrong colours** on an ESP32 board: see
+  [Does the screen look right?](#does-the-screen-look-right)
 
 ## Privacy and security
 

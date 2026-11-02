@@ -82,8 +82,15 @@ export const configSchema = z.object({
         .regex(/^(http:\/\/[^/?#\s]+\/?)?$/, 'screens.hubUrl must be like http://192.168.1.20:8080 (screens only fetch over http)')
         .transform((s) => s.replace(/\/$/, ''))
         .default(''),
+      /**
+       * Setting up boards plugged into the hub's USB (ESP32 screens): 'auto' (when esptool is installed), 'mock'
+       * (a pretend board, for development and tests) or 'off'.
+       */
+      usb: z.enum(['auto', 'mock', 'off']).default('auto'),
+      /** The Python that has esptool and pyserial, for USB set-up. Empty: the hub looks for one. */
+      python: z.string().trim().default(''),
     })
-    .default({ wifi: 'auto', hubUrl: '' }),
+    .default({ wifi: 'auto', hubUrl: '', usb: 'auto', python: '' }),
 });
 
 export type Config = z.infer<typeof configSchema> & { webDir: string };
@@ -116,7 +123,7 @@ export function applyEnv(config: Config, env: NodeJS.ProcessEnv = process.env): 
 }
 
 /** Without a config file: simulated pills and screens, data in ./data and this machine trusted as the owner. */
-export const DEV_CONFIG = { bluetooth: { mock: true }, auth: { trustLocalhost: true }, screens: { wifi: 'mock' } };
+export const DEV_CONFIG = { bluetooth: { mock: true }, auth: { trustLocalhost: true }, screens: { wifi: 'mock', usb: 'mock' } };
 
 /** Loads RAPTHOOKER_CONFIG or ./rapthooker.config.json, or the development defaults. */
 export function loadConfig(defaultWebDir: string): { config: Config; path: string | null } {

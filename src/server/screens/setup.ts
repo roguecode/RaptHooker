@@ -69,6 +69,7 @@ export class ScreenSetup extends EventEmitter {
     const at = this.now();
     this.progress = {
       id: randomBytes(6).toString('hex'),
+      via: 'wifi',
       hotspot: input.hotspot,
       step: 'hotspot',
       state: 'running',
@@ -79,6 +80,7 @@ export class ScreenSetup extends EventEmitter {
       startedAt: at,
       updatedAt: at,
       steps: [{ step: 'hotspot', at }],
+      percent: null,
     };
   }
 

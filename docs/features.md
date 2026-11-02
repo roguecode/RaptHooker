@@ -78,8 +78,9 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
   progress, a graph, battery and signal), dark or light in any of the colours, and PNG, JPEG or BMP, with a live
   preview. The hub draws a fresh picture, in the app's look, each time the screen loads it. See
   [docs/screens.md](./screens.md).
-- **RaptHooker screens.** Plug in a Geekmagic Ultra/Smart weather clock (a little 240 × 240 Wi-Fi desk screen), press **Add a screen**
-  under **Screens**, and the hub puts its own firmware on it, connects it to your Wi-Fi and shows a pill (or all of
+- **RaptHooker screens.** Plug in a Geekmagic Ultra/Smart weather clock (a little 240 × 240 Wi-Fi desk screen), or plug an
+  ESP32-2432S028 2.8" board (320 × 240) into the hub's USB, press **Add a screen** under **Screens**, and the hub puts its
+  own firmware on it, connects it to your Wi-Fi and shows a pill (or all of
   them) on it, designed like an image link. It looks after the screens from then on: their status, new firmware with
   **Update all**, finding them again on the network, and putting their original firmware back. A pill's page shows the
   screens showing it. A hub that can't switch Wi-Fi (in Docker) sets them up from a browser instead. See

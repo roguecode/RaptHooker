@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SCREEN_MODELS, type FoundScreen, type ScreenSetupProgress } from '@rapthooker/shared';
+import type { FoundScreen, ScreenSetupProgress } from '@rapthooker/shared';
 import { errorText } from '../../api';
 import { useLive, useLiveMessages } from '../../live';
 import { useNow } from '../../format';
@@ -12,6 +12,7 @@ import { FoundScreens } from './FoundScreens';
 import { ScreenCard } from './ScreenCard';
 import { ScreenEditor } from './ScreenEditor';
 import { SetupPanel } from './SetupPanel';
+import { SupportedScreens } from './SupportedScreens';
 import './screens.css';
 
 /** A finished set-up stays on the page this long, unless dismissed. */
@@ -113,6 +114,21 @@ export function ScreensPage() {
         )}
       </div>
 
+      <div className="notice warning screens-experimental" role="note">
+        <Icon name="flask" />
+        <p className="grow">
+          <strong>{t('Screens are experimental.')}</strong>{' '}
+          {t("They've been tested with a few screens only, and how screens work may still change.")}{' '}
+          <button
+            type="button"
+            className="link-btn"
+            onClick={() => document.getElementById('supported-screens')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          >
+            {t('Which screens work')}
+          </button>
+        </p>
+      </div>
+
       {showSetup && (
         <SetupPanel
           progress={setup}
@@ -165,8 +181,7 @@ export function ScreensPage() {
           <h2>{t('No screens yet')}</h2>
           <p>
             {t(
-              'RaptHooker can turn a {name}, a little 240 × 240 Wi-Fi screen, into a display for your pills. Plug one in and add it here: the hub does the rest, including its updates.',
-              { name: SCREEN_MODELS[0]!.name },
+              'RaptHooker can turn a small Wi-Fi screen into a display for your pills. Plug one in and add it here: the hub does the rest, including its updates.',
             )}
           </p>
           {isOwner ? (
@@ -176,7 +191,6 @@ export function ScreensPage() {
           ) : (
             <OwnerOnly isOwner={false}>{null}</OwnerOnly>
           )}
-          <p className="small muted">{t('Supported Screens: {names}', { names: SCREEN_MODELS.map((m) => m.name).join(', ') })}</p>
         </div>
       ) : (
         <div className="grid cards screens-grid">
@@ -185,6 +199,8 @@ export function ScreensPage() {
           ))}
         </div>
       )}
+
+      <SupportedScreens />
 
       {adding && (
         <AddScreen

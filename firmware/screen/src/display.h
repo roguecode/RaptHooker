@@ -29,5 +29,12 @@ void showBanner(const String& text, uint16_t color);
 void showProgress(const String& title, const String& detail, int percent);
 void showIdentify(const String& name);
 void showPairing(const String& code);
+// Colour bars and words, to check the panel's way round and its colours (boards with RH_HAS_PANEL).
+void showTest();
+// Corrections on top of the panel's profile: PANEL_FLIP | PANEL_MIRROR | PANEL_SWAP | PANEL_INVERT (hw.h).
+void setPanel(uint8_t corrections);
+// The panel's controller and the profile picked for it ("8181b3", ...), for /api/info.
+const char* controller();
+const char* profile();
 
 }  // namespace display

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ScreenDevice, ScreenState } from '@rapthooker/shared';
+import { screenModel, type ScreenDevice, type ScreenState } from '@rapthooker/shared';
 import { errorText } from '../../api';
 import { useLive } from '../../live';
 import { navigate } from '../../router';
@@ -25,16 +25,19 @@ const pictureVersion = (s: ScreenDevice) => {
 /** The picture the screen shows, as the hub draws it for the screen. */
 export function ScreenThumb({ screen }: { screen: ScreenDevice }) {
   const [failed, setFailed] = useState(false);
+  const model = screenModel(screen.model);
+  const width = model?.width ?? 240;
+  const height = model?.height ?? 240;
   return (
-    <div className={`screen-thumb ${screen.status.state}`}>
+    <div className={`screen-thumb ${screen.status.state}${width > height ? ' wide' : ''}`} style={{ aspectRatio: `${width} / ${height}` }}>
       {failed ? (
         <Icon name="screen" size={36} />
       ) : (
         <img
           src={screensApi.pictureUrl(screen.id, pictureVersion(screen))}
           alt={t('What {name} shows', { name: screen.name })}
-          width={240}
-          height={240}
+          width={width}
+          height={height}
           loading="lazy"
           onError={() => setFailed(true)}
           onLoad={() => setFailed(false)}

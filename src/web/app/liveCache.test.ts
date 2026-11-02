@@ -73,6 +73,7 @@ const snapshot: LiveSnapshot = {
       interval: 60,
       brightness: 80,
       firmware: '1.0.3',
+      panel: null,
       createdAt: NOW - 86_400_000,
       status: {
         state: 'online',

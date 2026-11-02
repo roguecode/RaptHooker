@@ -8,6 +8,7 @@ import { Icon } from '../../components/Icon';
 import { Confirm, Modal, SignalBars } from '../../components/ui';
 import { ImagePreview, PictureFields, type PictureDesign } from '../../components/PictureDesigner';
 import { browserTimeZone } from '../../components/imageLinkOptions';
+import { PanelFix } from './PanelFix';
 import { screensApi } from './screensApi';
 import { STATE_LABELS } from './strings';
 import './screens.css';
@@ -153,6 +154,7 @@ export function ScreenEditor({ screen, onClose }: { screen: ScreenDevice; onClos
           <Icon name="check" size={16} /> {t('Save')}
         </button>
       </div>
+      {screen.panel !== null && <PanelFix screen={screen} />}
       <ScreenDetails screen={screen} onGone={onClose} />
     </Modal>
   );
@@ -267,9 +269,11 @@ function ScreenDetails({ screen, onGone }: { screen: ScreenDevice; onGone: () =>
         )}
       </div>
       <div className="row screen-details-actions">
-        <button type="button" className="btn small ghost" onClick={() => setRestoring(true)}>
-          <Icon name="upload" size={14} /> {t('Put the original firmware back')}
-        </button>
+        {screenModel(screen.model)?.install !== 'usb' && (
+          <button type="button" className="btn small ghost" onClick={() => setRestoring(true)}>
+            <Icon name="upload" size={14} /> {t('Put the original firmware back')}
+          </button>
+        )}
         <button type="button" className="btn small ghost danger" onClick={() => setForgetting(true)}>
           <Icon name="trash" size={14} /> {t('Forget')}
         </button>

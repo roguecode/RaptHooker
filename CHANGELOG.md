@@ -20,10 +20,30 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   - On a Pi, setting up again (or updating) adds a polkit rule that lets the service switch Wi-Fi networks through
     NetworkManager for this.
   - New config keys `screens.wifi` and `screens.hubUrl`; the Docker config sets screens up from a browser.
+- **ESP32 screens over USB.** The **ESP32-2432S028** 2.8" board ("Cheap Yellow Display", 320 × 240) is a RaptHooker
+  screen too: plug it into the hub's USB, and **Add a screen** (on its new **Plugged into the hub (USB)** tab) writes the
+  firmware and your Wi-Fi details in one go, watches it join, and finds it on the network, in about a minute, without
+  the hub leaving its Wi-Fi. As panels on these boards vary from batch to batch, **Does the screen look right?** shows a
+  test pattern and can turn, mirror or recolour the picture. Updates on these boards go back to the firmware they had by
+  themselves if the new one doesn't work.
+  - The screen firmware (1.1.0) now builds for the ESP32 as well as the ESP8266, from the same source.
+  - On a Pi, setting up again (or updating) installs esptool in `/usr/local/lib/rapthooker/esptool` and adds the
+    service to the `dialout` group.
+  - New config keys `screens.usb` and `screens.python`; the Docker config has USB set-up off.
+  - Saved screens gain `panel` (display corrections), which older versions keep.
+  - Boards left plugged into the hub are recognised: firmware 1.1.1 says which screen it is over USB (without
+    restarting), so the USB tab lists your screens under **Already set up** and only opens by itself for a new board.
+  - Screens are marked **experimental**. The **Screens** page says so, and lists the screens that have been confirmed
+    working, with where users bought them (not endorsements), and which other screens might or won't work.
 
 ### Changed
 
 - The live updates' `hello` message also has the hub's screens.
+
+### Fixed
+
+- A hub on Wi-Fi alone came back after a router restart only when NetworkManager happened to try again (it gives up
+  after a few failures). Now the hub asks NetworkManager to reconnect once it has been off its Wi-Fi for 2 minutes.
 
 ## [0.6.0] - 2026-10-30
 

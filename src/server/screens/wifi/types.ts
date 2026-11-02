@@ -25,6 +25,11 @@ export interface WifiController {
   password(ssid: string): Promise<string | null>;
   /** After a crash or restart in the middle of a set-up: leaves any hotspot and tidies up. */
   recover(): Promise<void>;
+  /**
+   * Keeps the hub on its Wi-Fi from now on, where it can: reconnects it when it has been off for a while (after the
+   * router restarts, say). Returns a function that stops it.
+   */
+  keepConnected?(): () => void;
 }
 
 /** Why a hub can't set screens up itself (WifiStatus.reason). */

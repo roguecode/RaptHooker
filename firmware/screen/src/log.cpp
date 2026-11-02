@@ -2,7 +2,11 @@
 
 #include <stdarg.h>
 
+#if defined(ESP32)
+static const size_t LOG_SIZE = 8192;
+#else
 static const size_t LOG_SIZE = 3072;
+#endif
 static char ring[LOG_SIZE];
 static size_t head = 0;
 static bool wrapped = false;

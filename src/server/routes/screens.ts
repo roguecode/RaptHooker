@@ -4,6 +4,7 @@ import {
   screenManualSchema,
   screenPatchSchema,
   screenSetupSchema,
+  screenUsbSetupSchema,
   type ScreenDevice,
 } from '@rapthooker/shared';
 import { ScreenError } from '../screens/index.js';
@@ -42,6 +43,12 @@ export function screensRoutes({ app, s, owner, broadcast }: RouteContext): void 
     return reply.code(202).send(progress);
   });
 
+  app.get('/api/screens/usb', owner, async () => screens.usbStatus());
+  app.post('/api/screens/usb/setup', owner, async (req, reply) => {
+    const progress = screens.startUsbSetup(screenUsbSetupSchema.parse(req.body));
+    return reply.code(202).send(progress);
+  });
+
   app.get('/api/screens/found', owner, async () => screens.found());
   app.post('/api/screens/discover', owner, async () => screens.discover());
   app.post('/api/screens/adopt', owner, async (req) => {
@@ -76,7 +83,7 @@ export function screensRoutes({ app, s, owner, broadcast }: RouteContext): void 
     await screens.remove(one(req), reset === '1' || reset === 'true');
     return reply.code(204).send();
   });
-  for (const what of ['identify', 'refresh', 'reboot'] as const) {
+  for (const what of ['identify', 'refresh', 'reboot', 'test-pattern'] as const) {
     app.post(`/api/screens/:id/${what}`, owner, async (req) => {
       await screens.action(one(req), what);
       return { ok: true };

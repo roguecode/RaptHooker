@@ -29,7 +29,7 @@ if (!existsSync(CONFIG)) {
       bluetooth: { mock: true },
       auth: { trustLocalhost: true },
       clock: { maxSyncWaitMin: 0 },
-      screens: { wifi: 'mock' },
+      screens: { wifi: 'mock', usb: 'mock' },
     }),
   );
 }

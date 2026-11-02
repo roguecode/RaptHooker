@@ -34,7 +34,24 @@ export const SETUP_ERRORS: Record<ScreenSetupError, string> = {
   'wifi-failed': tk("The screen couldn't join the network."),
   'not-found': tk("The screen is on your network, but the hub can't find it there yet. It may turn up under Found on your network."),
   'no-password': tk("Enter the Wi-Fi password: the hub doesn't know it."),
+  'no-usb': tk("The hub can't put firmware on boards over USB."),
+  'usb-failed': tk(
+    "The hub couldn't talk to the board. Unplug it and plug it back in, then try again. If it still won't, hold its BOOT button while the hub starts.",
+  ),
+  'usb-busy': tk('Something else on the hub is using the board (a serial monitor, say). Close it and try again.'),
+  'wrong-board': tk("That board isn't one RaptHooker has firmware for."),
   failed: tk('Something went wrong.'),
+};
+
+/** Why the hub can't set boards up over USB (UsbStatus.reason, or the detail of a 'no-usb' set-up error). */
+export const USB_REASONS: Record<string, string> = {
+  off: tk("USB set-up is switched off in the hub's config."),
+  'no-python': tk(
+    'The hub needs Python and esptool to put firmware on boards. Run the Pi set-up again, or install them (pip install esptool).',
+  ),
+  'no-esptool': tk('The hub needs esptool to put firmware on boards. Run the Pi set-up again, or install it (pip install esptool).'),
+  'no-pyserial': tk('The hub needs pyserial to talk to boards. Run the Pi set-up again, or install it (pip install pyserial).'),
+  'not-allowed': tk("The hub isn't allowed to use its USB serial ports. Run the Pi set-up again to allow it."),
 };
 
 /** Why the hub can't set screens up itself (WifiStatus.reason). */

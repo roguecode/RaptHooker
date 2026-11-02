@@ -19,7 +19,13 @@ const CONNECTION = `${NM}.Settings.Connection`;
 const DEVICE_WIFI = 2;
 const ACTIVATED = 2;
 const DEACTIVATED = 4;
+/** NMDeviceState: not connected, and not on the way there either. */
+const DEVICE_DISCONNECTED = 30;
+const DEVICE_FAILED = 120;
 const CALL_TIMEOUT_MS = 15_000;
+const KEEP_CHECK_MS = 30_000;
+/** How long the hub is off its Wi-Fi before it asks NetworkManager to connect again (and between asks). */
+export const RECONNECT_AFTER_MS = 2 * 60_000;
 /** The temporary connections' name, so a leftover one can be found and removed. */
 const TEMP_ID = 'rapthooker-screen-setup';
 /** Where both the stock and RaptHooker firmware answer on their hotspots. */
@@ -43,10 +49,12 @@ export class NetworkManagerWifi implements WifiController {
   private bus: MessageBus | null = null;
   /** The connection to go back to, from the first join; undefined when no set-up is going on. */
   private previous: { device: string; connection: string | null } | undefined;
+  /** Since when the Wi-Fi has been off (keepConnected), or null. */
+  private offSince: number | null = null;
 
   constructor(
     private readonly log: Logger,
-    private readonly opts: { dbus?: Dbus } = {},
+    private readonly opts: { dbus?: Dbus; otherLink?: (wifiIface: string) => Promise<boolean> } = {},
   ) {}
 
   private async connect(): Promise<MessageBus> {
@@ -142,6 +150,7 @@ export class NetworkManagerWifi implements WifiController {
 
   /** Whether the hub has a way onto the network besides its Wi-Fi (Ethernet, say). */
   private async otherLink(wifiIface: string): Promise<boolean> {
+    if (this.opts.otherLink) return this.opts.otherLink(wifiIface);
     for (const [name, list] of Object.entries(networkInterfaces())) {
       if (name === wifiIface || /^(lo|docker|veth|br-|virbr|tailscale|tun|wg|zt)/i.test(name)) continue;
       if (list?.some((a) => !a.internal && a.family === 'IPv4' && !a.address.startsWith('169.254.'))) return true;
@@ -205,7 +214,7 @@ export class NetworkManagerWifi implements WifiController {
       ipv4: { method: this.v('s', 'auto'), 'never-default': this.v('b', true) },
       ipv6: { method: this.v('s', 'ignore') },
     };
-    const [, active] = (await this.call(NM_PATH, NM, 'AddAndActivate2', 'a{sa{sv}}ooa{sv}', [
+    const [, active] = (await this.call(NM_PATH, NM, 'AddAndActivateConnection2', 'a{sa{sv}}ooa{sv}', [
       settings,
       device.path,
       '/',
@@ -299,6 +308,44 @@ export class NetworkManagerWifi implements WifiController {
       }
     }
     return null;
+  }
+
+  /**
+   * NetworkManager stops trying a network after a few failures, and won't try again by itself when a failure looked
+   * like a wrong password (as it can while a router restarts), so a hub on Wi-Fi alone could stay off the network until
+   * someone restarts it. So: when the Wi-Fi has been disconnected for RECONNECT_AFTER_MS, with no other way onto the
+   * network and no screen set-up using the Wi-Fi, NetworkManager is asked to connect it again (to the best network it
+   * has saved, as `nmcli device connect` does), and again every RECONNECT_AFTER_MS until it's back.
+   */
+  keepConnected(): () => void {
+    const timer = setInterval(() => void this.checkConnected().catch(() => undefined), KEEP_CHECK_MS);
+    timer.unref();
+    return () => clearInterval(timer);
+  }
+
+  /** One look for keepConnected. */
+  async checkConnected(now = Date.now()): Promise<void> {
+    if (this.previous !== undefined) {
+      this.offSince = null;
+      return;
+    }
+    const device = await this.wifiDevice().catch(() => null);
+    if (!device) return;
+    const state = await this.prop<number>(device.path, DEVICE, 'State').catch(() => 0);
+    // Connected, on its way, switched off or not NetworkManager's: nothing to do.
+    if ((state !== DEVICE_DISCONNECTED && state !== DEVICE_FAILED) || (await this.otherLink(device.iface))) {
+      this.offSince = null;
+      return;
+    }
+    this.offSince ??= now;
+    if (now - this.offSince < RECONNECT_AFTER_MS) return;
+    this.offSince = now;
+    try {
+      await this.call(NM_PATH, NM, 'ActivateConnection', 'ooo', ['/', device.path, '/']);
+      this.log.warn('the hub was off its Wi-Fi: asked NetworkManager to connect it again');
+    } catch (err) {
+      this.log.warn({ err: (err as Error).message }, "the hub is off its Wi-Fi, and NetworkManager couldn't connect it yet");
+    }
   }
 
   async recover(): Promise<void> {

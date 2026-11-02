@@ -1,20 +1,32 @@
 #include <ArduinoJson.h>
-#include <Crypto.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266WiFi.h>
 #include <StreamString.h>
+
+#include "platform.h"
+#if defined(ESP8266)
+#include <ESP8266WebServer.h>
 #include <Updater.h>
+#else
+#include <Update.h>
+#include <WebServer.h>
+#endif
 
 #include "app.h"
 #include "display.h"
 #include "fetch.h"
+#include "hw.h"
 #include "image.h"
 #include "log.h"
 #include "net.h"
 #include "store.h"
 #include "version.h"
 
+#if defined(ESP8266)
 static ESP8266WebServer server(80);
+#define UPDATE_ERROR() Update.getErrorString()
+#else
+static WebServer server(80);
+#define UPDATE_ERROR() String(Update.errorString())
+#endif
 
 // Every build carries this, and an update has to as well (unless forced), so RaptHooker can't put the
 // wrong firmware on a screen by mistake.
@@ -34,7 +46,9 @@ struct Ota {
   String error;
 };
 static Ota ota;
+#if defined(ESP8266)
 static ImageCheck check;
+#endif
 static bool installed = false;  // an update is staged: nothing more until the restart
 
 static Settings pending;
@@ -106,12 +120,16 @@ static void handleInfo() {
   String challenge = server.arg("challenge");
   if (c.token.length() && challenge.length() >= 16 && challenge.length() <= 64) {
     String message = String("rhscreen-proof:") + app::id + ":" + challenge;
-    d["proof"] = experimental::crypto::SHA256::hmac(message, c.token.c_str(), c.token.length(), 32);
+    d["proof"] = plat::hmacSha256(c.token, message);
   }
   // What this firmware can do, for RaptHooker to check before using something newer than API level 1 had.
   JsonArray f = d["features"].to<JsonArray>();
   for (const char* name : {"ota", "setup", "settings", "scan", "log", "identify", "refresh", "reboot", "reset", "adopt", "phy", "proof"})
     f.add(name);
+#if RH_HAS_PANEL
+  f.add("panel");
+  f.add("test-pattern");
+#endif
   JsonObject w = d["wifi"].to<JsonObject>();
   w["ssid"] = c.ssid;
   if (WiFi.status() == WL_CONNECTED) {
@@ -135,29 +153,23 @@ static void handleInfo() {
   im["error"] = fetch::error();
   im["bytes"] = fetch::bytes();
   JsonObject ds = d["display"].to<JsonObject>();
-  ds["width"] = 240;
-  ds["height"] = 240;
+  ds["width"] = SCREEN_W;
+  ds["height"] = SCREEN_H;
   ds["format"] = "jpeg";
   ds["brightness"] = c.brightness;
+#if RH_HAS_PANEL
+  ds["controller"] = display::controller();
+  ds["profile"] = display::profile();
+  ds["panel"] = c.panel;
+#endif
   JsonObject su = d["setup"].to<JsonObject>();
   su["trial"] = net::trialName();
   su["error"] = net::trialError();
   if (net::trial() == net::Trial::Connected) su["ip"] = net::trialIp().toString();
   su["saved"] = trialSaved;
   JsonObject s = d["system"].to<JsonObject>();
-  s["uptime"] = millis() / 1000;
-  s["heap"] = ESP.getFreeHeap();
-  s["maxBlock"] = ESP.getMaxFreeBlockSize();
-  s["frag"] = ESP.getHeapFragmentation();
-  s["resetReason"] = app::resetReason();
-  s["flashSize"] = ESP.getFlashChipRealSize();
-  s["flashId"] = ESP.getFlashChipId();
-  s["sketchSize"] = ESP.getSketchSize();
-  s["freeSketch"] = ESP.getFreeSketchSpace();
-  s["sketchMd5"] = ESP.getSketchMD5();
-  s["core"] = ESP.getCoreVersion();
-  s["sdk"] = ESP.getSdkVersion();
-  s["cpuMhz"] = ESP.getCpuFreqMHz();
+  plat::systemInfo(s);
+  s["chip"] = plat::chip();
   s["button"] = app::buttonDown();
   s["store"] = store::available();
   sendJson(200, d);
@@ -220,6 +232,9 @@ static void writeSettings(JsonDocument& d) {
   d["brightness"] = c.brightness;
   d["phy"] = c.phy;
   d["txPower"] = c.txPower;
+#if RH_HAS_PANEL
+  d["panel"] = c.panel;
+#endif
 }
 
 static void handleGetSettings() {
@@ -256,6 +271,14 @@ static void handleSettings() {
     network |= t != next.txPower;
     next.txPower = t;
   }
+  bool panel = false;
+#if RH_HAS_PANEL
+  if (b["panel"].is<int>()) {
+    uint8_t v = b["panel"].as<int>() & 0x0F;
+    panel = v != next.panel;
+    next.panel = v;
+  }
+#endif
   if (b["token"].is<const char*>()) {
     String t = b["token"].as<const char*>();
     if (t.length() < 16 || t.length() > 64) return sendError(400, "bad token");
@@ -277,6 +300,10 @@ static void handleSettings() {
   sendJson(200, d);
   display::setBrightness(next.brightness);
   if (picture) fetch::forget();
+  if (panel) {
+    display::setPanel(next.panel);
+    app::panelChanged();
+  }
   app::settingsChanged(network, picture);
 }
 
@@ -300,6 +327,19 @@ static void handleIdentify() {
   app::identify();
   sendOk();
 }
+
+#if RH_HAS_PANEL
+// Colour bars and words, to check the panel. {"seconds": 0} takes them away.
+static void handleTestPattern() {
+  if (!requireAuth()) return;
+  JsonDocument b;
+  String body = server.arg("plain");
+  if (body.length() && (deserializeJson(b, body) || !b.is<JsonObject>())) return sendError(400, "bad JSON");
+  uint32_t seconds = constrain((long)(b["seconds"] | 60), 0L, 600L);
+  app::showTestPattern(seconds * 1000);
+  sendOk();
+}
+#endif
 
 static String adoptCode;
 static uint32_t adoptUntil = 0;
@@ -329,7 +369,7 @@ static void handleAdopt() {
   if (!code.length()) {
     if (!showing) {
       char c[7];
-      snprintf(c, sizeof(c), "%06lu", (unsigned long)(ESP.random() % 1000000));
+      snprintf(c, sizeof(c), "%06lu", (unsigned long)(plat::random32() % 1000000));
       adoptCode = c;
       adoptUntil = now + 120000;
       adoptTries = 0;
@@ -396,7 +436,11 @@ static void handleScan() {
     o["rssi"] = WiFi.RSSI(i);
     o["channel"] = WiFi.channel(i);
     o["bssid"] = WiFi.BSSIDstr(i);
+#if defined(ESP8266)
     o["open"] = WiFi.encryptionType(i) == ENC_TYPE_NONE;
+#else
+    o["open"] = WiFi.encryptionType(i) == WIFI_AUTH_OPEN;
+#endif
   }
   WiFi.scanDelete();
   sendJson(200, d);
@@ -416,13 +460,17 @@ static void otaFail(const String& why) {
   logf("ota: %s", ota.error.c_str());
 }
 
-// Drops an update without installing it. end() installs a complete update whose MD5 matches, and there's
-// no other way to clear one, so give it an MD5 that can't match first.
+// Drops an update without installing it. On the ESP8266, end() installs a complete update whose MD5 matches, and
+// there's no other way to clear one, so give it an MD5 that can't match first.
 static void otaReset() {
   if (Update.isRunning()) {
+#if defined(ESP8266)
     Update.setMD5("00000000000000000000000000000000");
     Update.end();
     if (Update.isRunning()) Update.end();
+#else
+    Update.abort();
+#endif
   }
   ota.active = false;
   fetch::pause(false);
@@ -450,24 +498,39 @@ static void handleUpload() {
     if (ota.size > ESP.getFreeSketchSpace()) return otaFail(String("too big: ") + ota.size + " > " + ESP.getFreeSketchSpace());
     fetch::pause(true);
     logf("ota: start %u bytes%s", ota.size, ota.force ? " (forced)" : "");
+    // Firmware still on trial (ESP32) that's well enough to take an update is kept as the one to go back to. Installing
+    // switches the boot loader to the update, and keeping firmware afterwards would keep the update instead, untried.
+    if (plat::onTrial()) plat::markGood();
     if (!Update.begin(ota.size)) {
-      otaFail(Update.getErrorString());
+      otaFail(UPDATE_ERROR());
       return otaReset();
     }
     Update.setMD5(md5.c_str());
+#if defined(ESP8266)
     check.begin(ota.size);
+#endif
     ota.active = true;
     display::showProgress("Updating", "Don't unplug the screen", 0);
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (!ota.active || ota.error.length()) return;
+#if defined(ESP8266)
     if (ota.received == 0 && up.currentSize && up.buf[0] != 0xE9) {
       otaFail("not ESP8266 firmware");
       return otaReset();
     }
+#else
+    // ESP32 image header: magic, then the chip id at 12 (0 for the ESP32). The rest is checked as it's installed.
+    if (ota.received == 0 && (up.currentSize < 16 || up.buf[0] != 0xE9 || up.buf[12] != 0 || up.buf[13] != 0)) {
+      otaFail("not ESP32 firmware");
+      return otaReset();
+    }
+#endif
     scanMarker(up.buf, up.currentSize);
+#if defined(ESP8266)
     check.add(up.buf, up.currentSize);
+#endif
     if (Update.write(up.buf, up.currentSize) != up.currentSize) {
-      otaFail(Update.getErrorString());
+      otaFail(UPDATE_ERROR());
       return otaReset();
     }
     ota.received += up.currentSize;
@@ -487,26 +550,33 @@ static void handleUpload() {
 }
 
 static bool install() {
+#if defined(ESP8266)
   String why;
+#endif
   if (!ota.active || !ota.ended || ota.error.length()) return false;
   if (ota.received != ota.size) {
     otaFail(String("got ") + ota.received + " of " + ota.size + " bytes");
     return false;
   }
+#if defined(ESP8266)
   if (ota.force < 2 && !check.finish(why)) {
     otaFail("bad image: " + why);
     return false;
   }
+#endif
   if (!ota.force && !ota.found) {
     otaFail("not RaptHooker firmware for this screen");
     return false;
   }
+#if defined(ESP8266)
   if (!ota.force && !check.hasCrc()) {
     otaFail("image has no CRC");
     return false;
   }
+#endif
+  // The ESP32's checks the MD5, then the whole image (segments, checksum, SHA-256) before it switches to it.
   if (!Update.end()) {
-    otaFail(Update.getErrorString());
+    otaFail(UPDATE_ERROR());
     return false;
   }
   return true;
@@ -550,7 +620,12 @@ void web::begin() {
     if (marker[i] == marker[k]) k++;
     failure[i] = k;
   }
+#if defined(ESP8266)
   server.collectHeaders("Authorization");
+#else
+  static const char* headers[] = {"Authorization"};
+  server.collectHeaders(headers, 1);
+#endif
   server.enableCORS(true);
   server.on("/", HTTP_GET, handleRoot);
   server.on("/api/info", HTTP_GET, handleInfo);
@@ -563,6 +638,9 @@ void web::begin() {
   server.on("/api/reboot", HTTP_POST, handleReboot);
   server.on("/api/reset", HTTP_POST, handleReset);
   server.on("/api/identify", HTTP_POST, handleIdentify);
+#if RH_HAS_PANEL
+  server.on("/api/test-pattern", HTTP_POST, handleTestPattern);
+#endif
   server.on("/api/adopt", HTTP_POST, handleAdopt);
   server.on("/api/refresh", HTTP_POST, handleRefresh);
   server.on("/api/log", HTTP_GET, handleLog);
@@ -588,3 +666,4 @@ void web::loop() {
 }
 
 bool web::updating() { return ota.active; }
+bool web::installed() { return ::installed; }

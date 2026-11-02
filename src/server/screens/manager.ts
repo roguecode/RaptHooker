@@ -14,6 +14,9 @@ import {
   type ScreenSetupInput,
   type ScreenSetupProgress,
   type ScreenState,
+  type ScreenUsbSetupInput,
+  type UsbBoardId,
+  type UsbStatus,
   type WifiNetwork,
   type WifiStatus,
 } from '@rapthooker/shared';
@@ -23,6 +26,8 @@ import type { Settings } from '../settings.js';
 import { ScreenClient, ScreenRequestError, type ScreenInfo } from './client.js';
 import { compareVersions, imageMarker, imageProblems, md5, type FirmwareImage } from './firmware.js';
 import { ScreenSetup } from './setup.js';
+import { UsbSetup } from './usb/setup.js';
+import type { UsbFlasher } from './usb/types.js';
 import type { WifiController } from './wifi/types.js';
 
 export class ScreenError extends Error {
@@ -52,6 +57,8 @@ export interface SavedScreen {
   imageUrl: string | null;
   /** It has proved it has its key (firmware with "proof"), so it always has to from now on. */
   proof: boolean;
+  /** Corrections to its panel (SCREEN_PANEL bits), for models with `panel`. */
+  panel: number;
 }
 
 /** Fills in what an older save hasn't got. */
@@ -73,6 +80,7 @@ export function upgradeScreen(raw: Record<string, unknown>, units: Pick<ScreenLo
     ip: typeof raw.ip === 'string' ? raw.ip : null,
     imageUrl: typeof raw.imageUrl === 'string' ? raw.imageUrl : null,
     proof: raw.proof === true,
+    panel: num(raw.panel, 0),
   };
 }
 
@@ -111,6 +119,8 @@ export interface ScreenManagerDeps {
   settings: Settings;
   log: Logger;
   wifi: WifiController;
+  /** Boards plugged into the hub's USB. */
+  usb: UsbFlasher;
   firmware: Map<string, FirmwareImage>;
   /** The hub's addresses (system.addresses). */
   addresses: () => Promise<HubAddress[]>;
@@ -140,7 +150,7 @@ export class ScreenManager extends EventEmitter {
   /** Screens whose settings the hub couldn't send yet. */
   private readonly dirty = new Set<string>();
   private readonly pending = new Map<string, Pending>();
-  private job: ScreenSetup | null = null;
+  private job: ScreenSetup | UsbSetup | null = null;
   private lastSetup: ScreenSetupProgress | null = null;
   private foundList: FoundScreen[] = [];
   private timers: NodeJS.Timeout[] = [];
@@ -190,7 +200,11 @@ export class ScreenManager extends EventEmitter {
     }
   }
 
+  /** Stops keepConnected, while it runs. */
+  private stopKeepingConnected: (() => void) | null = null;
+
   start(): void {
+    this.stopKeepingConnected = this.deps.wifi.keepConnected?.() ?? null;
     // A restart in the middle of a set-up mustn't leave the hub on a screen's hotspot.
     void this.deps.wifi.recover().catch(() => undefined);
     this.timers.push(setInterval(() => this.tickStates(), MINUTE));
@@ -202,6 +216,8 @@ export class ScreenManager extends EventEmitter {
   }
 
   stop(): void {
+    this.stopKeepingConnected?.();
+    this.stopKeepingConnected = null;
     for (const t of this.timers) clearInterval(t);
     this.timers = [];
   }
@@ -262,6 +278,7 @@ export class ScreenManager extends EventEmitter {
       interval: s.interval,
       brightness: s.brightness,
       firmware: s.firmware,
+      panel: screenModel(s.model)?.panel ? s.panel : null,
       createdAt: entry.createdAt,
       status: {
         state: this.state(id, s.interval),
@@ -329,6 +346,8 @@ export class ScreenManager extends EventEmitter {
     this.errors.delete(info.id);
     this.dirty.add(info.id);
     this.changed(info.id);
+    // Heard on the network before it was added (over USB, say): it's not "found" any more.
+    if (this.foundList.some((f) => f.id === info.id)) this.emit('found', this.found());
     void this.check([info.id]);
     return info.id;
   }
@@ -394,7 +413,7 @@ export class ScreenManager extends EventEmitter {
       if (!s) return;
       const picture = (await this.imageUrl(id, client.host)) ?? s.imageUrl ?? '';
       if (this.dirty.has(id) || picture !== s.imageUrl || info.image.url !== picture) {
-        await client.settings({ name: s.name, interval: s.interval, brightness: s.brightness, hub: this.hubId(), imageUrl: picture });
+        await client.settings({ ...this.screenSettings(s), hub: this.hubId(), imageUrl: picture });
         await client.refresh().catch(() => undefined);
       }
       // Read again: what's saved may have changed while the screen was being asked.
@@ -411,6 +430,16 @@ export class ScreenManager extends EventEmitter {
         this.changed(id);
       }
     }
+  }
+
+  /** The settings the hub keeps for a screen and sends it when they change. */
+  private screenSettings(s: SavedScreen): { name: string; interval: number; brightness: number; panel?: number } {
+    return {
+      name: s.name,
+      interval: s.interval,
+      brightness: s.brightness,
+      ...(screenModel(s.model)?.panel ? { panel: s.panel } : {}),
+    };
   }
 
   // ---- the picture (GET /api/screens/:id/image.jpg)
@@ -457,15 +486,16 @@ export class ScreenManager extends EventEmitter {
       ...(patch.pillId !== undefined ? { pillId: patch.pillId } : {}),
       ...(patch.interval !== undefined ? { interval: patch.interval } : {}),
       ...(patch.brightness !== undefined ? { brightness: patch.brightness } : {}),
+      ...(patch.panel !== undefined && screenModel(s.model)?.panel ? { panel: patch.panel } : {}),
       look: { ...s.look, ...patch.look },
     };
     this.write(id, next, entry.raw);
-    const toScreen = patch.name !== undefined || patch.interval !== undefined || patch.brightness !== undefined;
+    const toScreen = patch.name !== undefined || patch.interval !== undefined || patch.brightness !== undefined || next.panel !== s.panel;
     await this.serial(id, async () => {
       try {
         const cur = this.screens.get(id)?.saved ?? next;
         const { client } = await this.trusted(id);
-        if (toScreen) await client.settings({ name: cur.name, interval: cur.interval, brightness: cur.brightness });
+        if (toScreen) await client.settings(this.screenSettings(cur));
         // A new look shows straight away rather than at the next refresh.
         await client.refresh();
         if (toScreen) this.dirty.delete(id);
@@ -478,12 +508,15 @@ export class ScreenManager extends EventEmitter {
     return this.device(id)!;
   }
 
-  async action(id: string, what: 'identify' | 'refresh' | 'reboot'): Promise<void> {
-    if (!this.screens.has(id)) throw new ScreenError('Unknown screen', 404);
+  async action(id: string, what: 'identify' | 'refresh' | 'reboot' | 'test-pattern'): Promise<void> {
+    const entry = this.screens.get(id);
+    if (!entry) throw new ScreenError('Unknown screen', 404);
+    if (what === 'test-pattern' && !screenModel(entry.saved.model)?.panel) throw new ScreenError('This screen has no test pattern');
     await this.serial(id, async () => {
       try {
         const { client } = await this.trusted(id);
-        await client[what]();
+        if (what === 'test-pattern') await client.testPattern(60);
+        else await client[what]();
       } catch (err) {
         if (err instanceof ScreenError) throw err;
         throw new ScreenError(`The screen didn't answer: ${(err as Error).message}`, 502);
@@ -576,7 +609,9 @@ export class ScreenManager extends EventEmitter {
    * well-formed image is sent.
    */
   async restoreStock(id: string, data: Buffer): Promise<void> {
-    if (!this.screens.has(id)) throw new ScreenError('Unknown screen', 404);
+    const entry = this.screens.get(id);
+    if (!entry) throw new ScreenError('Unknown screen', 404);
+    if (screenModel(entry.saved.model)?.install !== 'hotspot') throw new ScreenError('This screen has no original firmware to put back');
     const problems = imageProblems(data);
     if (problems.length) throw new ScreenError(`That file isn't firmware the screen can take: ${problems.join(', ')}`);
     if (imageMarker(data)) throw new ScreenError("That's RaptHooker's own firmware, not the screen's original");
@@ -621,21 +656,69 @@ export class ScreenManager extends EventEmitter {
       now: this.now,
       fast: this.deps.fast,
     });
+    this.track(job, (list) => {
+      addresses = list;
+    });
+    return job.snapshot();
+  }
+
+  /**
+   * Boards plugged into the hub's USB, and whether the hub can set them up. Each likely board is asked which screen it
+   * is (without restarting it), so ones already set up can be told from new ones; not the one a set-up is using.
+   */
+  async usbStatus(): Promise<UsbStatus> {
+    const status = await this.deps.usb.status();
+    const busy = this.job instanceof UsbSetup ? this.job.port : null;
+    const ask = status.canSetUp ? status.ports.filter((p) => p.likely && p.path !== busy).map((p) => p.path) : [];
+    const boards = ask.length ? await this.deps.usb.whois(ask).catch(() => new Map<string, UsbBoardId>()) : new Map<string, UsbBoardId>();
+    return { ...status, ports: status.ports.map((p) => ({ ...p, board: boards.get(p.path) ?? null })) };
+  }
+
+  /** Starts setting up a board plugged into the hub's USB; follow it like startSetup. */
+  startUsbSetup(input: ScreenUsbSetupInput): ScreenSetupProgress {
+    if (this.job) throw new ScreenError('A screen is already being set up', 409);
+    let addresses: HubAddress[] = [];
+    const job = new UsbSetup(input, {
+      usb: this.deps.usb,
+      wifi: this.deps.wifi,
+      firmware: this.deps.firmware,
+      hubId: () => this.hubId(),
+      imageUrl: (id) => this.urlFrom(addresses, id),
+      known: (id) => {
+        const s = this.screens.get(id)?.saved;
+        return s ? { token: s.token, panel: s.panel } : null;
+      },
+      lookup: this.deps.lookup,
+      save: ({ info, token, ip }) => this.add(info, token, ip, { name: input.name, pillId: input.pillId, look: input.look }),
+      log: this.deps.log,
+      now: this.now,
+      fast: this.deps.fast,
+    });
+    this.track(job, (list) => {
+      addresses = list;
+    });
+    return job.snapshot();
+  }
+
+  /**
+   * Runs a set-up job (once the hub's addresses are known) and passes its progress on. The job is over, and another
+   * may start, before its last progress goes out.
+   */
+  private track(job: ScreenSetup | UsbSetup, gotAddresses: (list: HubAddress[]) => void): void {
     this.job = job;
-    job.on('progress', (p: ScreenSetupProgress) => this.emit('setup', p));
-    void this.deps
-      .addresses()
-      .then((list) => {
-        addresses = list;
-      })
-      .catch(() => undefined)
-      .then(() => job.run())
-      .then((p) => {
+    job.on('progress', (p: ScreenSetupProgress) => {
+      if (p.state !== 'running' && this.job === job) {
         this.lastSetup = p;
         this.job = null;
-        this.emit('setup', p);
-      });
-    return job.snapshot();
+      }
+      this.emit('setup', p);
+    });
+    void this.deps
+      .addresses()
+      .then(gotAddresses)
+      .catch(() => undefined)
+      .then(() => job.run())
+      .catch((err: Error) => this.deps.log.error({ err: err.message }, 'screen set-up crashed'));
   }
 
   private urlFrom(addresses: HubAddress[], id: string): string | null {

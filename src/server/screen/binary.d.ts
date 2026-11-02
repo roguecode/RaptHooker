@@ -8,3 +8,8 @@ declare module '*.wasm' {
   const data: Uint8Array;
   export default data;
 }
+
+declare module '*.bin' {
+  const data: Uint8Array;
+  export default data;
+}

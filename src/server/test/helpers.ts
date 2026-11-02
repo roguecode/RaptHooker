@@ -3,8 +3,27 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import pino from 'pino';
 import { Store } from '../db.js';
+import { ScreenManager } from '../screens/manager.js';
+import { NoUsb } from '../screens/usb/types.js';
+import { NoWifi } from '../screens/wifi/types.js';
+import type { Settings } from '../settings.js';
 
 export const silent = pino({ level: 'silent' });
+
+/** A screens service with no screens and no Wi-Fi control, for tests about other things. */
+export function testScreens(store: Store, settings: Settings): ScreenManager {
+  return new ScreenManager({
+    store,
+    settings,
+    log: silent,
+    wifi: new NoWifi('off'),
+    usb: new NoUsb('off'),
+    firmware: new Map(),
+    addresses: async () => [],
+    lookup: async () => null,
+    browse: async () => [],
+  });
+}
 
 export function tempStore(): { store: Store; dir: string; cleanup: () => void } {
   const dir = mkdtempSync(join(tmpdir(), 'rapthooker-test-'));

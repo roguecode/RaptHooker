@@ -16,7 +16,7 @@ import { UpdateService } from '../updates.js';
 import { SystemService } from '../system.js';
 import { TokenService } from '../tokens.js';
 import { LogBuffer } from '../logbuffer.js';
-import { silent, tempStore } from './helpers.js';
+import { silent, tempStore, testScreens } from './helpers.js';
 
 let cleanup: (() => void) | undefined;
 afterEach(() => cleanup?.());
@@ -58,6 +58,7 @@ async function setup() {
     updates: new UpdateService('t', settings, silent),
     system: new SystemService(config, t.store, silent),
     tokens: new TokenService(t.store),
+    screens: testScreens(t.store, settings),
     logs: new LogBuffer(),
     version: 't',
     startedAt: Date.now(),

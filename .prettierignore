@@ -11,3 +11,5 @@ src/web/public
 src/web/app/i18n/source.json
 test-results
 playwright-report
+firmware/screen/bin
+firmware/screen/.pio

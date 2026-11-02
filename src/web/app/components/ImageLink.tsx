@@ -1,49 +1,41 @@
-import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useId, useState } from 'react';
 import {
   SCREEN_FORMATS,
-  SCREEN_ITEMS,
   SCREEN_MAX_SIZE,
   SCREEN_MIN_SIZE,
-  SCREEN_RANGES,
+  SCREEN_MODELS,
   screenPath,
   screenQuery,
   type HubAddress,
   type Pill,
-  type ScreenFormat,
-  type ScreenItem,
+  type ScreenDevice,
   type ScreenOptions,
-  type ScreenTheme,
 } from '@rapthooker/shared';
-import { http } from '../api';
+import { errorText, http } from '../api';
 import { useLive } from '../live';
 import { useUnits } from '../units';
-import { useTheme, type Palette } from '../theme';
+import { useTheme } from '../theme';
 import { useStored } from '../storage';
-import { bytes, intlLocale } from '../format';
+import { intlLocale } from '../format';
 import { t } from '../i18n';
 import { copyText } from '../pages/settings/copy';
+import { screensApi } from '../pages/screens/screensApi';
 import { Icon } from './Icon';
 import { Modal } from './ui';
 import { NumberInput } from './NumberInput';
-import { PalettePicker } from './PalettePicker';
+import { ImagePreview, PictureFields, type PictureDesign } from './PictureDesigner';
 import {
   browserTimeZone,
-  CONTENT_PRESETS,
-  contentPreset,
   CUSTOM,
   FORMAT_LABELS,
   IMAGE_LINK_KEY,
-  ITEM_LABELS,
   parseImageLinkSettings,
-  RANGE_LABELS,
   serializeImageLinkSettings,
   SIZE_PRESETS,
   sizePreset,
   type ImageLinkSettings,
 } from './imageLinkOptions';
 import './ImageLink.css';
-
-const n2 = (v: number) => Math.round(v * 100) / 100;
 
 /**
  * "Image link": a web address for a picture of every pill (or of `pill`) that a small screen can load, with what's on
@@ -98,32 +90,37 @@ function ImageLinkDialog({ pill, onClose }: { pill: Pill | null; onClose: () => 
   const units = useUnits();
   const [saved, save] = useStored(IMAGE_LINK_KEY, parseImageLinkSettings, serializeImageLinkSettings);
   // The look and units start as this browser's, each time.
-  const [mode, setMode] = useState<ScreenTheme>(theme.theme);
-  const [palette, setPalette] = useState<Palette>(theme.palette);
-  const [gravity, setGravity] = useState(units.gravity);
-  const [temperature, setTemperature] = useState(units.temperature);
+  const [look, setLook] = useState<Pick<PictureDesign, 'theme' | 'palette' | 'gravity' | 'temperature'>>({
+    theme: theme.theme,
+    palette: theme.palette,
+    gravity: units.gravity,
+    temperature: units.temperature,
+  });
   const { hosts, best } = useHosts();
-  const ids = { size: useId(), w: useId(), h: useId(), link: useId(), host: useId(), range: useId() };
+  const ids = { size: useId(), w: useId(), h: useId(), link: useId(), host: useId(), fields: useId() };
 
   const update = (patch: Partial<ImageLinkSettings>) => save({ ...saved, ...patch });
   const host = saved.host && hosts.some((h) => h.origin === saved.host) ? saved.host : best;
   const all = pill === null;
+  const design: PictureDesign = { show: saved.show, range: saved.range, brewing: saved.brewing, ...look };
+  const changeDesign = (patch: Partial<PictureDesign>) => {
+    const { show, range, brewing, ...rest } = patch;
+    const stored: Partial<ImageLinkSettings> = {};
+    if (show) stored.show = show;
+    if (range) stored.range = range;
+    if (brewing !== undefined) stored.brewing = brewing;
+    if (Object.keys(stored).length) update(stored);
+    if (Object.keys(rest).length) setLook((cur) => ({ ...cur, ...rest }));
+  };
   const options: ScreenOptions = {
     width: saved.width,
     height: saved.height,
-    theme: mode,
-    palette,
-    show: saved.show,
-    range: saved.range,
-    gravity,
-    temperature,
+    ...design,
     lang: intlLocale(),
     tz: browserTimeZone(),
-    brewing: saved.brewing,
   };
   const path = `${screenPath(saved.format, pill?.id)}?${screenQuery(options, { allDevices: all })}`;
   const url = `${host}${path}`;
-  const preset = contentPreset(saved.show);
 
   const setSize = (id: string) => {
     const p = SIZE_PRESETS.find((s) => s.id === id);
@@ -135,10 +132,6 @@ function ImageLinkDialog({ pill, onClose }: { pill: Pill | null; onClose: () => 
     const width = which === 'width' ? Math.round(v) : saved.width;
     const height = which === 'height' ? Math.round(v) : saved.height;
     update({ width, height, size: sizePreset(width, height, saved.size)?.id ?? CUSTOM });
-  };
-  const toggle = (item: ScreenItem) => {
-    const on = saved.show.includes(item);
-    update({ show: SCREEN_ITEMS.filter((i) => (i === item ? !on : saved.show.includes(i))) });
   };
   const copy = async () => {
     const ok = await copyText(url);
@@ -225,98 +218,7 @@ function ImageLinkDialog({ pill, onClose }: { pill: Pill | null; onClose: () => 
             </div>
           </fieldset>
 
-          <fieldset className="fieldset">
-            <legend>{t('What to show')}</legend>
-            <div className="chips" role="group" aria-label={t('Presets')}>
-              {CONTENT_PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  className={`chip toggle${preset?.id === p.id ? ' on' : ''}`}
-                  aria-pressed={preset?.id === p.id}
-                  title={t(p.hint)}
-                  onClick={() => update({ show: [...p.items] })}
-                >
-                  {t(p.label)}
-                </button>
-              ))}
-              {!preset && <span className="chip on">{t('Custom')}</span>}
-            </div>
-            <div className="image-link-items">
-              {SCREEN_ITEMS.map((item) => (
-                <label key={item} className="check">
-                  <input type="checkbox" checked={saved.show.includes(item)} onChange={() => toggle(item)} />
-                  <span>{t(ITEM_LABELS[item])}</span>
-                </label>
-              ))}
-            </div>
-            {saved.show.includes('chart') && (
-              <label className="field" htmlFor={ids.range}>
-                <span>{t('The graph shows')}</span>
-                <select
-                  id={ids.range}
-                  className="select"
-                  value={saved.range}
-                  onChange={(e) => update({ range: SCREEN_RANGES.find((r) => r === e.target.value) ?? 'brew' })}
-                >
-                  {SCREEN_RANGES.map((r) => (
-                    <option key={r} value={r}>
-                      {t(RANGE_LABELS[r])}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {all && (
-              <label className="check">
-                <input type="checkbox" checked={saved.brewing} onChange={(e) => update({ brewing: e.target.checked })} />
-                <span>{t('Only pills with a brew running')}</span>
-              </label>
-            )}
-            <p className="hint">{t("What doesn't fit at a readable size is left out, so check the preview.")}</p>
-          </fieldset>
-
-          <fieldset className="fieldset">
-            <legend>{t('Look')}</legend>
-            <div className="row">
-              <div className="segmented" role="group" aria-label={t('Theme')}>
-                {(['dark', 'light'] as const).map((m) => (
-                  <button key={m} type="button" className={mode === m ? 'on' : ''} aria-pressed={mode === m} onClick={() => setMode(m)}>
-                    <Icon name={m === 'dark' ? 'moon' : 'sun'} size={14} /> {m === 'dark' ? t('Dark') : t('Light')}
-                  </button>
-                ))}
-              </div>
-              <PalettePicker compact value={palette} onChange={setPalette} />
-            </div>
-            <div className="row">
-              <div className="segmented" role="group" aria-label={t('Gravity unit')}>
-                {(['sg', 'plato'] as const).map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    className={gravity === g ? 'on' : ''}
-                    aria-pressed={gravity === g}
-                    onClick={() => setGravity(g)}
-                  >
-                    {g === 'sg' ? 'SG' : '°P'}
-                  </button>
-                ))}
-              </div>
-              <div className="segmented" role="group" aria-label={t('Temperature unit')}>
-                {(['C', 'F'] as const).map((u) => (
-                  <button
-                    key={u}
-                    type="button"
-                    className={temperature === u ? 'on' : ''}
-                    aria-pressed={temperature === u}
-                    onClick={() => setTemperature(u)}
-                  >
-                    °{u}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </fieldset>
+          <PictureFields value={design} onChange={changeDesign} all={all} idPrefix={ids.fields} />
 
           <fieldset className="fieldset">
             <legend>{t('File type')}</legend>
@@ -376,79 +278,74 @@ function ImageLinkDialog({ pill, onClose }: { pill: Pill | null; onClose: () => 
           )}
         </p>
       </div>
+      <ShowOnScreen pill={pill} design={design} />
     </Modal>
   );
 }
 
-/** The picture as the hub draws it, fetched again (after a short pause) whenever the link changes. */
-function ImagePreview({ path, width, height, format }: { path: string; width: number; height: number; format: ScreenFormat }) {
-  const [shown, setShown] = useState<{ src: string; size: number; width: number; height: number } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
-  const current = useRef<string | null>(null);
-
-  useEffect(() => {
-    const ctl = new AbortController();
-    setLoading(true);
-    const timer = window.setTimeout(() => {
-      fetch(path, { signal: ctl.signal, credentials: 'same-origin' })
-        .then(async (res) => {
-          if (!res.ok && res.status !== 404) throw new Error(String(res.status));
-          const blob = await res.blob();
-          if (ctl.signal.aborted) return;
-          const src = URL.createObjectURL(blob);
-          if (current.current) URL.revokeObjectURL(current.current);
-          current.current = src;
-          setShown({ src, size: blob.size, width, height });
-          setFailed(false);
-          setLoading(false);
-        })
-        .catch(() => {
-          if (ctl.signal.aborted) return;
-          setFailed(true);
-          setLoading(false);
-        });
-    }, 350);
-    return () => {
-      window.clearTimeout(timer);
-      ctl.abort();
-    };
-  }, [path, width, height]);
-
-  useEffect(
-    () => () => {
-      if (current.current) URL.revokeObjectURL(current.current);
-    },
-    [],
-  );
-
-  // Small screens are shown bigger than life, so there's something to see; big ones fit the space.
-  const w = shown?.width ?? width;
-  const h = shown?.height ?? height;
-  const scale = w <= 320 && h <= 320 ? 1.5 : 1;
-  const box: CSSProperties = { width: `min(100%, ${w * scale}px, ${n2((24 * w) / h)}rem)`, aspectRatio: `${w} / ${h}` };
+/**
+ * The same picture on one of the hub's own screens (pages/screens), which fetch it by themselves: no link to copy.
+ * A screen keeps its own size and file type.
+ */
+function ShowOnScreen({ pill, design }: { pill: Pill | null; design: PictureDesign }) {
+  const { isOwner, screens, upsertScreen, toast } = useLive();
+  const id = useId();
+  const [chosen, setChosen] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (!isOwner) return null;
+  if (screens.length === 0) {
+    return (
+      <p className="hint image-link-screens">
+        <Icon name="screen" size={14} />{' '}
+        {t('Got a screen RaptHooker supports ({names})? It can set it up to show this by itself.', {
+          names: SCREEN_MODELS.map((m) => m.name).join(', '),
+        })}{' '}
+        <a href="#/screens">{t('Set up a screen')}</a>
+      </p>
+    );
+  }
+  const target = screens.find((s) => s.id === chosen) ?? screens.find((s) => s.pillId !== (pill?.id ?? null)) ?? screens[0]!;
+  const send = async (screen: ScreenDevice) => {
+    setBusy(true);
+    try {
+      const updated = await screensApi.patch(screen.id, {
+        pillId: pill?.id ?? null,
+        look: { ...design, lang: intlLocale(), tz: browserTimeZone() },
+      });
+      upsertScreen(updated);
+      toast({ tone: 'success', title: t('{name} shows this now', { name: updated.name }) });
+    } catch (err) {
+      toast({ tone: 'error', title: t("Couldn't change the screen"), body: errorText(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
-    <figure className={`image-link-frame${loading ? ' loading' : ''}`} aria-busy={loading}>
-      <div className="image-link-screen">
-        {shown ? (
-          <img src={shown.src} alt={t('Preview of the picture')} width={shown.width} height={shown.height} style={box} />
-        ) : (
-          <div className="skeleton" style={box} />
+    <div className="image-link-screens">
+      {screens.length > 1 ? (
+        <label className="label" htmlFor={id}>
+          <Icon name="screen" size={16} /> {t('Show this on a screen')}
+        </label>
+      ) : (
+        <span className="label">
+          <Icon name="screen" size={16} /> {t('Show this on a screen')}
+        </span>
+      )}
+      <div className="image-link-url">
+        {screens.length > 1 && (
+          <select id={id} className="select" value={target.id} onChange={(e) => setChosen(e.target.value)}>
+            {screens.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
         )}
+        <button type="button" className="btn" disabled={busy} onClick={() => void send(target)}>
+          <Icon name="send" size={16} /> {screens.length > 1 ? t('Show it there') : t('Show it on {name}', { name: target.name })}
+        </button>
       </div>
-      <figcaption className="small muted">
-        {failed ? (
-          <span className="image-link-error">
-            <Icon name="alert" size={14} /> {t("Couldn't load the preview")}
-          </span>
-        ) : (
-          <>
-            {t('{width} × {height} px', { width, height })} · {FORMAT_LABELS[format]}
-            {shown && !loading ? ` · ${bytes(shown.size)}` : ''}
-            {loading && <span className="image-link-busy"> · {t('Updating…')}</span>}
-          </>
-        )}
-      </figcaption>
-    </figure>
+      <p className="hint">{t('The screen keeps its own size, and changes to the new picture straight away.')}</p>
+    </div>
   );
 }

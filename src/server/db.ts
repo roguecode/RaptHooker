@@ -129,6 +129,11 @@ export const MIGRATIONS: string[] = [
   UPDATE rollups SET sg_all = 0, sg_missing = n, battery = 0, battery_missing = n, x = 0, y = 0, z = 0, xyz_missing = n
     WHERE pill_id IN (SELECT id FROM pills WHERE CASE WHEN json_valid(json) THEN json_extract(json, '$.kind') END = 'thermometer');
   `,
+  // v5: screens the hub has set up (small Wi-Fi displays that show a picture from it). Their settings are JSON like
+  // the other tables; the id is the screen's MAC address. Older versions don't know the table and leave it alone.
+  `
+  CREATE TABLE screens (id TEXT PRIMARY KEY, json TEXT NOT NULL, created_at INTEGER NOT NULL);
+  `,
 ];
 
 /**

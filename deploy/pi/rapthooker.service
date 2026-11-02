@@ -15,7 +15,8 @@ WatchdogSec=60
 TimeoutStartSec=300
 User=rapthooker
 Group=rapthooker
-SupplementaryGroups=bluetooth
+# dialout: the serial ports screen boards plugged in over USB turn up on.
+SupplementaryGroups=bluetooth dialout
 WorkingDirectory=/opt/rapthooker
 Environment=RAPTHOOKER_CONFIG=/etc/rapthooker/rapthooker.config.json
 Environment=NODE_ENV=production

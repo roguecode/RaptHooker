@@ -6,6 +6,7 @@ import {
   type LiveMessage,
   type NearbyPill,
   type Pill,
+  type ScreenDevice,
   type Session,
   type UpdateInfo,
 } from '@rapthooker/shared';
@@ -48,6 +49,10 @@ interface LiveContext {
   subscribe: (fn: Listener) => () => void;
   /** Applies a pill returned by the API straight away (the live update follows). */
   upsertPill: (pill: Pill) => void;
+  /** The hub's screens (pages/screens), kept up to date like the pills. */
+  screens: ScreenDevice[];
+  /** Applies a screen returned by the API straight away. */
+  upsertScreen: (screen: ScreenDevice) => void;
 }
 
 const Ctx = createContext<LiveContext | null>(null);
@@ -72,6 +77,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const [cachedAt, setCachedAt] = useState<number | null>(cache?.savedAt ?? null);
   const [session, setSession] = useState<Session | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [screens, setScreens] = useState<ScreenDevice[]>(cache?.screens ?? []);
   const listeners = useRef(new Set<Listener>());
 
   const dismiss = useCallback((id: string) => setToasts((t) => t.filter((x) => x.id !== id)), []);
@@ -126,6 +132,9 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const upsertPill = useCallback((pill: Pill) => {
     setPills((cur) => (cur.some((p) => p.id === pill.id) ? cur.map((p) => (p.id === pill.id ? pill : p)) : [...cur, pill]));
   }, []);
+  const upsertScreen = useCallback((screen: ScreenDevice) => {
+    setScreens((cur) => (cur.some((s) => s.id === screen.id) ? cur.map((s) => (s.id === screen.id ? screen : s)) : [...cur, screen]));
+  }, []);
 
   // Reconnect when the role changes (signing in or out), so live updates match what this user may see.
   const role = session?.role;
@@ -150,6 +159,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
           setBle(msg.ble);
           setClockSynced(msg.clockSynced);
           if (msg.hub) setHub(msg.hub);
+          setScreens(msg.screens ?? []);
           setLoaded(true);
           setCachedAt(null);
           // The hub is reachable: ask who's signed in if that failed before (a phone still joining the network) or is
@@ -177,6 +187,12 @@ export function LiveProvider({ children }: { children: ReactNode }) {
           break;
         case 'alert':
           toast({ tone: msg.event.kind === 'fired' ? 'warning' : 'success', title: msg.event.ruleName, body: msg.event.message });
+          break;
+        case 'screen':
+          upsertScreen(msg.screen);
+          break;
+        case 'screen-removed':
+          setScreens((cur) => cur.filter((s) => s.id !== msg.screenId));
           break;
         default:
           break;
@@ -242,11 +258,11 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       ws = undefined;
       old?.close();
     };
-  }, [toast, upsertPill, refreshSession, role]);
+  }, [toast, upsertPill, upsertScreen, refreshSession, role]);
 
   // Keep a copy of the live state for offline use: at most every few seconds, and when the page is put away.
-  const snapshot = useRef({ pills, nearby, ble, clockSynced, hub });
-  snapshot.current = { pills, nearby, ble, clockSynced, hub };
+  const snapshot = useRef({ pills, nearby, ble, clockSynced, hub, screens });
+  snapshot.current = { pills, nearby, ble, clockSynced, hub, screens };
   const saveTimer = useRef<number | undefined>(undefined);
   const live = loaded && cachedAt === null;
   useEffect(() => {
@@ -255,7 +271,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       saveTimer.current = undefined;
       saveLiveCache(snapshot.current);
     }, 5000);
-  }, [live, pills, nearby, ble, clockSynced, hub]);
+  }, [live, pills, nearby, ble, clockSynced, hub, screens]);
   useEffect(() => {
     if (!live) return;
     const flush = () => {
@@ -301,6 +317,8 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       dismiss,
       subscribe,
       upsertPill,
+      screens,
+      upsertScreen,
     }),
     [
       pills,
@@ -320,6 +338,8 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       dismiss,
       subscribe,
       upsertPill,
+      screens,
+      upsertScreen,
     ],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

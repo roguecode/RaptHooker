@@ -21,6 +21,7 @@ Everything is in one SQLite database, `/var/lib/rapthooker/rapthooker.db` on a P
 | `webhooks`, `webhook_state`, `webhook_deliveries` | Webhooks, how far each has got, and their recent deliveries.                                                                                        |
 | `alert_rules`, `alert_state`, `alert_events`      | Alerts.                                                                                                                                             |
 | `channels`, `push_subs`, `api_tokens`             | Notification channels, browsers with notifications on, API tokens.                                                                                  |
+| `screens`                                         | [Screens](./rapthooker-screens.md) the hub has set up, by MAC address, with their settings (and the key the hub gave each) as JSON.                 |
 | `meta`                                            | Hub settings (as JSON) and bookkeeping.                                                                                                             |
 
 Outside the database: `rapthooker.config.json`, the push keys, and the backups (see [Backups](./backups.md)).
@@ -79,8 +80,8 @@ Outside the database: `rapthooker.config.json`, the push keys, and the backups (
 Devices, webhooks, alert rules, channels and brews keep their settings as JSON, and hub settings are JSON in `meta`.
 
 - **Read through the upgrade functions** that fill in what older saves don't have: `upgradeConfig` (devices),
-  `upgradeWebhook`, `Settings.read`, `BrewService.upgrade`. A new field gets its default there; never assume it's
-  present.
+  `upgradeWebhook`, `Settings.read`, `BrewService.upgrade`, `upgradeScreen`. A new field gets its default there; never
+  assume it's present.
 - **Keep what you don't know.** Save by spreading the saved object (`{ ...saved, ...changes }`), not field by field,
   so going back a version and forward again loses nothing.
 - **Don't rename a field or change its meaning or unit.** Add a new one.
@@ -100,6 +101,14 @@ People's own setups depend on these, and changes break them silently:
   cope with newer files.
 - **Backups**: a backup from any earlier version must restore. It's upgraded like the live database.
 - **The web app's saved choices** (`localStorage` keys): renaming one forgets what people picked.
+- **Screens' firmware** ([firmware/screen](../firmware/screen/README.md)): screens in people's homes run whatever
+  firmware they last got, and a hub may be put back to an older version. The screens' HTTP API only gains things (a new
+  call, a new field, a new name in `features`); nothing changes meaning or goes away, and `FW_API` goes up when the hub
+  needs to know. The hub checks `api` or `features` before using anything newer, and the firmware ignores what it
+  doesn't know in a request. Screens' settings (in their own flash) keep keys an older firmware doesn't know.
+- **ESP32 boards' flash layout** ([partitions-esp32.csv](../firmware/screen/partitions-esp32.csv)) is written once,
+  over USB, and can't be changed by an update: every later firmware has to fit its app partitions and read its
+  settings from the `rhscreen` partition, in the same sector format the hub writes.
 
 ## Tests
 

@@ -32,14 +32,17 @@ export default defineConfig({
   noExternal: [/^(?!usocket$|x11$)/],
   external: ['usocket', 'x11'],
   // Screen images: the renderer (WebAssembly) and fonts go inside the server file as bytes, in place of the module that
-  // reads them from disk when running from source.
-  loader: { '.wasm': 'binary', '.ttf': 'binary' },
+  // reads them from disk when running from source. So does the firmware for screens (firmware/screen/bin).
+  loader: { '.wasm': 'binary', '.ttf': 'binary', '.bin': 'binary' },
   esbuildPlugins: [
     {
       name: 'embed-screen-assets',
       setup(build) {
         build.onResolve({ filter: /\/assets-files\.js$/ }, () => ({
           path: fileURLToPath(new URL('./screen/assets-embedded.ts', import.meta.url)),
+        }));
+        build.onResolve({ filter: /\/firmware-files\.js$/ }, () => ({
+          path: fileURLToPath(new URL('./screens/firmware-embedded.ts', import.meta.url)),
         }));
       },
     },

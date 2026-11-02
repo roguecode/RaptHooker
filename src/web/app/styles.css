@@ -2646,3 +2646,85 @@ a.list-item:hover h4 {
     transition: none !important;
   }
 }
+
+/* Shared bits first used by screens (pages/screens): a spinner, a success notice, a quiet danger button, and the
+   nav tab's update dot. */
+
+.spinner {
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-top-color: currentColor;
+  animation: screen-spin 0.8s linear infinite;
+  vertical-align: -0.1em;
+}
+
+@keyframes screen-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+.notice.success {
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+  border-color: color-mix(in srgb, var(--success) 35%, transparent);
+}
+
+.notice.success > svg {
+  color: var(--success);
+}
+
+.btn.ghost.danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: transparent;
+}
+
+.btn.ghost.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+/* The nav's update dot */
+.nav-icon {
+  position: relative;
+  display: inline-flex;
+}
+
+.nav-badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--warning);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+/* Six tabs on a phone: a little tighter, and a label that still doesn't fit is cut short rather than push the bar wider. */
+@media (max-width: 760px) {
+  .nav {
+    padding-inline: 0.2rem;
+  }
+
+  .nav a {
+    min-width: 0;
+    padding-inline: 0.1rem;
+    font-size: 0.66rem;
+  }
+
+  .nav a > span:not(.nav-icon) {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

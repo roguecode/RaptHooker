@@ -12,6 +12,14 @@
   margin-bottom: 0;
 }
 
+.pill-page-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
 .pill-history .chart-toolbar {
   align-items: flex-start;
 }

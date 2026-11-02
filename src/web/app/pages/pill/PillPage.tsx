@@ -7,6 +7,7 @@ import { ImageLinkButton } from '../../components/ImageLink';
 import { PillFigure } from '../../components/PillFigure';
 import { OwnerOnly } from '../../components/ui';
 import { t } from '../../i18n';
+import { ScreenChips } from '../screens';
 import { ThermometerBadge } from '../dashboard/ThermometerCard';
 import { BrewPanel } from './BrewPanel';
 import { DataPanel } from './Tiles';
@@ -48,7 +49,10 @@ function PillView({ pill }: { pill: Pill }) {
           <a className="back" href="#/">
             <Icon name="left" size={16} /> {t('All pills')}
           </a>
-          <ImageLinkButton pill={pill} />
+          <div className="pill-page-tools">
+            <ScreenChips pillId={pill.id} />
+            <ImageLinkButton pill={pill} />
+          </div>
         </div>
         <div className="panel hero" style={{ '--pill': pill.color } as React.CSSProperties}>
           {thermometer ? (

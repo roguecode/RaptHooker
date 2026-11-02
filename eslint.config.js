@@ -15,12 +15,22 @@ export default tseslint.config(
       'playwright-report/**',
       '**/data/**',
       'src/web/public/**',
+      'firmware/screen/.pio/**',
     ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['src/server/**/*.ts', 'src/shared/**/*.ts', '*.ts', '*.js', 'e2e/**/*.ts', 'scripts/**/*.mjs', 'deploy/**/*.mjs'],
+    files: [
+      'src/server/**/*.ts',
+      'src/shared/**/*.ts',
+      '*.ts',
+      '*.js',
+      'e2e/**/*.ts',
+      'scripts/**/*.mjs',
+      'deploy/**/*.mjs',
+      'firmware/**/*.mjs',
+    ],
     languageOptions: { globals: { ...globals.node } },
   },
   {

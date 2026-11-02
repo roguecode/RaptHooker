@@ -23,6 +23,7 @@ import { ChannelError, type ChannelService } from './channels.js';
 import type { UpdateService } from './updates.js';
 import type { SystemService } from './system.js';
 import type { TokenService } from './tokens.js';
+import { ScreenError, type ScreenManager } from './screens/index.js';
 import type { LogBuffer } from './logbuffer.js';
 import type { RouteContext } from './routes/context.js';
 import { sessionRoutes } from './routes/session.js';
@@ -42,6 +43,7 @@ import { tokenRoutes } from './routes/tokens.js';
 import { relayRoutes } from './routes/relay.js';
 import { updateRoutes } from './routes/updates.js';
 import { screenRoutes } from './routes/screen.js';
+import { screensRoutes } from './routes/screens.js';
 
 export { Settings, type NotificationUnits } from './settings.js';
 
@@ -62,6 +64,7 @@ export interface Services {
   updates: UpdateService;
   system: SystemService;
   tokens: TokenService;
+  screens: ScreenManager;
   logs: LogBuffer;
   version: string;
   startedAt: number;
@@ -111,6 +114,7 @@ export async function buildServer(s: Services, opts: { logger?: FastifyBaseLogge
       err instanceof WebhookError ||
       err instanceof AlertError ||
       err instanceof ChannelError ||
+      err instanceof ScreenError ||
       err instanceof PinError;
     const status = known ? err.statusCode! : (err.statusCode ?? 500);
     if (status >= 500) app.log.error(err);
@@ -135,6 +139,7 @@ export async function buildServer(s: Services, opts: { logger?: FastifyBaseLogge
   relayRoutes(ctx);
   updateRoutes(ctx);
   screenRoutes(ctx);
+  screensRoutes(ctx);
   liveRoutes(ctx, sockets);
   await webRoutes(ctx);
 

@@ -5,6 +5,46 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Screens.** RaptHooker can now turn a **Geekmagic Ultra/Smart weather clock** (a little 240 × 240 Wi-Fi desk screen) into a display
+  for your pills. Plug it in, open the new **Screens** tab and press **Add a screen**: the hub finds the screen's own
+  Wi-Fi, puts RaptHooker's firmware on it, connects it to your network and shows the details once it's there. From then
+  on the screen fetches a picture of a pill (or of every pill) from the hub, designed with the same choices as an image
+  link, as often as you like; when something's wrong it says so in a line under the picture. The **Screens** page shows
+  how each one is doing, offers new screen firmware (**Update all**), finds screens on the network again (adding one
+  takes the code it shows), and can put a screen's original firmware back. A pill's page shows the screens showing it,
+  and the **Image link** dialog can send its picture to a screen. A hub that can't switch Wi-Fi networks (in Docker, say)
+  sets screens up from a browser instead. See [docs/rapthooker-screens.md](docs/rapthooker-screens.md).
+  - Stored in a new `screens` table (schema 5), which older versions leave alone.
+  - On a Pi, setting up again (or updating) adds a polkit rule that lets the service switch Wi-Fi networks through
+    NetworkManager for this.
+  - New config keys `screens.wifi` and `screens.hubUrl`; the Docker config sets screens up from a browser.
+- **ESP32 screens over USB.** The **ESP32-2432S028** 2.8" board ("Cheap Yellow Display", 320 × 240) is a RaptHooker
+  screen too: plug it into the hub's USB, and **Add a screen** (on its new **Plugged into the hub (USB)** tab) writes the
+  firmware and your Wi-Fi details in one go, watches it join, and finds it on the network, in about a minute, without
+  the hub leaving its Wi-Fi. As panels on these boards vary from batch to batch, **Does the screen look right?** shows a
+  test pattern and can turn, mirror or recolour the picture. Updates on these boards go back to the firmware they had by
+  themselves if the new one doesn't work.
+  - The screen firmware (1.1.0) now builds for the ESP32 as well as the ESP8266, from the same source.
+  - On a Pi, setting up again (or updating) installs esptool in `/usr/local/lib/rapthooker/esptool` and adds the
+    service to the `dialout` group.
+  - New config keys `screens.usb` and `screens.python`; the Docker config has USB set-up off.
+  - Saved screens gain `panel` (display corrections), which older versions keep.
+  - Boards left plugged into the hub are recognised: firmware 1.1.1 says which screen it is over USB (without
+    restarting), so the USB tab lists your screens under **Already set up** and only opens by itself for a new board.
+  - Screens are marked **experimental**. The **Screens** page says so, and lists the screens that have been confirmed
+    working, with where users bought them (not endorsements), and which other screens might or won't work.
+
+### Changed
+
+- The live updates' `hello` message also has the hub's screens.
+
+### Fixed
+
+- A hub on Wi-Fi alone came back after a router restart only when NetworkManager happened to try again (it gives up
+  after a few failures). Now the hub asks NetworkManager to reconnect once it has been off its Wi-Fi for 2 minutes.
+
 ## [0.6.0] - 2026-10-30
 
 ### Added

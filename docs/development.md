@@ -13,22 +13,25 @@ npm run build        # src/web/dist and src/server/dist/rapthooker.cjs (one file
 ```
 
 Without a `rapthooker.config.json`, the server runs in development mode: simulated pills (they behave like real ones,
-including re-sending their previous reading), data in `./data`, and this computer treated as the owner.
+including re-sending their previous reading), a simulated "Smart weather clock" on its stock firmware to set up as a
+screen (with pretend Wi-Fi: `screens.wifi` is `mock`) and a pretend ESP32 board on USB (`screens.usb` is `mock`), data in `./data`, and this computer treated as the owner.
 
-| Path                        | What                                                                                                               |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| [src/shared](../src/shared) | Types, units, webhook template engine, variables and presets (used by both sides)                                  |
-| [src/server](../src/server) | Bluetooth (BlueZ over D-Bus) and the RAPT decoder, SQLite store, pills, brews, webhooks, alerts, MQTT, API         |
-| [src/web](../src/web)       | React + Vite web app (uPlot charts, PWA)                                                                           |
-| [deploy](../deploy)         | Installer and updater, Pi setup script, systemd units, deploy and packaging scripts, Pi image stage, Docker config |
-| [docs](.)                   | Guides, listed below                                                                                               |
+| Path                                  | What                                                                                                                |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| [src/shared](../src/shared)           | Types, units, webhook template engine, variables and presets (used by both sides)                                   |
+| [src/server](../src/server)           | Bluetooth (BlueZ over D-Bus) and the RAPT decoder, SQLite store, pills, brews, webhooks, alerts, MQTT, screens, API |
+| [src/web](../src/web)                 | React + Vite web app (uPlot charts, PWA)                                                                            |
+| [firmware/screen](../firmware/screen) | Firmware for the screens RaptHooker sets up (PlatformIO); its built image ships in the hub                          |
+| [deploy](../deploy)                   | Installer and updater, Pi setup script, systemd units, deploy and packaging scripts, Pi image stage, Docker config  |
+| [docs](.)                             | Guides, listed below                                                                                                |
 
 To check what the Pi hears, run the probe tool there: `node /opt/rapthooker/server/rapthooker-probe.cjs 120`.
 
 Guides: [Pi setup](./pi-setup.md), [configuration](./configuration.md), [features](./features.md),
 [webhooks](./webhooks.md), [alerts](./alerts.md), [brewing](./brewing.md), [calibration](./calibration.md),
 [Home Assistant](./home-assistant.md), [backups](./backups.md), [relays](./relay.md), [API](./api.md),
-[small screens](./screens.md), [updating](./updating.md), [translations](./translations.md), [Docker](./docker.md).
+[small screens](./screens.md), [RaptHooker screens](./rapthooker-screens.md), [updating](./updating.md),
+[translations](./translations.md), [Docker](./docker.md).
 
 Changing how anything is stored, identified or sent, or adding a kind of device? Read
 [Keeping people's data](./data-compatibility.md) first: updates must never lose or change what's on people's hubs. The
@@ -42,7 +45,13 @@ npm run build        # the end-to-end tests use the built app
 npx playwright install chromium   # once
 npm run test:e2e     # Playwright: a real hub with simulated pills, on a desktop and a phone screen
 npm run i18n:check   # every translatable string is extractable and every translation's placeholders match
+npm run firmware     # the screens' firmware (needs PlatformIO); see firmware/screen/README.md
 ```
+
+Screens are simulated in tests and development (`src/server/screens/simulator.ts`: a stock screen that becomes a
+RaptHooker one, and pretend Wi-Fi). To try a real one from a Windows PC with a Wi-Fi adapter, run the built server with
+a config that has `"screens": { "wifi": "netsh" }`: the PC joins the screen's hotspot while its wired connection keeps
+the hub reachable.
 
 ## Build and deploy it yourself
 

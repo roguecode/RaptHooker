@@ -12,6 +12,7 @@ import { applyOrder, fullOrder, sameOrder, sortByOrder } from '../order';
 import { parseFlag, serializeFlag, useStored } from '../storage';
 import { Icon } from '../components/Icon';
 import { ImageLinkButton } from '../components/ImageLink';
+import { ScreenChips, ScreenMark } from './screens';
 import { PillFigure } from '../components/PillFigure';
 import { Sparkline } from '../components/Sparkline';
 import { FermentBar } from '../components/Ferment';
@@ -220,6 +221,7 @@ export function Dashboard() {
             )}
             {!arranging && (
               <>
+                <ScreenChips pillId={null} />
                 <ImageLinkButton />
                 <a className="btn small" href="#/kiosk" title={t('Big readings for a spare screen')}>
                   <Icon name="tv" size={16} /> {t('TV mode')}
@@ -382,6 +384,7 @@ export function PillCard({ pill }: { pill: Pill }) {
             {status.label} · {timeAgo(pill.live.lastReadingAt, now)}
           </div>
         </div>
+        <ScreenMark pillId={pill.id} />
         {pill.brew ? <span className="chip brew">{t('Brewing')}</span> : <span className="chip">{t('Idle')}</span>}
       </div>
       {r && r.gravity !== null && !plausibleGravity(r.gravity) && (

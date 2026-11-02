@@ -25,6 +25,8 @@ import { MockScanner } from './ble/mock.js';
 import { UnavailableScanner, type Scanner } from './ble/scanner.js';
 import { CompositeScanner } from './ble/composite.js';
 import { RelayHub } from './ble/relays.js';
+import { createScreens } from './screens/index.js';
+import { FakeScreen } from './screens/simulator.js';
 
 declare const __RAPTHOOKER_VERSION__: string | undefined;
 declare const __RAPTHOOKER_BUILD__: { commit: string | null; changes: boolean; builtAt: number } | undefined;
@@ -143,6 +145,14 @@ async function main(): Promise<void> {
     maintenance,
     restart: () => void shutdown('restart'),
   });
+  const { screens, fakes } = createScreens({ config, store, settings, system, log: log.child({ svc: 'screens' }) });
+  screens.load();
+  if (config.screens.wifi === 'mock') {
+    // A pretend "Smart weather clock" on its stock firmware, ready to be set up.
+    const fake = new FakeScreen({ networks: { Brewery: 'hops-and-barley' } });
+    await fake.start();
+    fakes.push(fake);
+  }
 
   const guarded = (what: string, fn: () => void) => {
     try {
@@ -184,6 +194,7 @@ async function main(): Promise<void> {
       updates,
       system,
       tokens,
+      screens,
       logs,
       version: VERSION,
       startedAt: Date.now(),
@@ -198,6 +209,7 @@ async function main(): Promise<void> {
   maintenance.start();
   updates.start();
   system.start();
+  screens.start();
   void mqtt.start().catch((err: Error) => log.error({ err: err.message }, 'MQTT failed to start'));
   await scanner.start().catch((err: Error) => log.error({ err: err.message }, 'bluetooth failed to start'));
   try {
@@ -230,6 +242,8 @@ async function main(): Promise<void> {
     alerts.stop();
     updates.stop();
     system.stop();
+    screens.stop();
+    for (const fake of fakes) await fake.stop();
     await webhooks.stop();
     await mqtt.stop().catch(() => undefined);
     await scanner.stop().catch(() => undefined);

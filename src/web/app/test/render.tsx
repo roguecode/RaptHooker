@@ -21,6 +21,7 @@ import {
   type PillLive,
   type PillModel,
   type Reading,
+  type ScreenDevice,
   type Session,
 } from '@rapthooker/shared';
 import { LiveProvider, useLive } from '../live';
@@ -153,6 +154,49 @@ export function makeSession(over: Partial<Session> = {}): Session {
   return { role: 'owner', user: 'localhost', via: 'localhost', secure: false, pinSet: true, ...over };
 }
 
+export type ScreenOverrides = Partial<Omit<ScreenDevice, 'status'>> & { status?: Partial<ScreenDevice['status']> };
+
+export function makeScreen(over: ScreenOverrides = {}): ScreenDevice {
+  const { status, ...rest } = over;
+  return {
+    id: '025248000001',
+    name: 'Kitchen',
+    model: 'sdpro-240',
+    mac: '02:52:48:00:00:01',
+    hostname: 'rh-screen-000001',
+    ip: '192.168.1.50',
+    pillId: null,
+    look: {
+      theme: 'dark',
+      palette: 'violet',
+      show: ['name', 'status', 'gravity', 'temperature', 'brew', 'chart'],
+      range: 'brew',
+      gravity: 'sg',
+      temperature: 'C',
+      lang: 'en',
+      tz: null,
+      brewing: false,
+    },
+    interval: 60,
+    brightness: 80,
+    firmware: '1.0.0',
+    panel: null,
+    createdAt: Date.now() - DAY,
+    ...rest,
+    status: {
+      state: 'online',
+      lastSeenAt: Date.now() - 20_000,
+      rssi: -58,
+      uptime: 3600,
+      failures: 0,
+      update: null,
+      updating: false,
+      error: null,
+      ...status,
+    },
+  };
+}
+
 export function emptyHistory(pillId: string, from = Date.now() - DAY, to = Date.now()): History {
   return {
     pillId,
@@ -193,6 +237,8 @@ export interface FakeHub {
   ble?: BleStatus | null;
   hub?: Partial<HubSettings>;
   clockSynced?: boolean;
+  /** The hub's screens. */
+  screens?: ScreenDevice[];
   /** Who is looking: the owner (with a PIN set) unless changed. */
   session?: Partial<Session>;
   routes?: Routes;
@@ -312,6 +358,7 @@ export async function renderWithHub(ui: ReactElement, fake: FakeHub = {}): Promi
     ble: (fake.ble === undefined ? makeBle() : fake.ble) as BleStatus,
     clockSynced: fake.clockSynced ?? true,
     hub: { ...DEFAULT_HUB_SETTINGS, ...fake.hub },
+    screens: fake.screens ?? [],
   };
   const routes: Routes = {
     'GET /api/session': makeSession(fake.session),

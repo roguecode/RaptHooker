@@ -21,6 +21,7 @@
     "fastify": "^5.12.5",
     "jpeg-js": "^0.4.4",
     "mqtt": "^5.16.1",
+    "multicast-dns": "^7.2.5",
     "nodemailer": "^10.2.1",
     "pino": "^10.4.0",
     "qrcode": "^1.5.4",
@@ -28,6 +29,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@types/multicast-dns": "^7.2.4",
     "@types/nodemailer": "^8.0.2",
     "@types/qrcode": "^1.5.6",
     "@types/web-push": "^3.6.4",

@@ -1,12 +1,16 @@
 /** Types shared by the server and the web app. All values are stored and sent in SI-ish units: SG and °C. */
 
 import type { FoundScreen, ScreenDevice, ScreenSetupProgress } from './screens.js';
+import type { IspindelHotspot, IspindelSetupProgress } from './ispindel.js';
 
 export type GravityUnit = 'sg' | 'plato';
 export type TemperatureUnit = 'C' | 'F';
 
-/** A RAPT Pill (hydrometer and thermometer) or a RAPT Bluetooth Thermometer (temperature only). */
-export type DeviceKind = 'pill' | 'thermometer';
+/**
+ * A RAPT Pill (hydrometer and thermometer), a RAPT Bluetooth Thermometer (temperature only) or an iSpindel (a Wi-Fi
+ * hydrometer, experimental).
+ */
+export type DeviceKind = 'pill' | 'thermometer' | 'ispindel';
 
 /**
  * One reading from a pill, with the pill's calibration offsets and data choices applied. A thermometer only has a
@@ -21,9 +25,11 @@ export interface Reading {
   temperature: number;
   /** Gravity points per day (negative while fermenting) from the pill or RaptHooker, or null when not known yet. */
   velocity: number | null;
-  /** Battery state of charge, %. */
+  /** Battery state of charge, % (for an iSpindel, estimated from its battery's voltage). */
   battery: number | null;
-  /** Signal strength at the hub, dBm. */
+  /** Battery voltage, V: iSpindels send it. Missing from hubs from before iSpindels. */
+  voltage?: number | null;
+  /** Signal strength at the hub, dBm (for an iSpindel, its Wi-Fi signal). */
   rssi: number | null;
   /** Angle from vertical, degrees. */
   tilt: number | null;
@@ -128,9 +134,9 @@ export interface ChartExclusion {
 export interface Pill {
   id: string;
   kind: DeviceKind;
-  /** Bluetooth address, AA:BB:CC:DD:EE:FF. */
+  /** Bluetooth address, AA:BB:CC:DD:EE:FF, or ISPINDEL:<chip id> for an iSpindel. */
   address: string;
-  /** The address the RAPT app shows (Bluetooth address with 2 off the last octet). */
+  /** The address the RAPT app shows (Bluetooth address with 2 off the last octet); other devices' address. */
   raptId: string;
   name: string;
   color: string;
@@ -149,11 +155,13 @@ export interface Pill {
   brew: Brew | null;
 }
 
-/** A RAPT Pill or Thermometer heard nearby that hasn't been added. */
+/** A RAPT Pill or Thermometer heard nearby, or an iSpindel posting to the hub, that hasn't been added. */
 export interface NearbyPill {
   address: string;
   kind: DeviceKind;
   raptId: string;
+  /** The name it gives itself (iSpindels). Missing from hubs from before iSpindels. */
+  name?: string | null;
   firstHeardAt: number;
   lastHeardAt: number;
   rssi: number | null;
@@ -328,9 +336,9 @@ export interface WebhookExport {
   webhooks: WebhookInput[];
 }
 
-export type TokenScope = 'read' | 'relay';
+export type TokenScope = 'read' | 'relay' | 'ispindel';
 
-/** A key for scripts (read-only API) or a Bluetooth relay (posting adverts). */
+/** A key for scripts (read-only API), a Bluetooth relay (posting adverts) or iSpindels (posting readings). */
 export interface ApiToken {
   id: string;
   name: string;
@@ -741,4 +749,6 @@ export type LiveMessage =
   | { type: 'screen-removed'; screenId: string }
   | { type: 'screen-setup'; setup: ScreenSetupProgress }
   | { type: 'screens-found'; found: FoundScreen[] }
+  | { type: 'ispindel-hotspots'; hotspots: IspindelHotspot[]; scannedAt: number | null }
+  | { type: 'ispindel-setup'; setup: IspindelSetupProgress }
   | { type: 'ping'; at: number };

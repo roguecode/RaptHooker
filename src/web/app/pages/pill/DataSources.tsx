@@ -127,7 +127,14 @@ export function DataSources({ pill, onCalibrateTilt }: { pill: Pill; onCalibrate
         value={draft.gravitySource}
         onChange={(gravitySource) => setDraft({ ...draft, gravitySource })}
         options={[
-          { id: 'pill', label: t('From the pill (default)'), hint: t('What the pill sends, using its own calibration from the RAPT app.') },
+          {
+            id: 'pill',
+            label: t('From the pill (default)'),
+            hint:
+              pill.kind === 'ispindel'
+                ? t('What the iSpindel sends, using the gravity formula set on it.')
+                : t('What the pill sends, using its own calibration from the RAPT app.'),
+          },
           {
             id: 'tilt',
             label: t('Worked out by RaptHooker from the tilt'),

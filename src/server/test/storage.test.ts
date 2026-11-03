@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { ClockGuard } from '../clock.js';
-import { COMPACT_AFTER_UPGRADE_KEY, IncompatibleDatabaseError, MIGRATIONS, MIN_SCHEMA_KEY, ROLLUP_MS, Store } from '../db.js';
+import { COMPACT_AFTER_UPGRADE_KEY, IncompatibleDatabaseError, MIGRATIONS, MIN_SCHEMA_KEY, ROLLUP_MS, Store, tiltOf } from '../db.js';
 import { keepPreUpdateCopy, PRE_UPDATE_KEEP } from '../backup/files.js';
 import { Maintenance } from '../maintenance.js';
 import { PillService } from '../pills.js';
@@ -116,6 +116,51 @@ function schema3Database(file: string): void {
 
 type Rows = Record<string, Record<string, unknown>[]>;
 
+const THERMO = 'd02625b44895';
+
+/**
+ * A database as RaptHooker 0.7.0 and 0.8.0 (schema 5) left it: schema 3's, upgraded, plus a RAPT Thermometer with a
+ * reading and its rollup (NULLs, and the *_missing counts from v4) and a screen. Keep it as it is when adding a
+ * migration.
+ */
+function schema5Database(file: string): void {
+  schema3Database(file);
+  const db = new DatabaseSync(file);
+  for (const sql of MIGRATIONS.slice(3, 5)) db.exec(sql);
+  db.exec('PRAGMA user_version = 5');
+  db.prepare('INSERT INTO pills (id, address, json, created_at) VALUES (?, ?, ?, ?)').run(
+    THERMO,
+    'D0:26:25:B4:48:95',
+    JSON.stringify({
+      kind: 'thermometer',
+      name: 'Fridge',
+      color: '#f472b6',
+      archived: false,
+      offsets: { gravity: 0, temperature: 0.2 },
+      model: { gravitySource: 'pill', tiltPoints: [], velocitySource: 'pill', velocityHours: 24, smoothing: 'off' },
+      order: 1,
+      info: { firmware: null, deviceType: null, payloadVersion: null },
+      exclusions: [{ id: 'x1', from: T0, to: T0 + 60_000, createdAt: T0 }],
+    }),
+    T0,
+  );
+  // What 0.8.0 runs for a reading (here a thermometer's).
+  db.prepare(
+    'INSERT OR IGNORE INTO readings (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  ).run(THERMO, T0 + 60_000, null, 15.3, null, null, -48, null, null, null, 0);
+  db.prepare(
+    `INSERT INTO rollups (pill_id, bucket, n, sg, sg_n, sg_all, sg_missing, temp, temp_missing, velocity, velocity_n, battery,
+       battery_missing, rssi, rssi_n, x, y, z, xyz_missing)
+     VALUES (?, ?, 1, 0, 0, 0, 1, ?, 0, 0, 0, 0, 1, ?, 1, 0, 0, 0, 1)`,
+  ).run(THERMO, T0, 15.3, -48);
+  db.prepare('INSERT INTO screens (id, json, created_at) VALUES (?, ?, ?)').run(
+    'f008d11c1802',
+    '{"name":"Kitchen","token":"k","model":"sdpro-240"}',
+    T0,
+  );
+  db.close();
+}
+
 /** Every row of every table, as these columns (all of them, unless given). */
 function dump(db: DatabaseSync, columns?: Record<string, string[]>): { rows: Rows; columns: Record<string, string[]> } {
   const tables = (
@@ -179,7 +224,7 @@ describe('upgrading the database', () => {
       expect(h.tilt[i]).not.toBeNull();
       expect(h.implausible[i]).toBe(false);
       expect(store.prunedRollups(PILL, T0 - 2 * DAY, T0)).toEqual([
-        { bucket: T0 - DAY, n: 3, sg: expect.closeTo(1.06, 6), temp: 19.5, x: 400, y: -10, z: 925 },
+        { bucket: T0 - DAY, n: 3, sg: expect.closeTo(1.06, 6), temp: 19.5, x: 400, y: -10, z: 925, tilt: null },
       ]);
     } finally {
       store.close();
@@ -216,6 +261,9 @@ describe('upgrading the database', () => {
         x: null,
         y: null,
         z: null,
+        // Added by v6 (iSpindels): NULL for everything recorded before.
+        tilt: null,
+        voltage: null,
         flags: 0,
       });
       expect(
@@ -385,6 +433,111 @@ describe('upgrading the database', () => {
   });
 });
 
+describe('upgrading a database from 0.7.0 and 0.8.0 (schema 5)', () => {
+  it('keeps every row and value, and adds empty columns for what iSpindels send', () => {
+    const file = join(tempDir(), 'rapthooker.db');
+    schema5Database(file);
+    const raw = new DatabaseSync(file);
+    const before = dump(raw);
+    raw.close();
+    expect(Object.values(before.rows).every((rows) => rows.length > 0)).toBe(true);
+
+    const store = new Store(file);
+    try {
+      expect(store.schemaVersion).toBe(MIGRATIONS.length);
+      const after = dump(store.db, before.columns);
+      for (const table of Object.keys(before.rows)) {
+        const rows = table === 'meta' ? after.rows[table]!.filter((r) => r.key !== COMPACT_AFTER_UPGRADE_KEY) : after.rows[table];
+        expect(rows, table).toEqual(before.rows[table]);
+      }
+      expect(store.db.prepare('SELECT COUNT(*) AS n FROM readings WHERE tilt IS NOT NULL OR voltage IS NOT NULL').get()).toEqual({ n: 0 });
+      expect(
+        store.db.prepare('SELECT TOTAL(tilt) AS t, TOTAL(tilt_n) AS tn, TOTAL(voltage) AS v, TOTAL(voltage_n) AS vn FROM rollups').get(),
+      ).toEqual({
+        t: 0,
+        tn: 0,
+        v: 0,
+        vn: 0,
+      });
+    } finally {
+      store.close();
+    }
+  });
+
+  it('stays right when 0.8.0 is put back and records into it', () => {
+    const file = join(tempDir(), 'rapthooker.db');
+    schema5Database(file);
+    new Store(file).close();
+    // What 0.8.0 runs for each reading: it doesn't know the new columns.
+    const db = new DatabaseSync(file);
+    db.prepare(
+      'INSERT OR IGNORE INTO readings (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run(PILL, T0 - DAY + 1000, 1.05, 21.5, -2.5, 86, -50, 400, -10, 925, 0);
+    db.prepare(
+      `INSERT INTO rollups (pill_id, bucket, n, sg, sg_n, sg_all, sg_missing, temp, temp_missing, velocity, velocity_n, battery,
+         battery_missing, rssi, rssi_n, x, y, z, xyz_missing)
+       VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (pill_id, bucket) DO UPDATE SET
+         n = n + 1, sg = sg + excluded.sg, sg_n = sg_n + excluded.sg_n, sg_all = sg_all + excluded.sg_all,
+         sg_missing = sg_missing + excluded.sg_missing, temp = temp + excluded.temp, temp_missing = temp_missing + excluded.temp_missing,
+         velocity = velocity + excluded.velocity, velocity_n = velocity_n + excluded.velocity_n,
+         battery = battery + excluded.battery, battery_missing = battery_missing + excluded.battery_missing,
+         rssi = rssi + excluded.rssi, rssi_n = rssi_n + excluded.rssi_n,
+         x = x + excluded.x, y = y + excluded.y, z = z + excluded.z, xyz_missing = xyz_missing + excluded.xyz_missing`,
+    ).run(PILL, T0 - DAY, 1.05, 1, 1.05, 0, 21.5, 0, -2.5, 1, 86, 0, -50, 1, 400, -10, 925, 0);
+    db.close();
+
+    const store = new Store(file);
+    try {
+      expect(store.latestReadings(PILL, 1)[0]).toMatchObject({ sg: 0.2, tilt: null, voltage: null });
+      const h = store.history(PILL, T0 - 2 * DAY, T0 - DAY + ROLLUP_MS, {
+        maxPoints: 10,
+        gapMs: DAY,
+        offsets: { gravity: 0, temperature: 0 },
+      });
+      const i = h.ts.length - 1;
+      expect(h.temperature[i]).toBeCloseTo((4 * 19.5 + 21.5) / 5, 6);
+      expect(h.gravity[i]).toBeCloseTo((3 * 1.06 + 1.05) / 4, 6);
+      // The pill's tilt is still from its accelerometer.
+      expect(h.tilt[i]).toBeCloseTo(tiltOf(400, -10, 925)!, 6);
+    } finally {
+      store.close();
+    }
+  });
+
+  it("keeps an iSpindel's tilt and voltage in its 15-minute averages, for when its readings are gone", () => {
+    const store = new Store(join(tempDir(), 'rapthooker.db'));
+    try {
+      const id = 'ispindel-64983f';
+      const reading = { velocity: null, rssi: -60, x: null, y: null, z: null, flags: 0 };
+      store.addReading(id, { ...reading, ts: T0 + 1000, sg: 1.05, temp: 20, battery: 85, tilt: 50, voltage: 4.0 });
+      store.addReading(id, { ...reading, ts: T0 + 2000, sg: 1.049, temp: 20.2, battery: 86, tilt: 52, voltage: 4.02 });
+      expect(store.db.prepare('SELECT n, tilt, tilt_n, voltage, voltage_n, xyz_missing FROM rollups WHERE pill_id = ?').get(id)).toEqual({
+        n: 2,
+        tilt: 102,
+        tilt_n: 2,
+        voltage: expect.closeTo(8.02, 6),
+        voltage_n: 2,
+        xyz_missing: 2,
+      });
+      expect(store.latestReadings(id, 1)[0]).toMatchObject({ tilt: 52, voltage: 4.02 });
+      store.pruneRaw(T0 + DAY);
+      expect(store.prunedRollups(id, T0 - DAY, T0 + DAY)).toEqual([
+        { bucket: T0, n: 2, sg: expect.closeTo(1.0495, 6), temp: expect.closeTo(20.1, 6), x: null, y: null, z: null, tilt: 51 },
+      ]);
+      const h = store.history(id, T0 - DAY, T0 + DAY, {
+        maxPoints: 10,
+        gapMs: DAY,
+        offsets: { gravity: 0, temperature: 0 },
+        rawFrom: T0 + DAY,
+      });
+      expect(h.tilt.filter((v) => v !== null)).toEqual([51]);
+    } finally {
+      store.close();
+    }
+  });
+});
+
 describe('a database from a newer version', () => {
   it('is used as it is, unless that version said older ones no longer can', () => {
     const file = join(tempDir(), 'rapthooker.db');
@@ -411,15 +564,16 @@ describe('a database from a newer version', () => {
     const file = join(tempDir(), 'rapthooker.db');
     schema3Database(file);
     const store = new Store(file);
+    // A kind of device a version after this one may add (iSpindel was one, until this version knew it).
     const future = {
-      kind: 'ispindel',
-      name: 'Spindel',
+      kind: 'tilt-hydrometer',
+      name: 'Floaty',
       color: '#34d399',
       offsets: { gravity: 0, temperature: 0 },
       info: {},
       polynomial: '0.0001*tilt^2',
     };
-    store.savePill('spindel', 'ISPINDEL:1234', future, T0);
+    store.savePill('future1', 'C4:DE:E2:00:00:01', future, T0);
     const now = T0 + DAY;
     const clock = new ClockGuard({ syncFile: null, maxWaitMs: 0, now: () => now, mono: () => now });
     const pills = new PillService(store, clock, silent, () => now);
@@ -431,16 +585,16 @@ describe('a database from a newer version', () => {
       const saved = JSON.parse(store.listPillRows().find((r) => r.id === PILL)!.json) as Record<string, unknown>;
       expect(saved).toMatchObject({ kind: 'pill', name: 'Hazy IPA (renamed)', info: { firmware: '20250319_055542_b3788ba' } });
 
-      expect(pills.get('spindel')?.kind).toBe('ispindel');
-      pills.update('spindel', { name: 'Spindel 2' });
-      const kept = JSON.parse(store.listPillRows().find((r) => r.id === 'spindel')!.json) as Record<string, unknown>;
-      expect(kept).toMatchObject({ kind: 'ispindel', name: 'Spindel 2', polynomial: '0.0001*tilt^2' });
+      expect(pills.get('future1')?.kind).toBe('tilt-hydrometer');
+      pills.update('future1', { name: 'Floaty 2' });
+      const kept = JSON.parse(store.listPillRows().find((r) => r.id === 'future1')!.json) as Record<string, unknown>;
+      expect(kept).toMatchObject({ kind: 'tilt-hydrometer', name: 'Floaty 2', polynomial: '0.0001*tilt^2' });
       for (const [companyId, data] of [
         [RAPT_COMPANY_ID, Buffer.from(CAPTURED.metricsFalling, 'hex')],
         [APPLE_COMPANY_ID, encodeRaptThermometer(18)],
       ] as const) {
         pills.handleAdvert({
-          address: 'ISPINDEL:1234',
+          address: 'C4:DE:E2:00:00:01',
           rssi: -50,
           manufacturer: new Map([[companyId, data]]),
           at: now,
@@ -448,8 +602,8 @@ describe('a database from a newer version', () => {
           cached: false,
         });
       }
-      expect(store.countReadings('spindel')).toBe(0);
-      expect(pills.get('spindel')?.kind).toBe('ispindel');
+      expect(store.countReadings('future1')).toBe(0);
+      expect(pills.get('future1')?.kind).toBe('tilt-hydrometer');
     } finally {
       pills.stop();
       store.close();

@@ -1,4 +1,12 @@
-import { DEFAULT_HUB_SETTINGS, type BleStatus, type HubSettings, type NearbyPill, type Pill, type ScreenDevice } from '@rapthooker/shared';
+import {
+  DEFAULT_HUB_SETTINGS,
+  type BleStatus,
+  type DeviceKind,
+  type HubSettings,
+  type NearbyPill,
+  type Pill,
+  type ScreenDevice,
+} from '@rapthooker/shared';
 
 /** The last live state, kept in this browser so the app can show something when the hub can't be reached. */
 export interface LiveSnapshot {
@@ -46,6 +54,9 @@ function isScreen(v: unknown): v is ScreenDevice {
   return isObject(v) && typeof v.id === 'string' && typeof v.name === 'string' && isObject(v.look) && isObject(v.status);
 }
 
+/** A saved device's kind: saved before thermometers were supported, everything was a pill. */
+const kindOf = (kind: unknown): DeviceKind => (kind === 'thermometer' || kind === 'ispindel' ? kind : 'pill');
+
 function hubFrom(v: unknown): HubSettings {
   if (!isObject(v)) return DEFAULT_HUB_SETTINGS;
   const units = isObject(v.units) ? v.units : {};
@@ -74,11 +85,8 @@ export function parseLive(raw: string | null, now: number): CachedLive | null {
   if (!d.pills.every(isPill)) return null;
   return {
     savedAt: d.savedAt,
-    // Saved before thermometers were supported, everything was a pill.
-    pills: d.pills.map((p) => ({ ...p, kind: p.kind === 'thermometer' ? 'thermometer' : 'pill' })),
-    nearby: Array.isArray(d.nearby)
-      ? d.nearby.filter(isNearby).map((n) => ({ ...n, kind: n.kind === 'thermometer' ? 'thermometer' : 'pill' }))
-      : [],
+    pills: d.pills.map((p) => ({ ...p, kind: kindOf(p.kind) })),
+    nearby: Array.isArray(d.nearby) ? d.nearby.filter(isNearby).map((n) => ({ ...n, kind: kindOf(n.kind) })) : [],
     ble: isObject(d.ble) && typeof d.ble.state === 'string' ? (d.ble as unknown as BleStatus) : null,
     clockSynced: d.clockSynced !== false,
     hub: hubFrom(d.hub),

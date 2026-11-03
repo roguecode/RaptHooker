@@ -15,7 +15,8 @@ const hash = (token: string): string => createHash('sha256').update(token).diges
 
 /**
  * API tokens: 'read' tokens let scripts use the read-only API, 'relay' tokens let a Bluetooth relay (an ESP32) post
- * adverts. Only a hash is stored; the token itself is shown once.
+ * adverts, 'ispindel' tokens let iSpindels post readings (the hub makes and keeps one, see IspindelService). Only a hash
+ * is stored; the token itself is shown once.
  */
 export class TokenService {
   /** last_used_at is written at most this often per token. */
@@ -28,6 +29,11 @@ export class TokenService {
       .prepare('SELECT id, name, scope, hint, created_at, last_used_at FROM api_tokens ORDER BY created_at')
       .all() as unknown as TokenRow[];
     return rows.map(toToken);
+  }
+
+  /** Whether the token with this id still exists (it hasn't been deleted). */
+  has(id: string): boolean {
+    return this.store.db.prepare('SELECT 1 FROM api_tokens WHERE id = ?').get(id) !== undefined;
   }
 
   create(name: string, scope: TokenScope, now = Date.now()): ApiTokenCreated {

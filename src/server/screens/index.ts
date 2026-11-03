@@ -7,7 +7,7 @@ import type { SystemService } from '../system.js';
 import { browseScreens, resolveScreen } from './discovery.js';
 import { loadFirmware } from './firmware.js';
 import { ScreenManager } from './manager.js';
-import { MockUsb, MockWifi, type FakeScreen } from './simulator.js';
+import { MockUsb, MockWifi, type FakeScreen, type HotspotDevice } from './simulator.js';
 import { EsptoolFlasher } from './usb/esptool.js';
 import { NoUsb, type UsbFlasher } from './usb/types.js';
 import { NetshWifi } from './wifi/netsh.js';
@@ -18,19 +18,29 @@ export { ScreenError, ScreenManager } from './manager.js';
 
 /**
  * The screens service, with the Wi-Fi control and USB set-up the config and platform allow (or pretend screens and a
- * pretend board in mock mode).
+ * pretend board in mock mode). The Wi-Fi control is shared with setting iSpindels up: `wifiBusy` says when one is.
  */
-export function createScreens(deps: { config: Config; store: Store; settings: Settings; system: SystemService; log: Logger }): {
+export function createScreens(deps: {
+  config: Config;
+  store: Store;
+  settings: Settings;
+  system: SystemService;
+  log: Logger;
+  /** Other pretend devices with hotspots, in mock mode (FakeIspindels). */
+  hotspots?: () => HotspotDevice[];
+  wifiBusy?: () => boolean;
+}): {
   screens: ScreenManager;
   fakes: FakeScreen[];
   usb: UsbFlasher;
+  wifi: WifiController;
 } {
   const { config, log } = deps;
   const mode = config.screens.wifi;
   const fakes: FakeScreen[] = [];
   let wifi: WifiController;
   if (mode === 'off') wifi = new NoWifi('off');
-  else if (mode === 'mock') wifi = new MockWifi(() => fakes);
+  else if (mode === 'mock') wifi = new MockWifi(() => [...fakes, ...(deps.hotspots?.() ?? [])]);
   else if (mode === 'networkmanager' || (mode === 'auto' && process.platform === 'linux')) wifi = new NetworkManagerWifi(log);
   else if (mode === 'netsh' || (mode === 'auto' && process.platform === 'win32')) wifi = new NetshWifi(log);
   else wifi = new NoWifi('unsupported-os');
@@ -77,6 +87,7 @@ export function createScreens(deps: { config: Config; store: Store; settings: Se
               claimed: !!f.settings.token,
             }))
       : () => browseScreens(log),
+    wifiBusy: deps.wifiBusy,
   });
-  return { screens, fakes, usb };
+  return { screens, fakes, usb, wifi };
 }

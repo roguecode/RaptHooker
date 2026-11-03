@@ -8,6 +8,13 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
   recorded once a minute: its temperature and signal on the dashboard, its own page, charts, TV mode, CSV export,
   webhooks, MQTT and Home Assistant, and temperature and "gone quiet" alerts. It has no gravity, battery or brews. Its
   Bluetooth format isn't published by KegLand; RaptHooker's decoding was worked out against the RAPT app's readings.
+- **iSpindels (experimental).** An [iSpindel](./ispindel.md), the DIY Wi-Fi hydrometer, sends its readings straight to
+  the hub over your Wi-Fi: gravity (from its own formula), temperature, tilt, battery voltage and Wi-Fi signal, with
+  brews, charts, calibration, webhooks, MQTT and alerts like a pill. **Add device → iSpindel** can set one up for you:
+  the hub finds it in setup mode, joins its hotspot for a minute and fills in its settings (only the ones it needs). Or
+  set it up by hand, with every value to type (including the token the hub has made) on the same screen.
+- **Add device.** One dialog for every kind of device, with a tab each: pills and thermometers heard nearby, ready to
+  add, and iSpindels sending to the hub or in setup mode.
 - **Brews.** Start a brew on a pill (now, or back-dated to when you pitched), and end it when you're done. Each brew
   keeps its own chart, OG (typed in, or taken from the pill once it has settled), current/final gravity, ABV (standard
   or strong-beer formula), attenuation, temperature range and notes. Brews can be edited, resumed and exported.

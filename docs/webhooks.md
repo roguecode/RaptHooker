@@ -141,35 +141,39 @@ as it will be sent.
 
 ### Variables
 
-| Variable                                             |                                                                                                |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `name`, `name_slug`                                  | The pill's name, and as `lower-case-with-dashes`                                               |
-| `pill_id`, `chip_id`                                 | RaptHooker's id; a number from the last 3 bytes of the Bluetooth address (like an iSpindel ID) |
-| `address`, `rapt_id`                                 | Bluetooth address; the MAC address the RAPT app shows                                          |
-| `firmware`, `device_type`                            | e.g. `20250319_055542_b3788ba`, `PillG1`                                                       |
-| `device`                                             | `pill`, or `thermometer` for a RAPT Bluetooth Thermometer                                      |
-| `gravity`, `gravity_unit`, `gravity_label`           | In the webhook's unit; `G` or `P`; `SG` or `°P`                                                |
-| `gravity_sg`, `gravity_plato`, `gravity_points`      | Always in that unit (points: 1.0465 → 46.5)                                                    |
-| `temperature`, `temp_unit`                           | In the webhook's unit; `C` or `F`                                                              |
-| `temperature_c`, `temperature_f`                     | Always in that unit                                                                            |
-| `velocity`                                           | Gravity points per day, negative while fermenting (empty until the pill has enough data)       |
-| `plausible`                                          | `true` when the pill looks like it's floating, `false` when the reading looks wrong            |
-| `pill_gravity_sg`, `pill_velocity`                   | What the pill itself sent, even when RaptHooker works the gravity or velocity out itself       |
-| `battery`, `rssi`, `tilt`                            | %, dBm at the hub, degrees from vertical                                                       |
-| `accel_x`, `accel_y`, `accel_z`                      | Raw accelerometer                                                                              |
-| `timestamp`, `timestamp_unix`, `timestamp_ms`        | When the reading was taken (ISO 8601 UTC, seconds, ms)                                         |
-| `age_seconds`, `interval`                            | How old the reading is; the webhook's interval in seconds                                      |
-| `brew_id`, `brew_name`, `brew_style`, `brew_started` | The pill's running brew (empty when none)                                                      |
-| `brew_og`, `brew_target_fg`                          | In the webhook's gravity unit                                                                  |
-| `brew_abv`, `brew_attenuation`, `brew_days`          | So far                                                                                         |
-| `hub_name`                                           | This hub's name (Settings)                                                                     |
-| `app`, `app_version`                                 | `RaptHooker` and its version                                                                   |
+| Variable                                             |                                                                                                                      |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `name`, `name_slug`                                  | The pill's name, and as `lower-case-with-dashes`                                                                     |
+| `pill_id`, `chip_id`                                 | RaptHooker's id; a number from the last 3 bytes of the Bluetooth address (like an iSpindel ID; an iSpindel's own ID) |
+| `address`, `rapt_id`                                 | Bluetooth address (`ISPINDEL:` and its chip id for an iSpindel); the MAC address the RAPT app shows                  |
+| `firmware`, `device_type`                            | e.g. `20250319_055542_b3788ba`, `PillG1`                                                                             |
+| `device`                                             | `pill`, `thermometer` for a RAPT Bluetooth Thermometer, or `ispindel`                                                |
+| `gravity`, `gravity_unit`, `gravity_label`           | In the webhook's unit; `G` or `P`; `SG` or `°P`                                                                      |
+| `gravity_sg`, `gravity_plato`, `gravity_points`      | Always in that unit (points: 1.0465 → 46.5)                                                                          |
+| `temperature`, `temp_unit`                           | In the webhook's unit; `C` or `F`                                                                                    |
+| `temperature_c`, `temperature_f`                     | Always in that unit                                                                                                  |
+| `velocity`                                           | Gravity points per day, negative while fermenting (empty until the pill has enough data)                             |
+| `plausible`                                          | `true` when the pill looks like it's floating, `false` when the reading looks wrong                                  |
+| `pill_gravity_sg`, `pill_velocity`                   | What the pill itself sent, even when RaptHooker works the gravity or velocity out itself                             |
+| `battery`, `rssi`, `tilt`                            | %, dBm at the hub (an iSpindel's Wi-Fi signal), degrees from vertical                                                |
+| `battery_voltage`                                    | Battery, V: iSpindels send it (their `battery` % is worked out from it); `null` for RAPT devices                     |
+| `accel_x`, `accel_y`, `accel_z`                      | Raw accelerometer                                                                                                    |
+| `timestamp`, `timestamp_unix`, `timestamp_ms`        | When the reading was taken (ISO 8601 UTC, seconds, ms)                                                               |
+| `age_seconds`, `interval`                            | How old the reading is; the webhook's interval in seconds                                                            |
+| `brew_id`, `brew_name`, `brew_style`, `brew_started` | The pill's running brew (empty when none)                                                                            |
+| `brew_og`, `brew_target_fg`                          | In the webhook's gravity unit                                                                                        |
+| `brew_abv`, `brew_attenuation`, `brew_days`          | So far                                                                                                               |
+| `hub_name`                                           | This hub's name (Settings)                                                                                           |
+| `app`, `app_version`                                 | `RaptHooker` and its version                                                                                         |
 
 In batch mode the batch body also has `items` and `count` (see [batch mode](#all-pills-in-one-request-batch-mode)).
 
 A RAPT Bluetooth Thermometer only has a temperature and a signal strength: its gravity, velocity, battery, tilt and
 accelerometer variables are `null` (empty outside JSON), and it never has a brew. Give a fallback (`{{gravity|0}}`) if
 the service you send to needs a number, or pick only pills for that webhook.
+
+An [iSpindel](ispindel.md) has no accelerometer variables either. Its `pill_gravity_sg` is what its own formula gave,
+`pill_velocity` is empty and RaptHooker works its `velocity` out.
 
 ## Presets
 
@@ -198,7 +202,7 @@ Every preset is marked **Verified** or **Untested**:
 | **Custom**            | –           | anything                                                            | Start from scratch.                                                                                                                                                                                                                                                            |
 
 The services that take iSpindel-format JSON expect the battery in volts; RAPT Pills report a percentage, which is sent
-as it is.
+as it is. For an iSpindel, put `{{battery_voltage}}` there instead to send its volts.
 
 ## Reading the data yourself
 

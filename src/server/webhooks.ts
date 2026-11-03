@@ -452,7 +452,7 @@ export class WebhookService extends EventEmitter {
   }
 
   private statements(): { first: StatementSync; last: StatementSync } {
-    const cols = 'ts, sg, temp, velocity, battery, rssi, x, y, z, flags';
+    const cols = 'ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, flags';
     this.stmts ??= {
       first: this.store.db.prepare(
         `SELECT ${cols} FROM readings WHERE pill_id = ? AND ts > ? AND (? = 0 OR flags & 1 = 0) ORDER BY ts LIMIT 1`,

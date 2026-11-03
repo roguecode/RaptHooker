@@ -9,7 +9,7 @@
       "pages/webhooks/strings.ts"
     ]
   },
-  "\"pill\" or \"thermometer\" (a thermometer only sends the temperature: the rest is null)": {
+  "\"pill\", \"thermometer\" or \"ispindel\" (a thermometer only sends the temperature: the rest is null)": {
     "files": [
       "pages/webhooks/strings.ts"
     ]
@@ -123,6 +123,11 @@
       "pages/webhooks/WebhooksPage.tsx"
     ],
     "plural": true
+  },
+  "{count} found": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
   },
   "{count} h": {
     "files": [
@@ -390,12 +395,13 @@
   },
   "{name} (the hub's)": {
     "files": [
+      "pages/devices/IspindelTab.tsx",
       "pages/screens/AddScreen.tsx"
     ]
   },
   "{name} added": {
     "files": [
-      "pages/Dashboard.tsx",
+      "pages/dashboard/NearbyCard.tsx",
       "pages/screens/FoundScreens.tsx"
     ]
   },
@@ -419,6 +425,11 @@
       "pages/webhooks/ScheduleFields.tsx"
     ]
   },
+  "{name} is added": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "{name} is going back to its original firmware": {
     "files": [
       "pages/screens/ScreenEditor.tsx"
@@ -427,6 +438,11 @@
   "{name} is restarting": {
     "files": [
       "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "{name} is sending to this hub": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "{name} is set up": {
@@ -531,9 +547,20 @@
       "pages/pill/Tiles.tsx"
     ]
   },
+  "{rssi} dBm Wi-Fi signal": {
+    "files": [
+      "pages/Dashboard.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
   "{rules} will stop sending here.": {
     "files": [
       "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "{seconds} is a good start (every 15 minutes).": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "{service} added": {
@@ -586,6 +613,11 @@
   "{version} available": {
     "files": [
       "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "{what} · experimental": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
     ]
   },
   "{width} × {height} px": {
@@ -720,6 +752,11 @@
   "A colour like #a78bfa": {
     "files": [
       "validation.tsx"
+    ]
+  },
+  "A DIY Wi-Fi hydrometer. It wakes up every so often and sends its reading to this hub over your Wi-Fi.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "A file from \"Download a copy now\", the backups list, the USB stick or your S3 bucket.": {
@@ -902,6 +939,11 @@
       "pages/alerts/ChannelEditor.tsx"
     ]
   },
+  "Add a device": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
   "Add a pill on the dashboard and its readings show up here.": {
     "files": [
       "../../server/screen/render.ts",
@@ -934,6 +976,11 @@
       "pages/pill/calibration.ts"
     ]
   },
+  "Add device": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
   "Add event": {
     "files": [
       "pages/brews/events.tsx"
@@ -942,6 +989,11 @@
   "Add header": {
     "files": [
       "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Add iSpindel": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Add it when it appears under “Nearby”": {
@@ -956,8 +1008,8 @@
   },
   "Add pill": {
     "files": [
-      "pages/Dashboard.tsx",
-      "pages/dashboard/FirstRunGuide.tsx"
+      "pages/dashboard/FirstRunGuide.tsx",
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Add pills to Home Assistant": {
@@ -972,7 +1024,7 @@
   },
   "Add thermometer": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Added": {
@@ -987,6 +1039,11 @@
     ]
   },
   "Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. Calibrate the pill in the RAPT app first; this is for fine-tuning.": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. Use the iSpindel's own formula, or RaptHooker's calibration wizard, first; this is for fine-tuning.": {
     "files": [
       "pages/pill/PillSettings.tsx"
     ]
@@ -1191,6 +1248,7 @@
   },
   "Another network…": {
     "files": [
+      "pages/devices/IspindelTab.tsx",
       "pages/screens/AddScreen.tsx"
     ]
   },
@@ -1397,6 +1455,7 @@
   },
   "Back on the hub's network": {
     "files": [
+      "pages/devices/ispindelApi.ts",
       "pages/screens/strings.ts"
     ]
   },
@@ -1487,6 +1546,16 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Battery voltage": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Battery voltage, V (iSpindels; null for RAPT devices)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
   "Battery, %": {
     "files": [
       "pages/webhooks/strings.ts"
@@ -1551,22 +1620,19 @@
   },
   "Bluetooth isn't working.": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/Dashboard.tsx",
+      "pages/devices/AddDevice.tsx"
     ]
   },
   "Bluetooth mode": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/Dashboard.tsx",
+      "pages/devices/AddDevice.tsx"
     ]
   },
   "Bluetooth problem": {
     "files": [
       "pages/Dashboard.tsx"
-    ]
-  },
-  "Bluetooth signal at the hub, dBm": {
-    "files": [
-      "pages/webhooks/strings.ts"
     ]
   },
   "Bluetooth signal strength: the closer to 0 dBm, the stronger. Anything better than −85 dBm is fine.": {
@@ -1881,6 +1947,11 @@
       "pages/alerts/ChannelsPanel.tsx"
     ]
   },
+  "Check again": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Check for updates daily": {
     "files": [
       "pages/settings/HubSection.tsx"
@@ -1889,6 +1960,16 @@
   "Check now": {
     "files": [
       "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Check the network can reach this hub: guest and IoT networks often can't.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
+  "Check the Wi-Fi password: put it in setup mode and set it up again.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "Check this device is on the screen's Wi-Fi (\"Smart weather clock\"), then try again.": {
@@ -1916,6 +1997,16 @@
       "pages/pill/StartBrewModal.tsx"
     ]
   },
+  "chip {id}": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
+  "Chip ID, over Wi-Fi": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
   "Choose a PIN (4+ characters)": {
     "files": [
       "pages/settings/OwnerSection.tsx"
@@ -1939,6 +2030,11 @@
   "Choose where your readings should go. Everything can be changed afterwards.": {
     "files": [
       "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Choose your Wi-Fi network and type its password. It has to be a network that can reach this hub (guest and IoT networks often can't), on 2.4 GHz.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "Clear": {
@@ -2076,18 +2172,25 @@
   },
   "Copied": {
     "files": [
+      "pages/devices/IspindelTab.tsx",
       "pages/settings/TokensSection.tsx"
     ]
   },
   "Copy": {
     "files": [
       "components/ImageLink.tsx",
+      "pages/devices/IspindelTab.tsx",
       "pages/settings/SystemSection.tsx"
     ]
   },
   "Copy {url}": {
     "files": [
       "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Copy {what}": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "Copy a token from your Ubidots account (API Credentials) into the X-Auth-Token header.": {
@@ -2145,9 +2248,14 @@
       "pages/settings/BackupSection.tsx"
     ]
   },
+  "Couldn't add the iSpindel": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
+    ]
+  },
   "Couldn't add the pill": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Couldn't add the screen": {
@@ -2162,7 +2270,7 @@
   },
   "Couldn't add the thermometer": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Couldn't back up": {
@@ -2193,6 +2301,7 @@
   "Couldn't copy": {
     "files": [
       "components/ImageLink.tsx",
+      "pages/devices/IspindelTab.tsx",
       "pages/settings/SystemSection.tsx",
       "pages/settings/TokensSection.tsx"
     ]
@@ -2321,6 +2430,11 @@
       "pages/alerts/AlertsPage.tsx"
     ]
   },
+  "Couldn't look for iSpindels": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Couldn't look for screens": {
     "files": [
       "pages/screens/ScreensPage.tsx"
@@ -2409,6 +2523,11 @@
     "files": [
       "pages/webhooks/Preview.tsx",
       "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Couldn't start setting the iSpindel up": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "Couldn't start setting the screen up": {
@@ -2704,6 +2823,7 @@
       "App.tsx",
       "components/HubWarnings.tsx",
       "components/UpdateBanner.tsx",
+      "pages/devices/IspindelTab.tsx",
       "pages/screens/SetupPanel.tsx"
     ]
   },
@@ -2748,6 +2868,8 @@
       "pages/Dashboard.tsx",
       "pages/brews/brewText.ts",
       "pages/dashboard/FirstRunGuide.tsx",
+      "pages/devices/IspindelTab.tsx",
+      "pages/devices/ispindelApi.ts",
       "pages/pill/CalibrationWizard.tsx",
       "pages/screens/BrowserSetup.tsx",
       "pages/screens/SetupPanel.tsx",
@@ -3049,6 +3171,7 @@
   },
   "Enter the Wi-Fi password: the hub doesn't know it.": {
     "files": [
+      "pages/devices/ispindelApi.ts",
       "pages/screens/strings.ts"
     ]
   },
@@ -3072,10 +3195,35 @@
       "pages/screens/SupportedScreens.tsx"
     ]
   },
+  "Every": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "every {interval}": {
     "files": [
       "pages/screens/ScreenCard.tsx",
       "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Every 10 minutes": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
+    ]
+  },
+  "Every 15 minutes (recommended)": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
+    ]
+  },
+  "Every 30 minutes": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
+    ]
+  },
+  "Every 5 minutes (battery lasts weeks)": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
     ]
   },
   "Every batch, from pitch to packaging. Pills record all the time; a brew just marks out a batch.": {
@@ -3086,6 +3234,16 @@
   "Every board plugged in is one of your screens already. Plug a new one in and look again.": {
     "files": [
       "pages/screens/AddScreen.tsx"
+    ]
+  },
+  "Every hour (battery lasts months)": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
+    ]
+  },
+  "Every iSpindel set up with this token stops sending straight away. The hub makes a new one for setting them up again (Add device → iSpindel).": {
+    "files": [
+      "pages/settings/TokensSection.tsx"
     ]
   },
   "Every night at {time} the hub saves a copy of everything it has recorded and keeps the last {keep}.": {
@@ -3210,6 +3368,7 @@
   },
   "Experimental": {
     "files": [
+      "pages/devices/IspindelTab.tsx",
       "pages/screens/SupportedScreens.tsx"
     ]
   },
@@ -3230,9 +3389,9 @@
   },
   "Failed": {
     "files": [
-      "pages/Dashboard.tsx",
       "pages/alerts/AlertsPage.tsx",
       "pages/alerts/ChannelsPanel.tsx",
+      "pages/dashboard/NearbyCard.tsx",
       "pages/settings/BackupSection.tsx",
       "pages/settings/PillsSection.tsx"
     ]
@@ -3498,13 +3657,13 @@
   },
   "Found a RAPT Pill nearby": {
     "files": [
-      "pages/Dashboard.tsx",
-      "pages/dashboard/FirstRunGuide.tsx"
+      "pages/dashboard/FirstRunGuide.tsx",
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Found a RAPT Thermometer nearby": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Found on your network": {
@@ -3841,7 +4000,7 @@
   },
   "heard {ago}": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Height (px)": {
@@ -3944,6 +4103,11 @@
       "pages/screens/AddScreen.tsx"
     ]
   },
+  "How to set it up": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "How to set one up": {
     "files": [
       "pages/settings/BluetoothSection.tsx"
@@ -3990,6 +4154,16 @@
       "components/HubWarnings.tsx"
     ]
   },
+  "Hydrometer · Bluetooth": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "Hydrometer · Wi-Fi": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
   "Hydrometer logging for your mead brews": {
     "files": [
       "pages/webhooks/strings.ts"
@@ -4030,6 +4204,11 @@
       "pages/screens/BrowserSetup.tsx"
     ]
   },
+  "If the hub was offline for the setup, the first reading can take one interval to arrive.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "If the new version doesn't start, the hub goes back to {version} by itself. Your brews and settings stay.": {
     "files": [
       "components/UpdateBanner.tsx"
@@ -4052,7 +4231,7 @@
   },
   "Ignore": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Ignore pills sitting idle.": {
@@ -4151,6 +4330,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "In setup mode nearby": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "In Telegram, talk to @BotFather: send /newbot and follow the steps. Copy the bot token it gives you.": {
     "files": [
       "pages/alerts/strings.ts"
@@ -4238,9 +4422,29 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "iSpindels in setup mode": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
+  "iSpindels only use 2.4 GHz Wi-Fi, and the network has to reach this hub: guest and IoT networks often can't.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
+  "iSpindels sending to this hub": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "It doesn't restart by itself here: start it again.": {
     "files": [
       "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "It hasn't sent a reading yet. It's added as soon as one arrives (for the next 2 hours), or it shows up here to add. If nothing comes:": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "It is switched off.": {
@@ -4253,10 +4457,25 @@
       "pages/pill/PillPage.tsx"
     ]
   },
+  "It joins the iSpindel's own Wi-Fi hotspot for about a minute, as your phone would to set it up.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "It may have been removed.": {
     "files": [
       "../../server/screen/render.ts",
       "pages/pill/PillPage.tsx"
+    ]
+  },
+  "It reads the iSpindel's settings and changes only these: the Wi-Fi it joins, Service Type (HTTP), where it sends to (this hub, {where}), the token, and how often it sends. Its name (unless you give it a new one), its gravity formula and everything else stay as they are.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
+  "It saves them. The iSpindel leaves setup mode, restarts and joins your Wi-Fi.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "It sends on its schedule again.": {
@@ -4284,6 +4503,16 @@
   "It shows up below as “{heading}” after its next reading. Pills only send every few minutes, so give it a little while.": {
     "files": [
       "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "It shows up below within a few minutes (pills only send every so often). Name it and add it.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "It shows up below within a minute. Name it and add it.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
     ]
   },
   "It started earlier": {
@@ -4321,9 +4550,19 @@
       "pages/brews/BrewPage.tsx"
     ]
   },
+  "Its Wi-Fi": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
   "Join the screen's Wi-Fi on this device": {
     "files": [
       "pages/screens/BrowserSetup.tsx"
+    ]
+  },
+  "Joining the iSpindel's Wi-Fi": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
     ]
   },
   "Joining the screen's Wi-Fi": {
@@ -4352,6 +4591,16 @@
       "pages/webhooks/WebhooksPage.tsx"
     ]
   },
+  "Keep it within range of this hub (or of a relay).": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "Keep its own": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Keep the latest reading on the broker": {
     "files": [
       "pages/settings/MqttSection.tsx"
@@ -4360,6 +4609,16 @@
   "Keep the pill within Bluetooth range of this hub. The same room is best; thick walls and steel fermenters cut the range.": {
     "files": [
       "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "KegLand's Bluetooth hydrometer and thermometer. The hub hears it directly, or through a Bluetooth relay.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "KegLand's Bluetooth thermometer. The hub hears it directly, or through a Bluetooth relay, and records it once a minute.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
     ]
   },
   "Kept in {folder} on the Pi.": {
@@ -4375,6 +4634,11 @@
   "Keys, topics and addresses are only shown to the owner.": {
     "files": [
       "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Kind of device": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
     ]
   },
   "Kind of event": {
@@ -4619,8 +4883,14 @@
       "pages/brews/EditBrewModal.tsx"
     ]
   },
+  "Leave the password empty if the iSpindel already uses this network.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Leave the password empty to use the one the hub has.": {
     "files": [
+      "pages/devices/IspindelTab.tsx",
       "pages/screens/AddScreen.tsx"
     ]
   },
@@ -4684,7 +4954,13 @@
   },
   "Listening for RAPT Pills…": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/Dashboard.tsx",
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "Listening for RAPT Thermometers…": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
     ]
   },
   "Little Wi-Fi screens that show your pills. The hub sets them up, sends them pictures and keeps them up to date.": {
@@ -4758,6 +5034,11 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Looked {ago}": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Looking for Wi-Fi networks…": {
     "files": [
       "pages/screens/AddScreen.tsx"
@@ -4765,6 +5046,7 @@
   },
   "Looking…": {
     "files": [
+      "pages/devices/IspindelTab.tsx",
       "pages/screens/AddScreen.tsx",
       "pages/screens/ScreensPage.tsx"
     ]
@@ -4970,19 +5252,29 @@
       "pages/webhooks/WebhookEditor.tsx"
     ]
   },
+  "Name (optional)": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
+  "Name for the iSpindel {id} (optional)": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
+    ]
+  },
   "Name for the pill {id} (optional)": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Name for the thermometer {id} (optional)": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Name it (optional)": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Name on the network": {
@@ -5003,6 +5295,7 @@
   },
   "Network name": {
     "files": [
+      "pages/devices/IspindelTab.tsx",
       "pages/screens/AddScreen.tsx"
     ]
   },
@@ -5266,6 +5559,11 @@
       "pages/settings/BackupSection.tsx"
     ]
   },
+  "None yet. Put one in setup mode and it shows up here.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "None. An ESP32 near your fermenters can pass on what it hears to the hub.": {
     "files": [
       "pages/settings/BluetoothSection.tsx"
@@ -5354,7 +5652,7 @@
   },
   "Not yours? Hide it": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Note": {
@@ -5601,6 +5899,11 @@
       "pages/settings/SystemSection.tsx"
     ]
   },
+  "On your phone, join that network and open {url}, then choose {page}.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "On your Pushover dashboard (or a group key).": {
     "files": [
       "pages/alerts/strings.ts"
@@ -5629,6 +5932,11 @@
   "One request for all": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Ones you added already, or chose to ignore, aren’t listed. Ignored ones are under Settings → Archived and ignored pills.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
     ]
   },
   "Online": {
@@ -5703,6 +6011,11 @@
   "Open": {
     "files": [
       "components/ImageLink.tsx"
+    ]
+  },
+  "Open {name}": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "Open a chat with your new bot and send it any message (or add the bot to a group).": {
@@ -5943,6 +6256,11 @@
       "pages/brews/BrewsPage.tsx"
     ]
   },
+  "Pick it below when it shows up (the hub keeps looking), choose its settings and start.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Pick one of the options": {
     "files": [
       "validation.tsx"
@@ -6067,6 +6385,11 @@
       "pages/alerts/RuleModal.tsx",
       "pages/webhooks/ScheduleFields.tsx",
       "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Pills found": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
     ]
   },
   "Pills nearby": {
@@ -6270,6 +6593,11 @@
       "pages/screens/ScreenEditor.tsx"
     ]
   },
+  "Put the iSpindel in setup mode: press its reset button (twice quickly, on some). For about 5 minutes it opens its own Wi-Fi network, whose name starts with {name}.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Put the original firmware back": {
     "files": [
       "pages/screens/ScreenEditor.tsx"
@@ -6278,6 +6606,11 @@
   "Put the pill and a thermometer you trust in the same liquid (a jug of water, or the fermenter).": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Put the pill in {mode}: RAPT app → your pill → Connect → Setup → Telemetry via Bluetooth.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
     ]
   },
   "Put your pill in {mode} (RAPT app → your pill → Connect → Setup → Telemetry via Bluetooth) and keep it within range of this hub. It'll pop up here so you can add it.": {
@@ -6405,6 +6738,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "Reading its settings": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
+    ]
+  },
   "Reading now": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
@@ -6509,7 +6847,7 @@
   },
   "Recording has started.": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Recording pauses for a few seconds while RaptHooker starts again (a reading sent just then may be missed). Your data and running brews are kept.": {
@@ -6829,6 +7167,11 @@
       "pages/webhooks/WebhookEditor.tsx"
     ]
   },
+  "Save. It restarts, joins your Wi-Fi and sends its first reading within a minute: it shows up at the top of this tab, to add.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Saved": {
     "files": [
       "pages/alerts/ChannelEditor.tsx",
@@ -6838,6 +7181,11 @@
   "Saved on the hub": {
     "files": [
       "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Saving the settings for this hub": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
     ]
   },
   "Saving…": {
@@ -6992,9 +7340,19 @@
       "pages/webhooks/Preview.tsx"
     ]
   },
+  "Sends a reading": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Sends every chosen pill's latest reading.": {
     "files": [
       "pages/webhooks/Preview.tsx"
+    ]
+  },
+  "Sends to": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "Sent": {
@@ -7022,6 +7380,16 @@
       "pages/screens/AddScreen.tsx"
     ]
   },
+  "Set it up by hand": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
+  "Set it up for me": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Set it up from this device instead": {
     "files": [
       "pages/screens/AddScreen.tsx"
@@ -7042,9 +7410,19 @@
       "pages/screens/BrowserSetup.tsx"
     ]
   },
+  "Set these, and leave everything else as it is:": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Set up": {
     "files": [
       "pages/screens/AddScreen.tsx"
+    ]
+  },
+  "Set up {name}": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "Set up a screen": {
@@ -7067,6 +7445,11 @@
       "pages/dashboard/FirstRunGuide.tsx"
     ]
   },
+  "Set up another": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "set up by another hub": {
     "files": [
       "pages/screens/FoundScreens.tsx"
@@ -7084,6 +7467,7 @@
   },
   "Setting up {name}": {
     "files": [
+      "pages/devices/IspindelTab.tsx",
       "pages/webhooks/PresetGrid.tsx"
     ]
   },
@@ -7100,6 +7484,11 @@
   "Setting up Home Assistant": {
     "files": [
       "pages/settings/MqttSection.tsx"
+    ]
+  },
+  "Setting up the iSpindel didn't work": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "Setting up the screen didn't work": {
@@ -7223,9 +7612,19 @@
       "pages/webhooks/WebhookEditor.tsx"
     ]
   },
+  "Sign in as the owner to see it.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Sign in to add it": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
+    ]
+  },
+  "Sign in to set it up": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "Sign in with the owner PIN": {
@@ -7272,7 +7671,12 @@
   "Signal unknown": {
     "files": [
       "components/ui.tsx",
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
+    ]
+  },
+  "Signal, dBm (Bluetooth at the hub; an iSpindel's Wi-Fi)": {
+    "files": [
+      "pages/webhooks/strings.ts"
     ]
   },
   "Signal: {quality}": {
@@ -7283,7 +7687,7 @@
   },
   "Signal: {quality} ({rssi} dBm)": {
     "files": [
-      "pages/Dashboard.tsx"
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "signal::Excellent": {
@@ -7415,6 +7819,11 @@
   "SMTP server": {
     "files": [
       "pages/alerts/strings.ts"
+    ]
+  },
+  "Some readings may be missed: its Wi-Fi is weak where it is.": {
+    "files": [
+      "pages/pill/Tiles.tsx"
     ]
   },
   "Some readings may be missed: try the hub (or a relay) closer to the pill.": {
@@ -7667,6 +8076,11 @@
       "pages/webhooks/WebhooksPage.tsx"
     ]
   },
+  "Switch the thermometer on. It sends its temperature over Bluetooth all the time.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
   "Switch to gravity worked out from the tilt?": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
@@ -7806,6 +8220,11 @@
       "pages/pill/Tiles.tsx"
     ]
   },
+  "Temperature · Bluetooth": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
   "Temperature ({unit})": {
     "files": [
       "pages/brews/SummaryChart.tsx"
@@ -7928,6 +8347,11 @@
   "That file isn't a RaptHooker webhooks export (it isn't JSON).": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "That hotspot's setup page isn't an iSpindel's.": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
     ]
   },
   "That's more than 10 °C out: check the number and that both are in the same liquid.": {
@@ -8090,6 +8514,11 @@
       "pages/screens/strings.ts"
     ]
   },
+  "The hub can't switch Wi-Fi networks. Set the iSpindel up by hand instead.": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
+    ]
+  },
   "The hub checks the file is firmware for this screen before sending it. Keep the screen plugged in until it's back.": {
     "files": [
       "pages/screens/ScreenEditor.tsx"
@@ -8098,6 +8527,11 @@
   "The hub couldn't join the screen's Wi-Fi. Check the screen is on and near the hub, then scan again.": {
     "files": [
       "pages/screens/strings.ts"
+    ]
+  },
+  "The hub couldn't reach the iSpindel's Wi-Fi. It only stays in setup mode for a few minutes: press its reset button again, then check again.": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
     ]
   },
   "The hub couldn't talk to the board. Unplug it and plug it back in, then try again. If it still won't, hold its BOOT button while the hub starts.": {
@@ -8110,6 +8544,11 @@
       "pages/screens/strings.ts"
     ]
   },
+  "The hub doesn't know its own address on your network. Set the iSpindel up by hand instead.": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
+    ]
+  },
   "The hub downloads release {version}, installs it in place of this development build and restarts. From then on it updates from releases like any other hub.": {
     "files": [
       "components/UpdateBanner.tsx"
@@ -8120,9 +8559,20 @@
       "components/UpdateBanner.tsx"
     ]
   },
+  "The hub goes back to its own network, and adds the iSpindel as soon as its first reading arrives.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "The hub had trouble getting back on its network. If it's unreachable, restart it.": {
     "files": [
+      "pages/devices/IspindelTab.tsx",
       "pages/screens/SetupPanel.tsx"
+    ]
+  },
+  "The hub has more than one address: {list}. Use the one on the network the iSpindel joins.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "The hub has no firmware for this screen.": {
@@ -8145,6 +8595,11 @@
       "pages/settings/BackupSection.tsx"
     ]
   },
+  "The hub is away talking to the iSpindel. This page reconnects by itself when it's back.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "The hub is away talking to the screen. This page reconnects by itself when it's back.": {
     "files": [
       "pages/screens/SetupPanel.tsx"
@@ -8153,6 +8608,11 @@
   "The hub is listening now.": {
     "files": [
       "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "The hub is off your network meanwhile: this page reconnects by itself when it's back.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "The hub is restarting. This page reconnects by itself.": {
@@ -8225,6 +8685,26 @@
       "pages/screens/strings.ts"
     ]
   },
+  "The hub's Wi-Fi is busy setting something else up. Wait for it to finish.": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
+    ]
+  },
+  "The iSpindel didn't take the settings. Put it in setup mode again and try again.": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
+    ]
+  },
+  "The iSpindel is set up": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
+  "The iSpindel's Wi-Fi signal strength: the closer to 0 dBm, the stronger. Anything better than −80 dBm is fine.": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
   "The last 8 weeks are kept.": {
     "files": [
       "pages/settings/BackupSection.tsx"
@@ -8268,6 +8748,11 @@
   "The name you gave the pill": {
     "files": [
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "The one it uses now": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "The owner also sees the hub's Tailscale address here, if it has one.": {
@@ -8464,6 +8949,11 @@
       "pages/pill/PillSettings.tsx"
     ]
   },
+  "Thermometers found": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
   "Thermometers have no gravity or battery reading, so this alert leaves them out.": {
     "files": [
       "pages/alerts/RuleModal.tsx"
@@ -8544,9 +9034,19 @@
       "pages/alerts/PushPanel.tsx"
     ]
   },
+  "this hub": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "This hub": {
     "files": [
       "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "This hub can't switch Wi-Fi networks, so it can't set an iSpindel up itself or look for ones in setup mode.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "This hub isn't running as a service (development mode), so it can't restart itself. The backup is swapped in when it next starts.": {
@@ -8563,6 +9063,11 @@
   "This hub wasn't set up with the one-line installer, so it can't update itself from here.": {
     "files": [
       "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "This hub's IP address (your router lists it).": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "This isn't a screen RaptHooker can set up.": {
@@ -8785,6 +9290,7 @@
     "files": [
       "components/UpdateBanner.tsx",
       "pages/brews/BrewPage.tsx",
+      "pages/devices/IspindelTab.tsx",
       "pages/screens/BrowserSetup.tsx",
       "pages/screens/SetupPanel.tsx"
     ]
@@ -8835,6 +9341,11 @@
   "Type the gravity you measured.": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Type the hub's IP address, not a name like rapthooker.local: iSpindels can't look those up. Give the hub a fixed address in your router (a DHCP reservation) so it doesn't change.": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
     ]
   },
   "Type the same topic here and send a test.": {
@@ -9173,6 +9684,11 @@
       "pages/webhooks/WebhooksPage.tsx"
     ]
   },
+  "Waiting for its first reading": {
+    "files": [
+      "pages/devices/ispindelApi.ts"
+    ]
+  },
   "Waiting for network time (readings are held until then)": {
     "files": [
       "pages/settings/StatusSection.tsx"
@@ -9321,9 +9837,19 @@
       "pages/brews/events.tsx"
     ]
   },
+  "What the hub does": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "What the hub has been doing lately, newest first. Click a line with more detail to open it.": {
     "files": [
       "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "What the iSpindel sends, using the gravity formula set on it.": {
+    "files": [
+      "pages/pill/DataSources.tsx"
     ]
   },
   "What the pill sends, using its own calibration from the RAPT app.": {
@@ -9438,6 +9964,16 @@
       "pages/settings/BluetoothSection.tsx"
     ]
   },
+  "Wi-Fi": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
+  "Wi-Fi for the iSpindel": {
+    "files": [
+      "pages/devices/IspindelTab.tsx"
+    ]
+  },
   "Wi-Fi for the screen": {
     "files": [
       "pages/screens/AddScreen.tsx",
@@ -9446,6 +9982,7 @@
   },
   "Wi-Fi password": {
     "files": [
+      "pages/devices/IspindelTab.tsx",
       "pages/screens/AddScreen.tsx",
       "pages/screens/BrowserSetup.tsx"
     ]
@@ -9463,6 +10000,11 @@
   "Wi-Fi signal": {
     "files": [
       "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "Wi-Fi: {quality} ({rssi} dBm)": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Width (px)": {

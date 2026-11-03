@@ -5,7 +5,8 @@ import type { History, Offsets, PillModel, WebhookDelivery } from '@rapthooker/s
 
 /**
  * A reading as decoded from a device, before calibration offsets. What a device doesn't measure is null (a RAPT
- * Thermometer has no gravity, battery or accelerometer).
+ * Thermometer has no gravity, battery or accelerometer; an iSpindel sends its tilt as an angle, not accelerometer
+ * values).
  */
 export interface RawReading {
   ts: number;
@@ -18,9 +19,16 @@ export interface RawReading {
   x: number | null;
   y: number | null;
   z: number | null;
+  /** Angle from vertical, degrees, from a device that sends it rather than accelerometer values (iSpindels). */
+  tilt?: number | null;
+  /** Battery voltage, V (iSpindels). */
+  voltage?: number | null;
   /** FLAG_* bits. */
   flags: number;
 }
+
+/** The columns a RawReading is read from. */
+const READING_COLUMNS = 'ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, flags';
 
 /**
  * Schema versions, applied in order; the database's user_version says how many have run. People's brewing history is
@@ -134,6 +142,18 @@ export const MIGRATIONS: string[] = [
   `
   CREATE TABLE screens (id TEXT PRIMARY KEY, json TEXT NOT NULL, created_at INTEGER NOT NULL);
   `,
+  // v6: iSpindels (Wi-Fi hydrometers) send their tilt as an angle rather than accelerometer values, and their battery
+  // as a voltage: two new columns, NULL for every other reading. Rollups sum them with a count of the readings that
+  // had them (rather than of those that didn't, as in v4): versions from before never record either, so a row they
+  // add rightly counts as having neither. Adding nullable columns doesn't rewrite the table.
+  `
+  ALTER TABLE readings ADD COLUMN tilt REAL;
+  ALTER TABLE readings ADD COLUMN voltage REAL;
+  ALTER TABLE rollups ADD COLUMN tilt REAL NOT NULL DEFAULT 0;
+  ALTER TABLE rollups ADD COLUMN tilt_n INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE rollups ADD COLUMN voltage REAL NOT NULL DEFAULT 0;
+  ALTER TABLE rollups ADD COLUMN voltage_n INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 /**
@@ -198,6 +218,8 @@ export interface PrunedRollup {
   x: number | null;
   y: number | null;
   z: number | null;
+  /** The average tilt a device sent as an angle (iSpindels). */
+  tilt: number | null;
 }
 
 export interface Aggregate {
@@ -216,6 +238,10 @@ export function tiltOf(x: number | null, y: number | null, z: number | null): nu
   if (!(g > 0)) return null;
   return (Math.acos(Math.min(1, Math.abs(z) / g)) * 180) / Math.PI;
 }
+
+/** A reading's tilt: from its accelerometer values, or as the device sent it (iSpindels). */
+export const readingTilt = (r: { x: number | null; y: number | null; z: number | null; tilt?: number | null }): number | null =>
+  tiltOf(r.x, r.y, r.z) ?? r.tilt ?? null;
 
 /** The database was upgraded by a newer version of RaptHooker that said older ones can't use it any more. */
 export class IncompatibleDatabaseError extends Error {}
@@ -257,21 +283,24 @@ export class Store {
       throw err;
     }
     this.insertReadingStmt = this.db.prepare(
-      'INSERT OR IGNORE INTO readings (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT OR IGNORE INTO readings (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
-    // Each measurement is a sum, with a count of the readings that didn't have it (see migration v4). sg/sg_n only
-    // count plausible readings; sg_all covers every reading with a gravity, for buckets where none were plausible.
+    // Each measurement is a sum, with a count of the readings that didn't have it (see migration v4), or of those that
+    // did for tilt and voltage (v6). sg/sg_n only count plausible readings; sg_all covers every reading with a gravity,
+    // for buckets where none were plausible.
     this.upsertRollupStmt = this.db.prepare(`
       INSERT INTO rollups (pill_id, bucket, n, sg, sg_n, sg_all, sg_missing, temp, temp_missing, velocity, velocity_n, battery,
-        battery_missing, rssi, rssi_n, x, y, z, xyz_missing)
-      VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        battery_missing, rssi, rssi_n, x, y, z, xyz_missing, tilt, tilt_n, voltage, voltage_n)
+      VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT (pill_id, bucket) DO UPDATE SET
         n = n + 1, sg = sg + excluded.sg, sg_n = sg_n + excluded.sg_n, sg_all = sg_all + excluded.sg_all,
         sg_missing = sg_missing + excluded.sg_missing, temp = temp + excluded.temp, temp_missing = temp_missing + excluded.temp_missing,
         velocity = velocity + excluded.velocity, velocity_n = velocity_n + excluded.velocity_n,
         battery = battery + excluded.battery, battery_missing = battery_missing + excluded.battery_missing,
         rssi = rssi + excluded.rssi, rssi_n = rssi_n + excluded.rssi_n,
-        x = x + excluded.x, y = y + excluded.y, z = z + excluded.z, xyz_missing = xyz_missing + excluded.xyz_missing`);
+        x = x + excluded.x, y = y + excluded.y, z = z + excluded.z, xyz_missing = xyz_missing + excluded.xyz_missing,
+        tilt = tilt + excluded.tilt, tilt_n = tilt_n + excluded.tilt_n, voltage = voltage + excluded.voltage,
+        voltage_n = voltage_n + excluded.voltage_n`);
   }
 
   get schemaVersion(): number {
@@ -400,11 +429,25 @@ export class Store {
 
   addReading(pillId: string, r: RawReading): boolean {
     return this.transaction(() => {
-      const res = this.insertReadingStmt.run(pillId, r.ts, r.sg, r.temp, r.velocity, r.battery, r.rssi, r.x, r.y, r.z, r.flags);
+      const res = this.insertReadingStmt.run(
+        pillId,
+        r.ts,
+        r.sg,
+        r.temp,
+        r.velocity,
+        r.battery,
+        r.rssi,
+        r.x,
+        r.y,
+        r.z,
+        r.tilt ?? null,
+        r.voltage ?? null,
+        r.flags,
+      );
       if (res.changes === 0) return false;
       const bucket = r.ts - (r.ts % ROLLUP_MS);
       const plausible = (r.flags & FLAG_IMPLAUSIBLE) === 0;
-      const sum = (v: number | null): [number, number] => (v === null ? [0, 0] : [v, 1]);
+      const sum = (v: number | null | undefined): [number, number] => (v === null || v === undefined ? [0, 0] : [v, 1]);
       const missing = (v: number | null): [number, number] => (v === null ? [0, 1] : [v, 0]);
       const xyz = r.x !== null && r.y !== null && r.z !== null;
       this.upsertRollupStmt.run(
@@ -420,6 +463,8 @@ export class Store {
         xyz ? r.y : 0,
         xyz ? r.z : 0,
         xyz ? 0 : 1,
+        ...sum(r.tilt),
+        ...sum(r.voltage),
       );
       return true;
     });
@@ -444,24 +489,20 @@ export class Store {
 
   latestReadings(pillId: string, limit: number): RawReading[] {
     return this.db
-      .prepare('SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? ORDER BY ts DESC LIMIT ?')
+      .prepare(`SELECT ${READING_COLUMNS} FROM readings WHERE pill_id = ? ORDER BY ts DESC LIMIT ?`)
       .all(pillId, limit) as unknown as RawReading[];
   }
 
   readingsFrom(pillId: string, from: number, limit: number): RawReading[] {
     return this.db
-      .prepare(
-        'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts >= ? ORDER BY ts LIMIT ?',
-      )
+      .prepare(`SELECT ${READING_COLUMNS} FROM readings WHERE pill_id = ? AND ts >= ? ORDER BY ts LIMIT ?`)
       .all(pillId, from, limit) as unknown as RawReading[];
   }
 
   lastReadingBefore(pillId: string, ts: number): RawReading | null {
     return (
       (this.db
-        .prepare(
-          'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts <= ? ORDER BY ts DESC LIMIT 1',
-        )
+        .prepare(`SELECT ${READING_COLUMNS} FROM readings WHERE pill_id = ? AND ts <= ? ORDER BY ts DESC LIMIT 1`)
         .get(pillId, ts) as unknown as RawReading | undefined) ?? null
     );
   }
@@ -470,7 +511,7 @@ export class Store {
     return (
       (this.db
         .prepare(
-          'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts <= ? AND flags & 1 = 0 AND sg IS NOT NULL ORDER BY ts DESC LIMIT 1',
+          `SELECT ${READING_COLUMNS} FROM readings WHERE pill_id = ? AND ts <= ? AND flags & 1 = 0 AND sg IS NOT NULL ORDER BY ts DESC LIMIT 1`,
         )
         .get(pillId, ts) as unknown as RawReading | undefined) ?? null
     );
@@ -481,9 +522,7 @@ export class Store {
   }
 
   *iterateReadings(pillId: string, from: number, to: number): Generator<RawReading> {
-    const stmt = this.db.prepare(
-      'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? ORDER BY ts',
-    );
+    const stmt = this.db.prepare(`SELECT ${READING_COLUMNS} FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? ORDER BY ts`);
     for (const row of stmt.iterate(pillId, from, to)) yield row as unknown as RawReading;
   }
 
@@ -527,7 +566,7 @@ export class Store {
       .prepare(
         `SELECT bucket, sg_n AS n, sg / sg_n AS sg, CASE WHEN n > temp_missing THEN temp / (n - temp_missing) END AS temp,
                 CASE WHEN n > xyz_missing THEN x / (n - xyz_missing) END AS x, CASE WHEN n > xyz_missing THEN y / (n - xyz_missing) END AS y,
-                CASE WHEN n > xyz_missing THEN z / (n - xyz_missing) END AS z
+                CASE WHEN n > xyz_missing THEN z / (n - xyz_missing) END AS z, CASE WHEN tilt_n > 0 THEN tilt / tilt_n END AS tilt
          FROM rollups WHERE pill_id = ? AND bucket >= ? AND bucket + ${ROLLUP_MS} <= ? AND sg_n > 0 ORDER BY bucket`,
       )
       .all(pillId, from, until) as unknown as PrunedRollup[];
@@ -581,6 +620,7 @@ export class Store {
       x: number | null;
       y: number | null;
       z: number | null;
+      tilt: number | null;
       flags: number;
     };
     const empty = (r: P, ts = r.ts): P => ({
@@ -594,15 +634,14 @@ export class Store {
       x: null,
       y: null,
       z: null,
+      tilt: null,
     });
     let rows: P[];
 
     if (bucket <= 60_000) {
       bucket = 0;
       rows = this.db
-        .prepare(
-          'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? ORDER BY ts LIMIT ?',
-        )
+        .prepare(`SELECT ${READING_COLUMNS} FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? ORDER BY ts LIMIT ?`)
         .all(pillId, qFrom, to, opts.maxPoints * 4 + Math.ceil(lookback / 60_000)) as unknown as P[];
       if (excluded.length) rows = rows.map((r) => (excludedAt(r.ts) ? empty(r) : r));
     } else if (bucket < ROLLUP_MS) {
@@ -611,7 +650,7 @@ export class Store {
           `SELECT CAST(${keep ? `COALESCE(${avg('ts')}, AVG(ts))` : 'AVG(ts)'} AS INTEGER) AS ts,
                   COALESCE(AVG(CASE WHEN flags & 1 = 0${keep ? ` AND ${keep}` : ''} THEN sg END), ${avg('sg')}) AS sg, ${avg('temp')} AS temp,
                   ${avg('velocity')} AS velocity, ${avg('battery')} AS battery, ${avg('rssi')} AS rssi, ${avg('x')} AS x, ${avg('y')} AS y,
-                  ${avg('z')} AS z, ${keep ? `MIN(CASE WHEN ${keep} THEN flags & 1 END)` : 'MIN(flags & 1)'} AS flags
+                  ${avg('z')} AS z, ${avg('tilt')} AS tilt, ${keep ? `MIN(CASE WHEN ${keep} THEN flags & 1 END)` : 'MIN(flags & 1)'} AS flags
            FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? GROUP BY ts / ${Math.floor(bucket)} ORDER BY 1`,
         )
         .all(pillId, qFrom, to) as unknown as P[];
@@ -629,6 +668,7 @@ export class Store {
                   CASE WHEN TOTAL(n) > TOTAL(xyz_missing) THEN TOTAL(x) / (TOTAL(n) - TOTAL(xyz_missing)) END AS x,
                   CASE WHEN TOTAL(n) > TOTAL(xyz_missing) THEN TOTAL(y) / (TOTAL(n) - TOTAL(xyz_missing)) END AS y,
                   CASE WHEN TOTAL(n) > TOTAL(xyz_missing) THEN TOTAL(z) / (TOTAL(n) - TOTAL(xyz_missing)) END AS z,
+                  CASE WHEN TOTAL(tilt_n) > 0 THEN TOTAL(tilt) / TOTAL(tilt_n) END AS tilt,
                   CASE WHEN TOTAL(sg_n) > 0 OR TOTAL(n) = TOTAL(sg_missing) THEN 0 ELSE 1 END AS flags
            FROM rollups WHERE pill_id = ? AND bucket BETWEEN ? AND ? GROUP BY bucket / ${Math.floor(bucket)} ORDER BY 1`,
         )
@@ -646,7 +686,7 @@ export class Store {
     // Model the whole fetched span, then keep the requested range.
     const ts = rows.map((r) => r.ts);
     const implausible = rows.map((r) => (r.flags & FLAG_IMPLAUSIBLE) !== 0);
-    const tilt = rows.map((r) => tiltOf(r.x, r.y, r.z));
+    const tilt = rows.map((r) => readingTilt(r));
     const pillGravity = rows.map((r) => (r.sg === null ? null : r.sg + opts.offsets.gravity));
     let gravity = rows.map((r, i) => {
       const fromTilt = tiltGravity(model, tilt[i]!);

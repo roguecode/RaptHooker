@@ -77,7 +77,7 @@ function PillView({ pill }: { pill: Pill }) {
               <span>{t('Last reading {time}', { time: timeAgo(pill.live.lastReadingAt, now) })}</span>
               {/* i18n: when the next reading is due, e.g. "Next in 5 min" */}
               {pill.live.online && next && <span>{t('Next {time}', { time: timeUntil(next, now) })}</span>}
-              <span className="num">{thermometer ? pill.address : `RAPT ID ${pill.raptId}`}</span>
+              <span className="num">{pill.kind === 'pill' ? `RAPT ID ${pill.raptId}` : pill.address}</span>
             </div>
           </div>
           <div className="hero-figures">

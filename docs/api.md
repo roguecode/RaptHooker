@@ -10,10 +10,11 @@ when you want a script to identify itself, or when the hub is reached in ways wh
 
 Create one under **Settings → API tokens** (owner only). There are two kinds:
 
-| Kind      | Can                                                                                                                                                        |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Read**  | Read pills, readings, brews and the rest of the read-only API. It can't change anything, and sees secrets (webhook URLs and keys) hidden, like any viewer. |
-| **Relay** | Only post Bluetooth adverts from a relay (see [relay.md](relay.md)). It can't read anything.                                                               |
+| Kind         | Can                                                                                                                                                                                                         |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Read**     | Read pills, readings, brews and the rest of the read-only API. It can't change anything, and sees secrets (webhook URLs and keys) hidden, like any viewer.                                                  |
+| **Relay**    | Only post Bluetooth adverts from a relay (see [relay.md](relay.md)). It can't read anything.                                                                                                                |
+| **iSpindel** | Only post readings from [iSpindels](ispindel.md) (`POST /api/ispindel`). It can't read anything. The hub makes this one itself, and keeps it so the owner can see it again under **Add device → iSpindel**. |
 
 The token (`rh_read_…` or `rh_relay_…`) is shown **once**, when it's created; the hub only keeps a hash of it. Lost
 it? Delete it and make another. The list shows when each token was last used. Deleting a token stops it working
@@ -35,8 +36,11 @@ curl -H "Authorization: Bearer $TOKEN" $HUB/api/pills
 ## Endpoints
 
 All times are milliseconds since 1970 (UTC). Gravity is SG and temperature °C, whatever units the app shows. Each pill
-has a `kind`: `"pill"`, or `"thermometer"` for a RAPT Bluetooth Thermometer, whose readings have only a `temperature`
-and `rssi` (the rest is `null`).
+has a `kind`: `"pill"`, `"thermometer"` for a RAPT Bluetooth Thermometer, whose readings have only a `temperature`
+and `rssi` (the rest is `null`), or `"ispindel"` for an [iSpindel](ispindel.md), whose readings have a `tilt` (degrees)
+and a `voltage` (its battery, V; `battery` is the charge estimated from it), no accelerometer values (`x`, `y`, `z` are
+`null`), and whose `rssi` is its Wi-Fi signal. `voltage` is missing (or `null`) for everything else. A device that
+hasn't been added yet but is heard nearby (`nearby` in `/api/state`) has a `name` if it says its own (iSpindels do).
 
 | Endpoint                                                 | What                                                                                                                                                                                                                                                                                                                         |
 | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -149,3 +153,17 @@ history leaves them out only when asked to (`exclude=1`). The ranges are in each
 A set-up's progress says `via` (`wifi` or `usb`) and, while installing over USB, `percent`. Set-up progress and screens
 found on the network also come as live messages (`screen-setup`, `screens-found`), and
 changes to a screen as `screen` and `screen-removed`.
+
+[iSpindels](./ispindel.md) post their readings themselves; adding them and setting them up is the owner's:
+
+| Endpoint                                              | What                                                                                                                                                                                                                                                     |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/ispindel`                                  | An iSpindel's reading, as its HTTP service sends it (JSON with `name`, `ID`, `token`, `angle`, `temperature`, `temp_units`, `battery`, `gravity`, `interval`, `RSSI`). Needs the iSpindel token: in `token`, a `Bearer` header or `?token=`              |
+| `GET /api/ispindel`                                   | What setting one up needs: the `token` (owner only), the address to send to (`server`: `host`, `hosts`, `port`, `path`), whether the hub can switch Wi-Fi networks (`wifi`), iSpindels in setup mode nearby (`hotspots`) and the owner's current `setup` |
+| `POST /api/ispindel/scan`                             | Looks for iSpindels in setup mode now, and keeps looking every 15 seconds for the next minute and a half: `{ hotspots, scannedAt }`                                                                                                                      |
+| `POST /api/ispindel/setup`, `GET /api/ispindel/setup` | `{ hotspot, ssid, password, name, interval }` starts setting one up from its hotspot (an empty `ssid`: the network it has; an empty `name`: its own); then how it's going (`step`, `state`, `error`, `written`, `deviceId`)                              |
+| `DELETE /api/ispindel/setup/:id`                      | How that set-up ended has been shown: the hub stops offering it (it otherwise keeps it for 15 minutes, for a page that missed the end)                                                                                                                   |
+
+An iSpindel that posts with the token is listed under `nearby` until it's added with `POST /api/pills` like any other
+device (its address is `ISPINDEL:` and its chip id in hex). Hotspots seen and set-up progress also come as live messages
+(`ispindel-hotspots`, and `ispindel-setup` for the owner).

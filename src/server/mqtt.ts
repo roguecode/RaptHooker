@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import { hostname } from 'node:os';
 import { randomBytes } from 'node:crypto';
 import { connect, type IClientOptions, type MqttClient } from 'mqtt';
-import { sgToPlato, type Brew, type MqttSettings, type MqttStatus, type Pill, type Reading } from '@rapthooker/shared';
+import { measuresGravity, sgToPlato, type Brew, type MqttSettings, type MqttStatus, type Pill, type Reading } from '@rapthooker/shared';
 import type { Logger } from './log.js';
 import type { PillService } from './pills.js';
 import type { BrewService } from './brews.js';
@@ -46,6 +46,8 @@ interface EntityDef {
   icon?: string;
   /** Also announced for a RAPT Thermometer (which only has these). */
   thermometer?: boolean;
+  /** Only announced for this kind of device. */
+  only?: Pill['kind'];
 }
 
 export const MQTT_ENTITIES: readonly EntityDef[] = [
@@ -91,6 +93,18 @@ export const MQTT_ENTITIES: readonly EntityDef[] = [
     deviceClass: 'battery',
     precision: 0,
     measurement: true,
+  },
+  {
+    component: 'sensor',
+    object: 'battery_voltage',
+    name: 'Battery voltage',
+    field: 'battery_voltage',
+    unit: 'V',
+    deviceClass: 'voltage',
+    precision: 2,
+    measurement: true,
+    diagnostic: true,
+    only: 'ispindel',
   },
   {
     component: 'sensor',
@@ -182,7 +196,8 @@ const roundOrNull = (v: number | null | undefined, dp: number): number | null =>
 const errText = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
 /** Whether a device of this kind has the entity. */
-const hasEntity = (pill: Pill, e: EntityDef): boolean => pill.kind === 'pill' || e.thermometer === true;
+const hasEntity = (pill: Pill, e: EntityDef): boolean =>
+  e.only !== undefined ? pill.kind === e.only : measuresGravity(pill.kind) || e.thermometer === true;
 
 /** The JSON published to `<topic>/<pill id>/state`. Brew fields are null when no brew is running. */
 export function statePayload(pill: Pill, reading: Reading): Record<string, unknown> {
@@ -194,6 +209,7 @@ export function statePayload(pill: Pill, reading: Reading): Record<string, unkno
     temperature: round(reading.temperature, 2),
     velocity: roundOrNull(reading.velocity, 2),
     battery: roundOrNull(reading.battery, 1),
+    battery_voltage: roundOrNull(reading.voltage, 3),
     rssi: reading.rssi,
     tilt: roundOrNull(reading.tilt, 1),
     plausible: reading.plausible,
@@ -717,13 +733,15 @@ export class MqttService extends EventEmitter {
       device: {
         identifiers: [`rapthooker_${pill.id}`],
         name: pill.name,
-        manufacturer: 'KegLand',
+        manufacturer: pill.kind === 'ispindel' ? 'iSpindel' : 'KegLand',
         model:
           pill.kind === 'thermometer'
             ? 'RAPT Bluetooth Thermometer'
-            : pill.info.deviceType
-              ? `RAPT Pill (${pill.info.deviceType})`
-              : 'RAPT Pill',
+            : pill.kind === 'ispindel'
+              ? 'iSpindel'
+              : pill.info.deviceType
+                ? `RAPT Pill (${pill.info.deviceType})`
+                : 'RAPT Pill',
         ...(pill.info.firmware ? { sw_version: pill.info.firmware } : {}),
         via_device: this.hubIdentifier,
       },

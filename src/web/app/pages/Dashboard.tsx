@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { plausibleGravity, type NearbyPill, type Pill } from '@rapthooker/shared';
+import { plausibleGravity, type Pill } from '@rapthooker/shared';
 import { api, errorText } from '../api';
 import { useLive } from '../live';
 import { useUnits } from '../units';
 import { historyGapMs, useHistory, useRecentRange } from '../hooks';
-import { href, navigate } from '../router';
+import { href } from '../router';
 import { fixed, signalQuality, timeAgo, timeUntil, useNow } from '../format';
 import { t, tp } from '../i18n';
 import { Trans } from '../i18n/Trans';
@@ -22,6 +22,8 @@ import { FirstRunGuide, useGuide } from './dashboard/FirstRunGuide';
 import { ArrangeList } from './dashboard/ArrangeList';
 import { PillRow, pillStatus } from './dashboard/PillRow';
 import { ThermometerCard } from './dashboard/ThermometerCard';
+import { NearbyCard } from './dashboard/NearbyCard';
+import { AddDeviceButton } from './devices/AddDevice';
 import './dashboard/dashboard.css';
 
 const DAY = 86_400_000;
@@ -142,7 +144,10 @@ export function Dashboard() {
           <h1>{t('Your pills')}</h1>
           <p>{active.length === 0 ? t('Live readings from your RAPT Pills, recorded around the clock.') : recording}</p>
         </div>
-        <BleChip />
+        <div className="row page-actions">
+          <AddDeviceButton />
+          <BleChip />
+        </div>
       </div>
 
       {guide.visible ? <FirstRunGuide onHide={guide.hide} /> : session && !session.pinSet && <PinNotice />}
@@ -271,87 +276,9 @@ function EmptyState() {
         />
       </p>
       <p className="small muted">{t('Pills only send every few minutes, so it can take a little while to appear.')}</p>
-    </div>
-  );
-}
-
-function NearbyCard({ pill }: { pill: NearbyPill }) {
-  const { isOwner, toast, upsertPill } = useLive();
-  const u = useUnits();
-  const now = useNow(10_000);
-  const [name, setName] = useState('');
-  const [busy, setBusy] = useState(false);
-  const nearbySignal = signalQuality(pill.rssi);
-  const thermometer = pill.kind === 'thermometer';
-  const add = async () => {
-    setBusy(true);
-    try {
-      const added = await api.adopt(pill.address, name.trim() || undefined);
-      upsertPill(added);
-      toast({ tone: 'success', title: t('{name} added', { name: added.name }), body: t('Recording has started.') });
-      navigate(href.pill(added.id));
-    } catch (err) {
-      toast({ tone: 'error', title: thermometer ? t("Couldn't add the thermometer") : t("Couldn't add the pill"), body: errorText(err) });
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <div className="panel nearby">
-      <div className="radar" aria-hidden="true">
-        <Icon name={thermometer ? 'thermometer' : 'bluetooth'} size={20} />
+      <div className="row" style={{ justifyContent: 'center' }}>
+        <AddDeviceButton primary />
       </div>
-      <div className="info">
-        <h2>{thermometer ? t('Found a RAPT Thermometer nearby') : t('Found a RAPT Pill nearby')}</h2>
-        <div className="small muted num">
-          {pill.raptId} ·{' '}
-          {pill.latest ? `${thermometer ? '' : `${u.gravityText(pill.latest.gravity)} · `}${u.tempText(pill.latest.temperature)} · ` : ''}
-          {nearbySignal
-            ? t('Signal: {quality} ({rssi} dBm)', { quality: nearbySignal.label, rssi: nearbySignal.rssi })
-            : t('Signal unknown')}{' '}
-          · {t('heard {ago}', { ago: timeAgo(pill.lastHeardAt, now) })}
-        </div>
-      </div>
-      {isOwner ? (
-        <form
-          className="row"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void add();
-          }}
-        >
-          <input
-            className="input"
-            style={{ width: '12rem' }}
-            aria-label={
-              thermometer
-                ? t('Name for the thermometer {id} (optional)', { id: pill.raptId })
-                : t('Name for the pill {id} (optional)', { id: pill.raptId })
-            }
-            placeholder={t('Name it (optional)')}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={60}
-          />
-          <button type="submit" className="btn primary" disabled={busy}>
-            <Icon name="plus" /> {thermometer ? t('Add thermometer') : t('Add pill')}
-          </button>
-          <button
-            type="button"
-            className="btn ghost"
-            title={t('Not yours? Hide it')}
-            onClick={() =>
-              api.ignoreNearby(pill.address, true).catch((e) => toast({ tone: 'error', title: t('Failed'), body: errorText(e) }))
-            }
-          >
-            {t('Ignore')}
-          </button>
-        </form>
-      ) : (
-        <a className="btn" href="#/settings">
-          <Icon name="lock" /> {t('Sign in to add it')}
-        </a>
-      )}
     </div>
   );
 }
@@ -442,7 +369,16 @@ export function PillCard({ pill }: { pill: Pill }) {
           {r?.battery != null ? `${Math.round(r.battery)}%` : '–'}
           <BatteryBar percent={r?.battery} />
         </div>
-        <div className="mini-stat" title={signal ? t('{rssi} dBm at the hub', { rssi: signal.rssi }) : undefined}>
+        <div
+          className="mini-stat"
+          title={
+            signal
+              ? pill.kind === 'ispindel'
+                ? t('{rssi} dBm Wi-Fi signal', { rssi: signal.rssi })
+                : t('{rssi} dBm at the hub', { rssi: signal.rssi })
+              : undefined
+          }
+        >
           <span className="k">
             <Icon name="signal" size={12} /> {t('Signal')}
           </span>

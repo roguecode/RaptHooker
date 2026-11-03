@@ -5,6 +5,34 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **iSpindels (experimental).** RaptHooker now records [iSpindels](docs/ispindel.md), the DIY Wi-Fi hydrometer, like a
+  pill: dashboard, charts, brews, calibration, alerts, webhooks, MQTT and Home Assistant, CSV export. An iSpindel sends
+  its readings over your Wi-Fi to the hub (`/api/ispindel`), with a token the hub makes for it. **Add device →
+  iSpindel** can set one up for you: the hub finds iSpindels in setup mode (it keeps looking, every 15 seconds while
+  the tab is open), joins one's hotspot for about a minute, changes only the settings it needs (Wi-Fi, the HTTP
+  service, the hub's address, the token and how often it sends) and adds it when its first reading arrives. Or set it
+  up by hand, with every value to type shown on the same screen, ready to copy. Tried with firmware 6.5.1; please
+  report back how it goes with yours.
+  - Stored in the same tables as pills, with two new columns for readings, `tilt` (degrees) and `voltage` (battery
+    volts), and their sums in the rollups (schema 6). Older versions leave them alone: they list an iSpindel you've
+    added but don't record it.
+  - An iSpindel's `kind` is `ispindel`, its address `ISPINDEL:<chip id>` and its id `ispindel-<chip id>`.
+  - A new kind of API token, made by the hub and listed as _iSpindels_ under Settings → API tokens, can only post
+    iSpindel readings.
+  - Readings in the API gain `voltage`, and devices heard nearby a `name`. New webhook variable `battery_voltage`, MQTT
+    state field `battery_voltage` and, for iSpindels, a _Battery voltage_ entity in Home Assistant. An iSpindel's CSV
+    export has its own columns.
+- **Add device.** A new **Add device** button on the dashboard opens one dialog with a tab for each kind of device: RAPT
+  Pills and RAPT Thermometers heard nearby, ready to name and add as on the dashboard, and iSpindels.
+
+### Changed
+
+- For an iSpindel, the `rssi` webhook variable and the _Signal strength_ entity are its Wi-Fi signal.
+- `screens.wifi` and `screens.hubUrl` also apply to setting up iSpindels; the hub sets up one screen or iSpindel at a
+  time.
+
 ## [0.8.0] - 2026-11-02
 
 ### Added

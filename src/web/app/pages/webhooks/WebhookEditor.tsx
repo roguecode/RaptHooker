@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   DEFAULT_WEBHOOK_OPTIONS,
+  measuresGravity,
   mixesPills,
   presetById,
   webhookInputSchema,
@@ -52,7 +53,7 @@ const onePillSchema = webhookInputSchema.refine((w) => Array.isArray(w.pillIds) 
 });
 
 const fromPreset = (p: WebhookPreset, pills: Pill[]): WebhookInput => {
-  const real = pills.filter((x) => !x.archived && x.kind === 'pill');
+  const real = pills.filter((x) => !x.archived && measuresGravity(x.kind));
   return {
     name: p.id === 'custom' ? t('My webhook') : p.name,
     enabled: true,

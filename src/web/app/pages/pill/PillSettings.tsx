@@ -127,9 +127,13 @@ export function PillSettings({ pill }: { pill: Pill }) {
             <p className="hint" style={{ marginTop: 0 }}>
               {thermometer
                 ? t('Added to every reading, including history and webhooks.')
-                : t(
-                    'Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. Calibrate the pill in the RAPT app first; this is for fine-tuning.',
-                  )}
+                : pill.kind === 'ispindel'
+                  ? t(
+                      "Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. Use the iSpindel's own formula, or RaptHooker's calibration wizard, first; this is for fine-tuning.",
+                    )
+                  : t(
+                      'Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. Calibrate the pill in the RAPT app first; this is for fine-tuning.',
+                    )}
             </p>
             <div className="row">
               <button type="submit" className="btn">

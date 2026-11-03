@@ -95,6 +95,29 @@ describe('live cache', () => {
     expect(back).toEqual({ ...snapshot, savedAt: NOW - 5000 });
   });
 
+  it("keeps each device's kind, and takes one saved without a kind (before thermometers) as a pill", () => {
+    const { kind: _kind, ...withoutKind } = pill('a');
+    const near = {
+      address: 'ISPINDEL:64983F',
+      kind: 'ispindel',
+      raptId: 'ISPINDEL:64983F',
+      name: 'Spindel',
+      firstHeardAt: NOW - 60_000,
+      lastHeardAt: NOW - 60_000,
+      rssi: -60,
+      latest: null,
+      info: { firmware: null, deviceType: 'iSpindel', payloadVersion: null },
+    };
+    const saved = {
+      ...snapshot,
+      pills: [withoutKind, { ...pill('ispindel-64983f'), kind: 'ispindel' }, { ...pill('t'), kind: 'thermometer' }],
+      nearby: [near],
+    };
+    const back = parseLive(serializeLive(saved as LiveSnapshot, NOW), NOW)!;
+    expect(back.pills.map((p) => p.kind)).toEqual(['pill', 'ispindel', 'thermometer']);
+    expect(back.nearby).toEqual([near]);
+  });
+
   it('ignores nothing, junk, other versions and broken pills', () => {
     expect(parseLive(null, NOW)).toBeNull();
     expect(parseLive('not json', NOW)).toBeNull();

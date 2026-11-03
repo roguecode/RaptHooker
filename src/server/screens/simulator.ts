@@ -443,9 +443,20 @@ export class FakeScreen extends EventEmitter {
   }
 }
 
+/** Anything with a hotspot the pretend Wi-Fi can see and join: a FakeScreen, or a FakeIspindel in setup mode. */
+export interface HotspotDevice {
+  readonly id: string;
+  /** The hotspot it has open now, or null. */
+  readonly hotspot: string | null;
+  /** Where its web server answers. */
+  readonly address: string;
+  /** Its hotspot's address (made up from its id if not given). */
+  readonly bssid?: string;
+}
+
 /**
- * A pretend Wi-Fi for FakeScreens: their hotspots show up in scans, joining one returns the fake screen's address,
- * and the hub's own network is always there to go back to.
+ * A pretend Wi-Fi for FakeScreens (and FakeIspindels): their hotspots show up in scans, joining one returns the
+ * device's address, and the hub's own network is always there to go back to.
  */
 export class MockWifi implements WifiController {
   readonly name = 'mock';
@@ -455,7 +466,7 @@ export class MockWifi implements WifiController {
   private previous: string | null | undefined;
 
   constructor(
-    private readonly screens: () => FakeScreen[],
+    private readonly screens: () => HotspotDevice[],
     readonly home: { ssid: string; password: string; channel: number } = { ssid: 'Brewery', password: 'hops-and-barley', channel: 6 },
     private readonly opts: { goesOffline?: boolean; knowsPassword?: boolean } = {},
   ) {
@@ -492,7 +503,7 @@ export class MockWifi implements WifiController {
       if (h)
         nets.push({
           ssid: h,
-          bssid: `02:00:00:00:01:${s.id.slice(-2)}`,
+          bssid: s.bssid ?? `02:00:00:00:01:${s.id.slice(-2)}`,
           signal: 70,
           channel: 1,
           band: 2.4,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Brew } from '@rapthooker/shared';
+import { measuresGravity, type Brew } from '@rapthooker/shared';
 import { api, errorText } from '../../api';
 import { useLive, useLiveMessages } from '../../live';
 import { useUnits } from '../../units';
@@ -60,7 +60,7 @@ export function BrewsPage() {
   const pillOf = (id: string) => pills.find((p) => p.id === id);
   const active = brews?.filter((b) => b.endedAt === null) ?? [];
   const past = brews?.filter((b) => b.endedAt !== null) ?? [];
-  const free = pills.filter((p) => !p.archived && !p.brew && p.kind === 'pill');
+  const free = pills.filter((p) => !p.archived && !p.brew && measuresGravity(p.kind));
   const known = brews ? selected.filter((id) => brews.some((b) => b.id === id)) : selected;
 
   const toggle = (id: string) => {

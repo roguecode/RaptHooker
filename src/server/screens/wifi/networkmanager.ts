@@ -158,12 +158,14 @@ export class NetworkManagerWifi implements WifiController {
     return false;
   }
 
-  async scan(): Promise<WifiNetwork[]> {
+  async scan(opts: { cached?: boolean } = {}): Promise<WifiNetwork[]> {
     const device = await this.wifiDevice();
     if (!device) return [];
     try {
-      await this.call(device.path, WIRELESS, 'RequestScan', 'a{sv}', [{}]);
-      await sleep(4000);
+      if (!opts.cached) {
+        await this.call(device.path, WIRELESS, 'RequestScan', 'a{sv}', [{}]);
+        await sleep(4000);
+      }
     } catch (err) {
       // NetworkManager refuses a scan right after another; the last results will do.
       this.log.debug({ err: (err as Error).message }, 'Wi-Fi scan not started');

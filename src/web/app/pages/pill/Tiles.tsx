@@ -156,21 +156,36 @@ export function Tiles({ pill, now }: { pill: Pill; now: number }) {
       )}
     </Tile>
   );
+  const wifi = pill.kind === 'ispindel';
   const signalTile = (
     <Tile
-      icon="signal"
+      icon={wifi ? 'wifi' : 'signal'}
       k={t('Signal')}
       v={signal ? signal.label : '–'}
-      s={signal ? t('{rssi} dBm at the hub', { rssi: signal.rssi }) : t('At the hub')}
+      s={
+        wifi
+          ? signal
+            ? t('{rssi} dBm Wi-Fi signal', { rssi: signal.rssi })
+            : t('Its Wi-Fi')
+          : signal
+            ? t('{rssi} dBm at the hub', { rssi: signal.rssi })
+            : t('At the hub')
+      }
       warn={weakSignal}
-      title={t('Bluetooth signal strength: the closer to 0 dBm, the stronger. Anything better than −85 dBm is fine.')}
+      title={
+        wifi
+          ? t("The iSpindel's Wi-Fi signal strength: the closer to 0 dBm, the stronger. Anything better than −80 dBm is fine.")
+          : t('Bluetooth signal strength: the closer to 0 dBm, the stronger. Anything better than −85 dBm is fine.')
+      }
     >
       <SignalBars rssi={pill.live.rssi} />
       {weakSignal && (
         <span className="tile-note">
           {thermometer
             ? t('Some readings may be missed: try the hub (or a relay) closer to the thermometer.')
-            : t('Some readings may be missed: try the hub (or a relay) closer to the pill.')}
+            : wifi
+              ? t('Some readings may be missed: its Wi-Fi is weak where it is.')
+              : t('Some readings may be missed: try the hub (or a relay) closer to the pill.')}
         </span>
       )}
     </Tile>
@@ -278,26 +293,36 @@ export function Tiles({ pill, now }: { pill: Pill; now: number }) {
       </Tile>
       {signalTile}
       <Tile icon="tilt" k={t('Tilt')} v={r?.tilt != null ? fixed(r.tilt, 1) : '–'} unit="°" s={t('From vertical')} />
-      <Tile
-        icon="axes"
-        k={t('Accelerometer')}
-        v={r && r.x !== null && r.y !== null && r.z !== null ? `${r.x.toFixed(0)} / ${r.y.toFixed(0)} / ${r.z.toFixed(0)}` : '–'}
-        s="x / y / z"
-      />
+      {pill.kind === 'ispindel' ? (
+        <Tile icon="zap" k={t('Battery voltage')} v={r?.voltage != null ? fixed(r.voltage, 2) : '–'} unit="V" />
+      ) : (
+        <Tile
+          icon="axes"
+          k={t('Accelerometer')}
+          v={r && r.x !== null && r.y !== null && r.z !== null ? `${r.x.toFixed(0)} / ${r.y.toFixed(0)} / ${r.z.toFixed(0)}` : '–'}
+          s="x / y / z"
+        />
+      )}
       {intervalTile}
       {lastHeardTile}
-      <Tile
-        icon="cpu"
-        k={t('Firmware')}
-        v={pill.info.firmware ?? '–'}
-        s={
-          pill.info.deviceType
-            ? t('{device} · format v{version}', { device: pill.info.deviceType, version: pill.info.payloadVersion ?? '?' })
-            : undefined
-        }
-        mono
-      />
-      <Tile icon="bluetooth" k="Bluetooth" v={pill.address} s={`RAPT ID ${pill.raptId}`} mono />
+      {pill.kind === 'ispindel' ? (
+        <Tile icon="wifi" k="iSpindel" v={pill.address.replace(/^ISPINDEL:/, '')} s={t('Chip ID, over Wi-Fi')} mono />
+      ) : (
+        <>
+          <Tile
+            icon="cpu"
+            k={t('Firmware')}
+            v={pill.info.firmware ?? '–'}
+            s={
+              pill.info.deviceType
+                ? t('{device} · format v{version}', { device: pill.info.deviceType, version: pill.info.payloadVersion ?? '?' })
+                : undefined
+            }
+            mono
+          />
+          <Tile icon="bluetooth" k="Bluetooth" v={pill.address} s={`RAPT ID ${pill.raptId}`} mono />
+        </>
+      )}
       {sinceTile}
     </section>
   );

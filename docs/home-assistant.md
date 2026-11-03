@@ -137,6 +137,7 @@ KegLand, and connected through a **RaptHooker** hub device (whose _Connection_ s
 | Temperature                         | °C         | Home Assistant converts it if you use °F                                                            |
 | Gravity velocity                    | points/day | Negative while fermenting                                                                           |
 | Battery                             | %          |                                                                                                     |
+| Battery voltage                     | V          | Diagnostic, iSpindels only                                                                          |
 | Brew                                |            | The running brew's name; unknown when no brew is running                                            |
 | Original gravity                    | (SG)       | The brew's OG                                                                                       |
 | ABV                                 | %          | The brew's ABV so far                                                                               |
@@ -156,6 +157,9 @@ Assistant restarts, RaptHooker announces everything again as soon as Home Assist
 A RAPT Bluetooth Thermometer appears as a _RAPT Bluetooth Thermometer_ device with only **Temperature**, **Signal
 strength** and **Last reading**. In its state the gravity, velocity, battery, tilt and brew fields are `null`.
 
+An [iSpindel](ispindel.md) appears as an _iSpindel_ device with what a pill has plus **Battery voltage**. Its **Signal
+strength** is its Wi-Fi signal, and **Gravity sent by the pill** is what its own formula gave.
+
 An example automation, a notification when a fermenter gets too warm:
 
 ```yaml
@@ -173,7 +177,8 @@ actions:
 ## Topics and payloads
 
 `<topic>` is the base topic (`rapthooker` by default) and `<pill id>` is the pill's Bluetooth address without the
-colons, in lower case (the **What gets published** list in the settings shows each pill's id).
+colons, in lower case, or `ispindel-` and its chip id for an iSpindel (the **What gets published** list in the settings
+shows each pill's id).
 
 | Topic                                                            | Retained        | What                                                                                |
 | ---------------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------- |
@@ -196,6 +201,7 @@ An example state:
   "temperature": 19.5,
   "velocity": -4.2,
   "battery": 87.5,
+  "battery_voltage": null,
   "rssi": -71,
   "tilt": 38.4,
   "plausible": true,
@@ -216,6 +222,7 @@ An example state:
 | `temperature`                                    | °C, offset applied                                                                                        |
 | `velocity`                                       | Gravity points per day (from the pill, or RaptHooker's own if you chose that), or `null`                  |
 | `battery`, `rssi`, `tilt`                        | Battery %, signal strength at the hub (dBm), angle from vertical (°)                                      |
+| `battery_voltage`                                | Battery volts, from iSpindels; `null` for RAPT devices                                                    |
 | `plausible`                                      | `false` when the pill doesn't look like it's floating                                                     |
 | `pill_gravity`, `pill_velocity`                  | What the pill itself sent (they differ from the above if RaptHooker works out gravity or velocity itself) |
 | `timestamp`                                      | When the reading was taken (UTC)                                                                          |
@@ -294,7 +301,8 @@ Each request carries one pill's reading:
 }
 ```
 
-`pill_id` is the pill's Bluetooth address without the colons, in lower case. It's at the end of the pill page's
+`pill_id` is the pill's Bluetooth address without the colons, in lower case (`ispindel-` and its chip id for an
+iSpindel). It's at the end of the pill page's
 address in RaptHooker (`…/#/pill/08b61f452f66`) and never changes, unlike the name. `velocity` and `abv` are `null`
 until there's one and `brew` is empty while no brew is running. A RAPT Bluetooth Thermometer only has `temperature`
 and `rssi`: its other numbers are `null`.

@@ -13,6 +13,18 @@ RaptHooker builds on other people's work. Thank you to all of them.
 - The tilt angle is the usual floating-hydrometer formula (angle between the accelerometer's long axis and gravity), as
   used by the iSpindel and GravityMon projects.
 
+## iSpindel
+
+- **[universam1/iSpindel](https://github.com/universam1/iSpindel)** firmware source and documentation, read only to
+  work with iSpindels: what its HTTP service posts (field names, units, `temp_units`, `gravity-unit`), its setup
+  portal (the WiFiManager form at `/wifi`, how it encodes values, saving through `/wifisave`, the service list), its
+  hotspot's name and how the chip id relates to its MAC address. No iSpindel code was copied: [src/server/ispindel](src/server/ispindel)
+  was written for RaptHooker and checked against a real iSpindel on firmware 6.5.1. The test fixtures are that
+  iSpindel's posts (with a made-up token) and its configuration form (without the firmware's scripts and styles, with
+  made-up settings).
+- The battery percentage is estimated from the voltage an iSpindel sends with a typical single-cell Li-ion discharge
+  curve; the iSpindel itself only sends volts.
+
 ## Passive Bluetooth scanning and relays
 
 - **BlueZ**'s [AdvertisementMonitor](https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitor.rst)

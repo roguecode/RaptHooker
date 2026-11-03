@@ -143,7 +143,9 @@ export function TokensSection() {
                   <div className="grow">
                     <h4>
                       {tok.name}{' '}
-                      <span className={`chip${tok.scope === 'relay' ? ' brew' : ''}`}>{tok.scope === 'read' ? t('Read') : t('Relay')}</span>
+                      <span className={`chip${tok.scope === 'read' ? '' : ' brew'}`}>
+                        {tok.scope === 'read' ? t('Read') : tok.scope === 'ispindel' ? 'iSpindel' : t('Relay')}
+                      </span>
                     </h4>
                     <p>
                       <code>
@@ -179,7 +181,15 @@ export function TokensSection() {
         createPortal(
           <Confirm
             title={t('Delete "{name}"?', { name: deleting.name })}
-            body={<p>{t('Anything using this token stops working straight away.')}</p>}
+            body={
+              <p>
+                {deleting.scope === 'ispindel'
+                  ? t(
+                      'Every iSpindel set up with this token stops sending straight away. The hub makes a new one for setting them up again (Add device → iSpindel).',
+                    )
+                  : t('Anything using this token stops working straight away.')}
+              </p>
+            }
             confirm={t('Delete')}
             danger
             onClose={() => setDeleting(null)}

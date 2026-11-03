@@ -5,6 +5,7 @@ import {
   PILL_COLORS,
   SMOOTHING_MS,
   fitTilt,
+  isIspindelAddress,
   normalizeAddress,
   pillIdFromAddress,
   plausibleGravity,
@@ -23,10 +24,11 @@ import {
   type Reading,
 } from '@rapthooker/shared';
 import type { ClockGuard } from './clock.js';
-import { FLAG_IMPLAUSIBLE, tiltOf, type RawReading, type Store } from './db.js';
+import { FLAG_IMPLAUSIBLE, readingTilt, type RawReading, type Store } from './db.js';
 import type { Logger } from './log.js';
 import { decodeRapt, fingerprintOf } from './ble/rapt.js';
 import type { Advert } from './ble/scanner.js';
+import type { IspindelDecoded } from './ispindel/decode.js';
 
 interface PillConfig {
   kind: DeviceKind;
@@ -98,6 +100,10 @@ interface NearbyState {
   thermo: number | null;
   thermoMono: number | null;
   lastSampleMono: number | null;
+  /** The name it gives itself (iSpindels). */
+  name: string | null;
+  /** How long it stays listed after it was last heard (iSpindels only post every so often). */
+  expiryMs: number;
 }
 
 interface Pending {
@@ -134,6 +140,11 @@ const median = (xs: number[]): number | null => {
 
 const NO_DERIVED: Derived = { velocity: null, smoothed: null, caught: null };
 const NO_INFO: PillInfo = { firmware: null, deviceType: null, payloadVersion: null };
+const ISPINDEL_INFO: PillInfo = { firmware: null, deviceType: 'iSpindel', payloadVersion: null };
+
+/** How long an iSpindel stays listed nearby after a post: a few of its intervals (it only posts every so often). */
+const ispindelExpiryMs = (intervalSec: number | null): number =>
+  Math.min(3 * 3_600_000, Math.max(NEARBY_EXPIRY_MS, (intervalSec ?? 900) * 2500 + 5 * 60_000));
 
 /** FLAG_* bits for a reading as the pill sent it. */
 export const flagsOf = (sg: number): number => (plausibleGravity(sg) ? 0 : FLAG_IMPLAUSIBLE);
@@ -177,22 +188,27 @@ const raptIdOf = (kind: DeviceKind, address: string): string => (kind === 'pill'
  * The kinds of device this version understands. One added by a newer version (and kept after going back to this one)
  * is listed, but nothing is recorded for it and its kind isn't changed.
  */
-const KNOWN_KINDS: ReadonlySet<string> = new Set<DeviceKind>(['pill', 'thermometer']);
+const KNOWN_KINDS: ReadonlySet<string> = new Set<DeviceKind>(['pill', 'thermometer', 'ispindel']);
 
 const defaultName = (kind: DeviceKind, address: string): string =>
   kind === 'pill'
     ? `RAPT Pill ${raptIdFromAddress(address).slice(-5).replace(':', '')}`
-    : `RAPT Thermometer ${address.slice(-5).replace(':', '')}`;
+    : kind === 'ispindel'
+      ? `iSpindel ${address.slice(-6)}`
+      : `RAPT Thermometer ${address.slice(-5).replace(':', '')}`;
+
+/** A Bluetooth address, or an iSpindel's (ISPINDEL: and its chip id in hex). */
+const validAddress = (addr: string): boolean => /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(addr) || /^ISPINDEL:[0-9A-F]{6,8}$/.test(addr);
 
 const r6 = (v: number): number => Math.round(v * 1e6) / 1e6;
 
 /** The gravity a pill's model uses for a stored reading (offset applied), before smoothing; null if it has none. */
 export function modelGravity(
-  raw: { sg: number | null; x: number | null; y: number | null; z: number | null },
+  raw: { sg: number | null; x: number | null; y: number | null; z: number | null; tilt?: number | null },
   offsets: Offsets,
   model: PillModel,
 ): number | null {
-  const fromTilt = tiltGravity(model, tiltOf(raw.x, raw.y, raw.z));
+  const fromTilt = tiltGravity(model, readingTilt(raw));
   const g = fromTilt ?? raw.sg;
   return g === null ? null : g + offsets.gravity;
 }
@@ -253,8 +269,9 @@ export function calibrate(
     temperature,
     velocity: gravity === null ? null : model.velocitySource === 'computed' ? derived.velocity : raw.velocity,
     battery: raw.battery,
+    voltage: raw.voltage ?? null,
     rssi: raw.rssi,
-    tilt: tiltOf(raw.x, raw.y, raw.z),
+    tilt: readingTilt(raw),
     x: raw.x,
     y: raw.y,
     z: raw.z,
@@ -420,6 +437,7 @@ export class PillService extends EventEmitter {
         address: n.address,
         kind: n.kind,
         raptId: raptIdOf(n.kind, n.address),
+        name: n.name,
         firstHeardAt: n.firstHeardAt,
         lastHeardAt: n.lastHeardAt,
         rssi: n.rssi,
@@ -522,7 +540,7 @@ export class PillService extends EventEmitter {
 
   adopt(address: string, input: { name?: string; color?: string }): Pill {
     const addr = normalizeAddress(address);
-    if (!/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(addr)) throw new PillError('That is not a Bluetooth address');
+    if (!validAddress(addr)) throw new PillError('That is not a Bluetooth address');
     const existingId = this.byAddress.get(addr);
     if (existingId) {
       const s = this.pills.get(existingId)!;
@@ -533,16 +551,17 @@ export class PillService extends EventEmitter {
     const near = this.nearbyPills.get(addr);
     const used = new Set([...this.pills.values()].map((p) => p.config.color));
     // Added by address before it was heard, it's taken to be a pill until it turns out otherwise (see settleKind()).
-    const kind = near?.kind ?? 'pill';
+    const kind = isIspindelAddress(addr) ? 'ispindel' : (near?.kind ?? 'pill');
     const config: PillConfig = {
       kind,
-      name: input.name?.trim() || defaultName(kind, addr),
+      name: input.name?.trim() || near?.name || defaultName(kind, addr),
       color: input.color ?? PILL_COLORS.find((c) => !used.has(c)) ?? PILL_COLORS[this.pills.size % PILL_COLORS.length]!,
       archived: false,
       offsets: { gravity: 0, temperature: 0 },
-      model: { ...DEFAULT_PILL_MODEL },
+      // An iSpindel doesn't send a velocity: RaptHooker works it out.
+      model: kind === 'ispindel' ? { ...DEFAULT_PILL_MODEL, velocitySource: 'computed' } : { ...DEFAULT_PILL_MODEL },
       order: Math.max(-1, ...[...this.pills.values()].map((p) => p.config.order)) + 1,
-      info: near?.info ?? NO_INFO,
+      info: near?.info ?? (kind === 'ispindel' ? ISPINDEL_INFO : NO_INFO),
       exclusions: [],
     };
     const state: PillState = {
@@ -573,7 +592,7 @@ export class PillService extends EventEmitter {
     this.save(state);
     // Start recording with what it last sent, so the dashboard isn't empty until its next transmission. Its fingerprint
     // stays in `recent` so the pill re-sending it isn't stored again. Before the clock is trusted it's only shown.
-    if (near?.latest && this.now() - near.lastHeardAt < 30 * 60_000) {
+    if (near?.latest && this.now() - near.lastHeardAt < Math.max(30 * 60_000, near.expiryMs)) {
       if (this.clock.trusted) {
         this.commit(state, near.latest);
       } else {
@@ -694,6 +713,8 @@ export class PillService extends EventEmitter {
 
   handleAdvert(a: Advert): void {
     const address = normalizeAddress(a.address);
+    // iSpindels post over Wi-Fi (handleIspindel): nothing heard over Bluetooth is one.
+    if (isIspindelAddress(address)) return;
     const id = this.byAddress.get(address);
     const s = id ? this.pills.get(id) : undefined;
     if (s?.config.archived || (s && !KNOWN_KINDS.has(s.config.kind))) return;
@@ -775,6 +796,63 @@ export class PillService extends EventEmitter {
     if (this.pending.length < MAX_PENDING) this.pending.push({ pillId: s.id, raw, mono });
   }
 
+  // iSpindels (Wi-Fi)
+
+  /**
+   * A reading an iSpindel posted (see ispindel/decode.ts): recorded once it's been added, listed nearby until then.
+   * Every post is a new reading (an iSpindel doesn't repeat itself), so nothing is held back or skipped as a repeat.
+   */
+  handleIspindel(post: Extract<IspindelDecoded, { ok: true }>, mono: number): 'recorded' | 'nearby' | 'ignored' {
+    const { address, raw } = post;
+    const id = this.byAddress.get(address);
+    const s = id ? this.pills.get(id) : undefined;
+    if (!s) {
+      this.ispindelNearby(post, mono);
+      return this.ignored.has(address) ? 'ignored' : 'nearby';
+    }
+    if (s.config.archived || s.config.kind !== 'ispindel') return 'ignored';
+    s.lastHeardAt = Math.max(s.lastHeardAt ?? 0, raw.ts);
+    s.lastHeardMono = Math.max(s.lastHeardMono ?? -Infinity, mono);
+    if (raw.rssi !== null) s.rssi = raw.rssi;
+    if (s.config.info.deviceType !== 'iSpindel') {
+      s.config.info = { ...s.config.info, deviceType: 'iSpindel' };
+      this.save(s);
+    }
+    this.record(s, raw, mono, false);
+    s.online = this.isOnline(s);
+    this.emitPill(s);
+    return 'recorded';
+  }
+
+  private ispindelNearby(post: Extract<IspindelDecoded, { ok: true }>, mono: number): void {
+    const { address, raw } = post;
+    const isNew = !this.nearbyPills.has(address);
+    const n: NearbyState = this.nearbyPills.get(address) ?? {
+      address,
+      kind: 'ispindel',
+      firstHeardAt: raw.ts,
+      lastHeardAt: raw.ts,
+      lastHeardMono: null,
+      rssi: null,
+      latest: null,
+      info: ISPINDEL_INFO,
+      thermo: null,
+      thermoMono: null,
+      lastSampleMono: null,
+      name: null,
+      expiryMs: NEARBY_EXPIRY_MS,
+    };
+    n.name = post.name ?? n.name;
+    n.latest = raw;
+    n.lastHeardAt = Math.max(n.lastHeardAt, raw.ts);
+    n.lastHeardMono = Math.max(n.lastHeardMono ?? -Infinity, mono);
+    if (raw.rssi !== null) n.rssi = raw.rssi;
+    n.expiryMs = ispindelExpiryMs(post.intervalSec);
+    this.nearbyPills.set(address, n);
+    if (isNew) this.log.info({ address, name: n.name }, 'found an iSpindel');
+    if (!this.ignored.has(address)) this.emit('nearby');
+  }
+
   private handleNearby(address: string, a: Advert): void {
     let n = this.nearbyPills.get(address);
     if (!n) {
@@ -792,6 +870,8 @@ export class PillService extends EventEmitter {
         thermo: null,
         thermoMono: null,
         lastSampleMono: null,
+        name: null,
+        expiryMs: NEARBY_EXPIRY_MS,
       };
     }
     let isRapt = false;
@@ -922,7 +1002,7 @@ export class PillService extends EventEmitter {
     }
     let changed = false;
     for (const [address, n] of this.nearbyPills) {
-      if (this.now() - n.lastHeardAt > NEARBY_EXPIRY_MS) {
+      if (this.now() - n.lastHeardAt > n.expiryMs) {
         this.nearbyPills.delete(address);
         this.nearbyRecent.delete(address);
         changed = true;

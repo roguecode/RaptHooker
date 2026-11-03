@@ -128,6 +128,8 @@ export interface ScreenManagerDeps {
   lookup: (hostname: string) => Promise<string | null>;
   /** Screens heard on the network. */
   browse: () => Promise<FoundScreen[]>;
+  /** Something else (setting an iSpindel up) has the hub's Wi-Fi. */
+  wifiBusy?: () => boolean;
   now?: () => number;
   /** Shorter waits (tests). */
   fast?: boolean;
@@ -639,9 +641,15 @@ export class ScreenManager extends EventEmitter {
     return this.job?.snapshot() ?? this.lastSetup;
   }
 
+  /** A screen is being set up (the hub's Wi-Fi may be on its hotspot). */
+  busy(): boolean {
+    return this.job !== null;
+  }
+
   /** Starts setting a screen up; follow it with setupProgress or the 'setup' events. */
   startSetup(input: ScreenSetupInput): ScreenSetupProgress {
     if (this.job) throw new ScreenError('A screen is already being set up', 409);
+    if (this.deps.wifiBusy?.()) throw new ScreenError("The hub's Wi-Fi is busy setting up an iSpindel: try again when it's done", 409);
     // The picture address is the hub's own on its network, so it's worked out before the hub leaves it.
     let addresses: HubAddress[] = [];
     const job = new ScreenSetup(input, {

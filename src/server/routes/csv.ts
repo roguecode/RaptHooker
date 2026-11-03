@@ -22,6 +22,27 @@ export function* csvLines(store: Store, pill: Pill, from: number, to: number): G
     }
     return;
   }
+  if (pill.kind === 'ispindel') {
+    yield 'timestamp,unix_ms,gravity_sg,gravity_plato,temperature_c,temperature_f,battery_percent,battery_volts,wifi_rssi_dbm,tilt_degrees,ispindel_gravity_sg,plausible\n';
+    for (const raw of store.iterateReadings(pill.id, from, to)) {
+      const r = calibrate(raw, offsets, { ...model, smoothing: 'off', velocitySource: 'pill' });
+      yield [
+        new Date(r.ts).toISOString(),
+        r.ts,
+        csvNumber(r.gravity, 5),
+        csvNumber(r.gravity === null ? null : sgToPlato(r.gravity), 2),
+        csvNumber(r.temperature, 2),
+        csvNumber(cToF(r.temperature), 2),
+        csvNumber(r.battery, 1),
+        csvNumber(r.voltage ?? null, 3),
+        r.rssi ?? '',
+        csvNumber(r.tilt, 2),
+        csvNumber(r.pillGravity, 5),
+        r.plausible ? 1 : 0,
+      ].join(',') + '\n';
+    }
+    return;
+  }
   yield 'timestamp,unix_ms,gravity_sg,gravity_plato,temperature_c,temperature_f,velocity_points_per_day,battery_percent,rssi_dbm,tilt_degrees,accel_x,accel_y,accel_z,pill_gravity_sg,plausible\n';
   for (const raw of store.iterateReadings(pill.id, from, to)) {
     const r = calibrate(raw, offsets, { ...model, smoothing: 'off', velocitySource: 'pill' });

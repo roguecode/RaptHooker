@@ -24,6 +24,7 @@ import type { UpdateService } from './updates.js';
 import type { SystemService } from './system.js';
 import type { TokenService } from './tokens.js';
 import { ScreenError, type ScreenManager } from './screens/index.js';
+import { IspindelError, type IspindelService } from './ispindel/service.js';
 import type { LogBuffer } from './logbuffer.js';
 import type { RouteContext } from './routes/context.js';
 import { sessionRoutes } from './routes/session.js';
@@ -41,6 +42,7 @@ import { mqttRoutes } from './routes/mqtt.js';
 import { channelRoutes } from './routes/channels.js';
 import { tokenRoutes } from './routes/tokens.js';
 import { relayRoutes } from './routes/relay.js';
+import { ispindelRoutes } from './routes/ispindel.js';
 import { updateRoutes } from './routes/updates.js';
 import { screenRoutes } from './routes/screen.js';
 import { screensRoutes } from './routes/screens.js';
@@ -65,6 +67,7 @@ export interface Services {
   system: SystemService;
   tokens: TokenService;
   screens: ScreenManager;
+  ispindel: IspindelService;
   logs: LogBuffer;
   version: string;
   startedAt: number;
@@ -115,6 +118,7 @@ export async function buildServer(s: Services, opts: { logger?: FastifyBaseLogge
       err instanceof AlertError ||
       err instanceof ChannelError ||
       err instanceof ScreenError ||
+      err instanceof IspindelError ||
       err instanceof PinError;
     const status = known ? err.statusCode! : (err.statusCode ?? 500);
     if (status >= 500) app.log.error(err);
@@ -137,6 +141,7 @@ export async function buildServer(s: Services, opts: { logger?: FastifyBaseLogge
   channelRoutes(ctx);
   tokenRoutes(ctx);
   relayRoutes(ctx);
+  ispindelRoutes(ctx);
   updateRoutes(ctx);
   screenRoutes(ctx);
   screensRoutes(ctx);

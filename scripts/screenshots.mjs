@@ -36,7 +36,8 @@ writeFileSync(
 );
 const env = { ...process.env, RAPTHOOKER_CONFIG: config, RAPTHOOKER_PORT: String(PORT), RAPTHOOKER_DATA_DIR: dataDir };
 
-execSync('npm run seed -w src/server', { env, stdio: 'inherit' });
+// The pictures show the pills and thermometer.
+execSync('npm run seed -w src/server -- pills thermometer', { env, stdio: 'inherit' });
 const hub = spawn(process.execPath, [SERVER], { env, stdio: ['ignore', 'ignore', 'inherit'] });
 
 async function hubReady() {

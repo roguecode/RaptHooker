@@ -36,7 +36,7 @@ export function App() {
 }
 
 const NAV: { id: string; href: string; label: string; icon: IconName; match: Route['name'][] }[] = [
-  { id: 'dashboard', href: '#/', label: tk('Pills'), icon: 'gauge', match: ['dashboard', 'pill'] },
+  { id: 'dashboard', href: '#/', label: tk('Devices'), icon: 'gauge', match: ['dashboard', 'pill'] },
   { id: 'brews', href: '#/brews', label: tk('Brews'), icon: 'beer', match: ['brews', 'brew', 'brew-summary'] },
   { id: 'screens', href: '#/screens', label: tk('Screens'), icon: 'screen', match: ['screens'] },
   { id: 'webhooks', href: '#/webhooks', label: tk('Webhooks'), icon: 'webhook', match: ['webhooks', 'webhook'] },

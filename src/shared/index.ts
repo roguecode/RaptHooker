@@ -11,3 +11,4 @@ export * from './fermentation.js';
 export * from './screen.js';
 export * from './screens.js';
 export * from './ispindel.js';
+export * from './devices.js';

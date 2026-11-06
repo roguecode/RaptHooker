@@ -1,7 +1,7 @@
-import type { Pill } from '@rapthooker/shared';
+import { measuresGravity, type Pill } from '@rapthooker/shared';
 import { useLive } from '../../live';
-import { useUnits } from '../../units';
-import { fixed, timeAgo, timeUntil, useNow } from '../../format';
+import { useUnits, volumeNumber } from '../../units';
+import { fixed, num, timeAgo, timeUntil, useNow } from '../../format';
 import { Icon } from '../../components/Icon';
 import { ImageLinkButton } from '../../components/ImageLink';
 import { PillFigure } from '../../components/PillFigure';
@@ -9,7 +9,9 @@ import { OwnerOnly } from '../../components/ui';
 import { t } from '../../i18n';
 import { ScreenChips } from '../screens';
 import { ThermometerBadge } from '../dashboard/ThermometerCard';
+import { KegBar, vesselOf } from '../devices/keg';
 import { BrewPanel } from './BrewPanel';
+import { KegPanel } from './KegPanel';
 import { DataPanel } from './Tiles';
 import { HistoryPanel } from './HistoryPanel';
 import { PillSettings } from './PillSettings';
@@ -22,7 +24,7 @@ export function PillPage({ id }: { id: string }) {
   if (!pill) {
     return (
       <div className="panel empty">
-        <h2>{t('Pill not found')}</h2>
+        <h2>{t('Device not found')}</h2>
         <p>{t('It may have been removed.')}</p>
         <a className="btn" href="#/">
           {t('Back to the dashboard')}
@@ -40,14 +42,16 @@ function PillView({ pill }: { pill: Pill }) {
   const r = pill.live.latest;
   const g = u.gravityParts(r?.gravity);
   const next = pill.live.lastReadingAt && pill.live.intervalSec ? pill.live.lastReadingAt + pill.live.intervalSec * 1000 : null;
-  const thermometer = pill.kind === 'thermometer';
+  // A thermometer or a Laser Level: no gravity, so no brews either.
+  const thermometer = !measuresGravity(pill.kind);
+  const laser = pill.kind === 'laser-level';
 
   return (
     <div className="page pill-page">
       <div>
         <div className="pill-page-top">
           <a className="back" href="#/">
-            <Icon name="left" size={16} /> {t('All pills')}
+            <Icon name="left" size={16} /> {t('All devices')}
           </a>
           <div className="pill-page-tools">
             <ScreenChips pillId={pill.id} />
@@ -56,7 +60,7 @@ function PillView({ pill }: { pill: Pill }) {
         </div>
         <div className="panel hero" style={{ '--pill': pill.color } as React.CSSProperties}>
           {thermometer ? (
-            <ThermometerBadge color={pill.color} size={92} offline={!pill.live.online} />
+            <ThermometerBadge color={pill.color} size={92} offline={!pill.live.online} icon={laser ? 'beer' : 'thermometer'} />
           ) : (
             <PillFigure color={pill.color} tilt={r?.tilt} size={92} offline={!pill.live.online} />
           )}
@@ -81,7 +85,24 @@ function PillView({ pill }: { pill: Pill }) {
             </div>
           </div>
           <div className="hero-figures">
-            {thermometer ? (
+            {laser ? (
+              <>
+                <div>
+                  <div className="reading-label">{t('In the keg')}</div>
+                  <div className="gravity-value">
+                    {volumeNumber(u.volumeScale(pill.servingUnit), r?.volume)}
+                    <span className="unit">
+                      {t('of {amount}', { amount: u.volumeText(vesselOf(pill).capacity, pill.servingUnit, true) })}
+                    </span>
+                  </div>
+                  <KegBar fill={r?.fill} color={pill.color} />
+                </div>
+                <div>
+                  <div className="reading-label">{t('Full')}</div>
+                  <div className="temp-value">{r?.fill == null ? '–' : `${num(r.fill, 0)}%`}</div>
+                </div>
+              </>
+            ) : thermometer ? (
               <div>
                 <div className="reading-label">{t('Temperature')}</div>
                 <div className="gravity-value">
@@ -123,6 +144,7 @@ function PillView({ pill }: { pill: Pill }) {
         </div>
       )}
       {!thermometer && <BrewPanel pill={pill} />}
+      {laser && <KegPanel pill={pill} />}
       <HistoryPanel pill={pill} />
       <DataPanel pill={pill} now={now} />
       {isOwner ? <PillSettings pill={pill} /> : <OwnerOnly isOwner={false}>{null}</OwnerOnly>}

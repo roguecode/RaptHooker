@@ -2,27 +2,35 @@ import { useMemo, type CSSProperties } from 'react';
 import type { Pill } from '@rapthooker/shared';
 import { useLive } from '../../live';
 import { useUnits } from '../../units';
-import { historyGapMs, useHistory, useRecentRange } from '../../hooks';
+import { historyGapMs, useCardRange, useHistory } from '../../hooks';
 import { href } from '../../router';
 import { fixed, signalQuality, timeAgo, timeUntil, useNow } from '../../format';
 import { t } from '../../i18n';
-import { Icon } from '../../components/Icon';
+import { Icon, type IconName } from '../../components/Icon';
 import { Sparkline } from '../../components/Sparkline';
 import { SignalBars } from '../../components/ui';
 import { caughtPercent } from '../pill/Tiles';
 import { pillStatus } from './PillRow';
 
-const DAY = 86_400_000;
-
-/** The thermometer's colour in a circle, in place of a pill's figure. */
-export function ThermometerBadge({ color, size, offline = false }: { color: string; size: number; offline?: boolean }) {
+/** The thermometer's colour in a circle, in place of a pill's figure (or another device's icon, a Laser Level's). */
+export function ThermometerBadge({
+  color,
+  size,
+  offline = false,
+  icon = 'thermometer',
+}: {
+  color: string;
+  size: number;
+  offline?: boolean;
+  icon?: IconName;
+}) {
   return (
     <span
       className={`thermo-badge${offline ? ' offline' : ''}`}
       style={{ '--pill': color, width: size, height: size } as CSSProperties}
       aria-hidden="true"
     >
-      <Icon name="thermometer" size={Math.round(size * 0.55)} />
+      <Icon name={icon} size={Math.round(size * 0.55)} />
     </span>
   );
 }
@@ -39,12 +47,12 @@ export function rangeOf(values: (number | null)[] | undefined): { min: number; m
   return min <= max ? { min, max } : null;
 }
 
-/** A RAPT Thermometer on the dashboard: its temperature, the last day of it, and how well it's heard. */
+/** A RAPT Thermometer on the dashboard: its temperature, a chart of it, and how well it's heard. */
 export function ThermometerCard({ pill }: { pill: Pill }) {
   const u = useUnits();
   const { cachedAt } = useLive();
   const now = useNow(15_000);
-  const range = useRecentRange(DAY);
+  const range = useCardRange(pill);
   const { history } = useHistory(pill.id, range, 160, historyGapMs(pill.live.intervalSec));
   const r = pill.live.latest;
   const signal = signalQuality(pill.live.rssi);

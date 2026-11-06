@@ -6,6 +6,7 @@ import { Store } from './db.js';
 import { ClockGuard } from './clock.js';
 import { PillService } from './pills.js';
 import { BrewService } from './brews.js';
+import { KegService } from './kegs.js';
 import { WebhookService } from './webhooks.js';
 import { AlertService } from './alerts.js';
 import { PushService, loadVapidKeys } from './push.js';
@@ -80,6 +81,7 @@ async function main(): Promise<void> {
   const brews = new BrewService(store, pills, log.child({ svc: 'brews' }));
   brews.abvFormula = () => settings.hub().abvFormula;
   pills.brewOf = (id) => brews.activeFor(id);
+  const kegs = new KegService(store, pills, log.child({ svc: 'kegs' }));
   pills.load();
   brews.load();
   const webhooks = new WebhookService(
@@ -224,6 +226,7 @@ async function main(): Promise<void> {
       tokens,
       screens,
       ispindel,
+      kegs,
       logs,
       version: VERSION,
       startedAt: Date.now(),

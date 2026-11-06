@@ -8,7 +8,8 @@ import { COMPACT_AFTER_UPGRADE_KEY, IncompatibleDatabaseError, MIGRATIONS, MIN_S
 import { keepPreUpdateCopy, PRE_UPDATE_KEEP } from '../backup/files.js';
 import { Maintenance } from '../maintenance.js';
 import { PillService } from '../pills.js';
-import { APPLE_COMPANY_ID, RAPT_COMPANY_ID, encodeRaptThermometer } from '../ble/rapt.js';
+import { APPLE_COMPANY_ID, RAPT_COMPANY_ID, encodeRaptLaser, encodeRaptThermometer } from '../ble/rapt.js';
+import { encodeTilt } from '../ble/tilt.js';
 import { CAPTURED, silent } from './helpers.js';
 
 /**
@@ -264,6 +265,8 @@ describe('upgrading the database', () => {
         // Added by v6 (iSpindels): NULL for everything recorded before.
         tilt: null,
         voltage: null,
+        // Added by v7 (Laser Levels): NULL too.
+        distance: null,
         flags: 0,
       });
       expect(
@@ -434,7 +437,7 @@ describe('upgrading the database', () => {
 });
 
 describe('upgrading a database from 0.7.0 and 0.8.0 (schema 5)', () => {
-  it('keeps every row and value, and adds empty columns for what iSpindels send', () => {
+  it('keeps every row and value, and adds empty columns for what iSpindels and Laser Levels send', () => {
     const file = join(tempDir(), 'rapthooker.db');
     schema5Database(file);
     const raw = new DatabaseSync(file);
@@ -459,6 +462,10 @@ describe('upgrading a database from 0.7.0 and 0.8.0 (schema 5)', () => {
         v: 0,
         vn: 0,
       });
+      expect(store.db.prepare('SELECT COUNT(*) AS n FROM readings WHERE distance IS NOT NULL').get()).toEqual({ n: 0 });
+      expect(store.db.prepare('SELECT TOTAL(distance) AS d, TOTAL(distance_n) AS dn FROM rollups').get()).toEqual({ d: 0, dn: 0 });
+      // v8: kegs, empty.
+      expect(store.db.prepare('SELECT COUNT(*) AS n FROM kegs').get()).toEqual({ n: 0 });
     } finally {
       store.close();
     }
@@ -489,7 +496,7 @@ describe('upgrading a database from 0.7.0 and 0.8.0 (schema 5)', () => {
 
     const store = new Store(file);
     try {
-      expect(store.latestReadings(PILL, 1)[0]).toMatchObject({ sg: 0.2, tilt: null, voltage: null });
+      expect(store.latestReadings(PILL, 1)[0]).toMatchObject({ sg: 0.2, tilt: null, voltage: null, distance: null });
       const h = store.history(PILL, T0 - 2 * DAY, T0 - DAY + ROLLUP_MS, {
         maxPoints: 10,
         gapMs: DAY,
@@ -532,6 +539,36 @@ describe('upgrading a database from 0.7.0 and 0.8.0 (schema 5)', () => {
         rawFrom: T0 + DAY,
       });
       expect(h.tilt.filter((v) => v !== null)).toEqual([51]);
+      // Only a device that measures the distance down to the beer gets it.
+      expect(h.distance).toBeUndefined();
+    } finally {
+      store.close();
+    }
+  });
+
+  it("keeps a Laser Level's distance in its 15-minute averages, for when its readings are gone", () => {
+    const store = new Store(join(tempDir(), 'rapthooker.db'));
+    try {
+      const id = 'f00d5eed0030';
+      const reading = { sg: null, velocity: null, rssi: -61, x: null, y: null, z: null, flags: 0 };
+      store.addReading(id, { ...reading, ts: T0 + 1000, temp: 3.5, battery: 86, distance: 300 });
+      store.addReading(id, { ...reading, ts: T0 + 2000, temp: 3.6, battery: 86, distance: 310 });
+      expect(store.db.prepare('SELECT n, distance, distance_n, sg_missing FROM rollups WHERE pill_id = ?').get(id)).toEqual({
+        n: 2,
+        distance: 610,
+        distance_n: 2,
+        sg_missing: 2,
+      });
+      expect(store.latestReadings(id, 1)[0]).toMatchObject({ distance: 310, sg: null, tilt: null });
+      store.pruneRaw(T0 + DAY);
+      const h = store.history(id, T0 - DAY, T0 + DAY, {
+        maxPoints: 10,
+        gapMs: DAY,
+        offsets: { gravity: 0, temperature: 0 },
+        rawFrom: T0 + DAY,
+      });
+      expect(h.distance?.filter((v) => v !== null)).toEqual([305]);
+      expect(h.gravity.filter((v) => v !== null)).toEqual([]);
     } finally {
       store.close();
     }
@@ -566,7 +603,7 @@ describe('a database from a newer version', () => {
     const store = new Store(file);
     // A kind of device a version after this one may add (iSpindel was one, until this version knew it).
     const future = {
-      kind: 'tilt-hydrometer',
+      kind: 'future-hydrometer',
       name: 'Floaty',
       color: '#34d399',
       offsets: { gravity: 0, temperature: 0 },
@@ -585,13 +622,15 @@ describe('a database from a newer version', () => {
       const saved = JSON.parse(store.listPillRows().find((r) => r.id === PILL)!.json) as Record<string, unknown>;
       expect(saved).toMatchObject({ kind: 'pill', name: 'Hazy IPA (renamed)', info: { firmware: '20250319_055542_b3788ba' } });
 
-      expect(pills.get('future1')?.kind).toBe('tilt-hydrometer');
+      expect(pills.get('future1')?.kind).toBe('future-hydrometer');
       pills.update('future1', { name: 'Floaty 2' });
       const kept = JSON.parse(store.listPillRows().find((r) => r.id === 'future1')!.json) as Record<string, unknown>;
-      expect(kept).toMatchObject({ kind: 'tilt-hydrometer', name: 'Floaty 2', polynomial: '0.0001*tilt^2' });
+      expect(kept).toMatchObject({ kind: 'future-hydrometer', name: 'Floaty 2', polynomial: '0.0001*tilt^2' });
       for (const [companyId, data] of [
         [RAPT_COMPANY_ID, Buffer.from(CAPTURED.metricsFalling, 'hex')],
         [APPLE_COMPANY_ID, encodeRaptThermometer(18)],
+        [APPLE_COMPANY_ID, encodeTilt({ color: 'Red', tempF: 68, sg: 1.05 })],
+        [RAPT_COMPANY_ID, encodeRaptLaser({ mac: 'C4:DE:E2:00:00:01', distance: 300, battery: 80, temp: 4 })],
       ] as const) {
         pills.handleAdvert({
           address: 'C4:DE:E2:00:00:01',
@@ -603,7 +642,7 @@ describe('a database from a newer version', () => {
         });
       }
       expect(store.countReadings('future1')).toBe(0);
-      expect(pills.get('future1')?.kind).toBe('tilt-hydrometer');
+      expect(pills.get('future1')?.kind).toBe('future-hydrometer');
     } finally {
       pills.stop();
       store.close();

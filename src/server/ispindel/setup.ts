@@ -181,7 +181,12 @@ export class IspindelSetup extends EventEmitter {
         log.info({ err: (err as Error).message }, 'no reply after sending an iSpindel its settings; taking them as saved');
       }
       log.info(
-        { hotspot: input.hotspot, ssid: written.ssid, server: `${written.server}:${written.port}${written.path}` },
+        {
+          hotspot: input.hotspot,
+          ssid: written.ssid,
+          server: `${written.server}:${written.port}${written.path}`,
+          interval: written.interval,
+        },
         'iSpindel set up',
       );
 

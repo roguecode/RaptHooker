@@ -9,7 +9,7 @@
       "pages/webhooks/strings.ts"
     ]
   },
-  "\"pill\", \"thermometer\" or \"ispindel\" (a thermometer only sends the temperature: the rest is null)": {
+  "\"pill\", \"thermometer\", \"ispindel\", \"tilt\" or \"laser-level\" (a thermometer only sends the temperature, a Laser Level how full its keg is: the rest is null)": {
     "files": [
       "pages/webhooks/strings.ts"
     ]
@@ -63,7 +63,10 @@
   "{abv}% ABV": {
     "files": [
       "../../server/screen/render.ts",
-      "components/Ferment.tsx"
+      "components/Ferment.tsx",
+      "pages/devices/keg.tsx",
+      "pages/kiosk/Kiosk.tsx",
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "{add} to send readings to Brewfather, Grainfather, Home Assistant and more.": {
@@ -74,6 +77,16 @@
   "{ago}: Bluetooth seemed stuck, so the hub switched it off and on": {
     "files": [
       "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "{amount} left": {
+    "files": [
+      "pages/devices/keg.tsx"
+    ]
+  },
+  "{amount} poured": {
+    "files": [
+      "pages/devices/keg.tsx"
     ]
   },
   "{auto} for Cloudflare R2.": {
@@ -135,6 +148,12 @@
       "pages/webhooks/WebhooksPage.tsx"
     ]
   },
+  "{count} keg level recording|{count} keg levels recording": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ],
+    "plural": true
+  },
   "{count} min": {
     "files": [
       "pages/webhooks/ScheduleFields.tsx",
@@ -180,6 +199,12 @@
   "{count} pill|{count} pills": {
     "files": [
       "pages/settings/BackupSection.tsx"
+    ],
+    "plural": true
+  },
+  "{count} pint|{count} pints": {
+    "files": [
+      "units.tsx"
     ],
     "plural": true
   },
@@ -285,7 +310,8 @@
   "{from} to {to}": {
     "files": [
       "components/Chart.tsx",
-      "components/OverviewStrip.tsx"
+      "components/OverviewStrip.tsx",
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "{gravity} and {temperature}": {
@@ -306,6 +332,11 @@
   "{min} to {max}": {
     "files": [
       "pages/brews/SummaryPage.tsx"
+    ]
+  },
+  "{mm} mm": {
+    "files": [
+      "pages/dashboard/LaserCard.tsx"
     ]
   },
   "{mqtt} (usually port 1883), {mqtts} with TLS (8883), or {ws} / {wss} for MQTT over WebSockets.": {
@@ -417,7 +448,8 @@
   },
   "{name} has been saved.": {
     "files": [
-      "pages/pill/BrewPanel.tsx"
+      "pages/pill/BrewPanel.tsx",
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "{name} ignores anything sent more often than every {minutes} minutes.": {
@@ -457,10 +489,20 @@
       "pages/screens/ScreenEditor.tsx"
     ]
   },
+  "{name} is still on tap: kegging up another beer marks it empty.": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
   "{name} is up to date": {
     "files": [
       "pages/screens/ScreenCard.tsx",
       "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "{name} kegged up": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "{name} moved to position {n} of {total}.": {
@@ -523,6 +565,11 @@
       "pages/settings/MqttSection.tsx"
     ]
   },
+  "{pct}% full": {
+    "files": [
+      "../../server/screen/render.ts"
+    ]
+  },
   "{pct}% there": {
     "files": [
       "../../server/screen/render.ts",
@@ -543,6 +590,7 @@
   "{rssi} dBm at the hub": {
     "files": [
       "pages/Dashboard.tsx",
+      "pages/dashboard/LaserCard.tsx",
       "pages/dashboard/ThermometerCard.tsx",
       "pages/pill/Tiles.tsx"
     ]
@@ -674,6 +722,11 @@
       "components/chartMath.ts"
     ]
   },
+  "19 L keg": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
   "2.9″ e-paper": {
     "files": [
       "components/imageLinkOptions.ts"
@@ -742,6 +795,11 @@
   "A backup on the hub": {
     "files": [
       "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "A Bluetooth hydrometer that floats in your fermenter. The hub hears it directly, or through a Bluetooth relay, and records it once a minute.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
     ]
   },
   "A broker address like mqtt://homeassistant.local:1883": {
@@ -841,6 +899,11 @@
   "ABV –": {
     "files": [
       "components/Ferment.tsx"
+    ]
+  },
+  "ABV (%)": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "ABV by the {formula}: {math}.": {
@@ -1001,6 +1064,11 @@
       "pages/dashboard/FirstRunGuide.tsx"
     ]
   },
+  "Add Laser Level": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
+    ]
+  },
   "Add one to get notified.": {
     "files": [
       "pages/alerts/AlertsPage.tsx"
@@ -1027,6 +1095,11 @@
       "pages/dashboard/NearbyCard.tsx"
     ]
   },
+  "Add Tilt": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
+    ]
+  },
   "Added": {
     "files": [
       "pages/pill/CalibrationWizard.tsx",
@@ -1034,6 +1107,11 @@
     ]
   },
   "Added to every reading, including history and webhooks.": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. A Tilt's own calibration (in Tilt's app) isn't in what it sends: calibrate it here.": {
     "files": [
       "pages/pill/PillSettings.tsx"
     ]
@@ -1137,6 +1215,11 @@
       "pages/brews/SummaryPage.tsx"
     ]
   },
+  "All devices": {
+    "files": [
+      "pages/pill/PillPage.tsx"
+    ]
+  },
   "All of it, as space allows": {
     "files": [
       "components/imageLinkOptions.ts"
@@ -1165,7 +1248,6 @@
   "All pills": {
     "files": [
       "pages/alerts/RuleModal.tsx",
-      "pages/pill/PillPage.tsx",
       "pages/screens/AddScreen.tsx",
       "pages/screens/BrowserSetup.tsx",
       "pages/screens/ScreenCard.tsx",
@@ -1536,6 +1618,7 @@
       "../../server/screen/render.ts",
       "components/Chart.tsx",
       "pages/Dashboard.tsx",
+      "pages/dashboard/LaserCard.tsx",
       "pages/dashboard/PillRow.tsx",
       "pages/kiosk/Kiosk.tsx",
       "pages/pill/Tiles.tsx"
@@ -1574,6 +1657,11 @@
   "Before the start": {
     "files": [
       "pages/brews/brewText.ts"
+    ]
+  },
+  "Between 0 and 30": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "Big numbers": {
@@ -1849,6 +1937,11 @@
       "pages/pill/PillSettings.tsx"
     ]
   },
+  "Called": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
   "Can": {
     "files": [
       "pages/settings/TokensSection.tsx"
@@ -1878,11 +1971,17 @@
       "pages/alerts/RuleModal.tsx",
       "pages/brews/EditBrewModal.tsx",
       "pages/brews/events.tsx",
+      "pages/pill/KegPanel.tsx",
       "pages/pill/StartBrewModal.tsx",
       "pages/screens/ScreenEditor.tsx",
       "pages/settings/BackupSection.tsx",
       "pages/settings/OwnerSection.tsx",
       "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "cans": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
     ]
   },
   "Cards": {
@@ -1902,6 +2001,7 @@
   },
   "Caught": {
     "files": [
+      "pages/Dashboard.tsx",
       "pages/dashboard/ThermometerCard.tsx",
       "pages/pill/Tiles.tsx"
     ]
@@ -1994,6 +2094,7 @@
   },
   "Cheers! 🍻": {
     "files": [
+      "pages/pill/KegPanel.tsx",
       "pages/pill/StartBrewModal.tsx"
     ]
   },
@@ -2253,6 +2354,11 @@
       "pages/dashboard/NearbyCard.tsx"
     ]
   },
+  "Couldn't add the Laser Level": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
+    ]
+  },
   "Couldn't add the pill": {
     "files": [
       "pages/dashboard/NearbyCard.tsx"
@@ -2269,6 +2375,11 @@
     ]
   },
   "Couldn't add the thermometer": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
+    ]
+  },
+  "Couldn't add the Tilt": {
     "files": [
       "pages/dashboard/NearbyCard.tsx"
     ]
@@ -2330,7 +2441,8 @@
   },
   "Couldn't delete it": {
     "files": [
-      "pages/alerts/ChannelsPanel.tsx"
+      "pages/alerts/ChannelsPanel.tsx",
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "Couldn't delete the event": {
@@ -2342,6 +2454,11 @@
     "files": [
       "pages/webhooks/WebhookEditor.tsx",
       "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Couldn't empty the keg": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "Couldn't end the brew": {
@@ -2378,6 +2495,11 @@
   "Couldn't keep the screen on. Tap the screen to try again, or turn off screen sleep in the device's settings.": {
     "files": [
       "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Couldn't keg it up": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "Couldn't load alerts": {
@@ -2484,6 +2606,7 @@
       "pages/brews/events.tsx",
       "pages/pill/DataSources.tsx",
       "pages/pill/PillSettings.tsx",
+      "pages/pill/VesselSettings.tsx",
       "pages/settings/BackupSection.tsx",
       "pages/settings/MqttSection.tsx",
       "pages/webhooks/WebhookEditor.tsx"
@@ -2502,6 +2625,11 @@
   "Couldn't save the image": {
     "files": [
       "pages/pill/HistoryPanel.tsx"
+    ]
+  },
+  "Couldn't save the keg": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "Couldn't save the order": {
@@ -2587,6 +2715,16 @@
       "pages/screens/ScreensPage.tsx"
     ]
   },
+  "Count the readings since then.": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
+  "Count what’s left in something of your own, like 330 ml cans or 425 ml glasses. It’s used when Custom is picked as the volume unit, next to °C and °F.": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
   "Create a Pushover application": {
     "files": [
       "pages/alerts/strings.ts"
@@ -2650,7 +2788,8 @@
   "Custom": {
     "files": [
       "components/PictureDesigner.tsx",
-      "components/RangePicker.tsx"
+      "components/RangePicker.tsx",
+      "units.tsx"
     ]
   },
   "Custom range": {
@@ -2729,6 +2868,7 @@
       "pages/brews/BrewPage.tsx",
       "pages/brews/events.tsx",
       "pages/pill/CalibrationWizard.tsx",
+      "pages/pill/KegPanel.tsx",
       "pages/settings/PillsSection.tsx",
       "pages/settings/TokensSection.tsx",
       "pages/webhooks/WebhooksPage.tsx"
@@ -2739,6 +2879,7 @@
       "pages/alerts/AlertsPage.tsx",
       "pages/alerts/ChannelsPanel.tsx",
       "pages/brews/BrewPage.tsx",
+      "pages/pill/KegPanel.tsx",
       "pages/settings/TokensSection.tsx",
       "pages/webhooks/WebhooksPage.tsx"
     ]
@@ -2746,6 +2887,7 @@
   "Delete {name}": {
     "files": [
       "pages/alerts/ChannelsPanel.tsx",
+      "pages/pill/KegPanel.tsx",
       "pages/settings/PillsSection.tsx",
       "pages/settings/TokensSection.tsx"
     ]
@@ -2798,6 +2940,11 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Device not found": {
+    "files": [
+      "pages/pill/PillPage.tsx"
+    ]
+  },
   "Device should be a device name from Pushover": {
     "files": [
       "pages/alerts/strings.ts"
@@ -2811,6 +2958,22 @@
   "Device type, e.g. PillG1": {
     "files": [
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "Devices": {
+    "files": [
+      "App.tsx",
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Devices nearby": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
+  "Devices that don't have this reading (a thermometer, say) are left out of this alert.": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
     ]
   },
   "Discovery prefix": {
@@ -2835,6 +2998,17 @@
   "Display options": {
     "files": [
       "components/DisplayMenu.tsx"
+    ]
+  },
+  "Distance": {
+    "files": [
+      "pages/dashboard/LaserCard.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Distance from the RAPT Laser Level down to the beer, mm": {
+    "files": [
+      "pages/webhooks/strings.ts"
     ]
   },
   "Does the screen look right?": {
@@ -2907,6 +3081,11 @@
       "pages/brews/brewText.ts"
     ]
   },
+  "Down to the beer": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
   "Download": {
     "files": [
       "pages/settings/BackupSection.tsx",
@@ -2929,7 +3108,7 @@
       "pages/pill/HistoryPanel.tsx"
     ]
   },
-  "Drag the pills, or use the arrows, to set their order. It's saved for everyone.": {
+  "Drag the devices, or use the arrows, to set their order. It's saved for everyone.": {
     "files": [
       "pages/Dashboard.tsx"
     ]
@@ -3011,6 +3190,11 @@
       "pages/pill/CalibrationWizard.tsx"
     ]
   },
+  "Earlier kegs": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
   "Easy to remember. Most computers and iPhones find .local names; some Android phones can't.": {
     "files": [
       "pages/settings/SystemSection.tsx"
@@ -3021,6 +3205,7 @@
       "pages/alerts/AlertsPage.tsx",
       "pages/alerts/ChannelsPanel.tsx",
       "pages/brews/BrewPage.tsx",
+      "pages/pill/KegPanel.tsx",
       "pages/screens/ScreenCard.tsx",
       "pages/webhooks/WebhooksPage.tsx"
     ]
@@ -3033,6 +3218,7 @@
   "Edit {name}": {
     "files": [
       "pages/alerts/ChannelEditor.tsx",
+      "pages/pill/KegPanel.tsx",
       "pages/screens/ScreenCard.tsx"
     ]
   },
@@ -3061,9 +3247,19 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Empty has to be further down than full.": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
   "Empty values become {null} in JSON; give a fallback with {fallback}.": {
     "files": [
       "pages/webhooks/RequestFields.tsx"
+    ]
+  },
+  "Empty: down to the bottom (mm)": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
     ]
   },
   "Enabled": {
@@ -3368,7 +3564,7 @@
   },
   "Experimental": {
     "files": [
-      "pages/devices/IspindelTab.tsx",
+      "pages/devices/AddDevice.tsx",
       "pages/screens/SupportedScreens.tsx"
     ]
   },
@@ -3475,6 +3671,11 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Fill in from a brew": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
   "Fill in Password to go with the username": {
     "files": [
       "pages/alerts/strings.ts"
@@ -3569,6 +3770,11 @@
       "pages/pill/CalibrationWizard.tsx"
     ]
   },
+  "Fit it to the keg and switch it on. It sends its reading over Bluetooth all the time.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
   "Float the pill in it at about 20 °C (68 °F) and wait for a reading or two.": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
@@ -3649,11 +3855,21 @@
       "pages/settings/BackupSection.tsx"
     ]
   },
+  "Found {name} nearby": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
+    ]
+  },
   "Found a pill nearby|Found {count} pills nearby": {
     "files": [
       "pages/dashboard/FirstRunGuide.tsx"
     ],
     "plural": true
+  },
+  "Found a RAPT Laser Level nearby": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
+    ]
   },
   "Found a RAPT Pill nearby": {
     "files": [
@@ -3711,6 +3927,11 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "From the Laser Level down to the beer. Empty is {empty} mm, full {full} mm (set under its settings).": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
   "from the pill": {
     "files": [
       "pages/brews/SummaryPage.tsx",
@@ -3748,6 +3969,15 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Full": {
+    "files": [
+      "../../server/screen/render.ts",
+      "pages/dashboard/LaserCard.tsx",
+      "pages/dashboard/PillRow.tsx",
+      "pages/pill/PillPage.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
   "Full HD TV (1080p)": {
     "files": [
       "components/imageLinkOptions.ts"
@@ -3756,6 +3986,21 @@
   "Full screen": {
     "files": [
       "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Full: down to the beer (mm)": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
+  "gal": {
+    "files": [
+      "units.tsx"
+    ]
+  },
+  "Gallons (US)": {
+    "files": [
+      "units.tsx"
     ]
   },
   "GeekMagic mini screen": {
@@ -4063,6 +4308,16 @@
       "pages/webhooks/ScheduleFields.tsx"
     ]
   },
+  "Holds": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "Holds (litres)": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
   "Home Assistant discovery, when it's on.": {
     "files": [
       "pages/settings/MqttSection.tsx"
@@ -4083,9 +4338,34 @@
       "pages/settings/HubSection.tsx"
     ]
   },
+  "How full the keg is": {
+    "files": [
+      "pages/devices/keg.tsx"
+    ]
+  },
+  "How full the keg is comes from how far down the beer is. A keg with straight sides is assumed. Changing these changes how full it was, everywhere, as nothing but the distance is stored.": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
+  "How full the keg is, % (RAPT Laser Levels)": {
+    "files": [
+      "pages/webhooks/strings.ts"
+    ]
+  },
   "How many pills are in this request": {
     "files": [
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "How much of the beer is left": {
+    "files": [
+      "pages/devices/keg.tsx"
+    ]
+  },
+  "How much went in is the fullest the keg reads in the 6 hours after kegging up, so fill it before or after.": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "How old the reading is when sent": {
@@ -4345,6 +4625,14 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "In the keg": {
+    "files": [
+      "pages/dashboard/LaserCard.tsx",
+      "pages/dashboard/PillRow.tsx",
+      "pages/pill/PillPage.tsx",
+      "pages/pill/Tiles.tsx"
+    ]
+  },
   "In the RAPT app (or the RAPT portal), open your pill and choose {path}. The interval you set there is how often it sends a reading: every few minutes is plenty.": {
     "files": [
       "pages/dashboard/FirstRunGuide.tsx"
@@ -4412,6 +4700,11 @@
       "pages/screens/SetupPanel.tsx"
     ]
   },
+  "Is \"{name}\" empty?": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
   "iSpindel-format services expect the battery in volts; RAPT Pills report a percentage, which is sent as it is.": {
     "files": [
       "pages/webhooks/strings.ts"
@@ -4468,6 +4761,11 @@
       "pages/pill/PillPage.tsx"
     ]
   },
+  "It moves to the earlier kegs. The Laser Level carries on recording either way.": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
   "It reads the iSpindel's settings and changes only these: the Wi-Fi it joins, Service Type (HTTP), where it sends to (this hub, {where}), the token, and how often it sends. Its name (unless you give it a new one), its gravity formula and everything else stay as they are.": {
     "files": [
       "pages/devices/IspindelTab.tsx"
@@ -4510,6 +4808,16 @@
       "pages/devices/AddDevice.tsx"
     ]
   },
+  "It shows up below within a minute, by its colour. Name it and add it.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "It shows up below within a minute. Name it and add it, then set the keg's size on its page (it starts as a 19 L keg).": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
   "It shows up below within a minute. Name it and add it.": {
     "files": [
       "pages/devices/AddDevice.tsx"
@@ -4535,6 +4843,21 @@
       "pages/settings/UpdateSection.tsx"
     ]
   },
+  "It was kegged earlier": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
+  "It’s empty now": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
+  "It’s full now": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
   "It's switched off for now.": {
     "files": [
       "pages/alerts/ChannelEditor.tsx"
@@ -4543,6 +4866,11 @@
   "It's switched off until you've changed what you need.": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Its brew": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "Its final stats are saved. The pill keeps recording.": {
@@ -4611,12 +4939,76 @@
       "pages/dashboard/FirstRunGuide.tsx"
     ]
   },
+  "Keg": {
+    "files": [
+      "pages/dashboard/LaserCard.tsx",
+      "pages/dashboard/PillRow.tsx",
+      "pages/kiosk/Kiosk.tsx",
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
+  "Keg emptied": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
+  "Keg empty": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
+  "Keg level · Bluetooth": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "Keg saved": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
+  "Keg up": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
+  "Kegged": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
+  "Kegged {amount}": {
+    "files": [
+      "pages/devices/keg.tsx",
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
+  "kegged {date} ({days} ago)": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
+  "Kegged up at": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
   "KegLand's Bluetooth hydrometer and thermometer. The hub hears it directly, or through a Bluetooth relay.": {
     "files": [
       "pages/devices/AddDevice.tsx"
     ]
   },
   "KegLand's Bluetooth thermometer. The hub hears it directly, or through a Bluetooth relay, and records it once a minute.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "KegLand's figures for a 19 L keg are 560 mm and 26 mm, and 290 mm for a 9.5 L one.": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
+  "KegLand's keg lid that measures how far down the beer is with a laser, so the hub can show how full the keg is. The hub hears it directly, or through a Bluetooth relay, and records it once a minute.": {
     "files": [
       "pages/devices/AddDevice.tsx"
     ]
@@ -4656,6 +5048,11 @@
       "pages/brews/brewText.ts"
     ]
   },
+  "L": {
+    "files": [
+      "units.tsx"
+    ]
+  },
   "Lag phase": {
     "files": [
       "pages/brews/brewText.ts"
@@ -4665,6 +5062,16 @@
     "files": [
       "components/DisplayMenu.tsx",
       "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Laser Level settings": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Laser Levels found": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
     ]
   },
   "Last {date}": {
@@ -4894,6 +5301,11 @@
       "pages/screens/AddScreen.tsx"
     ]
   },
+  "Left": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
   "Less smoothing": {
     "files": [
       "components/ChartSmoothing.tsx"
@@ -4952,6 +5364,11 @@
       "pages/Dashboard.tsx"
     ]
   },
+  "Listening for RAPT Laser Levels…": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
   "Listening for RAPT Pills…": {
     "files": [
       "pages/Dashboard.tsx",
@@ -4961,6 +5378,21 @@
   "Listening for RAPT Thermometers…": {
     "files": [
       "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "Listening for Tilts…": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "Litres": {
+    "files": [
+      "units.tsx"
+    ]
+  },
+  "Litres in the keg (RAPT Laser Levels; null for other devices)": {
+    "files": [
+      "pages/webhooks/strings.ts"
     ]
   },
   "Little Wi-Fi screens that show your pills. The hub sets them up, sends them pictures and keeps them up to date.": {
@@ -4973,7 +5405,7 @@
       "App.tsx"
     ]
   },
-  "Live readings from your RAPT Pills, recorded around the clock.": {
+  "Live readings from your brewing devices, recorded around the clock.": {
     "files": [
       "pages/Dashboard.tsx"
     ]
@@ -4993,7 +5425,7 @@
       "App.tsx"
     ]
   },
-  "Loading pills": {
+  "Loading devices": {
     "files": [
       "pages/Dashboard.tsx"
     ]
@@ -5130,6 +5562,11 @@
       "pages/screens/ScreenEditor.tsx"
     ]
   },
+  "Missing quite a few: try the hub (or a relay) closer to it.": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
   "Missing quite a few: try the hub (or a relay) closer to the pill.": {
     "files": [
       "pages/pill/Tiles.tsx"
@@ -5242,6 +5679,7 @@
       "pages/alerts/ChannelEditor.tsx",
       "pages/alerts/RuleModal.tsx",
       "pages/brews/EditBrewModal.tsx",
+      "pages/pill/KegPanel.tsx",
       "pages/pill/PillSettings.tsx",
       "pages/pill/StartBrewModal.tsx",
       "pages/screens/AddScreen.tsx",
@@ -5262,12 +5700,22 @@
       "pages/dashboard/NearbyCard.tsx"
     ]
   },
+  "Name for the Laser Level {id} (optional)": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
+    ]
+  },
   "Name for the pill {id} (optional)": {
     "files": [
       "pages/dashboard/NearbyCard.tsx"
     ]
   },
   "Name for the thermometer {id} (optional)": {
+    "files": [
+      "pages/dashboard/NearbyCard.tsx"
+    ]
+  },
+  "Name for the Tilt {id} (optional)": {
     "files": [
       "pages/dashboard/NearbyCard.tsx"
     ]
@@ -5533,6 +5981,11 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "None": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
   "None (only on your own network)": {
     "files": [
       "pages/alerts/strings.ts"
@@ -5691,6 +6144,11 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Nothing is kegged up here. Keg up a beer to keep track of how much of it is left.": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
   "Nothing is sent until then; your pills are still recorded.": {
     "files": [
       "pages/webhooks/WebhookEditor.tsx"
@@ -5750,6 +6208,13 @@
   "Ocean": {
     "files": [
       "theme.ts"
+    ]
+  },
+  "of {amount}": {
+    "files": [
+      "pages/dashboard/LaserCard.tsx",
+      "pages/pill/PillPage.tsx",
+      "pages/pill/Tiles.tsx"
     ]
   },
   "of readings since {time}": {
@@ -5873,6 +6338,12 @@
       "components/UpdateBanner.tsx"
     ]
   },
+  "On tap": {
+    "files": [
+      "pages/dashboard/LaserCard.tsx",
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
   "On the firmware it comes with (\"SD Pro\"): a new one opens a Wi-Fi network called \"Smart weather clock\".": {
     "files": [
       "pages/screens/SupportedScreens.tsx"
@@ -5957,6 +6428,11 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Only fills in the boxes below: change anything you like.": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
   "Only for protected topics. Or use a username and password instead.": {
     "files": [
       "pages/alerts/strings.ts"
@@ -5995,6 +6471,11 @@
   "Only shown in this app.": {
     "files": [
       "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Only the keg's details are deleted: the Laser Level's readings stay.": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "Only these:": {
@@ -6218,6 +6699,7 @@
     "files": [
       "pages/brews/EditBrewModal.tsx",
       "pages/brews/events.tsx",
+      "pages/pill/KegPanel.tsx",
       "pages/pill/StartBrewModal.tsx"
     ]
   },
@@ -6324,8 +6806,7 @@
   },
   "Pill not found": {
     "files": [
-      "../../server/screen/render.ts",
-      "pages/pill/PillPage.tsx"
+      "../../server/screen/render.ts"
     ]
   },
   "Pill order": {
@@ -6380,8 +6861,6 @@
   },
   "Pills": {
     "files": [
-      "App.tsx",
-      "pages/Dashboard.tsx",
       "pages/alerts/RuleModal.tsx",
       "pages/webhooks/ScheduleFields.tsx",
       "pages/webhooks/WebhookEditor.tsx"
@@ -6390,11 +6869,6 @@
   "Pills found": {
     "files": [
       "pages/devices/AddDevice.tsx"
-    ]
-  },
-  "Pills nearby": {
-    "files": [
-      "pages/Dashboard.tsx"
     ]
   },
   "Pills only send every few minutes, so it can take a little while to appear.": {
@@ -6420,6 +6894,21 @@
   "PIN created: you are signed in": {
     "files": [
       "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "pints": {
+    "files": [
+      "units.tsx"
+    ]
+  },
+  "Pints (UK)": {
+    "files": [
+      "units.tsx"
+    ]
+  },
+  "Pints (US)": {
+    "files": [
+      "units.tsx"
     ]
   },
   "Plain text": {
@@ -6501,6 +6990,12 @@
   "Posts in a channel on your Discord server": {
     "files": [
       "pages/alerts/strings.ts"
+    ]
+  },
+  "Poured": {
+    "files": [
+      "pages/kiosk/Kiosk.tsx",
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "Predicted FG": {
@@ -6609,6 +7104,11 @@
     ]
   },
   "Put the pill in {mode}: RAPT app → your pill → Connect → Setup → Telemetry via Bluetooth.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "Put the Tilt in your fermenter (or a jug of water). It sends its reading over Bluetooth every few seconds.": {
     "files": [
       "pages/devices/AddDevice.tsx"
     ]
@@ -6924,6 +7424,11 @@
       "pages/webhooks/RequestFields.tsx"
     ]
   },
+  "Remove Laser Level": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
   "Remove pill": {
     "files": [
       "pages/pill/PillSettings.tsx"
@@ -6932,6 +7437,16 @@
   "Remove thermometer": {
     "files": [
       "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Remove Tilt": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Remove unit": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
     ]
   },
   "removed pill": {
@@ -7093,9 +7608,19 @@
       "pages/webhooks/PauseButton.tsx"
     ]
   },
+  "Right now it reads {mm} mm.": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
   "Right now that would read {tilt} (the pill says {pill}).": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Right now that’s {amount}.": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
     ]
   },
   "Right now: pill {gravity}": {
@@ -7145,6 +7670,7 @@
       "pages/brews/EditBrewModal.tsx",
       "pages/brews/events.tsx",
       "pages/pill/DataSources.tsx",
+      "pages/pill/KegPanel.tsx",
       "pages/pill/PillSettings.tsx",
       "pages/screens/ScreenEditor.tsx",
       "pages/settings/BackupSection.tsx",
@@ -7167,6 +7693,16 @@
       "pages/webhooks/WebhookEditor.tsx"
     ]
   },
+  "Save keg": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
+  "Save unit": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
   "Save. It restarts, joins your Wi-Fi and sends its first reading within a minute: it shows up at the top of this tab, to add.": {
     "files": [
       "pages/devices/IspindelTab.tsx"
@@ -7175,7 +7711,8 @@
   "Saved": {
     "files": [
       "pages/alerts/ChannelEditor.tsx",
-      "pages/pill/DataSources.tsx"
+      "pages/pill/DataSources.tsx",
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "Saved on the hub": {
@@ -7544,7 +8081,7 @@
     ],
     "plural": true
   },
-  "Show all pills": {
+  "Show all devices": {
     "files": [
       "pages/Dashboard.tsx"
     ]
@@ -7558,6 +8095,11 @@
   "Show it all (0)": {
     "files": [
       "components/Chart.tsx"
+    ]
+  },
+  "Show it in {unit} here": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
     ]
   },
   "Show it on {name}": {
@@ -7657,6 +8199,7 @@
       "../../server/screen/render.ts",
       "components/Chart.tsx",
       "pages/Dashboard.tsx",
+      "pages/dashboard/LaserCard.tsx",
       "pages/dashboard/PillRow.tsx",
       "pages/dashboard/ThermometerCard.tsx",
       "pages/kiosk/Kiosk.tsx",
@@ -7745,9 +8288,19 @@
       "pages/brews/brewText.ts"
     ]
   },
+  "Since it was kegged": {
+    "files": [
+      "components/chartMath.ts"
+    ]
+  },
   "Since the brew started": {
     "files": [
       "components/chartMath.ts"
+    ]
+  },
+  "Size (ml)": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
     ]
   },
   "Skip a send if the pill hasn't reported since the last one (e.g. it's out of range).": {
@@ -7822,6 +8375,11 @@
     ]
   },
   "Some readings may be missed: its Wi-Fi is weak where it is.": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
+  "Some readings may be missed: try the hub (or a relay) closer to it.": {
     "files": [
       "pages/pill/Tiles.tsx"
     ]
@@ -8038,6 +8596,7 @@
   "Style": {
     "files": [
       "pages/brews/EditBrewModal.tsx",
+      "pages/pill/KegPanel.tsx",
       "pages/pill/StartBrewModal.tsx"
     ]
   },
@@ -8193,7 +8752,9 @@
   },
   "Temp": {
     "files": [
-      "pages/dashboard/PillRow.tsx"
+      "pages/dashboard/LaserCard.tsx",
+      "pages/dashboard/PillRow.tsx",
+      "pages/kiosk/Kiosk.tsx"
     ]
   },
   "Temp change": {
@@ -8705,6 +9266,11 @@
       "pages/pill/Tiles.tsx"
     ]
   },
+  "The keg": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
   "The last 8 weeks are kept.": {
     "files": [
       "pages/settings/BackupSection.tsx"
@@ -8869,6 +9435,11 @@
       "pages/screens/ScreenCard.tsx"
     ]
   },
+  "The sensor's own, in the lid": {
+    "files": [
+      "pages/pill/Tiles.tsx"
+    ]
+  },
   "The start has to be before the end": {
     "files": [
       "components/chartMath.ts"
@@ -8954,11 +9525,6 @@
       "pages/devices/AddDevice.tsx"
     ]
   },
-  "Thermometers have no gravity or battery reading, so this alert leaves them out.": {
-    "files": [
-      "pages/alerts/RuleModal.tsx"
-    ]
-  },
   "These have been confirmed working. RaptHooker puts its own firmware on them and looks after them from here.": {
     "files": [
       "pages/screens/SupportedScreens.tsx"
@@ -9007,6 +9573,11 @@
   "This browser can't keep the screen on from here (it needs a secure https:// address, such as through Tailscale). Turn off screen sleep in the device's settings instead.": {
     "files": [
       "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "This deletes {what}. This can't be undone. (To keep them, archive it instead.)": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
     ]
   },
   "This deletes {what}. This can't be undone. (To keep them, archive the pill instead.)": {
@@ -9195,6 +9766,16 @@
       "pages/pill/CalibrationWizard.tsx"
     ]
   },
+  "Tilt settings": {
+    "files": [
+      "pages/pill/PillSettings.tsx"
+    ]
+  },
+  "Tilts found": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
   "Time": {
     "files": [
       "pages/webhooks/strings.ts"
@@ -9358,6 +9939,11 @@
       "pages/settings/StatusSection.tsx"
     ]
   },
+  "Under {device}. Everything here is optional: how much is left comes from the Laser Level.": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
+    ]
+  },
   "Undo": {
     "files": [
       "pages/pill/DataSources.tsx"
@@ -9366,6 +9952,16 @@
   "Undo changes": {
     "files": [
       "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Unit removed": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
+  "Unit saved": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
     ]
   },
   "Units": {
@@ -9386,6 +9982,11 @@
   "Unknown variable {name}": {
     "files": [
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "Unnamed beer": {
+    "files": [
+      "pages/devices/keg.tsx"
     ]
   },
   "Untested": {
@@ -9664,6 +10265,22 @@
       "theme.ts"
     ]
   },
+  "Volume": {
+    "files": [
+      "../../server/screen/render.ts",
+      "components/Chart.tsx"
+    ]
+  },
+  "Volume ({unit})": {
+    "files": [
+      "components/Chart.tsx"
+    ]
+  },
+  "Volume unit": {
+    "files": [
+      "units.tsx"
+    ]
+  },
   "Wait a minute after a backup before pulling it out.": {
     "files": [
       "pages/settings/BackupSection.tsx"
@@ -9697,7 +10314,8 @@
   "Waiting for readings": {
     "files": [
       "../../server/screen/render.ts",
-      "components/Ferment.tsx"
+      "components/Ferment.tsx",
+      "pages/devices/keg.tsx"
     ]
   },
   "Waiting for the clock": {
@@ -9805,6 +10423,11 @@
   "Welcome to RaptHooker!": {
     "files": [
       "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "Went in": {
+    "files": [
+      "pages/pill/KegPanel.tsx"
     ]
   },
   "What": {
@@ -10017,6 +10640,16 @@
       "pages/pill/StartBrewModal.tsx"
     ]
   },
+  "With the keg empty: use what it reads now as empty": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
+  "With the keg just filled: use what it reads now as full": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
   "Won't work": {
     "files": [
       "pages/screens/SupportedScreens.tsx"
@@ -10124,6 +10757,11 @@
       "pages/pill/CalibrationWizard.tsx"
     ]
   },
+  "Your devices": {
+    "files": [
+      "pages/Dashboard.tsx"
+    ]
+  },
   "Your gravity offset ({offset}) is added on top.": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
@@ -10144,6 +10782,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "Your own unit": {
+    "files": [
+      "pages/pill/VesselSettings.tsx"
+    ]
+  },
   "your pill": {
     "files": [
       "pages/dashboard/FirstRunGuide.tsx"
@@ -10152,11 +10795,6 @@
   "Your pill is recording around the clock. A few extras you might like:": {
     "files": [
       "pages/dashboard/FirstRunGuide.tsx"
-    ]
-  },
-  "Your pills": {
-    "files": [
-      "pages/Dashboard.tsx"
     ]
   },
   "Your points are close together: add one with a higher gravity, up to the highest OG you brew.": {

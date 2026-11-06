@@ -7,6 +7,8 @@ import type {
   History,
   HubSettings,
   HubStatus,
+  Keg,
+  KegInputBody,
   NearbyPill,
   Pill,
   PillPatchBody,
@@ -102,6 +104,13 @@ export const api = {
   endBrew: (id: string) => post<Brew>(`/api/brews/${encodeURIComponent(id)}/end`),
   deleteBrew: (id: string) => request<void>('DELETE', `/api/brews/${encodeURIComponent(id)}`),
   brewCsvUrl: (id: string) => `/api/brews/${encodeURIComponent(id)}/export.csv`,
+
+  kegs: (pillId?: string) => get<Keg[]>(`/api/kegs${pillId ? `?pill=${encodeURIComponent(pillId)}` : ''}`),
+  startKeg: (pillId: string, input: KegInputBody) => post<Keg>('/api/kegs', { pillId, ...input }),
+  updateKeg: (id: string, patch: KegInputBody & { endedAt?: number | null }) =>
+    request<Keg>('PATCH', `/api/kegs/${encodeURIComponent(id)}`, patch),
+  endKeg: (id: string) => post<Keg>(`/api/kegs/${encodeURIComponent(id)}/end`, {}),
+  deleteKeg: (id: string) => request<void>('DELETE', `/api/kegs/${encodeURIComponent(id)}`),
 
   webhooks: () => get<Webhook[]>('/api/webhooks'),
   createWebhook: (input: WebhookInput) => post<Webhook>('/api/webhooks', input),

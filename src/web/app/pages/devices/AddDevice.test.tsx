@@ -58,8 +58,12 @@ describe('Add device', () => {
     expect(tabs.map((t) => t.textContent)).toEqual([
       expect.stringContaining('RAPT Pill'),
       expect.stringContaining('RAPT Thermometer'),
+      expect.stringContaining('RAPT Laser Level'),
+      expect.stringContaining('Tilt'),
       expect.stringContaining('iSpindel'),
     ]);
+    // The ones not tried with a real device yet say so.
+    expect(tabs.map((t) => t.textContent?.includes('experimental'))).toEqual([false, false, true, true, false]);
     expect(within(dialog).getByRole('tab', { selected: true }).textContent).toContain('RAPT Thermometer');
     expect(within(dialog).getByRole('heading', { name: 'Found a RAPT Thermometer nearby' })).toBeTruthy();
 

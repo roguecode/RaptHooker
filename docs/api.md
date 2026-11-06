@@ -37,9 +37,16 @@ curl -H "Authorization: Bearer $TOKEN" $HUB/api/pills
 
 All times are milliseconds since 1970 (UTC). Gravity is SG and temperature °C, whatever units the app shows. Each pill
 has a `kind`: `"pill"`, `"thermometer"` for a RAPT Bluetooth Thermometer, whose readings have only a `temperature`
-and `rssi` (the rest is `null`), or `"ispindel"` for an [iSpindel](ispindel.md), whose readings have a `tilt` (degrees)
+and `rssi` (the rest is `null`), `"ispindel"` for an [iSpindel](ispindel.md), whose readings have a `tilt` (degrees)
 and a `voltage` (its battery, V; `battery` is the charge estimated from it), no accelerometer values (`x`, `y`, `z` are
-`null`), and whose `rssi` is its Wi-Fi signal. `voltage` is missing (or `null`) for everything else. A device that
+`null`), and whose `rssi` is its Wi-Fi signal. `voltage` is missing (or `null`) for everything else. A `"tilt"`
+([Tilt](tilt.md)) has a gravity and temperature but no battery, tilt or accelerometer values. A `"laser-level"`
+([RAPT Laser Level](laser-level.md)) has no gravity; its readings have a `distance` (mm down to the beer), and `fill`
+(%) and `volume` (litres) worked out from it and the pill's `vessel` (`capacity` litres, `emptyMm`, `fullMm`), which the
+owner sets with `PATCH /api/pills/:id` (`{ "vessel": { ... } }`). Other readings don't have those three, and the
+history only has a `distance` column for a Laser Level. A Laser Level also has a `keg`: the beer kegged up under it
+(below), or `null`, and a `servingUnit`: its own unit for showing how much is left (`{ "ml": 330, "name": "cans" }`, set
+the same way), or `null`. Other kinds don't have either. A device that
 hasn't been added yet but is heard nearby (`nearby` in `/api/state`) has a `name` if it says its own (iSpindels do).
 
 | Endpoint                                                 | What                                                                                                                                                                                                                                                                                                                         |
@@ -129,6 +136,21 @@ history leaves them out only when asked to (`exclude=1`). The ranges are in each
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `POST /api/pills/:id/exclusions`                | `{ "from": <ms>, "to": <ms> }` leaves that range out (joining any it overlaps); the pill |
 | `DELETE /api/pills/:id/exclusions/:exclusionId` | Puts a range back on the charts; the pill                                                |
+
+A beer kegged up under a [Laser Level](laser-level.md#keg-up) is a keg: `id`, `pillId`, `name`, `style`, `abv` (% or
+`null`), `brewId` (the brew it was filled in from, or `null`), `keggedAt`, `endedAt` (`null` while it's on tap),
+`createdAt` and `startVolume` (litres that went in: the fullest it read in the 6 hours after `keggedAt`, or `null` until
+there's a reading). Listing them works with a token; the rest needs the owner. The live updates send `keg` and
+`keg-removed` messages.
+
+| Endpoint                 | What                                                                                                                                                                   |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/kegs?pill=`    | Kegs, newest first, optionally for one Laser Level                                                                                                                     |
+| `GET /api/kegs/:id`      | One keg                                                                                                                                                                |
+| `POST /api/kegs`         | `{ "pillId": "...", "name": "...", "style": "...", "abv": 5.2, "brewId": null, "keggedAt": <ms> }` (all but `pillId` optional) kegs one up, emptying the one before it |
+| `PATCH /api/kegs/:id`    | Changes any of those, or `endedAt`                                                                                                                                     |
+| `POST /api/kegs/:id/end` | Marks it empty (`{ "at": <ms> }`, or now)                                                                                                                              |
+| `DELETE /api/kegs/:id`   | Deletes it; the readings stay                                                                                                                                          |
 
 [Screens](./rapthooker-screens.md) are set up and looked after by the owner:
 

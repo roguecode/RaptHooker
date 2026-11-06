@@ -1,8 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { plausibleGravity, type Pill } from '@rapthooker/shared';
 import { useLive } from '../../live';
-import { useUnits } from '../../units';
-import { historyGapMs, useHistory, useRecentRange } from '../../hooks';
+import { useUnits, volumeNumber } from '../../units';
+import { historyGapMs, useCardRange, useHistory } from '../../hooks';
 import { navigate } from '../../router';
 import { fixed, signalQuality, timeAgo, timeOnly, useNow } from '../../format';
 import { t } from '../../i18n';
@@ -11,10 +11,10 @@ import { useStored } from '../../storage';
 import { Icon } from '../../components/Icon';
 import { Sparkline } from '../../components/Sparkline';
 import { rangeOf } from '../dashboard/ThermometerCard';
+import { kegLevels, kegName, vesselOf, volumeSeries } from '../devices/keg';
 import { brewDay, kioskLayout, pageItems, parseKioskSettings, ROTATE_SECONDS, serializeKioskSettings } from './layout';
 import './kiosk.css';
 
-const DAY = 86_400_000;
 const IDLE_MS = 3500;
 
 type WakeState = 'pending' | 'active' | 'unsupported' | 'failed';
@@ -267,7 +267,7 @@ export function Kiosk({ offline }: { offline: boolean }) {
 
 function KioskTile({ pill, now, stale }: { pill: Pill; now: number; stale: boolean }) {
   const u = useUnits();
-  const range = useRecentRange(DAY);
+  const range = useCardRange(pill);
   const { history } = useHistory(pill.id, range, 160, historyGapMs(pill.live.intervalSec));
   const r = pill.live.latest;
   const g = u.gravityParts(r?.gravity);
@@ -278,7 +278,11 @@ function KioskTile({ pill, now, stale }: { pill: Pill; now: number; stale: boole
   const online = pill.live.online && !stale;
   const nameId = useId();
   const thermometer = pill.kind === 'thermometer';
+  const laser = pill.kind === 'laser-level';
   const day = useMemo(() => (thermometer ? rangeOf(history?.temperature) : null), [thermometer, history]);
+  const vessel = vesselOf(pill);
+  const scale = u.volumeScale(pill.servingUnit);
+  const volume = useMemo(() => (laser && history ? volumeSeries(history, vessel) : null), [laser, history, vessel]);
   const signal = signalQuality(pill.live.rssi);
 
   return (
@@ -290,7 +294,21 @@ function KioskTile({ pill, now, stale }: { pill: Pill; now: number; stale: boole
       <div className="kt-head">
         <h2 id={nameId}>{pill.name}</h2>
         <span className="kt-brew">
-          {thermometer ? (
+          {laser ? (
+            pill.keg ? (
+              <>
+                {kegName(pill.keg)}
+                {pill.keg.abv !== null && (
+                  <>
+                    {' '}
+                    · <strong>{t('{abv}% ABV', { abv: fixed(pill.keg.abv, 1) })}</strong>
+                  </>
+                )}
+              </>
+            ) : (
+              t('Keg')
+            )
+          ) : thermometer ? (
             t('Thermometer')
           ) : brew ? (
             <>
@@ -303,7 +321,15 @@ function KioskTile({ pill, now, stale }: { pill: Pill; now: number; stale: boole
       </div>
 
       <div className="kt-main">
-        {thermometer ? (
+        {laser ? (
+          <>
+            <div className="kt-gravity num">
+              {volumeNumber(scale, r?.volume)}
+              <span className="unit">{scale.symbol}</span>
+            </div>
+            <div className="kt-temp num">{r?.fill == null ? '–' : `${Math.round(r.fill)}%`}</div>
+          </>
+        ) : thermometer ? (
           <div className="kt-gravity num">
             {r ? fixed(u.tempValue(r.temperature), 1) : '–'}
             <span className="unit">{u.tempLabel}</span>
@@ -328,7 +354,18 @@ function KioskTile({ pill, now, stale }: { pill: Pill; now: number; stale: boole
       <div className="kt-spark">
         {history &&
           history.ts.length > 1 &&
-          (thermometer ? (
+          (laser && volume ? (
+            <Sparkline
+              ts={history.ts}
+              values={volume}
+              secondary={history.temperature}
+              color={pill.color}
+              from={range.from}
+              to={Math.max(history.to, Date.now())}
+              minSpan={1}
+              secondaryMinSpan={3}
+            />
+          ) : thermometer ? (
             <Sparkline
               ts={history.ts}
               values={history.temperature}
@@ -353,7 +390,31 @@ function KioskTile({ pill, now, stale }: { pill: Pill; now: number; stale: boole
       </div>
 
       <dl className="kt-stats">
-        {thermometer ? (
+        {laser ? (
+          <>
+            {pill.keg ? (
+              <div>
+                <dt>{t('Poured')}</dt>
+                <dd className="num">{u.volumeText(kegLevels(pill.keg, r?.volume).poured, pill.servingUnit)}</dd>
+              </div>
+            ) : (
+              <div>
+                <dt>{t('Holds')}</dt>
+                <dd className="num">{u.volumeText(vessel.capacity, pill.servingUnit, true)}</dd>
+              </div>
+            )}
+            <div>
+              <dt>{t('Temp')}</dt>
+              <dd className="num">{u.tempText(r?.temperature)}</dd>
+            </div>
+            <div>
+              <dt>{t('Battery')}</dt>
+              <dd className={`num${r?.battery != null && r.battery < 20 ? ' low' : ''}`}>
+                {r?.battery != null ? `${Math.round(r.battery)}%` : '–'}
+              </dd>
+            </div>
+          </>
+        ) : thermometer ? (
           <>
             <div>
               <dt>{t('Last 24 h')}</dt>

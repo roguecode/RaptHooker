@@ -20,7 +20,7 @@ describe('Dashboard', () => {
   it('shows a card for each pill from the live state', async () => {
     await renderWithHub(<Dashboard />, { pills: [stout(), lager()] });
 
-    expect(screen.getByRole('heading', { name: 'Your pills' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Your devices' })).toBeTruthy();
     expect(screen.getByText('2 pills recording · 1 brew on the go')).toBeTruthy();
     const pils = within(card('Czech Pils'));
     expect(pils.getByText('11.0 °C')).toBeTruthy();
@@ -66,7 +66,7 @@ describe('Dashboard', () => {
 
     await view.push({ type: 'nearby', nearby: [makeNearby()] });
     expect(screen.getByText('Found a pill nearby')).toBeTruthy();
-    const nearby = within(screen.getByRole('region', { name: 'Pills nearby' }));
+    const nearby = within(screen.getByRole('region', { name: 'Devices nearby' }));
     expect(nearby.getByText(/1\.0480 · 11\.0 °C · Signal: Good \(-70 dBm\)/)).toBeTruthy();
 
     fireEvent.change(nearby.getByRole('textbox', { name: /Name for the pill/ }), { target: { value: '  Pill 2 ' } });
@@ -85,10 +85,10 @@ describe('Dashboard', () => {
 
   it('switches to the compact view and remembers it', async () => {
     await renderWithHub(<Dashboard />, { pills: [stout(), lager()] });
-    expect(screen.queryByRole('list', { name: 'Pills' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Devices' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Compact' }));
-    const rows = within(screen.getByRole('list', { name: 'Pills' })).getAllByRole('listitem');
+    const rows = within(screen.getByRole('list', { name: 'Devices' })).getAllByRole('listitem');
     expect(rows).toHaveLength(2);
     expect(within(rows[0]!).getByText(/Stout #2/)).toBeTruthy();
     expect(within(rows[1]!).getByText(/No brew/)).toBeTruthy();
@@ -117,7 +117,7 @@ describe('Dashboard', () => {
     await renderWithHub(<Dashboard />, { pills: [lager()] });
     fireEvent.click(screen.getByRole('button', { name: 'Brewing only' }));
     expect(screen.getByRole('heading', { name: 'No brews on the go' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Show all pills' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show all devices' }));
     expect(screen.getByRole('link', { name: 'Czech Pils' })).toBeTruthy();
   });
 });

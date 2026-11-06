@@ -1,13 +1,13 @@
-# iSpindels (experimental)
+# iSpindels
 
 An [iSpindel](https://www.ispindel.de) is a DIY Wi-Fi hydrometer: an ESP8266, an accelerometer and a temperature sensor
 in a tube that floats in your fermenter. Every so often it wakes up, sends its reading over your Wi-Fi and goes back to
 sleep. RaptHooker takes those readings itself, so an iSpindel is recorded like a pill: dashboard, charts, brews,
 calibration, alerts, webhooks, MQTT and Home Assistant, CSV export.
 
-Support is new and **experimental**. It has been tried with an iSpindel on firmware 6.5.1. Firmware 7, and other
-firmware that sends the same format (such as GravityMon), should work but haven't been tried. Please
-[report back](https://github.com/roguecode/RaptHooker/issues) how it goes.
+It has been tested with a real iSpindel on firmware 6.5.1, set up both by the hub and by hand. Firmware 7, and other
+firmware that sends the same format (such as GravityMon), should work but haven't been tried: please
+[report back](https://github.com/roguecode/RaptHooker/issues) if you use one.
 
 ## What it needs
 

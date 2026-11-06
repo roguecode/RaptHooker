@@ -25,6 +25,8 @@ import type { SystemService } from './system.js';
 import type { TokenService } from './tokens.js';
 import { ScreenError, type ScreenManager } from './screens/index.js';
 import { IspindelError, type IspindelService } from './ispindel/service.js';
+import { KegError, KegService } from './kegs.js';
+import type { Logger } from './log.js';
 import type { LogBuffer } from './logbuffer.js';
 import type { RouteContext } from './routes/context.js';
 import { sessionRoutes } from './routes/session.js';
@@ -43,6 +45,7 @@ import { channelRoutes } from './routes/channels.js';
 import { tokenRoutes } from './routes/tokens.js';
 import { relayRoutes } from './routes/relay.js';
 import { ispindelRoutes } from './routes/ispindel.js';
+import { kegRoutes } from './routes/kegs.js';
 import { updateRoutes } from './routes/updates.js';
 import { screenRoutes } from './routes/screen.js';
 import { screensRoutes } from './routes/screens.js';
@@ -68,6 +71,8 @@ export interface Services {
   tokens: TokenService;
   screens: ScreenManager;
   ispindel: IspindelService;
+  /** Kegs under Laser Levels: made by buildServer when not given (tests). */
+  kegs?: KegService;
   logs: LogBuffer;
   version: string;
   startedAt: number;
@@ -119,6 +124,7 @@ export async function buildServer(s: Services, opts: { logger?: FastifyBaseLogge
       err instanceof ChannelError ||
       err instanceof ScreenError ||
       err instanceof IspindelError ||
+      err instanceof KegError ||
       err instanceof PinError;
     const status = known ? err.statusCode! : (err.statusCode ?? 500);
     if (status >= 500) app.log.error(err);
@@ -126,6 +132,7 @@ export async function buildServer(s: Services, opts: { logger?: FastifyBaseLogge
   });
 
   const sockets: LiveSockets = new Map();
+  s.kegs ??= new KegService(store, s.pills, app.log as unknown as Logger);
   const ctx: RouteContext = { app, s, auth, sessionOf, isOwner, owner, broadcast: broadcaster(sockets) };
 
   sessionRoutes(ctx);
@@ -142,6 +149,7 @@ export async function buildServer(s: Services, opts: { logger?: FastifyBaseLogge
   tokenRoutes(ctx);
   relayRoutes(ctx);
   ispindelRoutes(ctx);
+  kegRoutes(ctx);
   updateRoutes(ctx);
   screenRoutes(ctx);
   screensRoutes(ctx);

@@ -20,8 +20,9 @@ export const ISPINDEL_PATH = '/api/ispindel';
 /** Device addresses of iSpindels: never confused with a Bluetooth address. */
 export const ISPINDEL_PREFIX = 'ISPINDEL:';
 
-/** Kinds of device that measure gravity (a RAPT Thermometer doesn't). */
-export const measuresGravity = (kind: DeviceKind | string | undefined): boolean => kind === 'pill' || kind === 'ispindel';
+/** Kinds of device that measure gravity (a RAPT Thermometer and a Laser Level don't). */
+export const measuresGravity = (kind: DeviceKind | string | undefined): boolean =>
+  kind === 'pill' || kind === 'ispindel' || kind === 'tilt';
 
 export const isIspindelAddress = (address: string): boolean => address.trim().toUpperCase().startsWith(ISPINDEL_PREFIX);
 

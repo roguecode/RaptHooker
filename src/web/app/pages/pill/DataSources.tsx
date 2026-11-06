@@ -122,44 +122,46 @@ export function DataSources({ pill, onCalibrateTilt }: { pill: Pill; onCalibrate
         {t("By default every number is the pill's own. You can let RaptHooker work some of them out instead, and switch back any time.")}
       </p>
 
-      <Choice
-        label={t('Gravity')}
-        value={draft.gravitySource}
-        onChange={(gravitySource) => setDraft({ ...draft, gravitySource })}
-        options={[
-          {
-            id: 'pill',
-            label: t('From the pill (default)'),
-            hint:
-              pill.kind === 'ispindel'
-                ? t('What the iSpindel sends, using the gravity formula set on it.')
-                : t('What the pill sends, using its own calibration from the RAPT app.'),
-          },
-          {
-            id: 'tilt',
-            label: t('Worked out by RaptHooker from the tilt'),
-            hint: canTilt
-              ? t("RaptHooker turns the pill's tilt into gravity using your tilt calibration points.")
-              : t('Needs a tilt calibration first: at least 2 points.'),
-            disabled: !canTilt,
-          },
-        ]}
-      >
-        {r && (
-          <p className="source-now num">
-            {t('Right now: pill {gravity}', { gravity: u.gravityText(r.pillGravity) })}
-            {tiltNow !== null && <> · {t('from the tilt {gravity}', { gravity: u.gravityText(tiltNow) })}</>}
-          </p>
-        )}
-        <div>
-          <button type="button" className="btn small ghost" onClick={onCalibrateTilt}>
-            <Icon name="tilt" size={14} />{' '}
-            {canTilt
-              ? tp(m.tiltPoints.length, 'Tilt calibration ({count} point)', 'Tilt calibration ({count} points)')
-              : t('Set up a tilt calibration')}
-          </button>
-        </div>
-      </Choice>
+      {pill.kind !== 'tilt' && (
+        <Choice
+          label={t('Gravity')}
+          value={draft.gravitySource}
+          onChange={(gravitySource) => setDraft({ ...draft, gravitySource })}
+          options={[
+            {
+              id: 'pill',
+              label: t('From the pill (default)'),
+              hint:
+                pill.kind === 'ispindel'
+                  ? t('What the iSpindel sends, using the gravity formula set on it.')
+                  : t('What the pill sends, using its own calibration from the RAPT app.'),
+            },
+            {
+              id: 'tilt',
+              label: t('Worked out by RaptHooker from the tilt'),
+              hint: canTilt
+                ? t("RaptHooker turns the pill's tilt into gravity using your tilt calibration points.")
+                : t('Needs a tilt calibration first: at least 2 points.'),
+              disabled: !canTilt,
+            },
+          ]}
+        >
+          {r && (
+            <p className="source-now num">
+              {t('Right now: pill {gravity}', { gravity: u.gravityText(r.pillGravity) })}
+              {tiltNow !== null && <> · {t('from the tilt {gravity}', { gravity: u.gravityText(tiltNow) })}</>}
+            </p>
+          )}
+          <div>
+            <button type="button" className="btn small ghost" onClick={onCalibrateTilt}>
+              <Icon name="tilt" size={14} />{' '}
+              {canTilt
+                ? tp(m.tiltPoints.length, 'Tilt calibration ({count} point)', 'Tilt calibration ({count} points)')
+                : t('Set up a tilt calibration')}
+            </button>
+          </div>
+        </Choice>
+      )}
 
       <Choice
         label={t('Velocity')}

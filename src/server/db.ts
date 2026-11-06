@@ -23,12 +23,14 @@ export interface RawReading {
   tilt?: number | null;
   /** Battery voltage, V (iSpindels). */
   voltage?: number | null;
+  /** mm from the sensor down to the beer (RAPT Laser Levels). */
+  distance?: number | null;
   /** FLAG_* bits. */
   flags: number;
 }
 
 /** The columns a RawReading is read from. */
-const READING_COLUMNS = 'ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, flags';
+const READING_COLUMNS = 'ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, distance, flags';
 
 /**
  * Schema versions, applied in order; the database's user_version says how many have run. People's brewing history is
@@ -154,6 +156,22 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE rollups ADD COLUMN voltage REAL NOT NULL DEFAULT 0;
   ALTER TABLE rollups ADD COLUMN voltage_n INTEGER NOT NULL DEFAULT 0;
   `,
+  // v7: RAPT Laser Levels measure the distance down to the beer in a keg, mm: a new column, NULL for every other
+  // reading, summed in the rollups with a count of the readings that had it (as tilt and voltage in v6).
+  `
+  ALTER TABLE readings ADD COLUMN distance REAL;
+  ALTER TABLE rollups ADD COLUMN distance REAL NOT NULL DEFAULT 0;
+  ALTER TABLE rollups ADD COLUMN distance_n INTEGER NOT NULL DEFAULT 0;
+  `,
+  // v8: kegs, a beer kegged up under a RAPT Laser Level (its name, style and ABV as JSON), from when it was kegged
+  // until the keg was emptied. Older versions don't know the table and leave it alone.
+  `
+  CREATE TABLE kegs (
+    id TEXT PRIMARY KEY, pill_id TEXT NOT NULL, json TEXT NOT NULL,
+    kegged_at INTEGER NOT NULL, ended_at INTEGER, created_at INTEGER NOT NULL
+  );
+  CREATE INDEX kegs_pill ON kegs (pill_id, kegged_at);
+  `,
 ];
 
 /**
@@ -182,6 +200,16 @@ export interface BrewRow {
   started_at: number;
   ended_at: number | null;
   json: string;
+  created_at: number;
+}
+
+/** A beer kegged up under a Laser Level (see KegService). */
+export interface KegRow {
+  id: string;
+  pill_id: string;
+  json: string;
+  kegged_at: number;
+  ended_at: number | null;
   created_at: number;
 }
 
@@ -283,15 +311,15 @@ export class Store {
       throw err;
     }
     this.insertReadingStmt = this.db.prepare(
-      'INSERT OR IGNORE INTO readings (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT OR IGNORE INTO readings (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, distance, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
     // Each measurement is a sum, with a count of the readings that didn't have it (see migration v4), or of those that
-    // did for tilt and voltage (v6). sg/sg_n only count plausible readings; sg_all covers every reading with a gravity,
-    // for buckets where none were plausible.
+    // did for tilt and voltage (v6) and distance (v7). sg/sg_n only count plausible readings; sg_all covers every
+    // reading with a gravity, for buckets where none were plausible.
     this.upsertRollupStmt = this.db.prepare(`
       INSERT INTO rollups (pill_id, bucket, n, sg, sg_n, sg_all, sg_missing, temp, temp_missing, velocity, velocity_n, battery,
-        battery_missing, rssi, rssi_n, x, y, z, xyz_missing, tilt, tilt_n, voltage, voltage_n)
-      VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        battery_missing, rssi, rssi_n, x, y, z, xyz_missing, tilt, tilt_n, voltage, voltage_n, distance, distance_n)
+      VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT (pill_id, bucket) DO UPDATE SET
         n = n + 1, sg = sg + excluded.sg, sg_n = sg_n + excluded.sg_n, sg_all = sg_all + excluded.sg_all,
         sg_missing = sg_missing + excluded.sg_missing, temp = temp + excluded.temp, temp_missing = temp_missing + excluded.temp_missing,
@@ -300,7 +328,7 @@ export class Store {
         rssi = rssi + excluded.rssi, rssi_n = rssi_n + excluded.rssi_n,
         x = x + excluded.x, y = y + excluded.y, z = z + excluded.z, xyz_missing = xyz_missing + excluded.xyz_missing,
         tilt = tilt + excluded.tilt, tilt_n = tilt_n + excluded.tilt_n, voltage = voltage + excluded.voltage,
-        voltage_n = voltage_n + excluded.voltage_n`);
+        voltage_n = voltage_n + excluded.voltage_n, distance = distance + excluded.distance, distance_n = distance_n + excluded.distance_n`);
   }
 
   get schemaVersion(): number {
@@ -418,7 +446,7 @@ export class Store {
   deletePill(id: string): void {
     this.transaction(() => {
       this.db.prepare('DELETE FROM brew_events WHERE brew_id IN (SELECT id FROM brews WHERE pill_id = ?)').run(id);
-      for (const table of ['readings', 'rollups', 'brews', 'webhook_state', 'alert_state']) {
+      for (const table of ['readings', 'rollups', 'brews', 'kegs', 'webhook_state', 'alert_state']) {
         this.db.prepare(`DELETE FROM ${table} WHERE pill_id = ?`).run(id);
       }
       this.db.prepare('DELETE FROM pills WHERE id = ?').run(id);
@@ -442,6 +470,7 @@ export class Store {
         r.z,
         r.tilt ?? null,
         r.voltage ?? null,
+        r.distance ?? null,
         r.flags,
       );
       if (res.changes === 0) return false;
@@ -465,6 +494,7 @@ export class Store {
         xyz ? 0 : 1,
         ...sum(r.tilt),
         ...sum(r.voltage),
+        ...sum(r.distance),
       );
       return true;
     });
@@ -621,6 +651,7 @@ export class Store {
       y: number | null;
       z: number | null;
       tilt: number | null;
+      distance: number | null;
       flags: number;
     };
     const empty = (r: P, ts = r.ts): P => ({
@@ -635,6 +666,7 @@ export class Store {
       y: null,
       z: null,
       tilt: null,
+      distance: null,
     });
     let rows: P[];
 
@@ -650,7 +682,7 @@ export class Store {
           `SELECT CAST(${keep ? `COALESCE(${avg('ts')}, AVG(ts))` : 'AVG(ts)'} AS INTEGER) AS ts,
                   COALESCE(AVG(CASE WHEN flags & 1 = 0${keep ? ` AND ${keep}` : ''} THEN sg END), ${avg('sg')}) AS sg, ${avg('temp')} AS temp,
                   ${avg('velocity')} AS velocity, ${avg('battery')} AS battery, ${avg('rssi')} AS rssi, ${avg('x')} AS x, ${avg('y')} AS y,
-                  ${avg('z')} AS z, ${avg('tilt')} AS tilt, ${keep ? `MIN(CASE WHEN ${keep} THEN flags & 1 END)` : 'MIN(flags & 1)'} AS flags
+                  ${avg('z')} AS z, ${avg('tilt')} AS tilt, ${avg('distance')} AS distance, ${keep ? `MIN(CASE WHEN ${keep} THEN flags & 1 END)` : 'MIN(flags & 1)'} AS flags
            FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? GROUP BY ts / ${Math.floor(bucket)} ORDER BY 1`,
         )
         .all(pillId, qFrom, to) as unknown as P[];
@@ -669,6 +701,7 @@ export class Store {
                   CASE WHEN TOTAL(n) > TOTAL(xyz_missing) THEN TOTAL(y) / (TOTAL(n) - TOTAL(xyz_missing)) END AS y,
                   CASE WHEN TOTAL(n) > TOTAL(xyz_missing) THEN TOTAL(z) / (TOTAL(n) - TOTAL(xyz_missing)) END AS z,
                   CASE WHEN TOTAL(tilt_n) > 0 THEN TOTAL(tilt) / TOTAL(tilt_n) END AS tilt,
+                  CASE WHEN TOTAL(distance_n) > 0 THEN TOTAL(distance) / TOTAL(distance_n) END AS distance,
                   CASE WHEN TOTAL(sg_n) > 0 OR TOTAL(n) = TOTAL(sg_missing) THEN 0 ELSE 1 END AS flags
            FROM rollups WHERE pill_id = ? AND bucket BETWEEN ? AND ? GROUP BY bucket / ${Math.floor(bucket)} ORDER BY 1`,
         )
@@ -706,6 +739,8 @@ export class Store {
       gravity = gravity.map((g, i) => (implausible[i] ? g : (smoothed[i] ?? g)));
     }
     const differs = model.gravitySource === 'tilt' || model.smoothing !== 'off';
+    // Only a device that measures it (a Laser Level) gets the distance.
+    const hasDistance = rows.some((r) => r.distance !== null && r.distance !== undefined);
 
     const out: History = {
       pillId,
@@ -720,6 +755,7 @@ export class Store {
       rssi: [],
       tilt: [],
       implausible: [],
+      ...(hasDistance ? { distance: [] } : {}),
       ...(differs ? { pillGravity: [] } : {}),
       ...(velocityMs > 0 ? { pillVelocity: [] } : {}),
     };
@@ -734,6 +770,7 @@ export class Store {
       out.rssi.push(null);
       out.tilt.push(null);
       out.implausible.push(null);
+      out.distance?.push(null);
       out.pillGravity?.push(null);
       out.pillVelocity?.push(null);
     };
@@ -749,6 +786,7 @@ export class Store {
       out.battery.push(r.battery);
       out.tilt.push(tilt[i]!);
       out.implausible.push(implausible[i]!);
+      out.distance?.push(r.distance === null ? null : Math.round(r.distance * 10) / 10);
       out.pillGravity?.push(pillGravity[i]!);
       out.pillVelocity?.push(r.velocity);
     });
@@ -778,6 +816,42 @@ export class Store {
          ON CONFLICT (id) DO UPDATE SET started_at = excluded.started_at, ended_at = excluded.ended_at, json = excluded.json`,
       )
       .run(row.id, row.pill_id, row.started_at, row.ended_at, row.json, row.created_at);
+  }
+
+  // Kegs
+
+  listKegRows(pillId?: string): KegRow[] {
+    return (pillId
+      ? this.db.prepare('SELECT * FROM kegs WHERE pill_id = ? ORDER BY kegged_at DESC').all(pillId)
+      : this.db.prepare('SELECT * FROM kegs ORDER BY kegged_at DESC').all()) as unknown as KegRow[];
+  }
+
+  getKegRow(id: string): KegRow | null {
+    return (this.db.prepare('SELECT * FROM kegs WHERE id = ?').get(id) as unknown as KegRow | undefined) ?? null;
+  }
+
+  saveKeg(row: KegRow): void {
+    this.db
+      .prepare(
+        `INSERT INTO kegs (id, pill_id, json, kegged_at, ended_at, created_at) VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT (id) DO UPDATE SET json = excluded.json, kegged_at = excluded.kegged_at, ended_at = excluded.ended_at`,
+      )
+      .run(row.id, row.pill_id, row.json, row.kegged_at, row.ended_at, row.created_at);
+  }
+
+  deleteKeg(id: string): boolean {
+    return this.db.prepare('DELETE FROM kegs WHERE id = ?').run(id).changes > 0;
+  }
+
+  /** The shortest distance (the fullest) a Laser Level measured from `from` until before `to`. */
+  minDistance(pillId: string, from: number, to: number): number | null {
+    return (
+      (
+        this.db.prepare('SELECT MIN(distance) AS d FROM readings WHERE pill_id = ? AND ts >= ? AND ts < ?').get(pillId, from, to) as {
+          d: number | null;
+        }
+      ).d ?? null
+    );
   }
 
   /** Removes a brew and its events. */

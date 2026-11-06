@@ -4,6 +4,7 @@ import {
   abv,
   attenuation,
   gravityStable,
+  measuresGravity,
   plausibleGravity,
   predictFermentation,
   SMOOTHING_MS,
@@ -139,7 +140,10 @@ export class BrewService extends EventEmitter {
   start(pillId: string, input: Partial<BrewInput>, startedAt?: number): Brew {
     const kind = this.pills.kind(pillId);
     if (!kind) throw new BrewError('Unknown pill', 404);
-    if (kind === 'thermometer') throw new BrewError("A brew needs a pill's gravity: a thermometer can't record one");
+    if (!measuresGravity(kind)) {
+      const what = kind === 'thermometer' ? 'a thermometer' : kind === 'laser-level' ? 'a RAPT Laser Level' : 'this device';
+      throw new BrewError(`A brew needs a pill's gravity: ${what} can't record one`);
+    }
     if (this.activeFor(pillId)) throw new BrewError('This pill already has a brew running: end it first', 409);
     const now = this.now();
     const start = Math.min(startedAt ?? now, now);

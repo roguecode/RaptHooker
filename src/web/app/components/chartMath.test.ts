@@ -146,6 +146,12 @@ describe('presetRange', () => {
     expect(presetRange('brew', ctx)).toEqual(presetRange('all', ctx));
   });
 
+  it('starts at the keg for "keg", showing at least the last hour', () => {
+    expect(presetRange('keg', { ...ctx, kegStart: 90 * D })).toEqual({ from: 90 * D, to: now, live: true });
+    expect(presetRange('keg', { ...ctx, kegStart: now - 60_000 })).toEqual({ from: now - H, to: now, live: true });
+    expect(presetRange('keg', ctx)).toEqual(presetRange('all', ctx));
+  });
+
   it('uses the custom range, following new readings only when it runs to now', () => {
     expect(presetRange('custom', { ...ctx, custom: { from: 60 * D, to: 70 * D } })).toEqual({ from: 60 * D, to: 70 * D, live: false });
     expect(presetRange('custom', { ...ctx, custom: { from: 60 * D, to: now + H } })).toEqual({ from: 60 * D, to: now, live: true });

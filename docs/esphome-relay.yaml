@@ -1,10 +1,10 @@
 # RaptHooker Bluetooth relay: an ESP32 running ESPHome that passes on the RAPT Pill adverts it hears.
 # UNTESTED on real hardware so far: see docs/relay.md for the set-up, and please report how it goes.
 #
-# It listens (passively) for adverts with RAPT manufacturer data, company id 0x4152 ("RA", the readings) or 0x454B
-# ("KE", the firmware version), and for the RAPT Bluetooth Thermometer's iBeacon (Apple's company id 0x004C, with a
-# UUID starting "Keg"), and posts them to RaptHooker's /api/relay every couple of seconds. Everything else it hears is
-# ignored.
+# It listens (passively) for adverts with RAPT manufacturer data, company id 0x4152 ("RA", the readings of pills and
+# Laser Levels) or 0x454B ("KE", the firmware version), and for the RAPT Bluetooth Thermometer's and Tilts' iBeacons
+# (Apple's company id 0x004C, with a UUID starting "Keg" or A4 95 BB), and posts them to RaptHooker's /api/relay every
+# couple of seconds. Everything else it hears is ignored.
 #
 # secrets.yaml, next to this file:
 #   wifi_ssid: "YourWiFi"
@@ -55,15 +55,17 @@ esp32_ble_tracker:
     - then:
         - lambda: |-
             // Keep only RAPT manufacturer data: "16722" (0x4152) and "17739" (0x454B) are the company ids in decimal,
-            // and "76" (0x004C, Apple) the RAPT Thermometer's iBeacon: 02 15, then a UUID starting "Keg".
+            // and "76" (0x004C, Apple) the RAPT Thermometer's iBeacon (02 15, then a UUID starting "Keg") and Tilts'
+            // (02 15, then a UUID starting A4 95 BB).
             std::string entries;
             for (auto &md : x.get_manufacturer_datas()) {
               const bool rapt = md.uuid == decltype(md.uuid)::from_uint16(0x4152);
               const bool keg = md.uuid == decltype(md.uuid)::from_uint16(0x454B);
               const auto &d = md.data;
-              const bool thermometer = md.uuid == decltype(md.uuid)::from_uint16(0x004C) && d.size() == 23 &&
-                                       d[0] == 0x02 && d[1] == 0x15 && d[2] == 0x4B && d[3] == 0x65 && d[4] == 0x67;
-              if (!rapt && !keg && !thermometer) continue;
+              const bool beacon = md.uuid == decltype(md.uuid)::from_uint16(0x004C) && d.size() == 23 && d[0] == 0x02 &&
+                                  d[1] == 0x15 && ((d[2] == 0x4B && d[3] == 0x65 && d[4] == 0x67) ||
+                                                   (d[2] == 0xA4 && d[3] == 0x95 && d[4] == 0xBB));
+              if (!rapt && !keg && !beacon) continue;
               std::string hex;
               char byte[3];
               for (uint8_t b : md.data) {
@@ -79,8 +81,8 @@ esp32_ble_tracker:
             char addr[18];
             snprintf(addr, sizeof(addr), "%02X:%02X:%02X:%02X:%02X:%02X", a[0], a[1], a[2], a[3], a[4], a[5]);
 
-            // A pill repeats each advert several times a second, and a thermometer sends one every second: pass each one
-            // on once (and again after 30 s, which is plenty for the thermometer's one reading a minute).
+            // A pill repeats each advert several times a second, and a thermometer or Tilt sends one every second or
+            // so: pass each one on once (and again after 30 s, which is plenty for one reading a minute).
             static std::map<std::string, std::pair<std::string, uint32_t>> last;
             auto &seen = last[std::string(addr) + entries.substr(0, 8)];
             if (seen.first == entries && millis() - seen.second < 30000) return;

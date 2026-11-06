@@ -12,17 +12,17 @@ and it carries on with the data the new one has already upgraded.
 
 Everything is in one SQLite database, `/var/lib/rapthooker/rapthooker.db` on a Pi (see [db.ts](../src/server/db.ts)):
 
-| Table                                             | What                                                                                                                                                           |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pills`                                           | Every device you've added (pills, thermometers, iSpindels and any kind to come), with its settings as JSON. "Pill" in table and column names means any device. |
-| `readings`                                        | Every reading, one row per device and time. Raw readings older than `rawRetentionDays` are deleted.                                                            |
-| `rollups`                                         | 15-minute sums of the readings. Once raw readings are deleted they're the only history left, so they're as precious as the readings.                           |
-| `brews`, `brew_events`                            | Brews and their timelines.                                                                                                                                     |
-| `webhooks`, `webhook_state`, `webhook_deliveries` | Webhooks, how far each has got, and their recent deliveries.                                                                                                   |
-| `alert_rules`, `alert_state`, `alert_events`      | Alerts.                                                                                                                                                        |
-| `channels`, `push_subs`, `api_tokens`             | Notification channels, browsers with notifications on, API tokens.                                                                                             |
-| `screens`                                         | [Screens](./rapthooker-screens.md) the hub has set up, by MAC address, with their settings (and the key the hub gave each) as JSON.                            |
-| `meta`                                            | Hub settings (as JSON) and bookkeeping.                                                                                                                        |
+| Table                                             | What                                                                                                                                                                                |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pills`                                           | Every device you've added (pills, thermometers, iSpindels, Tilts, Laser Levels and any kind to come), with its settings as JSON. "Pill" in table and column names means any device. |
+| `readings`                                        | Every reading, one row per device and time. Raw readings older than `rawRetentionDays` are deleted.                                                                                 |
+| `rollups`                                         | 15-minute sums of the readings. Once raw readings are deleted they're the only history left, so they're as precious as the readings.                                                |
+| `brews`, `brew_events`                            | Brews and their timelines.                                                                                                                                                          |
+| `webhooks`, `webhook_state`, `webhook_deliveries` | Webhooks, how far each has got, and their recent deliveries.                                                                                                                        |
+| `alert_rules`, `alert_state`, `alert_events`      | Alerts.                                                                                                                                                                             |
+| `channels`, `push_subs`, `api_tokens`             | Notification channels, browsers with notifications on, API tokens.                                                                                                                  |
+| `screens`                                         | [Screens](./rapthooker-screens.md) the hub has set up, by MAC address, with their settings (and the key the hub gave each) as JSON.                                                 |
+| `meta`                                            | Hub settings (as JSON) and bookkeeping.                                                                                                                                             |
 
 Outside the database: `rapthooker.config.json`, the push keys, and the backups (see [Backups](./backups.md)).
 
@@ -45,17 +45,18 @@ Outside the database: `rapthooker.config.json`, the push keys, and the backups (
   with its own SQL. A new column needs a default that's right for the rows an older version writes without knowing
   the column. The rollups' `*_missing` counts are an example: counting the readings that lacked a measurement, rather
   than those that had it, keeps a bucket right when an older version adds a pill's reading (which has everything).
-  For a measurement no older version ever records (an iSpindel's `tilt` and `voltage`), it's the other way round: the
-  rollups count the readings that had it (`tilt_n`, `voltage_n`), so a row an older version adds rightly counts as
-  having neither.
+  For a measurement no older version ever records (an iSpindel's `tilt` and `voltage`, a Laser Level's `distance`),
+  it's the other way round: the rollups count the readings that had it (`tilt_n`, `voltage_n`, `distance_n`), so a row
+  an older version adds rightly counts as having none of them.
 - **When older versions really can't cope**, the migration sets `minSchema` in `meta` (`MIN_SCHEMA_KEY`) to its own
   schema version. Versions that don't know that many migrations then refuse to open the database instead of damaging
   it, and say to update again or restore the pre-update copy. Releases from before this check was added don't check,
   so avoid it while people may still go back to one of them.
 - **What a device doesn't measure is NULL**, never a made-up 0. A new kind of measurement is a new nullable column in
   `readings`, plus a sum and a `<name>_missing` count in `rollups` (see migration 4), or a `<name>_n` count if older
-  versions never record it (migration 6), written in `Store.addReading` and averaged in `Store.history` and
-  `Store.prunedRollups`.
+  versions never record it (migrations 6 and 7), written in `Store.addReading` and averaged in `Store.history` and
+  `Store.prunedRollups`. Store what the device measured, not what's worked out from it with settings that can change:
+  a Laser Level's readings keep the distance, and how full the keg was comes from its `vessel` when shown.
 - **Size.** Migrations run while the hub starts, and the installer gives an update 60 seconds to answer. Go over
   `readings` once at most: copying a million readings takes a couple of seconds on a PC and up to half a minute on a
   Pi. A rebuilt table leaves the old one's space unused in the file (and in every backup): the hub compacts the
@@ -68,14 +69,18 @@ Outside the database: `rapthooker.config.json`, the push keys, and the backups (
 - **Identity.** A device's id is worked out from its address (`pillIdFromAddress`) and is used everywhere: readings,
   brews, webhook and alert state, MQTT topics and Home Assistant's unique ids, links. Never change how an existing
   device's id or address is worked out, or its history is orphaned and Home Assistant gets duplicates.
-- **Kinds.** Each device's settings have a `kind` (`DeviceKind`: `pill`, `thermometer`, `ispindel`). A new kind of
+- **Kinds.** Each device's settings have a `kind` (`DeviceKind`: `pill`, `thermometer`, `ispindel`, `tilt`,
+  `laser-level`). A new kind of
   device gets a new value. Existing devices keep theirs; settings saved without one are pills. A version that doesn't know a kind
   lists the device but records nothing for it and doesn't change its kind.
 - **One set of tables.** A new kind's readings go in `readings` and `rollups` like everything else, with NULL for what
   it doesn't measure, so history, retention, backups and exports work for it without anything new.
 - **Decoding.** Adding a decoder must not change how existing devices' broadcasts are decoded: the captured payloads
   (`CAPTURED` in [helpers.ts](../src/server/test/helpers.ts)) must decode exactly as before. Add captures from the new
-  device (`CAPTURED_ISPINDEL` has real iSpindel posts).
+  device (`CAPTURED_ISPINDEL` has real iSpindel posts). A RAPT Laser Level's adverts share the pill's "PT" prefix and
+  are told apart by their type byte (A1), checked before a pill's.
+- **Bluetooth.** A Tilt's and a Laser Level's id come from their Bluetooth address, like a pill's (the colour in a
+  Tilt's beacon isn't unique: two Tilts can be the same colour).
 - **Not Bluetooth.** A device that isn't heard over Bluetooth still needs an `address` that's unique and never
   changes, prefixed so it can't clash with a Bluetooth address. An iSpindel's is `ISPINDEL:` and its chip id in hex
   (`ISPINDEL:64983F`), and its id `ispindel-64983f`: the chip id is part of the ESP8266, so it survives a new name,
@@ -83,6 +88,11 @@ Outside the database: `rapthooker.config.json`, the push keys, and the backups (
 - **Hub-held secrets.** The token iSpindels send with each reading is an API token with the `ispindel` scope, kept
   in `meta` (`ispindelToken`) so the owner can see it again; `ispindelPending` remembers for 2 hours which iSpindels
   the hub has just set up, so it adds them when their first reading comes, even after a restart.
+- **Kegs.** A beer kegged up under a Laser Level is a row in `kegs` (migration 8): the device's id, when it was kegged
+  and emptied, and the rest (name, style, ABV, the brew it came from) as JSON. How much went in is worked out from the
+  readings and kept in the JSON (`startDistance`, mm) once its 6 hours are up, so it survives the readings being
+  rolled up. Like a reading, it's the distance that's kept, not litres, so it follows the keg's settings. A version
+  from before kegs ignores the table. Deleting a device deletes its kegs, as it does its brews.
 
 ## Settings saved as JSON
 
@@ -90,7 +100,8 @@ Devices, webhooks, alert rules, channels and brews keep their settings as JSON, 
 
 - **Read through the upgrade functions** that fill in what older saves don't have: `upgradeConfig` (devices),
   `upgradeWebhook`, `Settings.read`, `BrewService.upgrade`, `upgradeScreen`. A new field gets its default there; never
-  assume it's present.
+  assume it's present. A Laser Level's `vessel` defaults to KegLand's 19 L keg, and a missing `servingUnit` (its own
+  unit for showing what's left) means it has none.
 - **Keep what you don't know.** Save by spreading the saved object (`{ ...saved, ...changes }`), not field by field,
   so going back a version and forward again loses nothing.
 - **Don't rename a field or change its meaning or unit.** Add a new one.

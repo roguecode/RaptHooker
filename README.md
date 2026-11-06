@@ -7,7 +7,8 @@ Kegland has added subscriptions to their highly rated Rapt software (1.6⭐ on P
 
 RaptHooker - A fully local dashboard for Kegland Rapt devices that runs on a Raspberry Pi.
 
-- Track any number of RAPT Pills, RAPT Bluetooth Thermometers and (experimental) iSpindels
+- Track any number of RAPT Pills, RAPT Bluetooth Thermometers and iSpindels, and (experimental) Tilts and RAPT Laser
+  Levels
 - Unlimited webhooks and integrations at any frequency
 - All data is stored on your own hardware and can't be accessed by arbitrary employees
 - Only requires a cheap Raspberry Pi with SD card and power, and a PC to install it for the first time
@@ -39,8 +40,11 @@ Kiosk mode, for an always-on screen in the brewery:
 
 - **RAPT Pill** (gravity and temperature), set to [Bluetooth telemetry](#switch-a-rapt-pill-to-bluetooth).
 - **RAPT Bluetooth Thermometer** (temperature): no setup needed, just switch it on near the Pi.
-- **iSpindel** (gravity and temperature, experimental), the DIY Wi-Fi hydrometer: the hub can set it up for you from its
-  setup hotspot, or you type the details shown into its own setup page ([guide](docs/ispindel.md)).
+- **iSpindel** (gravity and temperature), the DIY Wi-Fi hydrometer: the hub can set it up for you from its setup
+  hotspot, or you type the details shown into its own setup page ([guide](docs/ispindel.md)).
+- **Tilt** (gravity and temperature, experimental: not tried with a real one yet), any colour, Pro too
+  ([guide](docs/tilt.md)).
+- **RAPT Laser Level** (how full a keg is, experimental: not tried with a real one yet) ([guide](docs/laser-level.md)).
 
 Press **Add device** on the dashboard to add any of them.
 

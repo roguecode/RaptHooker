@@ -22,6 +22,25 @@ export function* csvLines(store: Store, pill: Pill, from: number, to: number): G
     }
     return;
   }
+  if (pill.kind === 'laser-level') {
+    // How full the keg was, from the distance and the keg as it's set up now.
+    yield 'timestamp,unix_ms,distance_mm,fill_percent,volume_litres,temperature_c,temperature_f,battery_percent,rssi_dbm\n';
+    for (const raw of store.iterateReadings(pill.id, from, to)) {
+      const r = calibrate(raw, offsets, undefined, undefined, pill.vessel);
+      yield [
+        new Date(r.ts).toISOString(),
+        r.ts,
+        csvNumber(r.distance ?? null, 0),
+        csvNumber(r.fill ?? null, 1),
+        csvNumber(r.volume ?? null, 2),
+        csvNumber(r.temperature, 2),
+        csvNumber(cToF(r.temperature), 2),
+        csvNumber(r.battery, 1),
+        r.rssi ?? '',
+      ].join(',') + '\n';
+    }
+    return;
+  }
   if (pill.kind === 'ispindel') {
     yield 'timestamp,unix_ms,gravity_sg,gravity_plato,temperature_c,temperature_f,battery_percent,battery_volts,wifi_rssi_dbm,tilt_degrees,ispindel_gravity_sg,plausible\n';
     for (const raw of store.iterateReadings(pill.id, from, to)) {

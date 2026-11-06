@@ -7,6 +7,7 @@ import { signalQuality, timeAgo, useNow } from '../../format';
 import { Icon } from '../../components/Icon';
 import { fixed } from '../../format';
 import { t } from '../../i18n';
+import { kegName, LOW_FILL } from '../devices/keg';
 
 /** "Online"/"Offline", or "Last reading" while the page shows saved data (the hub's view isn't known then). */
 export function pillStatus(pill: Pill, cachedAt: number | null): { label: string; on: boolean } {
@@ -24,6 +25,7 @@ export function PillRow({ pill }: { pill: Pill }) {
   const abv = pill.brew?.stats.abv ?? null;
   const status = pillStatus(pill, cachedAt);
   const thermometer = pill.kind === 'thermometer';
+  const laser = pill.kind === 'laser-level';
   const signal = signalQuality(pill.live.rssi);
   return (
     <li className={`pill-row${pill.live.online ? '' : ' offline'}`} style={{ '--pill': pill.color } as CSSProperties}>
@@ -35,10 +37,45 @@ export function PillRow({ pill }: { pill: Pill }) {
         <span className="sub">
           <span className={`status-dot${status.on ? ' on' : ''}`} aria-hidden="true" />
           <span className="sr-only">{status.label}, </span>
-          {thermometer ? t('Thermometer') : pill.brew ? pill.brew.name : t('No brew')} · {timeAgo(pill.live.lastReadingAt, now)}
+          {thermometer
+            ? t('Thermometer')
+            : laser
+              ? pill.keg
+                ? kegName(pill.keg)
+                : t('Keg')
+              : pill.brew
+                ? pill.brew.name
+                : t('No brew')} · {timeAgo(pill.live.lastReadingAt, now)}
         </span>
       </div>
-      {thermometer ? (
+      {laser ? (
+        <>
+          <div className="pill-row-val main">
+            <span className="k">{t('In the keg')}</span>
+            <span className="v">{u.volumeText(r?.volume, pill.servingUnit)}</span>
+          </div>
+          <div className="pill-row-val">
+            <span className="k">{t('Full')}</span>
+            <span className={`v${r?.fill != null && r.fill < LOW_FILL ? ' low' : ''}`}>
+              {r?.fill == null ? '–' : `${Math.round(r.fill)}%`}
+            </span>
+          </div>
+          <div className="pill-row-val wide">
+            <span className="k">{t('Temp')}</span>
+            <span className="v">{u.tempText(r?.temperature)}</span>
+          </div>
+          <div className="pill-row-val wide">
+            <span className="k">{t('Battery')}</span>
+            <span className={`v${r?.battery != null && r.battery < 20 ? ' low' : ''}`}>
+              {r?.battery != null ? `${Math.round(r.battery)}%` : '–'}
+            </span>
+          </div>
+          <div className="pill-row-val wide">
+            <span className="k">{t('Signal')}</span>
+            <span className={`v signal-quality ${signal?.quality ?? ''}`}>{signal ? signal.label : '–'}</span>
+          </div>
+        </>
+      ) : thermometer ? (
         <>
           <div className="pill-row-val main">
             <span className="k">{t('Temp')}</span>

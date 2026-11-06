@@ -76,7 +76,7 @@ describe('RAPT Thermometer on the dashboard', () => {
   it('has a compact row with its temperature and signal', async () => {
     await renderWithHub(<Dashboard />, { pills: [makePill(), thermometer()] });
     fireEvent.click(screen.getByRole('button', { name: 'Compact' }));
-    const rows = within(screen.getByRole('list', { name: 'Pills' })).getAllByRole('listitem');
+    const rows = within(screen.getByRole('list', { name: 'Devices' })).getAllByRole('listitem');
     const fridge = within(rows[1]!);
     expect(fridge.getByText(/Thermometer/)).toBeTruthy();
     expect(fridge.getByText('15.3 °C')).toBeTruthy();
@@ -92,7 +92,7 @@ describe('RAPT Thermometer on the dashboard', () => {
       nearby: [makeNearby({ address: ADDR, raptId: ADDR, kind: 'thermometer', latest: makeReading({ ...tempOnly, temperature: 15.3 }) })],
       routes: { 'POST /api/pills': added },
     });
-    const nearby = within(screen.getByRole('region', { name: 'Pills nearby' }));
+    const nearby = within(screen.getByRole('region', { name: 'Devices nearby' }));
     expect(nearby.getByRole('heading', { name: 'Found a RAPT Thermometer nearby' })).toBeTruthy();
     expect(nearby.getByText(/^D0:26:25:B4:48:95 · 15\.3 °C · Signal: Good \(-70 dBm\)/)).toBeTruthy();
 

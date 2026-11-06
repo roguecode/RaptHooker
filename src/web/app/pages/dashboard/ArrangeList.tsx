@@ -136,8 +136,13 @@ export function ArrangeList({ pills, onChange }: { pills: Pill[]; onChange: (ids
             <span className="drag-handle" aria-hidden="true" title={t('Drag to move')}>
               <Icon name="grip" size={18} />
             </span>
-            {p.kind === 'thermometer' ? (
-              <ThermometerBadge color={p.color} size={30} offline={!p.live.online} />
+            {p.kind === 'thermometer' || p.kind === 'laser-level' ? (
+              <ThermometerBadge
+                color={p.color}
+                size={30}
+                offline={!p.live.online}
+                icon={p.kind === 'laser-level' ? 'beer' : 'thermometer'}
+              />
             ) : (
               <PillFigure color={p.color} tilt={p.live.latest?.tilt} size={34} offline={!p.live.online} decorative />
             )}

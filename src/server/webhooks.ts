@@ -13,6 +13,7 @@ import {
   type Offsets,
   type Pill,
   type PillModel,
+  type Vessel,
   type Reading,
   type RenderedRequest,
   type Webhook,
@@ -44,6 +45,8 @@ export interface WebhookDeps {
     model?(id: string): PillModel;
     /** RaptHooker's own velocity and smoothed gravity at a stored reading's time (catch-up). */
     derivedAt?(id: string, ts: number): Derived;
+    /** The keg under a Laser Level, to work out how full it was (catch-up). */
+    vessel?(id: string): Vessel;
   };
   brews: { activeFor(pillId: string): Brew | null };
   /** False until the clock can be trusted after boot. */
@@ -441,6 +444,7 @@ export class WebhookService extends EventEmitter {
         this.deps.pills.model?.(pillId) ?? DEFAULT_PILL_MODEL,
         // Smoothed and with RaptHooker's velocity as it was then, like a reading sent live.
         this.deps.pills.derivedAt?.(pillId, raw.ts),
+        this.deps.pills.vessel?.(pillId),
       );
       const silentMs = state.last_reading_ts === null ? null : reading.ts - state.last_reading_ts;
       if ((!hook.skipImplausible || reading.plausible) && changedEnough(hook, state, reading, silentMs)) return reading;
@@ -452,7 +456,7 @@ export class WebhookService extends EventEmitter {
   }
 
   private statements(): { first: StatementSync; last: StatementSync } {
-    const cols = 'ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, flags';
+    const cols = 'ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, distance, flags';
     this.stmts ??= {
       first: this.store.db.prepare(
         `SELECT ${cols} FROM readings WHERE pill_id = ? AND ts > ? AND (? = 0 OR flags & 1 = 0) ORDER BY ts LIMIT 1`,

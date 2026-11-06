@@ -6,7 +6,9 @@ import type * as DbusNext from 'dbus-next';
 import type { MessageBus, Message as DbusMessage } from 'dbus-next';
 import type { BleStatus, ScanMode } from '@rapthooker/shared';
 import type { Logger } from '../log.js';
-import { APPLE_COMPANY_ID, KEG_COMPANY_ID, RAPT_COMPANY_ID, THERMOMETER_PREFIX, isThermometerBeacon } from './rapt.js';
+import { APPLE_COMPANY_ID, KEG_COMPANY_ID, RAPT_COMPANY_ID, THERMOMETER_PREFIX } from './rapt.js';
+import { isKnownBeacon } from './devices.js';
+import { TILT_PREFIX } from './tilt.js';
 import type { Advert, Scanner } from './scanner.js';
 
 /** dbus-next, or a stand-in with the same shape (the tests hand in a fake system bus). */
@@ -90,12 +92,14 @@ const MANAGER_MISSING = "BlueZ's experimental features are off, so it can't list
 /**
  * The advertisement monitor's "or_patterns": (start position, AD type, bytes). BlueZ and the kernel match manufacturer
  * data (AD type 0xFF) with its company id included, and company ids go on air little-endian, so RAPT's 0x4152 is
- * "RA" (0x52 0x41) and the firmware adverts' 0x454B is "KE" (0x4B 0x45). The RAPT Thermometer's iBeacon is Apple's
- * 0x004C (0x4C 0x00), then the iBeacon type (02 15) and the "Keg" its UUID starts with.
+ * "RA" (0x52 0x41) and the firmware adverts' 0x454B is "KE" (0x4B 0x45); the RAPT Laser Level's adverts are under
+ * "RA" too. The RAPT Thermometer's and Tilts' iBeacons are Apple's 0x004C (0x4C 0x00), then the iBeacon type (02 15)
+ * and the start of their UUIDs ("Keg", or A4 95 BB).
  */
 export const MONITOR_PATTERNS: ReadonlyArray<readonly [number, number, readonly number[]]> = [
   ...[RAPT_COMPANY_ID, KEG_COMPANY_ID].map((id) => [0, 0xff, [id & 0xff, id >> 8]] as const),
   [0, 0xff, [APPLE_COMPANY_ID & 0xff, APPLE_COMPANY_ID >> 8, ...THERMOMETER_PREFIX]],
+  [0, 0xff, [APPLE_COMPANY_ID & 0xff, APPLE_COMPANY_ID >> 8, ...TILT_PREFIX]],
 ];
 
 interface Registration {
@@ -161,7 +165,7 @@ export function manufacturerMap(value: unknown): Map<number, Uint8Array> | null 
 }
 
 const isRapt = (map: Map<number, Uint8Array> | null) =>
-  !!map && (map.has(RAPT_COMPANY_ID) || map.has(KEG_COMPANY_ID) || isThermometerBeacon(map.get(APPLE_COMPANY_ID)));
+  !!map && (map.has(RAPT_COMPANY_ID) || map.has(KEG_COMPANY_ID) || isKnownBeacon(map.get(APPLE_COMPANY_ID)));
 
 /** Why passive scanning can't be used on this adapter, judging by what BlueZ exports for it, or null if it can. */
 function passiveUnavailable(ifaces: Record<string, Props> | undefined): string | null {

@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { ALERT_KINDS, alertInputSchema, alertKindInfo, BROWSER_PUSH, type AlertRuleInput, type Channel } from '@rapthooker/shared';
+import {
+  ALERT_KINDS,
+  alertInputSchema,
+  alertKindInfo,
+  BROWSER_PUSH,
+  measuresGravity,
+  type AlertRuleInput,
+  type Channel,
+} from '@rapthooker/shared';
 import { errorText } from '../../api';
 import { useLive } from '../../live';
 import { useUnits } from '../../units';
@@ -262,9 +270,10 @@ export function RuleModal({
               })}
           </div>
           {['gravity_below', 'gravity_stable', 'battery_below'].includes(rule.kind) &&
-            pills.some((p) => !p.archived && p.kind === 'thermometer') && (
-              <span className="hint">{t('Thermometers have no gravity or battery reading, so this alert leaves them out.')}</span>
-            )}
+            pills.some(
+              (p) =>
+                !p.archived && (rule.kind === 'battery_below' ? p.kind === 'thermometer' || p.kind === 'tilt' : !measuresGravity(p.kind)),
+            ) && <span className="hint">{t("Devices that don't have this reading (a thermometer, say) are left out of this alert.")}</span>}
         </div>
         <SendTo value={rule.channelIds} channels={channels} onChange={(channelIds) => setRule({ ...rule, channelIds })} />
         <FieldError error={errors.channelIds} />

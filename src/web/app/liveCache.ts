@@ -55,7 +55,8 @@ function isScreen(v: unknown): v is ScreenDevice {
 }
 
 /** A saved device's kind: saved before thermometers were supported, everything was a pill. */
-const kindOf = (kind: unknown): DeviceKind => (kind === 'thermometer' || kind === 'ispindel' ? kind : 'pill');
+const KINDS: readonly DeviceKind[] = ['pill', 'thermometer', 'ispindel', 'tilt', 'laser-level'];
+const kindOf = (kind: unknown): DeviceKind => (KINDS.includes(kind as DeviceKind) ? (kind as DeviceKind) : 'pill');
 
 function hubFrom(v: unknown): HubSettings {
   if (!isObject(v)) return DEFAULT_HUB_SETTINGS;

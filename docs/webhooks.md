@@ -147,7 +147,7 @@ as it will be sent.
 | `pill_id`, `chip_id`                                 | RaptHooker's id; a number from the last 3 bytes of the Bluetooth address (like an iSpindel ID; an iSpindel's own ID) |
 | `address`, `rapt_id`                                 | Bluetooth address (`ISPINDEL:` and its chip id for an iSpindel); the MAC address the RAPT app shows                  |
 | `firmware`, `device_type`                            | e.g. `20250319_055542_b3788ba`, `PillG1`                                                                             |
-| `device`                                             | `pill`, `thermometer` for a RAPT Bluetooth Thermometer, or `ispindel`                                                |
+| `device`                                             | `pill`, `thermometer` for a RAPT Bluetooth Thermometer, `ispindel`, `tilt` or `laser-level`                          |
 | `gravity`, `gravity_unit`, `gravity_label`           | In the webhook's unit; `G` or `P`; `SG` or `°P`                                                                      |
 | `gravity_sg`, `gravity_plato`, `gravity_points`      | Always in that unit (points: 1.0465 → 46.5)                                                                          |
 | `temperature`, `temp_unit`                           | In the webhook's unit; `C` or `F`                                                                                    |
@@ -157,6 +157,7 @@ as it will be sent.
 | `pill_gravity_sg`, `pill_velocity`                   | What the pill itself sent, even when RaptHooker works the gravity or velocity out itself                             |
 | `battery`, `rssi`, `tilt`                            | %, dBm at the hub (an iSpindel's Wi-Fi signal), degrees from vertical                                                |
 | `battery_voltage`                                    | Battery, V: iSpindels send it (their `battery` % is worked out from it); `null` for RAPT devices                     |
+| `volume_l`, `fill_percent`, `distance_mm`            | A RAPT Laser Level's keg: litres in it, how full it is (%), and mm down to the beer; `null` for other devices        |
 | `accel_x`, `accel_y`, `accel_z`                      | Raw accelerometer                                                                                                    |
 | `timestamp`, `timestamp_unix`, `timestamp_ms`        | When the reading was taken (ISO 8601 UTC, seconds, ms)                                                               |
 | `age_seconds`, `interval`                            | How old the reading is; the webhook's interval in seconds                                                            |
@@ -173,7 +174,11 @@ accelerometer variables are `null` (empty outside JSON), and it never has a brew
 the service you send to needs a number, or pick only pills for that webhook.
 
 An [iSpindel](ispindel.md) has no accelerometer variables either. Its `pill_gravity_sg` is what its own formula gave,
-`pill_velocity` is empty and RaptHooker works its `velocity` out.
+`pill_velocity` is empty and RaptHooker works its `velocity` out. A [Tilt](tilt.md) likewise, with no `battery` or
+`tilt` either.
+
+A [RAPT Laser Level](laser-level.md) has no gravity (so no brew), and its keg in `volume_l`, `fill_percent` and
+`distance_mm`, with its temperature, battery and signal. Pick it on its own for a webhook built around those.
 
 ## Presets
 

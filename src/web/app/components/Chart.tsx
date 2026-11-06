@@ -11,8 +11,8 @@ import {
 import uPlot, { type AlignedData, type Options, type Range, type Series } from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import './Chart.css';
-import type { ChartExclusion, History } from '@rapthooker/shared';
-import { useUnits } from '../units';
+import { DEFAULT_VESSEL, vesselFill, type ChartExclusion, type History, type Vessel } from '@rapthooker/shared';
+import { scaleOf, useUnits, type VolumeScale } from '../units';
 import { useTheme } from '../theme';
 import { dateTime, fixed, timeOnly } from '../format';
 import { t, tk } from '../i18n';
@@ -38,11 +38,12 @@ import { bridgeAt, excludeColumn, mergeWindows, type Bridge } from './exclusions
 export type { ChartAnnotation } from './annotations';
 export type { TimeWindow } from './chartMath';
 
-export type SeriesKey = 'gravity' | 'temperature' | 'velocity' | 'battery' | 'rssi' | 'tilt';
+export type SeriesKey = 'gravity' | 'temperature' | 'velocity' | 'battery' | 'rssi' | 'tilt' | 'volume';
 
 /** Labels are English (marked with tk): show them with t(). */
 export const SERIES: { key: SeriesKey; label: string; color: string }[] = [
   { key: 'gravity', label: tk('Gravity'), color: '--series-gravity' },
+  { key: 'volume', label: tk('Volume'), color: '--series-gravity' },
   { key: 'temperature', label: tk('Temperature'), color: '--series-temp' },
   { key: 'velocity', label: tk('Velocity'), color: '--series-velocity' },
   { key: 'battery', label: tk('Battery'), color: '--series-battery' },
@@ -92,6 +93,10 @@ export interface ChartProps {
   onRemoveExclusion?: (exclusion: ChartExclusion) => void;
   /** For screen readers, e.g. "History of Pill 1". */
   label?: string;
+  /** The keg under a RAPT Laser Level, to chart how much is in it (the volume series). */
+  vessel?: Vessel;
+  /** The unit the volume is shown in (litres by default). */
+  volumeScale?: VolumeScale;
   ref?: Ref<ChartHandle>;
 }
 
@@ -120,7 +125,7 @@ interface BandLabel {
 }
 
 /** Lines with curves through excluded ranges; the pill's own values (dotted, for comparison) just break there. */
-const BRIDGED: ReadonlySet<ColKey> = new Set<ColKey>(['gravity', 'temperature', 'velocity', 'battery', 'rssi', 'tilt']);
+const BRIDGED: ReadonlySet<ColKey> = new Set<ColKey>(['gravity', 'temperature', 'velocity', 'battery', 'rssi', 'tilt', 'volume']);
 
 const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#a78bfa';
 
@@ -197,6 +202,8 @@ export function Chart({
   exclusions,
   onRemoveExclusion,
   label = t('Chart'),
+  vessel = DEFAULT_VESSEL,
+  volumeScale,
   ref,
 }: ChartProps) {
   const wrap = useRef<HTMLDivElement | null>(null);
@@ -213,6 +220,10 @@ export function Chart({
   /** Excluded ranges shown in full (shaded, with their label): pointed at, tapped, focused or open. */
   const [hot, setHot] = useState<string[]>([]);
   const zoomable = !compact && onZoom !== undefined;
+  const vScale = volumeScale ?? scaleOf('l');
+  const perLitre = vScale.perLitre;
+  /** A volume (already in the unit shown) as text with its unit. */
+  const volumeText = (v: number, decimals: number) => vScale.amount(Number(v.toFixed(decimals)), fixed(v, decimals));
 
   const active = useMemo(() => SERIES.filter((s) => series.includes(s.key)).map((s) => s.key), [series]);
 
@@ -238,6 +249,11 @@ export function Chart({
         case 'temperature':
           out.push({ key, values: h.temperature.map((v) => (v === null ? null : u.tempValue(v))) });
           break;
+        case 'volume': {
+          const fill = (d: number | null) => vesselFill(d, vessel)?.volume;
+          out.push({ key, values: (h.distance ?? h.ts.map(() => null)).map((d) => (fill(d) == null ? null : fill(d)! * perLitre)) });
+          break;
+        }
         case 'velocity':
           out.push({ key, values: skipImplausible(h.velocity, h.implausible) });
           if (h.pillVelocity) out.push({ key: 'pillVelocity', values: h.pillVelocity });
@@ -265,7 +281,7 @@ export function Chart({
       const bridges = windows.length && BRIDGED.has(c.key) ? excludeColumn(h.ts, values, windows).bridges : [];
       return { ...c, values, raw, actual, bridges: bridges.length ? bridges : undefined };
     });
-  }, [history, active, u, excluded, smoothMs]);
+  }, [history, active, u, excluded, smoothMs, vessel, perLitre]);
 
   const data = useMemo<AlignedData>(
     () => [history ? history.ts.map((t) => t / 1000) : [], ...cols.map((c) => c.values)] as AlignedData,
@@ -318,7 +334,7 @@ export function Chart({
 
   // Colours come from CSS variables, so a theme or palette change rebuilds the chart too.
   const { look } = useTheme();
-  const key = `${cols.map((c) => c.key).join(',')}|${fadedAuto}|${u.gravity}|${u.temperature}|${gravityColor ?? ''}|${compact}|${zoomable}|${look}`;
+  const key = `${cols.map((c) => c.key).join(',')}|${fadedAuto}|${u.gravity}|${u.temperature}|${gravityColor ?? ''}|${compact}|${zoomable}|${look}|${vessel.capacity}|${perLitre}|${vScale.symbol}|${vScale.decimals}`;
 
   useEffect(() => {
     const el = box.current;
@@ -338,6 +354,7 @@ export function Chart({
       battery: (v) => `${fixed(v, 0)}%`,
       rssi: (v) => `${fixed(v, 0)} dBm`,
       tilt: (v) => `${fixed(v, 1)}°`,
+      volume: (v) => volumeText(v, vScale.decimals),
     };
     const axisBase = { stroke: muted, grid: { stroke: grid, width: 1 }, ticks: { show: false }, font: '11px system-ui, sans-serif' };
     const colsNow = latest.current.cols;
@@ -406,6 +423,13 @@ export function Chart({
           const color = cssVar('--series-temp');
           const name = t('Temperature');
           return { s: { ...base, label: name, scale: 't', stroke: color, width: 1.8 }, png: { label: name, color } };
+        }
+        case 'volume': {
+          const name = t('Volume ({unit})', { unit: vScale.symbol });
+          return {
+            s: { ...base, label: name, scale: 'v', stroke: gColor, width: 2.4, fill: alpha(gColor, 0.14) },
+            png: { label: name, color: gColor },
+          };
         }
         case 'velocity': {
           const color = cssVar('--series-velocity');
@@ -771,12 +795,32 @@ export function Chart({
             return padRange(lo, hi, 0.15, 1, [15, 25]);
           },
         },
+        // A keg's volume: from empty, so how much is left looks like it.
+        v: {
+          auto: true,
+          range: (p, min, max) => {
+            const [, hi] = widen(p, 'v', min, max);
+            return [0, Math.max(hi ?? 0, vessel.capacity * perLitre) * 1.05];
+          },
+        },
         ...Object.fromEntries(
           (['velocity', 'battery', 'rssi', 'tilt'] as const).filter(has).map((k) => [k, { auto: true, range: numRange(k) }]),
         ),
       },
       axes: [
         { ...axisBase, space: 70 },
+        ...(has('volume')
+          ? [
+              {
+                ...axisBase,
+                scale: 'v',
+                // Room for a custom unit's name ("cans").
+                size: Math.max(44, 30 + vScale.symbol.length * 6),
+                values: (_p: uPlot, vals: number[], _a: number, _s: number, incr: number) =>
+                  vals.map((v) => volumeText(v, incr < 1 ? 1 : 0)),
+              },
+            ]
+          : []),
         ...(has('gravity')
           ? [
               {

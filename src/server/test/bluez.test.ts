@@ -298,13 +298,15 @@ describe('BlueZ scanner, passive', () => {
     expect(app.props.Patterns!.signature).toBe('a(yyay)');
     const patterns = (app.props.Patterns!.value as [number, number, Buffer][]).map(([pos, type, bytes]) => [pos, type, [...bytes]]);
     // 'RA' and 'KE': company ids 0x4152 and 0x454B as they go on air (little-endian), at the start of the AD data;
-    // then the RAPT Thermometer's iBeacon: Apple's 0x004C, the iBeacon type and "Keg".
+    // then the RAPT Thermometer's iBeacon: Apple's 0x004C, the iBeacon type and "Keg"; then Tilts': the start of their
+    // UUIDs, A4 95 BB.
     expect(patterns).toEqual([
       [0, 0xff, [0x52, 0x41]],
       [0, 0xff, [0x4b, 0x45]],
       [0, 0xff, [0x4c, 0x00, 0x02, 0x15, 0x4b, 0x65, 0x67]],
+      [0, 0xff, [0x4c, 0x00, 0x02, 0x15, 0xa4, 0x95, 0xbb]],
     ]);
-    expect(MONITOR_PATTERNS).toHaveLength(3);
+    expect(MONITOR_PATTERNS).toHaveLength(4);
 
     // The monitor's properties can be read the usual way too.
     const all = await fake.bus.callScanner(app.monitor, PROPS, 'GetAll', 's', [MONITOR]);

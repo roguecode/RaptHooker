@@ -5,17 +5,20 @@ import { checkCustomRange, RANGE_PRESETS, type RangePreset, type TimeWindow } fr
 import { t } from '../i18n';
 import './Chart.css';
 
-/** Preset ranges (6 hours to everything, or the running brew) and a custom from–to. */
+/** Preset ranges (6 hours to everything, or the running brew or keg) and a custom from–to. */
 export function RangePicker({
   preset,
   custom,
   hasBrew,
+  hasKeg = false,
   onPreset,
   onCustom,
 }: {
   preset: RangePreset;
   custom: TimeWindow | null;
   hasBrew: boolean;
+  /** A beer is kegged up under this Laser Level. */
+  hasKeg?: boolean;
   onPreset: (preset: Exclude<RangePreset, 'custom'>) => void;
   onCustom: (win: TimeWindow) => void;
 }) {
@@ -45,7 +48,7 @@ export function RangePicker({
   return (
     <div className="range-picker">
       <div className="segmented range-presets" role="group" aria-label={t('Time range')}>
-        {RANGE_PRESETS.filter((p) => p.id !== 'brew' || hasBrew).map((p) => (
+        {RANGE_PRESETS.filter((p) => (p.id !== 'brew' || hasBrew) && (p.id !== 'keg' || hasKeg)).map((p) => (
           <button
             key={p.id}
             type="button"

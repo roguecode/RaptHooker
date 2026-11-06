@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { servingUnitSchema, vesselSchema } from './devices.js';
 
 /** Request bodies and queries the API accepts. The web app checks its forms against the same schemas before sending. */
 
@@ -43,7 +44,26 @@ export const pillPatchSchema = z.object({
   archived: z.boolean().optional(),
   model: pillModelSchema.partial().optional(),
   order: z.number().int().min(0).max(10_000).optional(),
+  /** The keg under a RAPT Laser Level. */
+  vessel: vesselSchema.optional(),
+  /** A Laser Level's own unit for how much is left (null: none). */
+  servingUnit: servingUnitSchema.nullable().optional(),
 });
+
+/** Kegging a beer up under a Laser Level, or changing one: everything is optional. */
+export const kegInputSchema = z.object({
+  name: z.string().trim().max(60).optional(),
+  style: z.string().trim().max(60).optional(),
+  abv: z.number().min(0).max(30).nullable().optional(),
+  brewId: z.string().min(1).max(64).nullable().optional(),
+  keggedAt: z.number().int().positive().optional(),
+});
+
+export const kegStartSchema = kegInputSchema.extend({ pillId: z.string().min(1).max(64) });
+
+export const kegPatchSchema = kegInputSchema.extend({ endedAt: z.number().int().positive().nullable().optional() });
+
+export const kegEndSchema = z.object({ at: z.number().int().positive().optional() });
 
 export const pillOrderSchema = z.object({ ids: z.array(z.string().min(1).max(64)).max(200) });
 
@@ -291,6 +311,7 @@ export type PillPatchBody = z.input<typeof pillPatchSchema>;
 export type HistoryQuery = z.output<typeof historyQuerySchema>;
 export type StartBrewBody = z.input<typeof startBrewSchema>;
 export type BrewPatchBody = z.input<typeof brewPatchSchema>;
+export type KegInputBody = z.input<typeof kegInputSchema>;
 export type SettingsBody = z.input<typeof settingsBodySchema>;
 
 // Checking forms

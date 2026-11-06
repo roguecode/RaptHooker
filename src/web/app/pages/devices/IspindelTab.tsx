@@ -103,7 +103,7 @@ export function IspindelPanel({ onAdded }: { onAdded: () => void }) {
 
   return (
     <div className="stack">
-      <DeviceIntro icon="wifi" name="iSpindel" badge={<span className="chip warning">{t('Experimental')}</span>}>
+      <DeviceIntro icon="wifi" name="iSpindel">
         {t('A DIY Wi-Fi hydrometer. It wakes up every so often and sends its reading to this hub over your Wi-Fi.')}
       </DeviceIntro>
 

@@ -86,7 +86,8 @@ export function CalibrationWizard({
         )}
       </p>
       <div className="segmented calib-tabs" role="tablist" aria-label={t('Calibration steps')}>
-        {STEPS.map((s, i) => (
+        {/* A Tilt sends no tilt angle, so it has no tilt points. */}
+        {STEPS.filter((s) => s.id !== 'tilt' || pill.kind !== 'tilt').map((s, i) => (
           <button
             key={s.id}
             type="button"

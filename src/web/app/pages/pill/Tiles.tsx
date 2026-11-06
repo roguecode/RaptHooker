@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import type { Pill } from '@rapthooker/shared';
-import { useUnits } from '../../units';
+import { useUnits, volumeNumber } from '../../units';
 import { dateOnly, dateTime, days, duration, fixed, signalQuality, timeAgo, timeOnly } from '../../format';
 import { Icon, type IconName } from '../../components/Icon';
 import { CollapsiblePanel, usePanelOpen } from '../../components/CollapsiblePanel';
 import { BatteryBar, SignalBars } from '../../components/ui';
 import { t, tp } from '../../i18n';
+import { KegBar, LOW_FILL, vesselOf } from '../devices/keg';
 import './pill.css';
 
 function Tile({
@@ -117,6 +118,10 @@ export function Tiles({ pill, now }: { pill: Pill; now: number }) {
   const { caught: pct, lowCatch, signal, weakSignal } = reception(pill);
   const sinceRestart = caught !== null && caught.since > now - 23 * 3_600_000;
   const thermometer = pill.kind === 'thermometer';
+  const tilt = pill.kind === 'tilt';
+  const laser = pill.kind === 'laser-level';
+  // A pill or thermometer is named in the hints; a Tilt or Laser Level isn't.
+  const other = tilt || laser;
 
   const caughtTile = (
     <Tile
@@ -151,7 +156,9 @@ export function Tiles({ pill, now }: { pill: Pill; now: number }) {
         <span className="tile-note">
           {thermometer
             ? t('Missing quite a few: try the hub (or a relay) closer to the thermometer.')
-            : t('Missing quite a few: try the hub (or a relay) closer to the pill.')}
+            : other
+              ? t('Missing quite a few: try the hub (or a relay) closer to it.')
+              : t('Missing quite a few: try the hub (or a relay) closer to the pill.')}
         </span>
       )}
     </Tile>
@@ -185,7 +192,9 @@ export function Tiles({ pill, now }: { pill: Pill; now: number }) {
             ? t('Some readings may be missed: try the hub (or a relay) closer to the thermometer.')
             : wifi
               ? t('Some readings may be missed: its Wi-Fi is weak where it is.')
-              : t('Some readings may be missed: try the hub (or a relay) closer to the pill.')}
+              : other
+                ? t('Some readings may be missed: try the hub (or a relay) closer to it.')
+                : t('Some readings may be missed: try the hub (or a relay) closer to the pill.')}
         </span>
       )}
     </Tile>
@@ -232,12 +241,59 @@ export function Tiles({ pill, now }: { pill: Pill; now: number }) {
     );
   }
 
+  if (laser) {
+    const vessel = vesselOf(pill);
+    const scale = u.volumeScale(pill.servingUnit);
+    return (
+      <section className="tiles pill-tiles" aria-label={t('Latest values')}>
+        <Tile
+          icon="beer"
+          k={t('In the keg')}
+          v={volumeNumber(scale, r?.volume)}
+          unit={scale.symbol}
+          s={t('of {amount}', { amount: u.volumeText(vessel.capacity, pill.servingUnit, true) })}
+        >
+          <KegBar fill={r?.fill} color={pill.color} />
+        </Tile>
+        <Tile
+          icon="percent"
+          k={t('Full')}
+          v={r?.fill == null ? '–' : fixed(r.fill, 0)}
+          unit="%"
+          warn={r?.fill != null && r.fill < LOW_FILL}
+        />
+        <Tile
+          icon="down"
+          k={t('Distance')}
+          v={r?.distance == null ? '–' : fixed(r.distance, 0)}
+          unit="mm"
+          s={t('Down to the beer')}
+          title={t('From the Laser Level down to the beer. Empty is {empty} mm, full {full} mm (set under its settings).', {
+            empty: fixed(vessel.emptyMm, 0),
+            full: fixed(vessel.fullMm, 0),
+          })}
+        />
+        <Tile icon="thermometer" k={t('Temperature')} v={u.tempText(r?.temperature, 1)} s={t("The sensor's own, in the lid")} />
+        <Tile icon="battery" k={t('Battery')} v={r?.battery != null ? fixed(r.battery, 0) : '–'} unit="%">
+          <BatteryBar percent={r?.battery} />
+        </Tile>
+        {caughtTile}
+        {signalTile}
+        {intervalTile}
+        {lastHeardTile}
+        <Tile icon="cpu" k={t('Firmware')} v={pill.info.firmware ?? '–'} s="RAPT Laser Level" mono />
+        <Tile icon="bluetooth" k="Bluetooth" v={pill.address} s="RAPT Laser Level" mono />
+        {sinceTile}
+      </section>
+    );
+  }
+
   return (
     <section className="tiles pill-tiles" aria-label={t('Latest values')}>
       <Tile
         icon="droplet"
         k={t('Gravity')}
-        badge={fromTilt ? 'RaptHooker' : t('from the pill')}
+        badge={fromTilt ? 'RaptHooker' : tilt ? 'Tilt' : t('from the pill')}
         v={u.gravityText(r?.gravity)}
         s={
           r && r.gravity !== null
@@ -288,14 +344,16 @@ export function Tiles({ pill, now }: { pill: Pill; now: number }) {
         )}
       </Tile>
       {caughtTile}
-      <Tile icon="battery" k={t('Battery')} v={r?.battery != null ? fixed(r.battery, 0) : '–'} unit="%">
-        <BatteryBar percent={r?.battery} />
-      </Tile>
+      {!tilt && (
+        <Tile icon="battery" k={t('Battery')} v={r?.battery != null ? fixed(r.battery, 0) : '–'} unit="%">
+          <BatteryBar percent={r?.battery} />
+        </Tile>
+      )}
       {signalTile}
-      <Tile icon="tilt" k={t('Tilt')} v={r?.tilt != null ? fixed(r.tilt, 1) : '–'} unit="°" s={t('From vertical')} />
+      {!tilt && <Tile icon="tilt" k={t('Tilt')} v={r?.tilt != null ? fixed(r.tilt, 1) : '–'} unit="°" s={t('From vertical')} />}
       {pill.kind === 'ispindel' ? (
         <Tile icon="zap" k={t('Battery voltage')} v={r?.voltage != null ? fixed(r.voltage, 2) : '–'} unit="V" />
-      ) : (
+      ) : tilt ? null : (
         <Tile
           icon="axes"
           k={t('Accelerometer')}
@@ -307,6 +365,8 @@ export function Tiles({ pill, now }: { pill: Pill; now: number }) {
       {lastHeardTile}
       {pill.kind === 'ispindel' ? (
         <Tile icon="wifi" k="iSpindel" v={pill.address.replace(/^ISPINDEL:/, '')} s={t('Chip ID, over Wi-Fi')} mono />
+      ) : tilt ? (
+        <Tile icon="bluetooth" k="Bluetooth" v={pill.address} s={pill.info.deviceType ?? 'Tilt'} mono />
       ) : (
         <>
           <Tile

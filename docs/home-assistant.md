@@ -138,6 +138,7 @@ KegLand, and connected through a **RaptHooker** hub device (whose _Connection_ s
 | Gravity velocity                    | points/day | Negative while fermenting                                                                           |
 | Battery                             | %          |                                                                                                     |
 | Battery voltage                     | V          | Diagnostic, iSpindels only                                                                          |
+| Volume, Fill, Distance to the beer  | L, %, mm   | RAPT Laser Levels only (Distance is diagnostic)                                                     |
 | Brew                                |            | The running brew's name; unknown when no brew is running                                            |
 | Original gravity                    | (SG)       | The brew's OG                                                                                       |
 | ABV                                 | %          | The brew's ABV so far                                                                               |
@@ -159,6 +160,14 @@ strength** and **Last reading**. In its state the gravity, velocity, battery, ti
 
 An [iSpindel](ispindel.md) appears as an _iSpindel_ device with what a pill has plus **Battery voltage**. Its **Signal
 strength** is its Wi-Fi signal, and **Gravity sent by the pill** is what its own formula gave.
+
+A [Tilt](tilt.md) appears as a _Tilt_ device (its model is its colour, e.g. _Tilt Red_) with what a pill has except
+**Battery** and **Tilt**, which it doesn't send.
+
+A [RAPT Laser Level](laser-level.md) appears as a _RAPT Laser Level_ device with **Volume** (litres, a
+`volume_storage` sensor), **Fill** (%), **Distance to the beer** (mm, diagnostic), **Temperature** (the sensor's own),
+**Battery**, **Signal strength** and **Last reading**. Its state has `volume`, `fill` and `distance` (`null` for other
+devices), and its gravity, velocity, tilt and brew fields are `null`. A low-keg automation can trigger on **Fill**.
 
 An example automation, a notification when a fermenter gets too warm:
 
@@ -204,6 +213,9 @@ An example state:
   "battery_voltage": null,
   "rssi": -71,
   "tilt": 38.4,
+  "distance": null,
+  "fill": null,
+  "volume": null,
   "plausible": true,
   "pill_gravity": 1.0123,
   "pill_velocity": -4.2,
@@ -223,6 +235,7 @@ An example state:
 | `velocity`                                       | Gravity points per day (from the pill, or RaptHooker's own if you chose that), or `null`                  |
 | `battery`, `rssi`, `tilt`                        | Battery %, signal strength at the hub (dBm), angle from vertical (°)                                      |
 | `battery_voltage`                                | Battery volts, from iSpindels; `null` for RAPT devices                                                    |
+| `volume`, `fill`, `distance`                     | A RAPT Laser Level's keg: litres, % full, mm down to the beer; `null` for other devices                   |
 | `plausible`                                      | `false` when the pill doesn't look like it's floating                                                     |
 | `pill_gravity`, `pill_velocity`                  | What the pill itself sent (they differ from the above if RaptHooker works out gravity or velocity itself) |
 | `timestamp`                                      | When the reading was taken (UTC)                                                                          |

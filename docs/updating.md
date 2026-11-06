@@ -88,15 +88,3 @@ older one won't start rather than damage it: update again, or restore the copy f
   (it reinstalls in place and sets it up).
 - "GitHub is limiting how often it can be asked": GitHub allows 60 questions an hour from one internet address without
   an account, shared by everything on your network. The hub tries again later by itself.
-
-## Releasing (for maintainers)
-
-1. Update the version in `package.json` and `src/*/package.json` (`npm version <x.y.z> --workspaces --include-workspace-root --no-git-tag-version`)
-   and add a `## [x.y.z] - date` section to [CHANGELOG.md](../CHANGELOG.md).
-2. Commit, then tag and push: `git tag vx.y.z && git push origin vx.y.z`.
-3. The [release workflow](../.github/workflows/release.yml) checks the tag matches `package.json`, runs the checks,
-   builds `rapthooker-<version>.tar.gz` with [deploy/package.mjs](../deploy/package.mjs) (try it with
-   `npm run package`), and publishes the release with that CHANGELOG section as its notes, the archive, `SHA256SUMS`
-   and `install.sh`. Then it builds the Raspberry Pi image (experimental) and attaches it.
-
-Hubs see the new release within a day.

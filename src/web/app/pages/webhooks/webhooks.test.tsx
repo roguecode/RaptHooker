@@ -71,8 +71,14 @@ describe('webhooks UI', () => {
 
   it('marks the services tried for real as verified and the others as untested', () => {
     render(createElement(PresetGrid, { onPick: () => undefined }));
-    expect(PRESETS.filter((p) => p.verified).map((p) => p.name)).toEqual(['Grainfather', 'BrewSpy', 'Home Assistant', 'Discord']);
-    expect(screen.getAllByText('Verified')).toHaveLength(4);
+    expect(PRESETS.filter((p) => p.verified).map((p) => p.name)).toEqual([
+      'Grainfather',
+      'BrewSpy',
+      'MeadTools',
+      'Home Assistant',
+      'Discord',
+    ]);
+    expect(screen.getAllByText('Verified')).toHaveLength(5);
     const services = PRESETS.filter((p) => p.docsUrl !== null && !p.verified).length;
     expect(screen.getAllByText('Untested')).toHaveLength(services + 1);
     expect(screen.getAllByText('Untested')[0]!.getAttribute('title')).toMatch(/not yet tried against the real service/);

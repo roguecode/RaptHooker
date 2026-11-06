@@ -1,6 +1,6 @@
 # Alternatives and related projects
 
-While we have no idea why someone would want to avoid being locked into the Kegland subscriptions after purchasing full-priced hardware, below is an incomplete list of related open-source projects.
+Below is an incomplete list of related open-source projects.
 
 ## Projects
 

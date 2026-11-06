@@ -129,7 +129,8 @@ MQTT problems never affect recording: readings are stored whether or not the bro
 ### 4. In Home Assistant
 
 Each pill appears under **Settings → Devices & services → MQTT → Devices**, named like the pill in RaptHooker, made by
-KegLand, and connected through a **RaptHooker** hub device (whose _Connection_ sensor shows whether the hub is online).
+KegLand (an iSpindel by _iSpindel_, a Tilt by _Tilt Hydrometer_), and connected through a **RaptHooker** hub device
+(whose _Connection_ sensor shows whether the hub is online).
 
 | Entity                              | Unit       | Notes                                                                                               |
 | ----------------------------------- | ---------- | --------------------------------------------------------------------------------------------------- |

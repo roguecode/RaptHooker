@@ -43,8 +43,9 @@ const AWS_KEY_RE = /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/g;
 const LONG_TOKEN_RE = /(?<![A-Za-z0-9_+=-])(?=[A-Za-z0-9_+=-]*[A-Z])(?=[A-Za-z0-9_+=-]*[a-z])(?=[A-Za-z0-9_+=-]*\d)[A-Za-z0-9_+=-]{28,}/g;
 const MAC_RE = /\b[0-9A-Fa-f]{2}([:-])(?:[0-9A-Fa-f]{2}\1){4}[0-9A-Fa-f]{2}\b/g;
 const BLUEZ_PATH_RE = /dev_[0-9A-Fa-f]{2}(?:_[0-9A-Fa-f]{2}){5}/g;
-/** Pill ids are the Bluetooth address without the colons. */
+/** Pill ids are the Bluetooth address without the colons; iSpindels' are their chip id (and their address has it). */
 const DEVICE_ID_RE = /\b[0-9a-fA-F]{12}\b/g;
+const ISPINDEL_ID_RE = /\b(ispindel[-:])[0-9a-fA-F]{6,8}\b/gi;
 const IPV4_RE = /\b(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3}\b/g;
 const IPV6_FULL_RE = /(?<![0-9A-Za-z:])(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}(?![0-9A-Za-z:])/g;
 const IPV6_SHORT_RE =
@@ -120,6 +121,7 @@ export function makeScrubber(replacements: Replacement[] = [], hostname = ''): S
       .replace(BLUEZ_PATH_RE, 'dev_XX_XX_XX_XX_XX_XX')
       .replace(MAC_RE, (_m, sep: string) => ['XX', 'XX', 'XX', 'XX', 'XX', 'XX'].join(sep))
       .replace(DEVICE_ID_RE, '<device>')
+      .replace(ISPINDEL_ID_RE, '$1<device>')
       .replace(IPV4_RE, ipv4Label)
       .replace(IPV6_FULL_RE, '<ipv6>')
       .replace(IPV6_SHORT_RE, (m) => (m === '::' || m === '::1' || m.length < 3 ? m : '<ipv6>'))

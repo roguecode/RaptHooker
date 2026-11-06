@@ -11,11 +11,19 @@ export const normalizeAddress = (address: string): string => address.trim().toUp
  */
 export const plausibleGravity = (sg: number): boolean => sg >= 0.98 && sg <= 1.2;
 
-/** Stable pill id from its Bluetooth address. */
-export const pillIdFromAddress = (address: string): string =>
-  normalizeAddress(address)
-    .replace(/[^0-9A-F]/g, '')
-    .toLowerCase();
+/**
+ * Stable device id from its address: a Bluetooth address's hex digits, or "ispindel-<chip id>" for an iSpindel. How
+ * an existing kind's id is worked out must never change (readings, brews and Home Assistant use it).
+ */
+export const pillIdFromAddress = (address: string): string => {
+  const a = normalizeAddress(address);
+  if (a.startsWith('ISPINDEL:'))
+    return `ispindel-${a
+      .slice('ISPINDEL:'.length)
+      .replace(/[^0-9A-F]/g, '')
+      .toLowerCase()}`;
+  return a.replace(/[^0-9A-F]/g, '').toLowerCase();
+};
 
 /**
  * The MAC address the RAPT app shows: the Bluetooth address with 2 taken off the last octet

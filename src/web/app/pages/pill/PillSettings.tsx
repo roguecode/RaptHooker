@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PILL_COLORS, temperatureDeltaIn, type Pill } from '@rapthooker/shared';
+import { measuresGravity, PILL_COLORS, temperatureDeltaIn, type Pill } from '@rapthooker/shared';
 import { api, errorText } from '../../api';
 import { useLive } from '../../live';
 import { useUnits } from '../../units';
@@ -11,13 +11,17 @@ import { t } from '../../i18n';
 import { Trans } from '../../i18n/Trans';
 import { CalibrationWizard, type CalibrationStep } from './CalibrationWizard';
 import { DataSources } from './DataSources';
+import { ServingUnitSettings, VesselSettings } from './VesselSettings';
 import './pill.css';
 
 export function PillSettings({ pill }: { pill: Pill }) {
   const u = useUnits();
   const { toast, upsertPill } = useLive();
   const tempUnit = u.temperature;
-  const thermometer = pill.kind === 'thermometer';
+  // A thermometer or a Laser Level: no gravity to calibrate.
+  const thermometer = !measuresGravity(pill.kind);
+  const laser = pill.kind === 'laser-level';
+  const tilt = pill.kind === 'tilt';
   // The offsets as the boxes show them: rounded, so an offset whose box wasn't touched is saved as it was.
   const shownG = String(Math.round(pill.offsets.gravity * 10000) / 10);
   const shownT = String(Math.round(temperatureDeltaIn(pill.offsets.temperature, tempUnit) * 100) / 100);
@@ -48,7 +52,8 @@ export function PillSettings({ pill }: { pill: Pill }) {
         onToggle={toggle}
         title={
           <>
-            <Icon name="sliders" /> {thermometer ? t('Thermometer settings') : t('Pill settings')}
+            <Icon name="sliders" />{' '}
+            {laser ? t('Laser Level settings') : tilt ? t('Tilt settings') : thermometer ? t('Thermometer settings') : t('Pill settings')}
           </>
         }
       >
@@ -127,9 +132,17 @@ export function PillSettings({ pill }: { pill: Pill }) {
             <p className="hint" style={{ marginTop: 0 }}>
               {thermometer
                 ? t('Added to every reading, including history and webhooks.')
-                : t(
-                    'Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. Calibrate the pill in the RAPT app first; this is for fine-tuning.',
-                  )}
+                : pill.kind === 'ispindel'
+                  ? t(
+                      "Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. Use the iSpindel's own formula, or RaptHooker's calibration wizard, first; this is for fine-tuning.",
+                    )
+                  : tilt
+                    ? t(
+                        "Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. A Tilt's own calibration (in Tilt's app) isn't in what it sends: calibrate it here.",
+                      )
+                    : t(
+                        'Added to every reading, including history and webhooks. 1 point = 0.001 SG, so −2 turns 1.012 into 1.010. Calibrate the pill in the RAPT app first; this is for fine-tuning.',
+                      )}
             </p>
             <div className="row">
               <button type="submit" className="btn">
@@ -143,6 +156,14 @@ export function PillSettings({ pill }: { pill: Pill }) {
             </div>
           </form>
         </div>
+        {laser && (
+          <>
+            <hr className="divider" />
+            <VesselSettings pill={pill} />
+            <hr className="divider" />
+            <ServingUnitSettings pill={pill} />
+          </>
+        )}
         {!thermometer && (
           <>
             <hr className="divider" />
@@ -159,7 +180,8 @@ export function PillSettings({ pill }: { pill: Pill }) {
             <Icon name={pill.archived ? 'play' : 'archive'} size={16} /> {pill.archived ? t('Start recording again') : t('Archive')}
           </button>
           <button type="button" className="btn danger" onClick={() => setConfirm('delete')}>
-            <Icon name="trash" size={16} /> {thermometer ? t('Remove thermometer') : t('Remove pill')}
+            <Icon name="trash" size={16} />{' '}
+            {laser ? t('Remove Laser Level') : tilt ? t('Remove Tilt') : thermometer ? t('Remove thermometer') : t('Remove pill')}
           </button>
         </div>
       </CollapsiblePanel>
@@ -186,7 +208,11 @@ export function PillSettings({ pill }: { pill: Pill }) {
             <p>
               {thermometer ? (
                 <Trans
-                  text={t("This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)")}
+                  text={
+                    laser
+                      ? t("This deletes {what}. This can't be undone. (To keep them, archive it instead.)")
+                      : t("This deletes {what}. This can't be undone. (To keep them, archive the thermometer instead.)")
+                  }
                   values={{ what: <strong>{t('all of its readings')}</strong> }}
                 />
               ) : (

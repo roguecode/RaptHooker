@@ -8,6 +8,24 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
   recorded once a minute: its temperature and signal on the dashboard, its own page, charts, TV mode, CSV export,
   webhooks, MQTT and Home Assistant, and temperature and "gone quiet" alerts. It has no gravity, battery or brews. Its
   Bluetooth format isn't published by KegLand; RaptHooker's decoding was worked out against the RAPT app's readings.
+- **iSpindels.** An [iSpindel](./ispindel.md), the DIY Wi-Fi hydrometer, sends its readings straight to
+  the hub over your Wi-Fi: gravity (from its own formula), temperature, tilt, battery voltage and Wi-Fi signal, with
+  brews, charts, calibration, webhooks, MQTT and alerts like a pill. **Add device → iSpindel** can set one up for you:
+  the hub finds it in setup mode, joins its hotspot for a minute and fills in its settings (only the ones it needs). Or
+  set it up by hand, with every value to type (including the token the hub has made) on the same screen.
+- **Tilts (experimental).** A [Tilt](./tilt.md) hydrometer of any colour (and a Tilt Pro) is found and added like a pill,
+  and recorded once a minute: gravity and temperature, with brews, charts, calibration, webhooks, MQTT and alerts. Not
+  tried with a real Tilt yet.
+- **RAPT Laser Levels (experimental).** A [RAPT Laser Level](./laser-level.md) on a keg says how far down the beer is;
+  RaptHooker turns that into litres left and how full the keg is, from the keg's size (set on its page). Its card has a
+  bar, its page a chart of the volume, and webhooks, MQTT and Home Assistant get the volume, fill and distance. Not
+  tried with a real one yet: its format comes from community projects.
+- **Keg up.** Keg a beer up under a Laser Level, with its name, style and ABV (filled in from a brew if you like), and
+  its card shows how much of that beer went in, is left and has been poured. Its chart starts from when it was kegged,
+  and earlier kegs are listed on its page. Kegs can be shown in litres, US gallons, UK or US pints, or a unit of each
+  Laser Level's own (330 ml cans, say), picked next to °C/°F.
+- **Add device.** One dialog for every kind of device, with a tab each: pills, thermometers, Laser Levels and Tilts
+  heard nearby, ready to add, and iSpindels sending to the hub or in setup mode.
 - **Brews.** Start a brew on a pill (now, or back-dated to when you pitched), and end it when you're done. Each brew
   keeps its own chart, OG (typed in, or taken from the pill once it has settled), current/final gravity, ABV (standard
   or strong-beer formula), attenuation, temperature range and notes. Brews can be edited, resumed and exported.
@@ -69,7 +87,8 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
   browser, or the top bar menu). Opens offline with the last readings this browser saw, clearly marked as saved.
 - **Your dashboard, your way.** Arrange the pills in your own order (drag them, or use the arrow buttons), switch to a
   compact list, or show only the pills with a brew on the go. A step-by-step guide gets a new hub going, ticking itself
-  off as you create the PIN and add your first pill.
+  off as you create the PIN and add your first pill. Each card's small chart covers its brew (or the beer on tap) from
+  the start, or else the last 24 hours, and TV mode's do the same.
 - **TV mode** (`#/kiosk`): big, full-screen readings for a spare screen or TV, rotating through the pills when they don't
   all fit, keeping the screen awake where the browser allows it.
 - **Pictures for small screens.** **Image link**, on the dashboard and on each pill's page, makes a web address for a

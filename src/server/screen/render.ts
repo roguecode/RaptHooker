@@ -1,4 +1,15 @@
-import { cToF, plausibleGravity, sgToPlato, type Brew, type History, type Pill, type ScreenOptions } from '@rapthooker/shared';
+import {
+  cToF,
+  DEFAULT_VESSEL,
+  measuresGravity,
+  plausibleGravity,
+  sgToPlato,
+  vesselFill,
+  type Brew,
+  type History,
+  type Pill,
+  type ScreenOptions,
+} from '@rapthooker/shared';
 import type { TextMeasure, TextStyle } from './assets.js';
 import { chart, type ChartInput } from './chart.js';
 import { SCREEN_COLORS, gradientStops, mix, paint, parseColor, type ScreenColors } from './palette.js';
@@ -104,13 +115,18 @@ function describe(d: ScreenDevice, opts: ScreenOptions, s: ScreenStrings, c: Scr
     v === null || v === undefined || !Number.isFinite(v) ? '–' : `${num(temp(v), 1)} ${tempUnit}`;
   const gravityText = (sg: number | null | undefined) =>
     sg === null || sg === undefined || !Number.isFinite(sg) ? '–' : plato ? `${num(sgToPlato(sg), 1)} °P` : num(sg, 4);
-  const thermometer = pill.kind === 'thermometer';
+  const thermometer = !measuresGravity(pill.kind);
+  const laser = pill.kind === 'laser-level';
   const show = new Set(opts.show);
 
   let big: Big | null = null;
   let second: string | null = null;
   const tempBig = (): Big => ({ main: r ? num(temp(r.temperature), 1) : '–', tail: '', unit: tempUnit, label: t('Temperature') });
-  if (!thermometer && show.has('gravity')) {
+  if (laser && show.has('gravity')) {
+    // A Laser Level's main value is how much beer is left.
+    big = { main: r?.volume == null ? '–' : num(r.volume, 1), tail: '', unit: 'L', label: t('Volume') };
+    second = r?.fill == null ? null : t('{pct}% full', { pct: num(r.fill, 0) });
+  } else if (!thermometer && show.has('gravity')) {
     const sg = r?.gravity;
     if (sg === null || sg === undefined || !Number.isFinite(sg))
       big = { main: '–', tail: '', unit: plato ? '°P' : 'SG', label: t('Gravity') };
@@ -152,24 +168,9 @@ function describe(d: ScreenDevice, opts: ScreenOptions, s: ScreenStrings, c: Scr
             : rssi >= -93
               ? tc('signal', 'Weak')
               : tc('signal', 'Very weak');
-  const stats: Stat[] = thermometer
+  const stats: Stat[] = laser
     ? [
-        {
-          icon: 'activity',
-          label: t('Last 24 h'),
-          value: d.day ? `${num(temp(d.day.min), 1)}–${num(temp(d.day.max), 1)}` : '–',
-          unit: d.day ? tempUnit : undefined,
-        },
-        { icon: 'signal', label: t('Signal'), value: signal },
-      ]
-    : [
-        { icon: 'percent', label: 'ABV', value: brew?.stats.abv == null ? '–' : `${num(brew.stats.abv, 1)}%` },
-        {
-          icon: 'activity',
-          label: t('Velocity'),
-          value: r?.velocity == null ? '–' : `${r.velocity > 0 ? '+' : ''}${num(r.velocity, 1)}`,
-          unit: r?.velocity == null ? undefined : t('pts/day'),
-        },
+        { icon: 'percent', label: t('Full'), value: r?.fill == null ? '–' : `${num(r.fill, 0)}%` },
         {
           icon: 'battery',
           label: t('Battery'),
@@ -177,7 +178,33 @@ function describe(d: ScreenDevice, opts: ScreenOptions, s: ScreenStrings, c: Scr
           danger: r?.battery != null && r.battery < 20,
         },
         { icon: 'signal', label: t('Signal'), value: signal },
-      ];
+      ]
+    : thermometer
+      ? [
+          {
+            icon: 'activity',
+            label: t('Last 24 h'),
+            value: d.day ? `${num(temp(d.day.min), 1)}–${num(temp(d.day.max), 1)}` : '–',
+            unit: d.day ? tempUnit : undefined,
+          },
+          { icon: 'signal', label: t('Signal'), value: signal },
+        ]
+      : [
+          { icon: 'percent', label: 'ABV', value: brew?.stats.abv == null ? '–' : `${num(brew.stats.abv, 1)}%` },
+          {
+            icon: 'activity',
+            label: t('Velocity'),
+            value: r?.velocity == null ? '–' : `${r.velocity > 0 ? '+' : ''}${num(r.velocity, 1)}`,
+            unit: r?.velocity == null ? undefined : t('pts/day'),
+          },
+          {
+            icon: 'battery',
+            label: t('Battery'),
+            value: r?.battery == null ? '–' : `${Math.round(r.battery)}%`,
+            danger: r?.battery != null && r.battery < 20,
+          },
+          { icon: 'signal', label: t('Signal'), value: signal },
+        ];
 
   let chartInput: ChartInput | null = null;
   const h = d.history;
@@ -188,21 +215,34 @@ function describe(d: ScreenDevice, opts: ScreenOptions, s: ScreenStrings, c: Scr
       minSpan: fahrenheit ? minSpan * 1.8 : minSpan,
       format: (v: number) => `${num(v, 0)}°`,
     });
-    chartInput = thermometer
-      ? { ts: h.ts, from: d.from, to: d.to, main: tempSeries(pill.color, 2) }
-      : {
+    const vessel = pill.vessel ?? DEFAULT_VESSEL;
+    chartInput = laser
+      ? {
           ts: h.ts,
           from: d.from,
           to: d.to,
           main: {
-            values: plato ? h.gravity.map((v) => (v === null ? null : sgToPlato(v))) : h.gravity,
-            skip: h.implausible,
+            values: (h.distance ?? []).map((v) => vesselFill(v, vessel)?.volume ?? null),
             color: pill.color,
-            minSpan: plato ? 1 : 0.004,
-            format: (v: number) => (plato ? num(v, 1) : num(v, 3)),
+            minSpan: 1,
+            format: (v: number) => num(v, 0),
           },
-          second: tempSeries(c.seriesTemp, 3),
-        };
+        }
+      : thermometer
+        ? { ts: h.ts, from: d.from, to: d.to, main: tempSeries(pill.color, 2) }
+        : {
+            ts: h.ts,
+            from: d.from,
+            to: d.to,
+            main: {
+              values: plato ? h.gravity.map((v) => (v === null ? null : sgToPlato(v))) : h.gravity,
+              skip: h.implausible,
+              color: pill.color,
+              minSpan: plato ? 1 : 0.004,
+              format: (v: number) => (plato ? num(v, 1) : num(v, 3)),
+            },
+            second: tempSeries(c.seriesTemp, 3),
+          };
   }
 
   return {

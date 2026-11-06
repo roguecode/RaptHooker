@@ -1,7 +1,8 @@
 import { EventEmitter } from 'node:events';
 import { performance } from 'node:perf_hooks';
 import type { BleStatus } from '@rapthooker/shared';
-import { APPLE_COMPANY_ID, encodeRaptThermometer, encodeRaptV2, KEG_COMPANY_ID, RAPT_COMPANY_ID } from './rapt.js';
+import { APPLE_COMPANY_ID, encodeRaptLaser, encodeRaptThermometer, encodeRaptV2, KEG_COMPANY_ID, RAPT_COMPANY_ID } from './rapt.js';
+import { encodeTilt } from './tilt.js';
 import type { Advert, Scanner } from './scanner.js';
 
 const DAY = 86_400_000;
@@ -80,6 +81,52 @@ export function simulatedThermometerTemp(t: number): number {
 
 const CYCLE_DAYS = 14;
 
+/** A simulated red Tilt (made-up address) in a fermenting ale. */
+export const MOCK_TILT: Profile & { color: 'Red' } = {
+  address: 'F0:0D:5E:ED:00:20',
+  color: 'Red',
+  og: 1.062,
+  fg: 1.013,
+  mid: 3,
+  width: 0.8,
+  temp: 20,
+  offsetDays: 2.4,
+  firmware: '',
+  rssi: -66,
+};
+
+/** A simulated RAPT Laser Level (made-up address) on a 19 L keg in a kegerator, poured from now and then. */
+export const MOCK_LASER = { address: 'F0:0D:5E:ED:00:30', temp: 3.5, rssi: -61, battery: 86 } as const;
+
+/** How long the simulated Laser Level's keg lasts before it's filled again. */
+export const LASER_CYCLE_MS = 8 * DAY;
+
+/** When the simulated Laser Level's keg was last filled, before or at time t. */
+export const laserFilledAt = (t: number): number => t - (((t % LASER_CYCLE_MS) + LASER_CYCLE_MS) % LASER_CYCLE_MS);
+
+/**
+ * The simulated Laser Level's distance down to the beer at time t, mm: a keg (560 mm deep, full at 26 mm) emptied over
+ * 8 days, a pint or so at a time, then refilled.
+ */
+export function simulatedLaserDistance(t: number): number {
+  const pours = 40;
+  const poured = Math.floor(((t - laserFilledAt(t)) / LASER_CYCLE_MS) * pours) / pours;
+  return Math.round(26 + (560 - 26) * Math.min(0.97, poured));
+}
+
+/** The simulated Laser Level's own temperature at time t: the kegerator cycling on and off. */
+export const simulatedLaserTemp = (t: number): number =>
+  Math.round((MOCK_LASER.temp + 0.4 * Math.sin((2 * Math.PI * t) / (3 * 3_600_000))) * 100) / 100;
+
+/** The simulated Laser Level's broadcast at time t. */
+export const simulatedLaserAdvert = (t: number): Buffer =>
+  encodeRaptLaser({
+    mac: MOCK_LASER.address,
+    distance: simulatedLaserDistance(t),
+    battery: MOCK_LASER.battery,
+    temp: simulatedLaserTemp(t),
+  });
+
 /** Days since the simulated pill's current fermentation began. */
 export function cycleAgeDays(p: Profile, t: number): number {
   return (((t / DAY + p.offsetDays) % CYCLE_DAYS) + CYCLE_DAYS) % CYCLE_DAYS;
@@ -120,6 +167,8 @@ export class MockScanner extends EventEmitter implements Scanner {
   private counts = new Map<string, number>();
   /** What "BlueZ" last passed on for the thermometer. */
   private thermo: { hex: string; rssi: number } | null = null;
+  /** What "BlueZ" last passed on for the Tilt and the Laser Level. */
+  private beacons = new Map<string, { hex: string; rssi: number }>();
   private _status: BleStatus = {
     state: 'mock',
     adapter: 'simulated',
@@ -147,6 +196,18 @@ export class MockScanner extends EventEmitter implements Scanner {
     });
     const beacon = () => this.beacon();
     this.timers.push(setTimeout(beacon, 1200), setInterval(beacon, THERMOMETER_EVERY_MS));
+    const others = () => {
+      const t = Date.now();
+      const tilt = simulate(MOCK_TILT, t);
+      this.passOn(
+        MOCK_TILT.address,
+        APPLE_COMPANY_ID,
+        encodeTilt({ color: MOCK_TILT.color, tempF: (tilt.temp * 9) / 5 + 32, sg: tilt.sg }),
+        MOCK_TILT,
+      );
+      this.passOn(MOCK_LASER.address, RAPT_COMPANY_ID, simulatedLaserAdvert(t), MOCK_LASER);
+    };
+    this.timers.push(setTimeout(others, 1800), setInterval(others, THERMOMETER_EVERY_MS * 2));
   }
 
   async stop(): Promise<void> {
@@ -177,6 +238,17 @@ export class MockScanner extends EventEmitter implements Scanner {
     const newRssi = !last || Math.abs(rssi - last.rssi) >= BLUEZ_RSSI_DELTA;
     this.thermo = { hex, rssi: newRssi || !last ? rssi : last.rssi };
     this.emitAdvert(MOCK_THERMOMETER.address, newData ? new Map([[APPLE_COMPANY_ID, data]]) : null, newRssi ? rssi : null);
+  }
+
+  /** A device that broadcasts all the time, passed on as BlueZ's monitor does (only what changed). */
+  private passOn(address: string, companyId: number, data: Buffer, device: { rssi: number }): void {
+    const hex = data.toString('hex');
+    const rssi = simulatedRssi(device);
+    const last = this.beacons.get(address);
+    const newData = last?.hex !== hex;
+    const newRssi = !last || Math.abs(rssi - last.rssi) >= BLUEZ_RSSI_DELTA;
+    this.beacons.set(address, { hex, rssi: newRssi || !last ? rssi : last.rssi });
+    this.emitAdvert(address, newData ? new Map([[companyId, data]]) : null, newRssi ? rssi : null);
   }
 
   private transmit(p: Profile): void {

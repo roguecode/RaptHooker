@@ -1,12 +1,17 @@
 /** Types shared by the server and the web app. All values are stored and sent in SI-ish units: SG and °C. */
 
 import type { FoundScreen, ScreenDevice, ScreenSetupProgress } from './screens.js';
+import type { IspindelHotspot, IspindelSetupProgress } from './ispindel.js';
+import type { ServingUnit, Vessel } from './devices.js';
 
 export type GravityUnit = 'sg' | 'plato';
 export type TemperatureUnit = 'C' | 'F';
 
-/** A RAPT Pill (hydrometer and thermometer) or a RAPT Bluetooth Thermometer (temperature only). */
-export type DeviceKind = 'pill' | 'thermometer';
+/**
+ * A RAPT Pill (hydrometer and thermometer), a RAPT Bluetooth Thermometer (temperature only), an iSpindel (a Wi-Fi
+ * hydrometer), a Tilt (a Bluetooth hydrometer, experimental) or a RAPT Laser Level (how full a keg is, experimental).
+ */
+export type DeviceKind = 'pill' | 'thermometer' | 'ispindel' | 'tilt' | 'laser-level';
 
 /**
  * One reading from a pill, with the pill's calibration offsets and data choices applied. A thermometer only has a
@@ -21,12 +26,20 @@ export interface Reading {
   temperature: number;
   /** Gravity points per day (negative while fermenting) from the pill or RaptHooker, or null when not known yet. */
   velocity: number | null;
-  /** Battery state of charge, %. */
+  /** Battery state of charge, % (for an iSpindel, estimated from its battery's voltage). */
   battery: number | null;
-  /** Signal strength at the hub, dBm. */
+  /** Battery voltage, V: iSpindels send it. Missing from hubs from before iSpindels. */
+  voltage?: number | null;
+  /** Signal strength at the hub, dBm (for an iSpindel, its Wi-Fi signal). */
   rssi: number | null;
   /** Angle from vertical, degrees. */
   tilt: number | null;
+  /** mm from a RAPT Laser Level down to the beer. Missing from hubs from before Laser Levels. */
+  distance?: number | null;
+  /** How full the keg under a Laser Level is, %, from `distance` and its vessel. */
+  fill?: number | null;
+  /** Litres in the keg under a Laser Level, from `distance` and its vessel. */
+  volume?: number | null;
   /** Raw accelerometer values. */
   x: number | null;
   y: number | null;
@@ -128,9 +141,9 @@ export interface ChartExclusion {
 export interface Pill {
   id: string;
   kind: DeviceKind;
-  /** Bluetooth address, AA:BB:CC:DD:EE:FF. */
+  /** Bluetooth address, AA:BB:CC:DD:EE:FF, or ISPINDEL:<chip id> for an iSpindel. */
   address: string;
-  /** The address the RAPT app shows (Bluetooth address with 2 off the last octet). */
+  /** The address the RAPT app shows (Bluetooth address with 2 off the last octet); other devices' address. */
   raptId: string;
   name: string;
   color: string;
@@ -144,21 +157,49 @@ export interface Pill {
   info: PillInfo;
   /** Ranges left out of the charts, oldest first. Always sent by the hub; missing from data saved by older versions. */
   exclusions?: ChartExclusion[];
+  /** The keg a RAPT Laser Level sits on (Laser Levels only). */
+  vessel?: Vessel;
+  /** A Laser Level's own unit for how much is left (shown when "custom" is picked), if it has one. */
+  servingUnit?: ServingUnit | null;
   live: PillLive;
   /** The brew running on this pill, if any. */
   brew: Brew | null;
+  /** The beer kegged under a Laser Level, if any (Laser Levels only). */
+  keg?: Keg | null;
 }
 
-/** A RAPT Pill or Thermometer heard nearby that hasn't been added. */
+/** A RAPT Pill or Thermometer heard nearby, or an iSpindel posting to the hub, that hasn't been added. */
 export interface NearbyPill {
   address: string;
   kind: DeviceKind;
   raptId: string;
+  /** The name it gives itself (iSpindels). Missing from hubs from before iSpindels. */
+  name?: string | null;
   firstHeardAt: number;
   lastHeardAt: number;
   rssi: number | null;
   latest: Reading | null;
   info: PillInfo;
+}
+
+/**
+ * A beer kegged up under a RAPT Laser Level: what it is (all optional) and when it was kegged and emptied. How much
+ * is in it is in litres, worked out from the Laser Level's distances and its keg as set up now.
+ */
+export interface Keg {
+  id: string;
+  pillId: string;
+  name: string;
+  style: string;
+  /** % */
+  abv: number | null;
+  /** The brew its details were filled in from, if they were. */
+  brewId: string | null;
+  keggedAt: number;
+  endedAt: number | null;
+  createdAt: number;
+  /** Litres in it when it was kegged up (the fullest it was in the hours after), or null until there's a reading. */
+  startVolume: number | null;
 }
 
 export interface BrewStats {
@@ -255,6 +296,8 @@ export interface History {
   battery: (number | null)[];
   rssi: (number | null)[];
   tilt: (number | null)[];
+  /** mm down to the beer, for a RAPT Laser Level (missing for other devices). */
+  distance?: (number | null)[];
   /** True where the pill didn't look like it was floating (for a bucket: every reading in it). */
   implausible: (boolean | null)[];
   /** The pill's own gravity, when the gravity above is RaptHooker's or smoothed. */
@@ -328,9 +371,9 @@ export interface WebhookExport {
   webhooks: WebhookInput[];
 }
 
-export type TokenScope = 'read' | 'relay';
+export type TokenScope = 'read' | 'relay' | 'ispindel';
 
-/** A key for scripts (read-only API) or a Bluetooth relay (posting adverts). */
+/** A key for scripts (read-only API), a Bluetooth relay (posting adverts) or iSpindels (posting readings). */
 export interface ApiToken {
   id: string;
   name: string;
@@ -733,6 +776,8 @@ export type LiveMessage =
   | { type: 'ble'; ble: BleStatus; clockSynced: boolean }
   | { type: 'brew'; brew: Brew }
   | { type: 'brew-removed'; brewId: string; pillId: string }
+  | { type: 'keg'; keg: Keg }
+  | { type: 'keg-removed'; kegId: string; pillId: string }
   | { type: 'webhook'; webhookId: string; status: WebhookStatus }
   | { type: 'alert'; event: AlertEvent }
   | { type: 'hub'; hub: HubSettings }
@@ -741,4 +786,6 @@ export type LiveMessage =
   | { type: 'screen-removed'; screenId: string }
   | { type: 'screen-setup'; setup: ScreenSetupProgress }
   | { type: 'screens-found'; found: FoundScreen[] }
+  | { type: 'ispindel-hotspots'; hotspots: IspindelHotspot[]; scannedAt: number | null }
+  | { type: 'ispindel-setup'; setup: IspindelSetupProgress }
   | { type: 'ping'; at: number };

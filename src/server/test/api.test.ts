@@ -9,7 +9,7 @@ import { AlertService } from '../alerts.js';
 import { Maintenance } from '../maintenance.js';
 import { buildServer, Settings } from '../server.js';
 import { UnavailableScanner } from '../ble/scanner.js';
-import { RAPT_COMPANY_ID } from '../ble/rapt.js';
+import { RAPT_COMPANY_ID, encodeRaptLaser } from '../ble/rapt.js';
 import type { PushService } from '../push.js';
 import { MqttService } from '../mqtt.js';
 import { ChannelService } from '../channels.js';
@@ -17,7 +17,7 @@ import { UpdateService } from '../updates.js';
 import { SystemService } from '../system.js';
 import { TokenService } from '../tokens.js';
 import { LogBuffer } from '../logbuffer.js';
-import { CAPTURED, silent, tempStore, testScreens } from './helpers.js';
+import { CAPTURED, silent, tempStore, testIspindel, testScreens } from './helpers.js';
 
 let cleanup: (() => void) | undefined;
 afterEach(() => cleanup?.());
@@ -61,6 +61,7 @@ async function setup() {
     system: new SystemService(config, t.store, silent),
     tokens: new TokenService(t.store),
     screens,
+    ispindel: testIspindel(t.store, new TokenService(t.store), pills),
     logs: new LogBuffer(),
     version: 't',
     startedAt: Date.now(),
@@ -75,6 +76,36 @@ async function setup() {
 const owner = { 'tailscale-user-login': 'me@example.com' };
 
 describe('API', () => {
+  it('kegs a beer up under a Laser Level for the owner, and shows it to everyone', async () => {
+    const { app, pills } = await setup();
+    const laser = encodeRaptLaser({ mac: 'D8:3B:DA:44:55:66', distance: 293, battery: 86, temp: 4 });
+    pills.handleAdvert({
+      address: 'D8:3B:DA:44:55:66',
+      rssi: -60,
+      manufacturer: new Map([[RAPT_COMPANY_ID, laser]]),
+      at: Date.now(),
+      mono: 0,
+      cached: false,
+    });
+    const id = pills.adopt('D8:3B:DA:44:55:66', {}).id;
+    const body = { pillId: id, name: 'Pale ale', style: 'APA', abv: 5.2 };
+    expect((await app.inject({ method: 'POST', url: '/api/kegs', payload: body })).statusCode).toBe(403);
+    const made = await app.inject({ method: 'POST', url: '/api/kegs', payload: body, headers: owner });
+    expect(made.statusCode).toBe(200);
+    const keg = made.json<{ id: string }>();
+    expect((await app.inject({ url: `/api/kegs?pill=${id}` })).json()).toEqual([expect.objectContaining({ id: keg.id, abv: 5.2 })]);
+    expect((await app.inject({ url: '/api/pills' })).json()).toEqual([
+      expect.objectContaining({ id, keg: expect.objectContaining({ name: 'Pale ale' }) }),
+    ]);
+    expect((await app.inject({ method: 'POST', url: '/api/kegs', payload: { pillId: id, abv: 99 }, headers: owner })).statusCode).toBe(400);
+    const patched = await app.inject({ method: 'PATCH', url: `/api/kegs/${keg.id}`, payload: { name: 'Pale' }, headers: owner });
+    expect(patched.json()).toMatchObject({ name: 'Pale', style: 'APA' });
+    const ended = await app.inject({ method: 'POST', url: `/api/kegs/${keg.id}/end`, payload: {}, headers: owner });
+    expect(ended.json<{ endedAt: number | null }>().endedAt).not.toBeNull();
+    expect((await app.inject({ method: 'DELETE', url: `/api/kegs/${keg.id}`, headers: owner })).statusCode).toBe(204);
+    expect((await app.inject({ url: `/api/kegs/${keg.id}` })).statusCode).toBe(404);
+  });
+
   it('lets anyone look but only the owner change things', async () => {
     const { app } = await setup();
     expect((await app.inject({ url: '/api/session' })).json()).toMatchObject({ role: 'viewer', pinSet: false });

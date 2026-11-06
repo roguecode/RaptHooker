@@ -2,9 +2,9 @@
 import { act, renderHook, screen, waitFor } from '@testing-library/react';
 import { useMemo } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_HUB_SETTINGS, type History, type LiveMessage, type Pill } from '@rapthooker/shared';
-import { emptyHistory, makeBle, makePill, renderWithHub, type FakeRequest } from './test/render';
-import { useHistory, useRecentRange } from './hooks';
+import { DEFAULT_HUB_SETTINGS, type History, type Keg, type LiveMessage, type Pill } from '@rapthooker/shared';
+import { emptyHistory, makeBle, makeBrew, makePill, makeReading, renderWithHub, type FakeRequest } from './test/render';
+import { appendReading, useCardRange, useHistory } from './hooks';
 
 const MIN = 60_000;
 const DAY = 24 * 60 * MIN;
@@ -93,14 +93,71 @@ describe('useHistory', () => {
   });
 });
 
-describe('useRecentRange', () => {
+describe('useCardRange', () => {
+  const NOW = 1_800_000_000_000;
+  const range = (over: Parameters<typeof makePill>[0]) => renderHook(() => useCardRange(makePill(over)));
+
+  it('covers the running brew or keg from its start', () => {
+    vi.useFakeTimers({ now: NOW });
+    const brew = makeBrew({ startedAt: NOW - 9 * DAY });
+    expect(range({ brew, live: { firstReadingAt: NOW - 30 * DAY } }).result.current).toEqual({ from: NOW - 9 * DAY, to: NOW, live: true });
+    const keg: Keg = {
+      id: 'keg-1',
+      pillId: 'pill-1',
+      name: '',
+      style: '',
+      abv: null,
+      brewId: null,
+      keggedAt: NOW - 3 * DAY,
+      endedAt: null,
+      createdAt: NOW - 3 * DAY,
+      startVolume: null,
+    };
+    expect(range({ keg, live: { firstReadingAt: NOW - 30 * DAY } }).result.current.from).toBe(NOW - 3 * DAY);
+  });
+
+  it('covers the last 24 hours otherwise, or everything when there is less', () => {
+    vi.useFakeTimers({ now: NOW });
+    expect(range({ live: { firstReadingAt: NOW - 30 * DAY } }).result.current).toEqual({ from: NOW - DAY, to: NOW, live: true });
+    expect(range({ live: { firstReadingAt: NOW - 5 * 60 * MIN } }).result.current.from).toBe(NOW - 5 * 60 * MIN);
+  });
+
   it('moves forward every quarter of an hour', () => {
-    vi.useFakeTimers({ now: 1_800_000_000_000 });
-    const { result } = renderHook(() => useRecentRange(DAY));
-    expect(result.current).toEqual({ from: 1_800_000_000_000 - DAY, to: 1_800_000_000_000, live: true });
+    vi.useFakeTimers({ now: NOW });
+    const { result } = range({ live: { firstReadingAt: NOW - 30 * DAY } });
     act(() => {
       vi.advanceTimersByTime(15 * MIN);
     });
-    expect(result.current).toEqual({ from: 1_800_000_000_000 + 15 * MIN - DAY, to: 1_800_000_000_000 + 15 * MIN, live: true });
+    expect(result.current).toEqual({ from: NOW + 15 * MIN - DAY, to: NOW + 15 * MIN, live: true });
+  });
+
+  it('starts at a brew started since the window last moved', () => {
+    vi.useFakeTimers({ now: NOW });
+    const { result, rerender } = renderHook(({ pill }) => useCardRange(pill), { initialProps: { pill: makePill() } });
+    act(() => {
+      vi.advanceTimersByTime(5 * MIN);
+    });
+    rerender({ pill: makePill({ brew: makeBrew({ startedAt: NOW + 5 * MIN }) }) });
+    expect(result.current).toEqual({ from: NOW + 5 * MIN, to: NOW + 5 * MIN, live: true });
+  });
+});
+
+describe('appendReading', () => {
+  it("adds a Laser Level's distance to a history that has them", () => {
+    const h = {
+      ...emptyHistory('laser-1', 0, 1000),
+      ts: [1000],
+      temperature: [4],
+      gravity: [null],
+      velocity: [null],
+      battery: [86],
+      rssi: [-60],
+      tilt: [null],
+      implausible: [false],
+      distance: [293],
+    };
+    const next = appendReading(h, makeReading({ ts: 61_000, gravity: null, distance: 300 }), 30 * MIN);
+    expect(next.distance).toEqual([293, 300]);
+    expect(appendReading(emptyHistory('pill-1', 0, 1000), makeReading({ ts: 61_000 }), 30 * MIN).distance).toBeUndefined();
   });
 });

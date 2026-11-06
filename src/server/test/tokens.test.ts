@@ -16,7 +16,7 @@ import { UpdateService } from '../updates.js';
 import { SystemService } from '../system.js';
 import { TokenService } from '../tokens.js';
 import { LogBuffer } from '../logbuffer.js';
-import { silent, tempStore, testScreens } from './helpers.js';
+import { silent, tempStore, testIspindel, testScreens } from './helpers.js';
 
 let cleanup: (() => void) | undefined;
 afterEach(() => cleanup?.());
@@ -59,6 +59,7 @@ async function setup() {
     system: new SystemService(config, t.store, silent),
     tokens: new TokenService(t.store),
     screens: testScreens(t.store, settings),
+    ispindel: testIspindel(t.store, new TokenService(t.store), pills),
     logs: new LogBuffer(),
     version: 't',
     startedAt: Date.now(),

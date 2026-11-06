@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { plausibleGravity, type NearbyPill, type Pill } from '@rapthooker/shared';
+import { plausibleGravity, type Pill } from '@rapthooker/shared';
 import { api, errorText } from '../api';
 import { useLive } from '../live';
 import { useUnits } from '../units';
-import { historyGapMs, useHistory, useRecentRange } from '../hooks';
-import { href, navigate } from '../router';
+import { historyGapMs, useCardRange, useHistory } from '../hooks';
+import { href } from '../router';
 import { fixed, signalQuality, timeAgo, timeUntil, useNow } from '../format';
 import { t, tp } from '../i18n';
 import { Trans } from '../i18n/Trans';
@@ -22,9 +22,11 @@ import { FirstRunGuide, useGuide } from './dashboard/FirstRunGuide';
 import { ArrangeList } from './dashboard/ArrangeList';
 import { PillRow, pillStatus } from './dashboard/PillRow';
 import { ThermometerCard } from './dashboard/ThermometerCard';
+import { LaserCard } from './dashboard/LaserCard';
+import { caughtPercent } from './pill/Tiles';
+import { NearbyCard } from './dashboard/NearbyCard';
+import { AddDeviceButton } from './devices/AddDevice';
 import './dashboard/dashboard.css';
-
-const DAY = 86_400_000;
 
 type View = 'cards' | 'compact';
 const parseView = (raw: string | null): View => (raw === 'compact' ? 'compact' : 'cards');
@@ -103,9 +105,12 @@ export function Dashboard() {
   const ordered = useMemo(() => applyOrder(active, localOrder), [active, localOrder]);
   const brewing = active.filter((p) => p.brew).length;
   const thermometers = active.filter((p) => p.kind === 'thermometer').length;
+  const lasers = active.filter((p) => p.kind === 'laser-level').length;
+  const hydrometers = active.length - thermometers - lasers;
   const recording = [
-    ...(active.length > thermometers ? [tp(active.length - thermometers, '{count} pill recording', '{count} pills recording')] : []),
+    ...(hydrometers ? [tp(hydrometers, '{count} pill recording', '{count} pills recording')] : []),
     ...(thermometers ? [tp(thermometers, '{count} thermometer recording', '{count} thermometers recording')] : []),
+    ...(lasers ? [tp(lasers, '{count} keg level recording', '{count} keg levels recording')] : []),
     ...(brewing ? [tp(brewing, '{count} brew on the go', '{count} brews on the go')] : []),
   ].join(' · ');
   const shown = brewingOnly && !arranging ? ordered.filter((p) => p.brew) : ordered;
@@ -139,10 +144,13 @@ export function Dashboard() {
     <div className="page">
       <div className="page-head">
         <div>
-          <h1>{t('Your pills')}</h1>
-          <p>{active.length === 0 ? t('Live readings from your RAPT Pills, recorded around the clock.') : recording}</p>
+          <h1>{t('Your devices')}</h1>
+          <p>{active.length === 0 ? t('Live readings from your brewing devices, recorded around the clock.') : recording}</p>
         </div>
-        <BleChip />
+        <div className="row page-actions">
+          <AddDeviceButton />
+          <BleChip />
+        </div>
       </div>
 
       {guide.visible ? <FirstRunGuide onHide={guide.hide} /> : session && !session.pinSet && <PinNotice />}
@@ -158,7 +166,7 @@ export function Dashboard() {
       )}
 
       {nearby.length > 0 && (
-        <section className="stack" aria-label={t('Pills nearby')}>
+        <section className="stack" aria-label={t('Devices nearby')}>
           {nearby.map((n) => (
             <NearbyCard key={n.address} pill={n} />
           ))}
@@ -166,7 +174,7 @@ export function Dashboard() {
       )}
 
       {!loaded ? (
-        <div className="grid cards" aria-busy="true" aria-label={t('Loading pills')}>
+        <div className="grid cards" aria-busy="true" aria-label={t('Loading devices')}>
           <div className="skeleton" style={{ height: '22rem' }} />
           <div className="skeleton" style={{ height: '22rem' }} />
         </div>
@@ -206,7 +214,7 @@ export function Dashboard() {
               </>
             )}
             {arranging && (
-              <p className="muted small grow">{t("Drag the pills, or use the arrows, to set their order. It's saved for everyone.")}</p>
+              <p className="muted small grow">{t("Drag the devices, or use the arrows, to set their order. It's saved for everyone.")}</p>
             )}
             <span className="spacer" />
             {canArrange && (
@@ -237,18 +245,26 @@ export function Dashboard() {
               <h2>{t('No brews on the go')}</h2>
               <p>{t("Start a brew from a pill's page to track it here.")}</p>
               <button type="button" className="btn" onClick={() => setBrewingOnly(false)}>
-                {t('Show all pills')}
+                {t('Show all devices')}
               </button>
             </div>
           ) : view === 'compact' ? (
-            <ul className="pill-rows" aria-label={t('Pills')}>
+            <ul className="pill-rows" aria-label={t('Devices')}>
               {shown.map((p) => (
                 <PillRow key={p.id} pill={p} />
               ))}
             </ul>
           ) : (
             <div className="grid cards">
-              {shown.map((p) => (p.kind === 'thermometer' ? <ThermometerCard key={p.id} pill={p} /> : <PillCard key={p.id} pill={p} />))}
+              {shown.map((p) =>
+                p.kind === 'thermometer' ? (
+                  <ThermometerCard key={p.id} pill={p} />
+                ) : p.kind === 'laser-level' ? (
+                  <LaserCard key={p.id} pill={p} />
+                ) : (
+                  <PillCard key={p.id} pill={p} />
+                ),
+              )}
             </div>
           )}
         </>
@@ -271,87 +287,9 @@ function EmptyState() {
         />
       </p>
       <p className="small muted">{t('Pills only send every few minutes, so it can take a little while to appear.')}</p>
-    </div>
-  );
-}
-
-function NearbyCard({ pill }: { pill: NearbyPill }) {
-  const { isOwner, toast, upsertPill } = useLive();
-  const u = useUnits();
-  const now = useNow(10_000);
-  const [name, setName] = useState('');
-  const [busy, setBusy] = useState(false);
-  const nearbySignal = signalQuality(pill.rssi);
-  const thermometer = pill.kind === 'thermometer';
-  const add = async () => {
-    setBusy(true);
-    try {
-      const added = await api.adopt(pill.address, name.trim() || undefined);
-      upsertPill(added);
-      toast({ tone: 'success', title: t('{name} added', { name: added.name }), body: t('Recording has started.') });
-      navigate(href.pill(added.id));
-    } catch (err) {
-      toast({ tone: 'error', title: thermometer ? t("Couldn't add the thermometer") : t("Couldn't add the pill"), body: errorText(err) });
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <div className="panel nearby">
-      <div className="radar" aria-hidden="true">
-        <Icon name={thermometer ? 'thermometer' : 'bluetooth'} size={20} />
+      <div className="row" style={{ justifyContent: 'center' }}>
+        <AddDeviceButton primary />
       </div>
-      <div className="info">
-        <h2>{thermometer ? t('Found a RAPT Thermometer nearby') : t('Found a RAPT Pill nearby')}</h2>
-        <div className="small muted num">
-          {pill.raptId} ·{' '}
-          {pill.latest ? `${thermometer ? '' : `${u.gravityText(pill.latest.gravity)} · `}${u.tempText(pill.latest.temperature)} · ` : ''}
-          {nearbySignal
-            ? t('Signal: {quality} ({rssi} dBm)', { quality: nearbySignal.label, rssi: nearbySignal.rssi })
-            : t('Signal unknown')}{' '}
-          · {t('heard {ago}', { ago: timeAgo(pill.lastHeardAt, now) })}
-        </div>
-      </div>
-      {isOwner ? (
-        <form
-          className="row"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void add();
-          }}
-        >
-          <input
-            className="input"
-            style={{ width: '12rem' }}
-            aria-label={
-              thermometer
-                ? t('Name for the thermometer {id} (optional)', { id: pill.raptId })
-                : t('Name for the pill {id} (optional)', { id: pill.raptId })
-            }
-            placeholder={t('Name it (optional)')}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={60}
-          />
-          <button type="submit" className="btn primary" disabled={busy}>
-            <Icon name="plus" /> {thermometer ? t('Add thermometer') : t('Add pill')}
-          </button>
-          <button
-            type="button"
-            className="btn ghost"
-            title={t('Not yours? Hide it')}
-            onClick={() =>
-              api.ignoreNearby(pill.address, true).catch((e) => toast({ tone: 'error', title: t('Failed'), body: errorText(e) }))
-            }
-          >
-            {t('Ignore')}
-          </button>
-        </form>
-      ) : (
-        <a className="btn" href="#/settings">
-          <Icon name="lock" /> {t('Sign in to add it')}
-        </a>
-      )}
     </div>
   );
 }
@@ -360,7 +298,7 @@ export function PillCard({ pill }: { pill: Pill }) {
   const u = useUnits();
   const { cachedAt } = useLive();
   const now = useNow(15_000);
-  const range = useRecentRange(DAY);
+  const range = useCardRange(pill);
   const { history } = useHistory(pill.id, range, 160, historyGapMs(pill.live.intervalSec));
   const r = pill.live.latest;
   const g = u.gravityParts(r?.gravity);
@@ -435,26 +373,53 @@ export function PillCard({ pill }: { pill: Pill }) {
       {pill.brew && <FermentBar brew={pill.brew} compact />}
 
       <div className="mini-stats">
-        <div className="mini-stat">
-          <span className="k">
-            <Icon name="battery" size={12} /> {t('Battery')}
-          </span>
-          {r?.battery != null ? `${Math.round(r.battery)}%` : '–'}
-          <BatteryBar percent={r?.battery} />
-        </div>
-        <div className="mini-stat" title={signal ? t('{rssi} dBm at the hub', { rssi: signal.rssi }) : undefined}>
+        {pill.kind === 'tilt' ? (
+          <div className="mini-stat">
+            <span className="k">
+              <Icon name="check" size={12} /> {t('Caught')}
+            </span>
+            {caughtPercent(pill.live.caught) === null ? '–' : `${caughtPercent(pill.live.caught)}%`}
+          </div>
+        ) : (
+          <div className="mini-stat">
+            <span className="k">
+              <Icon name="battery" size={12} /> {t('Battery')}
+            </span>
+            {r?.battery != null ? `${Math.round(r.battery)}%` : '–'}
+            <BatteryBar percent={r?.battery} />
+          </div>
+        )}
+        <div
+          className="mini-stat"
+          title={
+            signal
+              ? pill.kind === 'ispindel'
+                ? t('{rssi} dBm Wi-Fi signal', { rssi: signal.rssi })
+                : t('{rssi} dBm at the hub', { rssi: signal.rssi })
+              : undefined
+          }
+        >
           <span className="k">
             <Icon name="signal" size={12} /> {t('Signal')}
           </span>
           <span className={`signal-quality ${signal?.quality ?? ''}`}>{signal ? signal.label : '–'}</span>
           <SignalBars rssi={pill.live.rssi} />
         </div>
-        <div className="mini-stat">
-          <span className="k">
-            <Icon name="tilt" size={12} /> {t('Tilt')}
-          </span>
-          {r?.tilt != null ? `${fixed(r.tilt, 1)}°` : '–'}
-        </div>
+        {pill.kind === 'tilt' ? (
+          <div className="mini-stat">
+            <span className="k">
+              <Icon name="tilt" size={12} /> Tilt
+            </span>
+            {pill.info.deviceType?.replace(/^Tilt /, '') ?? '–'}
+          </div>
+        ) : (
+          <div className="mini-stat">
+            <span className="k">
+              <Icon name="tilt" size={12} /> {t('Tilt')}
+            </span>
+            {r?.tilt != null ? `${fixed(r.tilt, 1)}°` : '–'}
+          </div>
+        )}
         <div className="mini-stat">
           <span className="k">
             {/* i18n: when the next reading is due */}

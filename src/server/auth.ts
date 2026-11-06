@@ -1,6 +1,6 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import type { FastifyRequest } from 'fastify';
-import type { ApiToken, Session, TokenScope } from '@rapthooker/shared';
+import { ISPINDEL_PATH, type ApiToken, type Session, type TokenScope } from '@rapthooker/shared';
 import type { Config } from './config.js';
 import { bearer } from './tokens.js';
 
@@ -77,6 +77,11 @@ function tokenSession(tokens: TokenVerifier, req: FastifyRequest, token: string)
     }
     throw new TokenError(`This is a relay token: it can only post Bluetooth adverts to ${RELAY_PATH}`, 403);
   }
+  const ispindel = tokens.verify(token, 'ispindel');
+  if (ispindel) {
+    if (method === 'POST' && path === ISPINDEL_PATH) return { role: 'viewer', user: `ispindel:${ispindel.name}`, via: 'token' };
+    throw new TokenError(`This is the iSpindel token: it can only post iSpindel readings to ${ISPINDEL_PATH}`, 403);
+  }
   throw new TokenError('Unknown or deleted API token', 401);
 }
 
@@ -84,7 +89,8 @@ function tokenSession(tokens: TokenVerifier, req: FastifyRequest, token: string)
  * Viewing is open to anyone who can reach the hub; changes need the owner. The owner is someone signed in with the
  * PIN (created in the app on first visit, stored as a scrypt hash), or a Tailscale user coming through
  * `tailscale serve` (which proxies from loopback and adds Tailscale-User-* headers, so they're only trusted there).
- * Scripts can use a 'read' API token (a viewer that can only read); relays use a 'relay' token for posting adverts.
+ * Scripts can use a 'read' API token (a viewer that can only read); relays use a 'relay' token for posting adverts, and
+ * iSpindels the 'ispindel' token (usually in what they post rather than a header) for posting readings.
  */
 export class Auth {
   private readonly failures = new Map<string, { count: number; until: number }>();

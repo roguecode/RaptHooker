@@ -15,8 +15,11 @@ export interface HotspotLink {
 export interface WifiController {
   readonly name: string;
   status(): Promise<WifiStatus>;
-  /** Networks the hub can see, strongest first. */
-  scan(): Promise<WifiNetwork[]>;
+  /**
+   * Networks the hub can see, strongest first. `cached` only reads what the Wi-Fi has seen lately (it scans by itself
+   * now and then) rather than scanning now, which is gentler for something done in the background.
+   */
+  scan(opts?: { cached?: boolean }): Promise<WifiNetwork[]>;
   /** Joins an open network for now. The first join remembers the network to go back to. */
   join(ssid: string, timeoutMs: number): Promise<HotspotLink>;
   /** Back on the network from before the first join. True once the hub has it again (or wasn't on one). */

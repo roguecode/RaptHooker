@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import { hostname } from 'node:os';
 import { randomBytes } from 'node:crypto';
 import { connect, type IClientOptions, type MqttClient } from 'mqtt';
-import { sgToPlato, type Brew, type MqttSettings, type MqttStatus, type Pill, type Reading } from '@rapthooker/shared';
+import { measuresGravity, sgToPlato, type Brew, type MqttSettings, type MqttStatus, type Pill, type Reading } from '@rapthooker/shared';
 import type { Logger } from './log.js';
 import type { PillService } from './pills.js';
 import type { BrewService } from './brews.js';
@@ -46,6 +46,12 @@ interface EntityDef {
   icon?: string;
   /** Also announced for a RAPT Thermometer (which only has these). */
   thermometer?: boolean;
+  /** Only announced for this kind of device. */
+  only?: Pill['kind'];
+  /** Also announced for these kinds (that don't measure gravity). */
+  also?: readonly Pill['kind'][];
+  /** Not announced for these kinds (which don't measure it). */
+  except?: readonly Pill['kind'][];
 }
 
 export const MQTT_ENTITIES: readonly EntityDef[] = [
@@ -91,6 +97,20 @@ export const MQTT_ENTITIES: readonly EntityDef[] = [
     deviceClass: 'battery',
     precision: 0,
     measurement: true,
+    also: ['laser-level'],
+    except: ['tilt'],
+  },
+  {
+    component: 'sensor',
+    object: 'battery_voltage',
+    name: 'Battery voltage',
+    field: 'battery_voltage',
+    unit: 'V',
+    deviceClass: 'voltage',
+    precision: 2,
+    measurement: true,
+    diagnostic: true,
+    only: 'ispindel',
   },
   {
     component: 'sensor',
@@ -113,6 +133,41 @@ export const MQTT_ENTITIES: readonly EntityDef[] = [
     measurement: true,
     diagnostic: true,
     icon: 'mdi:angle-acute',
+    except: ['tilt'],
+  },
+  {
+    component: 'sensor',
+    object: 'volume',
+    name: 'Volume',
+    field: 'volume',
+    unit: 'L',
+    deviceClass: 'volume_storage',
+    precision: 1,
+    measurement: true,
+    only: 'laser-level',
+  },
+  {
+    component: 'sensor',
+    object: 'fill',
+    name: 'Fill',
+    field: 'fill',
+    unit: '%',
+    precision: 0,
+    measurement: true,
+    icon: 'mdi:keg',
+    only: 'laser-level',
+  },
+  {
+    component: 'sensor',
+    object: 'distance',
+    name: 'Distance to the beer',
+    field: 'distance',
+    unit: 'mm',
+    deviceClass: 'distance',
+    precision: 0,
+    measurement: true,
+    diagnostic: true,
+    only: 'laser-level',
   },
   {
     component: 'sensor',
@@ -182,7 +237,10 @@ const roundOrNull = (v: number | null | undefined, dp: number): number | null =>
 const errText = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
 /** Whether a device of this kind has the entity. */
-const hasEntity = (pill: Pill, e: EntityDef): boolean => pill.kind === 'pill' || e.thermometer === true;
+export const hasEntity = (pill: Pick<Pill, 'kind'>, e: EntityDef): boolean =>
+  e.only !== undefined
+    ? pill.kind === e.only
+    : !e.except?.includes(pill.kind) && (measuresGravity(pill.kind) || e.thermometer === true || !!e.also?.includes(pill.kind));
 
 /** The JSON published to `<topic>/<pill id>/state`. Brew fields are null when no brew is running. */
 export function statePayload(pill: Pill, reading: Reading): Record<string, unknown> {
@@ -194,8 +252,12 @@ export function statePayload(pill: Pill, reading: Reading): Record<string, unkno
     temperature: round(reading.temperature, 2),
     velocity: roundOrNull(reading.velocity, 2),
     battery: roundOrNull(reading.battery, 1),
+    battery_voltage: roundOrNull(reading.voltage, 3),
     rssi: reading.rssi,
     tilt: roundOrNull(reading.tilt, 1),
+    distance: roundOrNull(reading.distance, 0),
+    fill: roundOrNull(reading.fill, 1),
+    volume: roundOrNull(reading.volume, 2),
     plausible: reading.plausible,
     pill_gravity: roundOrNull(reading.pillGravity, 4),
     pill_velocity: roundOrNull(reading.pillVelocity, 2),
@@ -717,13 +779,19 @@ export class MqttService extends EventEmitter {
       device: {
         identifiers: [`rapthooker_${pill.id}`],
         name: pill.name,
-        manufacturer: 'KegLand',
+        manufacturer: pill.kind === 'ispindel' ? 'iSpindel' : pill.kind === 'tilt' ? 'Tilt Hydrometer' : 'KegLand',
         model:
           pill.kind === 'thermometer'
             ? 'RAPT Bluetooth Thermometer'
-            : pill.info.deviceType
-              ? `RAPT Pill (${pill.info.deviceType})`
-              : 'RAPT Pill',
+            : pill.kind === 'ispindel'
+              ? 'iSpindel'
+              : pill.kind === 'tilt'
+                ? (pill.info.deviceType ?? 'Tilt')
+                : pill.kind === 'laser-level'
+                  ? 'RAPT Laser Level'
+                  : pill.info.deviceType
+                    ? `RAPT Pill (${pill.info.deviceType})`
+                    : 'RAPT Pill',
         ...(pill.info.firmware ? { sw_version: pill.info.firmware } : {}),
         via_device: this.hubIdentifier,
       },

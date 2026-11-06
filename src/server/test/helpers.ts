@@ -3,12 +3,35 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import pino from 'pino';
 import { Store } from '../db.js';
+import { IspindelService } from '../ispindel/service.js';
+import type { PillService } from '../pills.js';
 import { ScreenManager } from '../screens/manager.js';
 import { NoUsb } from '../screens/usb/types.js';
-import { NoWifi } from '../screens/wifi/types.js';
+import { NoWifi, type WifiController } from '../screens/wifi/types.js';
 import type { Settings } from '../settings.js';
+import type { TokenService } from '../tokens.js';
 
 export const silent = pino({ level: 'silent' });
+
+/** An iSpindel service with no Wi-Fi control (and no hotspots), for tests about other things. */
+export function testIspindel(
+  store: Store,
+  tokens: TokenService,
+  pills: PillService,
+  opts: { wifi?: WifiController; addresses?: () => Promise<{ kind: 'lan'; url: string }[]>; fast?: boolean; now?: () => number } = {},
+): IspindelService {
+  return new IspindelService({
+    store,
+    tokens,
+    pills,
+    wifi: opts.wifi ?? new NoWifi('off'),
+    addresses: opts.addresses ?? (async () => [{ kind: 'lan', url: 'http://192.168.1.20:8080' }]),
+    screensBusy: () => false,
+    log: silent,
+    fast: opts.fast,
+    now: opts.now,
+  });
+}
 
 /** A screens service with no screens and no Wi-Fi control, for tests about other things. */
 export function testScreens(store: Store, settings: Settings): ScreenManager {
@@ -51,4 +74,14 @@ export const CAPTURED = {
   /** In warm water (32.4 °C) and iced water (0.0 °C) by the RAPT app. */
   thermometerWarm: '02154b6567b722314977852625b74c616e644c63400000',
   thermometerIced: '02154b6567b722314977852625b74c616e64444a400000',
+};
+
+/**
+ * Real posts from an iSpindel on firmware 6.5.1 (HTTP service), lying flat on a table. The first came straight after
+ * it was set up (it says its interval is 1 then), the second 2.4 s later. Its User-Agent was ESP8266HTTPClient.
+ */
+export const CAPTURED_ISPINDEL = {
+  afterSetup:
+    '{"name":"2-yolandi_[SG]","ID":6592575,"token":"test-token","angle":87.64426,"temperature":16.5625,"temp_units":"C","battery":4.134515,"gravity":1.11283,"interval":1,"RSSI":-56}',
+  flat: '{"name":"2-yolandi_[SG]","ID":6592575,"token":"test-token","angle":87.60577,"temperature":16.5625,"temp_units":"C","battery":4.129301,"gravity":1.112757,"interval":30,"RSSI":-53}',
 };

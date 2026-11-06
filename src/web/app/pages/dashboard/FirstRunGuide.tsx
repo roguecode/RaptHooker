@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
+import { measuresGravity } from '@rapthooker/shared';
 import { api } from '../../api';
 import { useLive } from '../../live';
 import { href } from '../../router';
@@ -83,7 +84,8 @@ export function FirstRunGuide({ onHide }: { onHide: () => void }) {
   const doneCount = essentials.filter((s) => s.done).length;
   const allDone = doneCount === essentials.length;
   const current = essentials.find((s) => !s.done)?.id ?? 'extras';
-  const firstPill = sortByOrder(pills.filter((p) => !p.archived && p.kind === 'pill'))[0] ?? pills.find((p) => p.kind === 'pill');
+  const firstPill =
+    sortByOrder(pills.filter((p) => !p.archived && measuresGravity(p.kind)))[0] ?? pills.find((p) => measuresGravity(p.kind));
   const listening = ble?.state === 'scanning' || ble?.state === 'mock';
 
   return (

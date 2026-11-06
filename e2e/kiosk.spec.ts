@@ -13,5 +13,5 @@ test('TV mode shows the pills in big type', async ({ page, request }) => {
   await expect(water.locator('.kt-gravity')).toHaveText(/^\d\.\d{4}SG$/);
 
   await page.getByRole('button', { name: 'Exit TV mode' }).click();
-  await expect(page.getByRole('heading', { name: 'Your pills' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your devices' })).toBeVisible();
 });

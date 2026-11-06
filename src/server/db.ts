@@ -5,7 +5,8 @@ import type { History, Offsets, PillModel, WebhookDelivery } from '@rapthooker/s
 
 /**
  * A reading as decoded from a device, before calibration offsets. What a device doesn't measure is null (a RAPT
- * Thermometer has no gravity, battery or accelerometer).
+ * Thermometer has no gravity, battery or accelerometer; an iSpindel sends its tilt as an angle, not accelerometer
+ * values).
  */
 export interface RawReading {
   ts: number;
@@ -18,9 +19,18 @@ export interface RawReading {
   x: number | null;
   y: number | null;
   z: number | null;
+  /** Angle from vertical, degrees, from a device that sends it rather than accelerometer values (iSpindels). */
+  tilt?: number | null;
+  /** Battery voltage, V (iSpindels). */
+  voltage?: number | null;
+  /** mm from the sensor down to the beer (RAPT Laser Levels). */
+  distance?: number | null;
   /** FLAG_* bits. */
   flags: number;
 }
+
+/** The columns a RawReading is read from. */
+const READING_COLUMNS = 'ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, distance, flags';
 
 /**
  * Schema versions, applied in order; the database's user_version says how many have run. People's brewing history is
@@ -134,6 +144,34 @@ export const MIGRATIONS: string[] = [
   `
   CREATE TABLE screens (id TEXT PRIMARY KEY, json TEXT NOT NULL, created_at INTEGER NOT NULL);
   `,
+  // v6: iSpindels (Wi-Fi hydrometers) send their tilt as an angle rather than accelerometer values, and their battery
+  // as a voltage: two new columns, NULL for every other reading. Rollups sum them with a count of the readings that
+  // had them (rather than of those that didn't, as in v4): versions from before never record either, so a row they
+  // add rightly counts as having neither. Adding nullable columns doesn't rewrite the table.
+  `
+  ALTER TABLE readings ADD COLUMN tilt REAL;
+  ALTER TABLE readings ADD COLUMN voltage REAL;
+  ALTER TABLE rollups ADD COLUMN tilt REAL NOT NULL DEFAULT 0;
+  ALTER TABLE rollups ADD COLUMN tilt_n INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE rollups ADD COLUMN voltage REAL NOT NULL DEFAULT 0;
+  ALTER TABLE rollups ADD COLUMN voltage_n INTEGER NOT NULL DEFAULT 0;
+  `,
+  // v7: RAPT Laser Levels measure the distance down to the beer in a keg, mm: a new column, NULL for every other
+  // reading, summed in the rollups with a count of the readings that had it (as tilt and voltage in v6).
+  `
+  ALTER TABLE readings ADD COLUMN distance REAL;
+  ALTER TABLE rollups ADD COLUMN distance REAL NOT NULL DEFAULT 0;
+  ALTER TABLE rollups ADD COLUMN distance_n INTEGER NOT NULL DEFAULT 0;
+  `,
+  // v8: kegs, a beer kegged up under a RAPT Laser Level (its name, style and ABV as JSON), from when it was kegged
+  // until the keg was emptied. Older versions don't know the table and leave it alone.
+  `
+  CREATE TABLE kegs (
+    id TEXT PRIMARY KEY, pill_id TEXT NOT NULL, json TEXT NOT NULL,
+    kegged_at INTEGER NOT NULL, ended_at INTEGER, created_at INTEGER NOT NULL
+  );
+  CREATE INDEX kegs_pill ON kegs (pill_id, kegged_at);
+  `,
 ];
 
 /**
@@ -162,6 +200,16 @@ export interface BrewRow {
   started_at: number;
   ended_at: number | null;
   json: string;
+  created_at: number;
+}
+
+/** A beer kegged up under a Laser Level (see KegService). */
+export interface KegRow {
+  id: string;
+  pill_id: string;
+  json: string;
+  kegged_at: number;
+  ended_at: number | null;
   created_at: number;
 }
 
@@ -198,6 +246,8 @@ export interface PrunedRollup {
   x: number | null;
   y: number | null;
   z: number | null;
+  /** The average tilt a device sent as an angle (iSpindels). */
+  tilt: number | null;
 }
 
 export interface Aggregate {
@@ -216,6 +266,10 @@ export function tiltOf(x: number | null, y: number | null, z: number | null): nu
   if (!(g > 0)) return null;
   return (Math.acos(Math.min(1, Math.abs(z) / g)) * 180) / Math.PI;
 }
+
+/** A reading's tilt: from its accelerometer values, or as the device sent it (iSpindels). */
+export const readingTilt = (r: { x: number | null; y: number | null; z: number | null; tilt?: number | null }): number | null =>
+  tiltOf(r.x, r.y, r.z) ?? r.tilt ?? null;
 
 /** The database was upgraded by a newer version of RaptHooker that said older ones can't use it any more. */
 export class IncompatibleDatabaseError extends Error {}
@@ -257,21 +311,24 @@ export class Store {
       throw err;
     }
     this.insertReadingStmt = this.db.prepare(
-      'INSERT OR IGNORE INTO readings (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT OR IGNORE INTO readings (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, distance, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
-    // Each measurement is a sum, with a count of the readings that didn't have it (see migration v4). sg/sg_n only
-    // count plausible readings; sg_all covers every reading with a gravity, for buckets where none were plausible.
+    // Each measurement is a sum, with a count of the readings that didn't have it (see migration v4), or of those that
+    // did for tilt and voltage (v6) and distance (v7). sg/sg_n only count plausible readings; sg_all covers every
+    // reading with a gravity, for buckets where none were plausible.
     this.upsertRollupStmt = this.db.prepare(`
       INSERT INTO rollups (pill_id, bucket, n, sg, sg_n, sg_all, sg_missing, temp, temp_missing, velocity, velocity_n, battery,
-        battery_missing, rssi, rssi_n, x, y, z, xyz_missing)
-      VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        battery_missing, rssi, rssi_n, x, y, z, xyz_missing, tilt, tilt_n, voltage, voltage_n, distance, distance_n)
+      VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT (pill_id, bucket) DO UPDATE SET
         n = n + 1, sg = sg + excluded.sg, sg_n = sg_n + excluded.sg_n, sg_all = sg_all + excluded.sg_all,
         sg_missing = sg_missing + excluded.sg_missing, temp = temp + excluded.temp, temp_missing = temp_missing + excluded.temp_missing,
         velocity = velocity + excluded.velocity, velocity_n = velocity_n + excluded.velocity_n,
         battery = battery + excluded.battery, battery_missing = battery_missing + excluded.battery_missing,
         rssi = rssi + excluded.rssi, rssi_n = rssi_n + excluded.rssi_n,
-        x = x + excluded.x, y = y + excluded.y, z = z + excluded.z, xyz_missing = xyz_missing + excluded.xyz_missing`);
+        x = x + excluded.x, y = y + excluded.y, z = z + excluded.z, xyz_missing = xyz_missing + excluded.xyz_missing,
+        tilt = tilt + excluded.tilt, tilt_n = tilt_n + excluded.tilt_n, voltage = voltage + excluded.voltage,
+        voltage_n = voltage_n + excluded.voltage_n, distance = distance + excluded.distance, distance_n = distance_n + excluded.distance_n`);
   }
 
   get schemaVersion(): number {
@@ -389,7 +446,7 @@ export class Store {
   deletePill(id: string): void {
     this.transaction(() => {
       this.db.prepare('DELETE FROM brew_events WHERE brew_id IN (SELECT id FROM brews WHERE pill_id = ?)').run(id);
-      for (const table of ['readings', 'rollups', 'brews', 'webhook_state', 'alert_state']) {
+      for (const table of ['readings', 'rollups', 'brews', 'kegs', 'webhook_state', 'alert_state']) {
         this.db.prepare(`DELETE FROM ${table} WHERE pill_id = ?`).run(id);
       }
       this.db.prepare('DELETE FROM pills WHERE id = ?').run(id);
@@ -400,11 +457,26 @@ export class Store {
 
   addReading(pillId: string, r: RawReading): boolean {
     return this.transaction(() => {
-      const res = this.insertReadingStmt.run(pillId, r.ts, r.sg, r.temp, r.velocity, r.battery, r.rssi, r.x, r.y, r.z, r.flags);
+      const res = this.insertReadingStmt.run(
+        pillId,
+        r.ts,
+        r.sg,
+        r.temp,
+        r.velocity,
+        r.battery,
+        r.rssi,
+        r.x,
+        r.y,
+        r.z,
+        r.tilt ?? null,
+        r.voltage ?? null,
+        r.distance ?? null,
+        r.flags,
+      );
       if (res.changes === 0) return false;
       const bucket = r.ts - (r.ts % ROLLUP_MS);
       const plausible = (r.flags & FLAG_IMPLAUSIBLE) === 0;
-      const sum = (v: number | null): [number, number] => (v === null ? [0, 0] : [v, 1]);
+      const sum = (v: number | null | undefined): [number, number] => (v === null || v === undefined ? [0, 0] : [v, 1]);
       const missing = (v: number | null): [number, number] => (v === null ? [0, 1] : [v, 0]);
       const xyz = r.x !== null && r.y !== null && r.z !== null;
       this.upsertRollupStmt.run(
@@ -420,6 +492,9 @@ export class Store {
         xyz ? r.y : 0,
         xyz ? r.z : 0,
         xyz ? 0 : 1,
+        ...sum(r.tilt),
+        ...sum(r.voltage),
+        ...sum(r.distance),
       );
       return true;
     });
@@ -444,24 +519,20 @@ export class Store {
 
   latestReadings(pillId: string, limit: number): RawReading[] {
     return this.db
-      .prepare('SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? ORDER BY ts DESC LIMIT ?')
+      .prepare(`SELECT ${READING_COLUMNS} FROM readings WHERE pill_id = ? ORDER BY ts DESC LIMIT ?`)
       .all(pillId, limit) as unknown as RawReading[];
   }
 
   readingsFrom(pillId: string, from: number, limit: number): RawReading[] {
     return this.db
-      .prepare(
-        'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts >= ? ORDER BY ts LIMIT ?',
-      )
+      .prepare(`SELECT ${READING_COLUMNS} FROM readings WHERE pill_id = ? AND ts >= ? ORDER BY ts LIMIT ?`)
       .all(pillId, from, limit) as unknown as RawReading[];
   }
 
   lastReadingBefore(pillId: string, ts: number): RawReading | null {
     return (
       (this.db
-        .prepare(
-          'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts <= ? ORDER BY ts DESC LIMIT 1',
-        )
+        .prepare(`SELECT ${READING_COLUMNS} FROM readings WHERE pill_id = ? AND ts <= ? ORDER BY ts DESC LIMIT 1`)
         .get(pillId, ts) as unknown as RawReading | undefined) ?? null
     );
   }
@@ -470,7 +541,7 @@ export class Store {
     return (
       (this.db
         .prepare(
-          'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts <= ? AND flags & 1 = 0 AND sg IS NOT NULL ORDER BY ts DESC LIMIT 1',
+          `SELECT ${READING_COLUMNS} FROM readings WHERE pill_id = ? AND ts <= ? AND flags & 1 = 0 AND sg IS NOT NULL ORDER BY ts DESC LIMIT 1`,
         )
         .get(pillId, ts) as unknown as RawReading | undefined) ?? null
     );
@@ -481,9 +552,7 @@ export class Store {
   }
 
   *iterateReadings(pillId: string, from: number, to: number): Generator<RawReading> {
-    const stmt = this.db.prepare(
-      'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? ORDER BY ts',
-    );
+    const stmt = this.db.prepare(`SELECT ${READING_COLUMNS} FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? ORDER BY ts`);
     for (const row of stmt.iterate(pillId, from, to)) yield row as unknown as RawReading;
   }
 
@@ -527,7 +596,7 @@ export class Store {
       .prepare(
         `SELECT bucket, sg_n AS n, sg / sg_n AS sg, CASE WHEN n > temp_missing THEN temp / (n - temp_missing) END AS temp,
                 CASE WHEN n > xyz_missing THEN x / (n - xyz_missing) END AS x, CASE WHEN n > xyz_missing THEN y / (n - xyz_missing) END AS y,
-                CASE WHEN n > xyz_missing THEN z / (n - xyz_missing) END AS z
+                CASE WHEN n > xyz_missing THEN z / (n - xyz_missing) END AS z, CASE WHEN tilt_n > 0 THEN tilt / tilt_n END AS tilt
          FROM rollups WHERE pill_id = ? AND bucket >= ? AND bucket + ${ROLLUP_MS} <= ? AND sg_n > 0 ORDER BY bucket`,
       )
       .all(pillId, from, until) as unknown as PrunedRollup[];
@@ -581,6 +650,8 @@ export class Store {
       x: number | null;
       y: number | null;
       z: number | null;
+      tilt: number | null;
+      distance: number | null;
       flags: number;
     };
     const empty = (r: P, ts = r.ts): P => ({
@@ -594,15 +665,15 @@ export class Store {
       x: null,
       y: null,
       z: null,
+      tilt: null,
+      distance: null,
     });
     let rows: P[];
 
     if (bucket <= 60_000) {
       bucket = 0;
       rows = this.db
-        .prepare(
-          'SELECT ts, sg, temp, velocity, battery, rssi, x, y, z, flags FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? ORDER BY ts LIMIT ?',
-        )
+        .prepare(`SELECT ${READING_COLUMNS} FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? ORDER BY ts LIMIT ?`)
         .all(pillId, qFrom, to, opts.maxPoints * 4 + Math.ceil(lookback / 60_000)) as unknown as P[];
       if (excluded.length) rows = rows.map((r) => (excludedAt(r.ts) ? empty(r) : r));
     } else if (bucket < ROLLUP_MS) {
@@ -611,7 +682,7 @@ export class Store {
           `SELECT CAST(${keep ? `COALESCE(${avg('ts')}, AVG(ts))` : 'AVG(ts)'} AS INTEGER) AS ts,
                   COALESCE(AVG(CASE WHEN flags & 1 = 0${keep ? ` AND ${keep}` : ''} THEN sg END), ${avg('sg')}) AS sg, ${avg('temp')} AS temp,
                   ${avg('velocity')} AS velocity, ${avg('battery')} AS battery, ${avg('rssi')} AS rssi, ${avg('x')} AS x, ${avg('y')} AS y,
-                  ${avg('z')} AS z, ${keep ? `MIN(CASE WHEN ${keep} THEN flags & 1 END)` : 'MIN(flags & 1)'} AS flags
+                  ${avg('z')} AS z, ${avg('tilt')} AS tilt, ${avg('distance')} AS distance, ${keep ? `MIN(CASE WHEN ${keep} THEN flags & 1 END)` : 'MIN(flags & 1)'} AS flags
            FROM readings WHERE pill_id = ? AND ts BETWEEN ? AND ? GROUP BY ts / ${Math.floor(bucket)} ORDER BY 1`,
         )
         .all(pillId, qFrom, to) as unknown as P[];
@@ -629,6 +700,8 @@ export class Store {
                   CASE WHEN TOTAL(n) > TOTAL(xyz_missing) THEN TOTAL(x) / (TOTAL(n) - TOTAL(xyz_missing)) END AS x,
                   CASE WHEN TOTAL(n) > TOTAL(xyz_missing) THEN TOTAL(y) / (TOTAL(n) - TOTAL(xyz_missing)) END AS y,
                   CASE WHEN TOTAL(n) > TOTAL(xyz_missing) THEN TOTAL(z) / (TOTAL(n) - TOTAL(xyz_missing)) END AS z,
+                  CASE WHEN TOTAL(tilt_n) > 0 THEN TOTAL(tilt) / TOTAL(tilt_n) END AS tilt,
+                  CASE WHEN TOTAL(distance_n) > 0 THEN TOTAL(distance) / TOTAL(distance_n) END AS distance,
                   CASE WHEN TOTAL(sg_n) > 0 OR TOTAL(n) = TOTAL(sg_missing) THEN 0 ELSE 1 END AS flags
            FROM rollups WHERE pill_id = ? AND bucket BETWEEN ? AND ? GROUP BY bucket / ${Math.floor(bucket)} ORDER BY 1`,
         )
@@ -646,7 +719,7 @@ export class Store {
     // Model the whole fetched span, then keep the requested range.
     const ts = rows.map((r) => r.ts);
     const implausible = rows.map((r) => (r.flags & FLAG_IMPLAUSIBLE) !== 0);
-    const tilt = rows.map((r) => tiltOf(r.x, r.y, r.z));
+    const tilt = rows.map((r) => readingTilt(r));
     const pillGravity = rows.map((r) => (r.sg === null ? null : r.sg + opts.offsets.gravity));
     let gravity = rows.map((r, i) => {
       const fromTilt = tiltGravity(model, tilt[i]!);
@@ -666,6 +739,8 @@ export class Store {
       gravity = gravity.map((g, i) => (implausible[i] ? g : (smoothed[i] ?? g)));
     }
     const differs = model.gravitySource === 'tilt' || model.smoothing !== 'off';
+    // Only a device that measures it (a Laser Level) gets the distance.
+    const hasDistance = rows.some((r) => r.distance !== null && r.distance !== undefined);
 
     const out: History = {
       pillId,
@@ -680,6 +755,7 @@ export class Store {
       rssi: [],
       tilt: [],
       implausible: [],
+      ...(hasDistance ? { distance: [] } : {}),
       ...(differs ? { pillGravity: [] } : {}),
       ...(velocityMs > 0 ? { pillVelocity: [] } : {}),
     };
@@ -694,6 +770,7 @@ export class Store {
       out.rssi.push(null);
       out.tilt.push(null);
       out.implausible.push(null);
+      out.distance?.push(null);
       out.pillGravity?.push(null);
       out.pillVelocity?.push(null);
     };
@@ -709,6 +786,7 @@ export class Store {
       out.battery.push(r.battery);
       out.tilt.push(tilt[i]!);
       out.implausible.push(implausible[i]!);
+      out.distance?.push(r.distance === null ? null : Math.round(r.distance * 10) / 10);
       out.pillGravity?.push(pillGravity[i]!);
       out.pillVelocity?.push(r.velocity);
     });
@@ -738,6 +816,42 @@ export class Store {
          ON CONFLICT (id) DO UPDATE SET started_at = excluded.started_at, ended_at = excluded.ended_at, json = excluded.json`,
       )
       .run(row.id, row.pill_id, row.started_at, row.ended_at, row.json, row.created_at);
+  }
+
+  // Kegs
+
+  listKegRows(pillId?: string): KegRow[] {
+    return (pillId
+      ? this.db.prepare('SELECT * FROM kegs WHERE pill_id = ? ORDER BY kegged_at DESC').all(pillId)
+      : this.db.prepare('SELECT * FROM kegs ORDER BY kegged_at DESC').all()) as unknown as KegRow[];
+  }
+
+  getKegRow(id: string): KegRow | null {
+    return (this.db.prepare('SELECT * FROM kegs WHERE id = ?').get(id) as unknown as KegRow | undefined) ?? null;
+  }
+
+  saveKeg(row: KegRow): void {
+    this.db
+      .prepare(
+        `INSERT INTO kegs (id, pill_id, json, kegged_at, ended_at, created_at) VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT (id) DO UPDATE SET json = excluded.json, kegged_at = excluded.kegged_at, ended_at = excluded.ended_at`,
+      )
+      .run(row.id, row.pill_id, row.json, row.kegged_at, row.ended_at, row.created_at);
+  }
+
+  deleteKeg(id: string): boolean {
+    return this.db.prepare('DELETE FROM kegs WHERE id = ?').run(id).changes > 0;
+  }
+
+  /** The shortest distance (the fullest) a Laser Level measured from `from` until before `to`. */
+  minDistance(pillId: string, from: number, to: number): number | null {
+    return (
+      (
+        this.db.prepare('SELECT MIN(distance) AS d FROM readings WHERE pill_id = ? AND ts >= ? AND ts < ?').get(pillId, from, to) as {
+          d: number | null;
+        }
+      ).d ?? null
+    );
   }
 
   /** Removes a brew and its events. */

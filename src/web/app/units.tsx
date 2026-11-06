@@ -5,13 +5,17 @@ import {
   sgToPlato,
   temperatureDeltaIn,
   temperatureFrom,
+  VOLUME_UNITS,
+  volumeScale,
   type GravityUnit,
+  type ServingUnit,
   type TemperatureUnit,
+  type VolumeUnit,
 } from '@rapthooker/shared';
 import { useLive } from './live';
 import { useStored } from './storage';
-import { fixed } from './format';
-import { t } from './i18n';
+import { fixed, num } from './format';
+import { t, tk, tp } from './i18n';
 
 export interface Units {
   temperature: TemperatureUnit;
@@ -37,10 +41,55 @@ interface UnitsContext extends Units {
   tempFromDisplay: (v: number) => number;
   tempDelta: (c: number) => number;
   tempLabel: string;
+  /** What keg volumes are shown in, in this browser. They're always litres at the hub. */
+  volume: VolumeUnit;
+  setVolume: (v: VolumeUnit) => void;
+  /** How to show litres for a device: "custom" uses the device's own unit, or litres when it has none. */
+  volumeScale: (own?: ServingUnit | null) => VolumeScale;
+  volumeText: (litres: number | null | undefined, own?: ServingUnit | null, trim?: boolean) => string;
 }
 
 export const UNITS_KEY = 'rapthooker.units';
+export const VOLUME_KEY = 'rapthooker.volume';
 const Ctx = createContext<UnitsContext | null>(null);
+
+export const parseVolumeUnit = (raw: string | null): VolumeUnit => (VOLUME_UNITS.includes(raw as VolumeUnit) ? (raw as VolumeUnit) : 'l');
+
+/** How to show litres in a unit, in the page's language. */
+export interface VolumeScale {
+  /** Multiply litres by this. */
+  perLitre: number;
+  decimals: number;
+  /** The unit on its own, as a label ("L", "pints", "cans"). */
+  symbol: string;
+  /** A number in this unit, already formatted as `text`, with its unit ("18.4 L", "1 pint", "33 pints"). */
+  amount: (value: number, text: string) => string;
+}
+
+/** How to show litres in a unit: a device's own unit is shown as it was named, the rest in the page's language. */
+export function scaleOf(unit: VolumeUnit, own?: ServingUnit | null): VolumeScale {
+  const s = volumeScale(unit, own);
+  if (unit === 'custom' && own) return { ...s, amount: (_v, text) => `${text} ${s.symbol}` };
+  if (s.symbol === 'pints') {
+    return { ...s, symbol: t('pints'), amount: (v, text) => tp(v, '{count} pint', '{count} pints', { count: text }) };
+  }
+  // i18n: the symbols for litres and US gallons, after a number ("19 L", "5 gal")
+  const symbol = s.symbol === 'gal' ? t('gal') : t('L');
+  return { ...s, symbol, amount: (_v, text) => `${text} ${symbol}` };
+}
+
+/** Litres in a scale, as text with its unit ("18.4 L", "39 pints"); `trim` drops trailing zeros ("19 L"). */
+export function volumeIn(scale: VolumeScale, litres: number | null | undefined, trim = false): string {
+  if (litres === null || litres === undefined || !Number.isFinite(litres)) return '–';
+  return scale.amount(Number((litres * scale.perLitre).toFixed(scale.decimals)), volumeNumber(scale, litres, trim));
+}
+
+/** Litres in a scale, as a number without its unit. */
+export function volumeNumber(scale: VolumeScale, litres: number | null | undefined, trim = false): string {
+  if (litres === null || litres === undefined || !Number.isFinite(litres)) return '–';
+  const v = Number((litres * scale.perLitre).toFixed(scale.decimals));
+  return num(v === 0 ? 0 : v, scale.decimals, trim ? 0 : scale.decimals);
+}
 
 /** This browser's own choices; a unit it hasn't picked is left out (and follows the hub). */
 export function parseUnitChoice(raw: string | null): Partial<Units> {
@@ -75,6 +124,7 @@ export function UnitsProvider({ children }: { children: ReactNode }) {
 
   const setUnits = useCallback((u: Partial<Units>) => setRaw(JSON.stringify({ ...choice, ...u })), [choice, setRaw]);
   const followHub = useCallback(() => setRaw('{}'), [setRaw]);
+  const [volume, setVolume] = useStored<VolumeUnit>(VOLUME_KEY, parseVolumeUnit);
 
   const value = useMemo<UnitsContext>(() => {
     const plato = units.gravity === 'plato';
@@ -105,8 +155,12 @@ export function UnitsProvider({ children }: { children: ReactNode }) {
       tempFromDisplay: (v) => temperatureFrom(v, units.temperature),
       tempDelta: (c) => temperatureDeltaIn(c, units.temperature),
       tempLabel: `°${units.temperature}`,
+      volume,
+      setVolume,
+      volumeScale: (own) => scaleOf(volume, own),
+      volumeText: (litres, own, trim) => volumeIn(scaleOf(volume, own), litres, trim),
     };
-  }, [units, setUnits, custom, followHub, hubUnits]);
+  }, [units, setUnits, custom, followHub, hubUnits, volume, setVolume]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -125,9 +179,11 @@ function Seg({ on, label, onClick, children }: { on: boolean; label?: string; on
   );
 }
 
-/** SG/°P and °C/°F buttons: this browser's choice. */
+/** SG/°P and °C/°F buttons, and how keg volumes are shown once there's a Laser Level: this browser's choice. */
 export function UnitToggles() {
   const u = useUnits();
+  const { pills } = useLive();
+  const kegs = pills.some((p) => p.kind === 'laser-level' && !p.archived);
   return (
     <div className="row" style={{ gap: '0.4rem' }}>
       <div className="segmented" role="group" aria-label={t('Gravity unit')}>
@@ -138,17 +194,42 @@ export function UnitToggles() {
           °P
         </Seg>
       </div>
-      <div className="segmented" role="group" aria-label={t('Temperature unit')}>
-        <Seg on={u.temperature === 'C'} label={t('°C, Celsius')} onClick={() => u.setUnits({ temperature: 'C' })}>
-          °C
-        </Seg>
-        <Seg on={u.temperature === 'F'} label={t('°F, Fahrenheit')} onClick={() => u.setUnits({ temperature: 'F' })}>
-          °F
-        </Seg>
+      <div className="row unit-pair">
+        <div className="segmented" role="group" aria-label={t('Temperature unit')}>
+          <Seg on={u.temperature === 'C'} label={t('°C, Celsius')} onClick={() => u.setUnits({ temperature: 'C' })}>
+            °C
+          </Seg>
+          <Seg on={u.temperature === 'F'} label={t('°F, Fahrenheit')} onClick={() => u.setUnits({ temperature: 'F' })}>
+            °F
+          </Seg>
+        </div>
+        {kegs && (
+          <select
+            className="unit-select"
+            aria-label={t('Volume unit')}
+            title={t('Volume unit')}
+            value={u.volume}
+            onChange={(e) => u.setVolume(e.target.value as VolumeUnit)}
+          >
+            {VOLUME_UNITS.map((v) => (
+              <option key={v} value={v}>
+                {t(VOLUME_LABELS[v])}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
     </div>
   );
 }
+
+const VOLUME_LABELS: Record<VolumeUnit, string> = {
+  l: tk('Litres'),
+  gal: tk('Gallons (US)'),
+  'pint-uk': tk('Pints (UK)'),
+  'pint-us': tk('Pints (US)'),
+  custom: tk('Custom'),
+};
 
 /** Says whether this browser follows the hub's default units, with a way back to them. */
 export function UnitSource() {

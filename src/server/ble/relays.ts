@@ -3,7 +3,8 @@ import { performance } from 'node:perf_hooks';
 import type { z } from 'zod';
 import type { RelayStatus, relayAdvertSchema } from '@rapthooker/shared';
 import type { Logger } from '../log.js';
-import { APPLE_COMPANY_ID, KEG_COMPANY_ID, RAPT_COMPANY_ID, isThermometerBeacon } from './rapt.js';
+import { KEG_COMPANY_ID, RAPT_COMPANY_ID } from './rapt.js';
+import { APPLE_COMPANY_ID, isKnownBeacon } from './devices.js';
 import type { Advert } from './scanner.js';
 
 export type RelayAdvert = z.infer<typeof relayAdvertSchema>;
@@ -16,8 +17,8 @@ const MAX_RELAYS = 20;
 const STATUS_EVERY_MS = 30_000;
 
 /**
- * Turns a relayed advert into the scanner's Advert, keeping only RAPT manufacturer data (a pill's, or a RAPT
- * Thermometer's iBeacon). Null if it carries none.
+ * Turns a relayed advert into the scanner's Advert, keeping only the manufacturer data of devices the hub knows (RAPT
+ * devices', and the RAPT Thermometer's and Tilts' iBeacons). Null if it carries none.
  */
 export function advertFromRelay(r: RelayAdvert, relay: string, at: number, mono: number): Advert | null {
   const entries = Object.entries(r.manufacturerData);
@@ -26,7 +27,7 @@ export function advertFromRelay(r: RelayAdvert, relay: string, at: number, mono:
     const companyId = Number(key);
     const data = Buffer.from(hex, 'hex');
     if (companyId === RAPT_COMPANY_ID || companyId === KEG_COMPANY_ID) manufacturer.set(companyId, data);
-    else if (companyId === APPLE_COMPANY_ID && isThermometerBeacon(data)) manufacturer.set(companyId, data);
+    else if (companyId === APPLE_COMPANY_ID && isKnownBeacon(data)) manufacturer.set(companyId, data);
   }
   // Manufacturer data from something else: not a RAPT device. None at all: only the signal strength.
   if (entries.length > 0 && manufacturer.size === 0) return null;

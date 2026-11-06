@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { History, Reading } from '@rapthooker/shared';
+import type { History, Pill, Reading } from '@rapthooker/shared';
 import { ApiError, api, errorText } from './api';
 import { useLiveMessages } from './live';
 import { useNow } from './format';
@@ -34,6 +34,7 @@ export function appendReading(h: History, r: Reading, gapMs: number): History {
     implausible: add(h.implausible ?? h.ts.map(() => null), implausible, null),
     ...(h.pillGravity ? { pillGravity: add(h.pillGravity, (r.pillGravity ?? r.gravity) as number | null, null) } : {}),
     ...(h.pillVelocity ? { pillVelocity: add(h.pillVelocity, r.pillVelocity ?? null, null) } : {}),
+    ...(h.distance ? { distance: add(h.distance, r.distance ?? null, null) } : {}),
   };
 }
 
@@ -150,27 +151,53 @@ const ROLLING: RangePreset[] = ['6h', '24h', '3d', '7d', '14d', '30d'];
 /** How often rolling ranges move forward. */
 const ROLL_MS = 15 * 60_000;
 
-/** The last `ms` up to now, for a small chart that runs for days (TV mode): it moves forward every quarter of an hour. */
-export function useRecentRange(ms: number): HistoryRange {
+const DAY = 86_400_000;
+
+/**
+ * What a device's small chart covers (the dashboard's cards and TV mode): its running brew or keg from the start, or
+ * else the last 24 hours, or everything when there's less than that. It moves forward every quarter of an hour; live
+ * readings are added in between.
+ */
+export function useCardRange(pill: Pick<Pill, 'brew' | 'keg' | 'live' | 'createdAt'>): HistoryRange {
   const tick = useNow(ROLL_MS);
-  return useMemo(() => ({ from: tick - ms, to: tick, live: true }), [tick, ms]);
+  const start = pill.brew?.startedAt ?? pill.keg?.keggedAt ?? null;
+  const first = pill.live.firstReadingAt ?? pill.createdAt;
+  return useMemo(() => {
+    const from = start ?? Math.max(tick - DAY, first);
+    // Started since the window last moved: it runs from then.
+    return { from, to: Math.max(tick, from), live: true };
+  }, [tick, start, first]);
 }
 
 /**
  * State for a range picker: a preset (6 hours … everything, or the running brew) or a custom from–to. Rolling presets
  * move forward every quarter of an hour; live readings are added in between.
  */
-export function useHistoryRange(opts: { initial: RangePreset; firstAt: number; brewStart?: number | null; brewEnd?: number | null }) {
+export function useHistoryRange(opts: {
+  initial: RangePreset;
+  firstAt: number;
+  brewStart?: number | null;
+  brewEnd?: number | null;
+  kegStart?: number | null;
+}) {
   const [preset, setPresetState] = useState<RangePreset>(opts.initial);
   const [custom, setCustomState] = useState<TimeWindow | null>(null);
   const tick = useNow(ROLL_MS);
-  const effective: RangePreset = preset === 'brew' && !opts.brewStart ? 'all' : preset;
+  const effective: RangePreset = (preset === 'brew' && !opts.brewStart) || (preset === 'keg' && !opts.kegStart) ? 'all' : preset;
   const rolling = ROLLING.includes(effective) ? tick : 0;
   const range = useMemo(
-    () => presetRange(effective, { now: Date.now(), firstAt: opts.firstAt, brewStart: opts.brewStart, brewEnd: opts.brewEnd, custom }),
+    () =>
+      presetRange(effective, {
+        now: Date.now(),
+        firstAt: opts.firstAt,
+        brewStart: opts.brewStart,
+        brewEnd: opts.brewEnd,
+        kegStart: opts.kegStart,
+        custom,
+      }),
     // `rolling` moves the window along.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [effective, custom, opts.firstAt, opts.brewStart, opts.brewEnd, rolling],
+    [effective, custom, opts.firstAt, opts.brewStart, opts.brewEnd, opts.kegStart, rolling],
   );
   const setPreset = useCallback((p: Exclude<RangePreset, 'custom'>) => setPresetState(p), []);
   const setCustom = useCallback((win: TimeWindow) => {

@@ -13,6 +13,48 @@ RaptHooker builds on other people's work. Thank you to all of them.
 - The tilt angle is the usual floating-hydrometer formula (angle between the accelerometer's long axis and gravity), as
   used by the iSpindel and GravityMon projects.
 
+## iSpindel
+
+- **[universam1/iSpindel](https://github.com/universam1/iSpindel)** firmware source and documentation, read only to
+  work with iSpindels: what its HTTP service posts (field names, units, `temp_units`, `gravity-unit`), its setup
+  portal (the WiFiManager form at `/wifi`, how it encodes values, saving through `/wifisave`, the service list), its
+  hotspot's name and how the chip id relates to its MAC address. No iSpindel code was copied: [src/server/ispindel](src/server/ispindel)
+  was written for RaptHooker and checked against a real iSpindel on firmware 6.5.1. The test fixtures are that
+  iSpindel's posts (with a made-up token) and its configuration form (without the firmware's scripts and styles, with
+  made-up settings).
+- The battery percentage is estimated from the voltage an iSpindel sends with a typical single-cell Li-ion discharge
+  curve; the iSpindel itself only sends volts.
+
+## RAPT Laser Level
+
+KegLand doesn't publish the Laser Level's Bluetooth format. [src/server/ble/rapt.ts](src/server/ble/rapt.ts) reads it
+the way these community projects found it; no code was copied from either.
+
+- **YDraig, [rapt-laser-level-display](https://github.com/YDraig/rapt-laser-level-display)**, an ESPHome keg monitor
+  for the Laser Level (an unofficial community project; its repository has no licence, so it was only read): its
+  [BLE guide](https://github.com/YDraig/rapt-laser-level-display/blob/main/docs/ble.md) and scanner tool gave the
+  packet layout (the "PT" prefix under company id 0x4152, the A1 type byte, the embedded MAC, distance, remaining
+  height, version, battery × 10, temperature × 100 and status, little-endian), and its configuration KegLand's keg
+  figures used as the default keg (19 L, 560 mm to the bottom, full at 26 mm; 290 mm for 9.5 L) and the fill
+  calculation from the distance.
+- **splitice, [homeassistant-rapt-keglaser](https://github.com/splitice/homeassistant-rapt-keglaser)** (MIT), a Home
+  Assistant integration: its [protocol notes](https://github.com/splitice/homeassistant-rapt-keglaser/blob/main/docs/BLE_PROTOCOL.md)
+  cross-checked the layout and added the older firmware's shorter adverts, the values meaning "none" (FFFF, 8000), the
+  firmware version in tenths and the 1–6000 mm range.
+- **thewolf-oz, [rapt-laser-level](https://github.com/thewolf-oz/rapt-laser-level)**, an unofficial community project
+  (its repository has no licence, so it was only read): its captures of a Laser Level were checked against this
+  reading of the layout. In them bytes 9 and 11 add up to 48 when byte 12 is 2, and to 304 when it's 1: what the
+  little-endian distance and remaining height give when together they're 560 mm, the depth of KegLand's 19 L keg. A
+  test in [devices.test.ts](src/server/test/devices.test.ts) decodes frames like those. Its own curve, fitted to byte 9
+  alone, isn't used.
+
+## Tilt
+
+- **[Bluetooth-Devices/tilt-ble](https://github.com/Bluetooth-Devices/tilt-ble)** (MIT), the parser Home Assistant's
+  Tilt integration uses: the Tilts' iBeacon UUIDs and their colours, °F and SG in the major and minor, and telling a
+  Tilt Pro by its minor of 5000 or more. [src/server/ble/tilt.ts](src/server/ble/tilt.ts) was written for RaptHooker
+  from it; no code was copied. Not yet tried with a real Tilt.
+
 ## Passive Bluetooth scanning and relays
 
 - **BlueZ**'s [AdvertisementMonitor](https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitor.rst)

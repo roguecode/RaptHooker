@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { mixesPills, presetById, type WebhookPreset } from '@rapthooker/shared';
+import { measuresGravity, mixesPills, presetById, type WebhookPreset } from '@rapthooker/shared';
 import { useLive } from '../../live';
 import { t } from '../../i18n';
 import { FieldError } from '../../validation';
@@ -139,7 +139,7 @@ function PillsField({ draft, set, errors, severalAllowed, setSeveralAllowed }: S
   const pillsError = Object.entries(errors).find(([k]) => k === 'pillIds' || k.startsWith('pillIds.'))?.[1];
 
   const backToOne = () => {
-    const real = activePills.filter((p) => p.kind === 'pill');
+    const real = activePills.filter((p) => measuresGravity(p.kind));
     setSeveralAllowed(false);
     set('pillIds', draft.pillIds === 'all' ? (real.length === 1 ? [real[0]!.id] : []) : draft.pillIds.slice(0, 1));
   };

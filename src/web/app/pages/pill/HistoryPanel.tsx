@@ -3,6 +3,7 @@ import type { Pill } from '@rapthooker/shared';
 import { api, errorText } from '../../api';
 import { historyGapMs, useHistoryRange, useZoomableHistory } from '../../hooks';
 import { useLive } from '../../live';
+import { useUnits } from '../../units';
 import { dateTime } from '../../format';
 import { Icon } from '../../components/Icon';
 import { CollapsiblePanel, usePanelOpen } from '../../components/CollapsiblePanel';
@@ -15,18 +16,38 @@ import { clampWindow, isZoomed, pngFileName, SMOOTHING_STEPS_MS, type TimeWindow
 import { contextWindow, fillHistory, windowsIn } from '../../components/exclusions';
 import { ExcludeRangeButton, ExclusionsToggle, useRemoveExclusion, useShowExclusions } from '../../components/ExclusionControls';
 import { SmoothingStepper, useChartSmoothing } from '../../components/ChartSmoothing';
+import { kegName } from '../devices/keg';
 import './pill.css';
 
 const SERIES_KEY = 'rapthooker.series';
 /** A thermometer only has these, and keeps its own choice of them. */
 const THERMOMETER_SERIES: readonly SeriesKey[] = ['temperature', 'rssi'];
 const THERMOMETER_SERIES_KEY = 'rapthooker.series.thermometer';
+/** A Laser Level likewise. */
+const LASER_SERIES: readonly SeriesKey[] = ['volume', 'temperature', 'battery', 'rssi'];
+const LASER_SERIES_KEY = 'rapthooker.series.laser';
+/** What a hydrometer can chart (a Laser Level's volume isn't one). */
+const HYDROMETER_SERIES: readonly SeriesKey[] = SERIES.map((s) => s.key).filter((k) => k !== 'volume');
 
-const loadSeries = (thermometer: boolean): SeriesKey[] => {
-  const fallback: SeriesKey[] = thermometer ? ['temperature'] : ['gravity', 'temperature'];
+/** The lines a kind of device can have, where its choice of them is kept, and what's shown at first. */
+const seriesFor = (kind: Pill['kind']): { offered: readonly SeriesKey[]; key: string; fallback: SeriesKey[] } =>
+  kind === 'thermometer'
+    ? { offered: THERMOMETER_SERIES, key: THERMOMETER_SERIES_KEY, fallback: ['temperature'] }
+    : kind === 'laser-level'
+      ? { offered: LASER_SERIES, key: LASER_SERIES_KEY, fallback: ['volume'] }
+      : kind === 'tilt'
+        ? {
+            offered: HYDROMETER_SERIES.filter((k) => k !== 'battery' && k !== 'tilt'),
+            key: SERIES_KEY,
+            fallback: ['gravity', 'temperature'],
+          }
+        : { offered: HYDROMETER_SERIES, key: SERIES_KEY, fallback: ['gravity', 'temperature'] };
+
+const loadSeries = (kind: Pill['kind']): SeriesKey[] => {
+  const { offered, key, fallback } = seriesFor(kind);
   try {
-    const s = JSON.parse(localStorage.getItem(thermometer ? THERMOMETER_SERIES_KEY : SERIES_KEY) ?? 'null') as SeriesKey[] | null;
-    const allowed = s?.filter((k) => SERIES.some((x) => x.key === k) && (!thermometer || THERMOMETER_SERIES.includes(k)));
+    const s = JSON.parse(localStorage.getItem(key) ?? 'null') as SeriesKey[] | null;
+    const allowed = s?.filter((k) => offered.includes(k));
     return Array.isArray(allowed) && allowed.length ? allowed : fallback;
   } catch {
     return fallback;
@@ -35,28 +56,40 @@ const loadSeries = (thermometer: boolean): SeriesKey[] => {
 
 export function HistoryPanel({ pill }: { pill: Pill }) {
   const { isOwner, toast } = useLive();
+  const u = useUnits();
   const [open, toggleOpen] = usePanelOpen('pill.history', true);
   const brew = pill.brew;
+  const keg = pill.keg ?? null;
   const thermometer = pill.kind === 'thermometer';
+  const lines = seriesFor(pill.kind);
   const firstAt = Math.min(pill.live.firstReadingAt ?? pill.createdAt, pill.createdAt);
   const { preset, setPreset, custom, setCustom, range } = useHistoryRange({
-    initial: brew ? 'brew' : '24h',
+    initial: brew ? 'brew' : keg ? 'keg' : '24h',
     firstAt,
     brewStart: brew?.startedAt ?? null,
+    kegStart: keg?.keggedAt ?? null,
   });
   const [view, setView] = useState<TimeWindow | null>(null);
-  const [series, setSeries] = useState<SeriesKey[]>(() => loadSeries(thermometer));
+  const [series, setSeries] = useState<SeriesKey[]>(() => loadSeries(pill.kind));
   const [exporting, setExporting] = useState(false);
   const chart = useRef<ChartHandle>(null);
-  const offered = thermometer ? SERIES.filter((s) => THERMOMETER_SERIES.includes(s.key)) : SERIES;
+  const offered = SERIES.filter((s) => lines.offered.includes(s.key));
 
-  // A brew started while the page is open is shown from its start.
+  // A brew started (or a beer kegged up) while the page is open is shown from its start.
   const [shownBrew, setShownBrew] = useState(brew?.id ?? null);
   if ((brew?.id ?? null) !== shownBrew) {
     setShownBrew(brew?.id ?? null);
     if (brew) {
       setView(null);
       setPreset('brew');
+    }
+  }
+  const [shownKeg, setShownKeg] = useState(keg?.id ?? null);
+  if ((keg?.id ?? null) !== shownKeg) {
+    setShownKeg(keg?.id ?? null);
+    if (keg) {
+      setView(null);
+      setPreset('keg');
     }
   }
 
@@ -107,14 +140,14 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
     const next = series.includes(k) ? series.filter((s) => s !== k) : [...series, k];
     const ordered = SERIES.map((s) => s.key).filter((s) => next.includes(s));
     setSeries(ordered);
-    localStorage.setItem(thermometer ? THERMOMETER_SERIES_KEY : SERIES_KEY, JSON.stringify(ordered));
+    localStorage.setItem(lines.key, JSON.stringify(ordered));
   };
 
   const exportPng = async () => {
     setExporting(true);
     try {
       await chart.current?.exportPng({
-        title: brew ? `${pill.name} · ${brew.name}` : pill.name,
+        title: brew ? `${pill.name} · ${brew.name}` : keg ? `${pill.name} · ${kegName(keg)}` : pill.name,
         subtitle: `${dateTime(win.from)} – ${dateTime(win.to)}`,
         fileName: pngFileName(pill.name, Date.now()),
       });
@@ -155,6 +188,7 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
           preset={preset}
           custom={custom}
           hasBrew={!!brew}
+          hasKeg={!!keg}
           onPreset={(p) => {
             setView(null);
             setPreset(p);
@@ -189,6 +223,8 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
           exclusions={excluding ? exclusionsHere : undefined}
           onRemoveExclusion={isOwner ? removeExclusion : undefined}
           label={t('History of {name}', { name: pill.name })}
+          vessel={pill.vessel}
+          volumeScale={pill.kind === 'laser-level' ? u.volumeScale(pill.servingUnit) : undefined}
         />
         {(overview?.ts.length ?? 0) > 1 && (
           <OverviewStrip
@@ -196,7 +232,7 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
             bounds={bounds}
             view={view}
             color={pill.color}
-            tempOnly={thermometer}
+            tempOnly={thermometer || pill.kind === 'laser-level'}
             onChange={(w) => onZoom(w.from, w.to)}
           />
         )}
@@ -226,7 +262,8 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
               aria-pressed={series.includes(s.key)}
               onClick={() => toggle(s.key)}
             >
-              <span className="swatch" style={{ background: s.key === 'gravity' ? pill.color : `var(${s.color})` }} /> {t(s.label)}
+              <span className="swatch" style={{ background: s.key === 'gravity' || s.key === 'volume' ? pill.color : `var(${s.color})` }} />{' '}
+              {t(s.label)}
             </button>
           ))}
         </div>

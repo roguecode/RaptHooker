@@ -1,4 +1,12 @@
-import { defaultScreenOptions, parseScreenQuery, type History, type Pill, type ScreenFormat, type ScreenOptions } from '@rapthooker/shared';
+import {
+  defaultScreenOptions,
+  measuresGravity,
+  parseScreenQuery,
+  type History,
+  type Pill,
+  type ScreenFormat,
+  type ScreenOptions,
+} from '@rapthooker/shared';
 import type { Config } from '../config.js';
 import type { Store } from '../db.js';
 import type { PillService } from '../pills.js';
@@ -117,7 +125,7 @@ export class ScreenService {
 
   private device(pill: Pill, opts: ScreenOptions, now: number): ScreenDevice {
     const chart = opts.show.includes('chart');
-    const brew = pill.kind === 'pill' ? pill.brew : null;
+    const brew = measuresGravity(pill.kind) ? pill.brew : null;
     const from = opts.range === 'brew' ? (brew ? Math.min(brew.startedAt, now - 3_600_000) : now - DAY) : now - RANGE_MS[opts.range];
     const points = Math.max(60, Math.min(360, Math.round(opts.width / 2)));
     const history = chart ? this.history(pill, from, now, points) : null;

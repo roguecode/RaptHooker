@@ -103,7 +103,7 @@ export const isZoomed = (win: TimeWindow, bounds: TimeWindow): boolean => win.to
 
 // Ranges
 
-export type RangePreset = '6h' | '24h' | '3d' | '7d' | '14d' | '30d' | 'brew' | 'all' | 'custom';
+export type RangePreset = '6h' | '24h' | '3d' | '7d' | '14d' | '30d' | 'brew' | 'keg' | 'all' | 'custom';
 
 /** Labels and titles are English (marked with tk): show them with t(). */
 export const RANGE_PRESETS: { id: Exclude<RangePreset, 'custom'>; label: string; title: string; ms: number }[] = [
@@ -116,6 +116,8 @@ export const RANGE_PRESETS: { id: Exclude<RangePreset, 'custom'>; label: string;
   { id: '30d', label: tk('30D'), title: tk('Last 30 days'), ms: 30 * D },
   // i18n: "Brew" is a noun: the time the brew has been running
   { id: 'brew', label: tk('Brew'), title: tk('Since the brew started'), ms: 0 },
+  // i18n: the time since the beer under a keg level was kegged
+  { id: 'keg', label: tk('Kegged'), title: tk('Since it was kegged'), ms: 0 },
   { id: 'all', label: tk('All'), title: tk('Everything recorded'), ms: 0 },
 ];
 
@@ -125,6 +127,8 @@ export interface RangeContext {
   firstAt: number;
   brewStart?: number | null;
   brewEnd?: number | null;
+  /** When the beer under a Laser Level was kegged up. */
+  kegStart?: number | null;
   custom?: TimeWindow | null;
 }
 
@@ -138,6 +142,7 @@ export function presetRange(preset: RangePreset, ctx: RangeContext): HistoryRang
     const end = ctx.brewEnd ?? null;
     return { from: ctx.brewStart, to: end ?? now, live: end === null };
   }
+  if (preset === 'keg' && ctx.kegStart) return { from: Math.min(ctx.kegStart, now - H), to: now, live: true };
   const fixed = RANGE_PRESETS.find((p) => p.id === preset && p.ms > 0);
   if (fixed) return { from: now - fixed.ms, to: now, live: true };
   return { from: Math.min(ctx.firstAt, now - H), to: now, live: true };

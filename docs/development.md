@@ -4,7 +4,7 @@ Requires Node.js 22.13+ (the built-in `node:sqlite` is used).
 
 ```bash
 npm install
-npm run seed         # optional: three simulated pills with a few days of history and brews
+npm run seed         # optional: the simulated pills, thermometer and Laser Level with a few days of history, brews and kegs
 npm run dev:server   # http://localhost:8080 with simulated pills (no config file = development mode)
 npm run dev:web      # Vite dev server with hot reload, proxies /api to the server
 npm test
@@ -14,7 +14,12 @@ npm run build        # src/web/dist and src/server/dist/rapthooker.cjs (one file
 
 Without a `rapthooker.config.json`, the server runs in development mode: simulated pills (they behave like real ones,
 including re-sending their previous reading), a simulated "Smart weather clock" on its stock firmware to set up as a
-screen (with pretend Wi-Fi: `screens.wifi` is `mock`) and a pretend ESP32 board on USB (`screens.usb` is `mock`), data in `./data`, and this computer treated as the owner.
+screen (with pretend Wi-Fi: `screens.wifi` is `mock`), a pretend iSpindel in setup mode to set up from **Add device**
+(it knows the Wi-Fi `Brewery`), a pretend ESP32 board on USB (`screens.usb` is `mock`), data in `./data`, and this
+computer treated as the owner.
+
+`npm run seed -- laser` (or `pills`, `thermometer`) adds just those, to the database in `./data` (or
+`RAPTHOOKER_DATA_DIR`). Stop the server first.
 
 | Path                                  | What                                                                                                                |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |

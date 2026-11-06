@@ -2,31 +2,41 @@ import { EventEmitter } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import {
   DEFAULT_PILL_MODEL,
+  DEFAULT_VESSEL,
   PILL_COLORS,
   SMOOTHING_MS,
+  TILT_COLOR_HEX,
   fitTilt,
+  isIspindelAddress,
+  measuresGravity,
   normalizeAddress,
   pillIdFromAddress,
   plausibleGravity,
   raptIdFromAddress,
   slopePerDay,
   tiltGravity,
+  vesselFill,
   type Brew,
   type CatchRate,
   type ChartExclusion,
   type DeviceKind,
+  type Keg,
   type NearbyPill,
   type Offsets,
   type Pill,
   type PillInfo,
   type PillModel,
   type Reading,
+  type ServingUnit,
+  type Vessel,
 } from '@rapthooker/shared';
 import type { ClockGuard } from './clock.js';
-import { FLAG_IMPLAUSIBLE, tiltOf, type RawReading, type Store } from './db.js';
+import { FLAG_IMPLAUSIBLE, readingTilt, type RawReading, type Store } from './db.js';
 import type { Logger } from './log.js';
-import { decodeRapt, fingerprintOf } from './ble/rapt.js';
+import { fingerprintOf } from './ble/rapt.js';
+import { decodeAdvert, type DeviceAdvert } from './ble/devices.js';
 import type { Advert } from './ble/scanner.js';
+import type { IspindelDecoded } from './ispindel/decode.js';
 
 interface PillConfig {
   kind: DeviceKind;
@@ -38,6 +48,10 @@ interface PillConfig {
   order: number;
   info: PillInfo;
   exclusions: ChartExclusion[];
+  /** The keg under a RAPT Laser Level (Laser Levels only). */
+  vessel?: Vessel;
+  /** A Laser Level's own unit for how much is left. */
+  servingUnit?: ServingUnit | null;
 }
 
 /** Values RaptHooker works out from the stored readings, refreshed with each new reading. */
@@ -56,6 +70,8 @@ export interface PillPatch {
   archived?: boolean;
   model?: Partial<Omit<PillModel, 'tiltPoly'>>;
   order?: number;
+  vessel?: Vessel;
+  servingUnit?: ServingUnit | null;
 }
 
 interface PillState {
@@ -84,7 +100,13 @@ interface PillState {
   thermoMono: number | null;
   /** When (performance.now()) a thermometer's temperature was last taken as a reading (see sampleDue()). */
   lastSampleMono: number | null;
+  /** A Tilt's or Laser Level's reading as last decoded, taken as a reading once a minute like a thermometer's. */
+  beacon: Beacon | null;
+  beaconMono: number | null;
 }
+
+/** What a Tilt or Laser Level last sent: a reading without its time and signal. */
+type Beacon = Omit<RawReading, 'ts' | 'rssi'>;
 
 interface NearbyState {
   address: string;
@@ -98,6 +120,12 @@ interface NearbyState {
   thermo: number | null;
   thermoMono: number | null;
   lastSampleMono: number | null;
+  beacon: Beacon | null;
+  beaconMono: number | null;
+  /** The name it gives itself (iSpindels). */
+  name: string | null;
+  /** How long it stays listed after it was last heard (iSpindels only post every so often). */
+  expiryMs: number;
 }
 
 interface Pending {
@@ -134,6 +162,11 @@ const median = (xs: number[]): number | null => {
 
 const NO_DERIVED: Derived = { velocity: null, smoothed: null, caught: null };
 const NO_INFO: PillInfo = { firmware: null, deviceType: null, payloadVersion: null };
+const ISPINDEL_INFO: PillInfo = { firmware: null, deviceType: 'iSpindel', payloadVersion: null };
+
+/** How long an iSpindel stays listed nearby after a post: a few of its intervals (it only posts every so often). */
+const ispindelExpiryMs = (intervalSec: number | null): number =>
+  Math.min(3 * 3_600_000, Math.max(NEARBY_EXPIRY_MS, (intervalSec ?? 900) * 2500 + 5 * 60_000));
 
 /** FLAG_* bits for a reading as the pill sent it. */
 export const flagsOf = (sg: number): number => (plausibleGravity(sg) ? 0 : FLAG_IMPLAUSIBLE);
@@ -173,26 +206,86 @@ function takeThermo(t: { thermo: number | null; thermoMono: number | null }, tem
 /** What the RAPT app calls a pill (the Bluetooth address with 2 off the last octet); thermometers go by their address. */
 const raptIdOf = (kind: DeviceKind, address: string): string => (kind === 'pill' ? raptIdFromAddress(address) : address);
 
+/** The kind of device an advert comes from. */
+const kindOfAdvert = (d: DeviceAdvert): DeviceKind =>
+  d.kind === 'thermometer' ? 'thermometer' : d.kind === 'tilt' ? 'tilt' : d.kind === 'laser' ? 'laser-level' : 'pill';
+
+/** Kinds that broadcast all the time and are taken as a reading once a minute (see sampleDue()). */
+const BEACON_KINDS: ReadonlySet<DeviceKind> = new Set<DeviceKind>(['tilt', 'laser-level']);
+
+/** What the log calls a device found nearby. */
+const FOUND: Partial<Record<DeviceKind, string>> = { thermometer: 'RAPT Thermometer', tilt: 'Tilt', 'laser-level': 'RAPT Laser Level' };
+
+/** A Tilt's or Laser Level's reading in an advert, if it has one (a Laser Level needs its distance and temperature). */
+function beaconOf(d: DeviceAdvert): Beacon | null {
+  if (d.kind === 'tilt') {
+    const { sg, temp } = d.metrics;
+    return { sg, temp, velocity: null, battery: null, x: null, y: null, z: null, flags: flagsOf(sg) };
+  }
+  if (d.kind === 'laser' && d.laser.distance !== null && d.laser.temp !== null) {
+    const { distance, temp, battery } = d.laser;
+    return { sg: null, temp, velocity: null, battery, x: null, y: null, z: null, distance, flags: 0 };
+  }
+  return null;
+}
+
+/** Takes a beacon reading from an advert, unless what it has is from a later one (as takeThermo()). */
+function takeBeacon(t: { beacon: Beacon | null; beaconMono: number | null }, beacon: Beacon, a: Advert): void {
+  if (a.cached) {
+    if (t.beaconMono === null) t.beacon = beacon;
+    return;
+  }
+  if (t.beaconMono !== null && a.mono < t.beaconMono) return;
+  t.beacon = beacon;
+  t.beaconMono = a.mono;
+}
+
+/** What an advert says about the device itself: a Tilt's colour, a Laser Level's firmware. */
+function infoFrom(d: DeviceAdvert, info: PillInfo): PillInfo {
+  if (d.kind === 'tilt') {
+    const deviceType = `Tilt ${d.metrics.pro ? 'Pro ' : ''}${d.metrics.color}`;
+    return info.deviceType === deviceType ? info : { ...info, deviceType };
+  }
+  if (d.kind === 'laser') {
+    const firmware = d.laser.firmware ?? info.firmware;
+    return info.firmware === firmware && info.deviceType === 'RAPT Laser Level'
+      ? info
+      : { ...info, firmware, deviceType: 'RAPT Laser Level' };
+  }
+  return info;
+}
+
 /**
  * The kinds of device this version understands. One added by a newer version (and kept after going back to this one)
  * is listed, but nothing is recorded for it and its kind isn't changed.
  */
-const KNOWN_KINDS: ReadonlySet<string> = new Set<DeviceKind>(['pill', 'thermometer']);
+const KNOWN_KINDS: ReadonlySet<string> = new Set<DeviceKind>(['pill', 'thermometer', 'ispindel', 'tilt', 'laser-level']);
+
+const shortAddress = (address: string) => address.slice(-5).replace(':', '');
 
 const defaultName = (kind: DeviceKind, address: string): string =>
   kind === 'pill'
     ? `RAPT Pill ${raptIdFromAddress(address).slice(-5).replace(':', '')}`
-    : `RAPT Thermometer ${address.slice(-5).replace(':', '')}`;
+    : kind === 'ispindel'
+      ? `iSpindel ${address.slice(-6)}`
+      : kind === 'tilt'
+        ? `Tilt ${shortAddress(address)}`
+        : kind === 'laser-level'
+          ? `RAPT Laser Level ${shortAddress(address)}`
+          : `RAPT Thermometer ${shortAddress(address)}`;
+
+/** A Bluetooth address, or an iSpindel's (ISPINDEL: and its chip id in hex). */
+const validAddress = (addr: string): boolean => /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(addr) || /^ISPINDEL:[0-9A-F]{6,8}$/.test(addr);
 
 const r6 = (v: number): number => Math.round(v * 1e6) / 1e6;
 
 /** The gravity a pill's model uses for a stored reading (offset applied), before smoothing; null if it has none. */
 export function modelGravity(
-  raw: { sg: number | null; x: number | null; y: number | null; z: number | null },
+  raw: { sg: number | null; x: number | null; y: number | null; z: number | null; tilt?: number | null },
   offsets: Offsets,
   model: PillModel,
 ): number | null {
-  const fromTilt = tiltGravity(model, tiltOf(raw.x, raw.y, raw.z));
+  const fromTilt = tiltGravity(model, readingTilt(raw));
   const g = fromTilt ?? raw.sg;
   return g === null ? null : g + offsets.gravity;
 }
@@ -240,6 +333,7 @@ export function calibrate(
   offsets: Offsets,
   model: PillModel = DEFAULT_PILL_MODEL,
   derived: Derived = NO_DERIVED,
+  vessel: Vessel = DEFAULT_VESSEL,
 ): Reading {
   const temperature = Math.round((raw.temp + offsets.temperature) * 1e4) / 1e4;
   const pillGravity = raw.sg === null ? null : r6(raw.sg + offsets.gravity);
@@ -253,16 +347,24 @@ export function calibrate(
     temperature,
     velocity: gravity === null ? null : model.velocitySource === 'computed' ? derived.velocity : raw.velocity,
     battery: raw.battery,
+    voltage: raw.voltage ?? null,
     rssi: raw.rssi,
-    tilt: tiltOf(raw.x, raw.y, raw.z),
+    tilt: readingTilt(raw),
     x: raw.x,
     y: raw.y,
     z: raw.z,
     plausible,
     pillGravity,
     pillVelocity: gravity === null ? null : raw.velocity,
+    // A Laser Level's: how far down the beer is, and so how full its keg is.
+    ...(raw.distance !== null && raw.distance !== undefined ? laserValues(raw.distance, vessel) : {}),
   };
 }
+
+const laserValues = (distance: number, vessel: Vessel): Pick<Reading, 'distance' | 'fill' | 'volume'> => {
+  const v = vesselFill(distance, vessel);
+  return { distance, fill: v?.fill ?? null, volume: v?.volume ?? null };
+};
 
 /** Fills in what older saved configs don't have. */
 function upgradeConfig(c: Partial<PillConfig> & Pick<PillConfig, 'name' | 'color' | 'offsets' | 'info'>, order: number): PillConfig {
@@ -274,6 +376,7 @@ function upgradeConfig(c: Partial<PillConfig> & Pick<PillConfig, 'name' | 'color
     model: { ...model, tiltPoly: fitTilt(model.tiltPoints) },
     order: c.order ?? order,
     exclusions: Array.isArray(c.exclusions) ? c.exclusions : [],
+    ...(c.kind === 'laser-level' ? { vessel: { ...DEFAULT_VESSEL, ...c.vessel } } : {}),
   };
 }
 
@@ -291,6 +394,8 @@ export class PillService extends EventEmitter {
   private timer: NodeJS.Timeout | undefined;
   private readonly holdMs: number;
   brewOf: (pillId: string) => Brew | null = () => null;
+  /** The beer kegged under a Laser Level (set by KegService). */
+  kegOf: (pillId: string) => Keg | null = () => null;
 
   constructor(
     private readonly store: Store,
@@ -335,6 +440,8 @@ export class PillService extends EventEmitter {
         thermo: null,
         thermoMono: null,
         lastSampleMono: null,
+        beacon: null,
+        beaconMono: null,
       };
       state.online = this.isOnline(state);
       this.refreshDerived(state);
@@ -386,6 +493,11 @@ export class PillService extends EventEmitter {
     return this.pills.get(id)?.config.model ?? DEFAULT_PILL_MODEL;
   }
 
+  /** The keg under a Laser Level (the default one for other devices, which have no use for it). */
+  vessel(id: string): Vessel {
+    return this.pills.get(id)?.config.vessel ?? DEFAULT_VESSEL;
+  }
+
   /** Ranges left out of the pill's charts. */
   exclusions(id: string): ChartExclusion[] {
     return this.pills.get(id)?.config.exclusions ?? [];
@@ -393,7 +505,7 @@ export class PillService extends EventEmitter {
 
   latest(id: string): Reading | null {
     const s = this.pills.get(id);
-    return s?.latest ? calibrate(s.latest, s.config.offsets, s.config.model, s.derived) : null;
+    return s?.latest ? calibrate(s.latest, s.config.offsets, s.config.model, s.derived, s.config.vessel) : null;
   }
 
   intervalSec(id: string): number | null {
@@ -420,6 +532,7 @@ export class PillService extends EventEmitter {
         address: n.address,
         kind: n.kind,
         raptId: raptIdOf(n.kind, n.address),
+        name: n.name,
         firstHeardAt: n.firstHeardAt,
         lastHeardAt: n.lastHeardAt,
         rssi: n.rssi,
@@ -447,6 +560,8 @@ export class PillService extends EventEmitter {
       order: s.config.order,
       info: s.config.info,
       exclusions: s.config.exclusions,
+      ...(s.config.vessel ? { vessel: s.config.vessel } : {}),
+      ...(s.config.kind === 'laser-level' ? { servingUnit: s.config.servingUnit ?? null } : {}),
       live: {
         lastHeardAt: s.lastHeardAt,
         lastReadingAt: s.lastReadingAt,
@@ -454,11 +569,12 @@ export class PillService extends EventEmitter {
         online: s.online,
         rssi: s.rssi,
         intervalSec: this.intervalSec(s.id),
-        latest: s.latest ? calibrate(s.latest, s.config.offsets, s.config.model, s.derived) : null,
+        latest: s.latest ? calibrate(s.latest, s.config.offsets, s.config.model, s.derived, s.config.vessel) : null,
         computedVelocity: s.derived.velocity,
         caught: s.derived.caught,
       },
       brew: this.brewOf(s.id),
+      ...(s.config.kind === 'laser-level' ? { keg: this.kegOf(s.id) } : {}),
     };
   }
 
@@ -471,7 +587,7 @@ export class PillService extends EventEmitter {
       s.derived = NO_DERIVED;
       return;
     }
-    if (s.config.kind === 'thermometer') {
+    if (!measuresGravity(s.config.kind)) {
       s.derived = { ...NO_DERIVED, caught: this.catchRate(s) };
       return;
     }
@@ -481,7 +597,7 @@ export class PillService extends EventEmitter {
   /** RaptHooker's own values at an earlier reading's time, for sending it later (webhook catch-up). */
   derivedAt(id: string, ts: number): Derived {
     const s = this.pills.get(id);
-    if (!s || s.config.kind === 'thermometer') return NO_DERIVED;
+    if (!s || !measuresGravity(s.config.kind)) return NO_DERIVED;
     const { model, offsets } = s.config;
     if (model.velocitySource !== 'computed' && model.smoothing === 'off') return NO_DERIVED;
     return { ...deriveAt(this.store, id, ts, offsets, model), caught: null };
@@ -522,7 +638,7 @@ export class PillService extends EventEmitter {
 
   adopt(address: string, input: { name?: string; color?: string }): Pill {
     const addr = normalizeAddress(address);
-    if (!/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(addr)) throw new PillError('That is not a Bluetooth address');
+    if (!validAddress(addr)) throw new PillError('That is not a Bluetooth address');
     const existingId = this.byAddress.get(addr);
     if (existingId) {
       const s = this.pills.get(existingId)!;
@@ -533,17 +649,25 @@ export class PillService extends EventEmitter {
     const near = this.nearbyPills.get(addr);
     const used = new Set([...this.pills.values()].map((p) => p.config.color));
     // Added by address before it was heard, it's taken to be a pill until it turns out otherwise (see settleKind()).
-    const kind = near?.kind ?? 'pill';
+    const kind = isIspindelAddress(addr) ? 'ispindel' : (near?.kind ?? 'pill');
+    // A Tilt is known by its colour ("Tilt Red"), which it's given in the app too.
+    const tiltColor = kind === 'tilt' ? near?.info.deviceType?.split(' ').pop() : undefined;
     const config: PillConfig = {
       kind,
-      name: input.name?.trim() || defaultName(kind, addr),
-      color: input.color ?? PILL_COLORS.find((c) => !used.has(c)) ?? PILL_COLORS[this.pills.size % PILL_COLORS.length]!,
+      name: input.name?.trim() || near?.name || (kind === 'tilt' ? near?.info.deviceType : null) || defaultName(kind, addr),
+      color:
+        input.color ??
+        (tiltColor && TILT_COLOR_HEX[tiltColor]) ??
+        PILL_COLORS.find((c) => !used.has(c)) ??
+        PILL_COLORS[this.pills.size % PILL_COLORS.length]!,
       archived: false,
       offsets: { gravity: 0, temperature: 0 },
-      model: { ...DEFAULT_PILL_MODEL },
+      // An iSpindel or a Tilt doesn't send a velocity: RaptHooker works it out.
+      model: kind === 'ispindel' || kind === 'tilt' ? { ...DEFAULT_PILL_MODEL, velocitySource: 'computed' } : { ...DEFAULT_PILL_MODEL },
       order: Math.max(-1, ...[...this.pills.values()].map((p) => p.config.order)) + 1,
-      info: near?.info ?? NO_INFO,
+      info: near?.info ?? (kind === 'ispindel' ? ISPINDEL_INFO : NO_INFO),
       exclusions: [],
+      ...(kind === 'laser-level' ? { vessel: { ...DEFAULT_VESSEL } } : {}),
     };
     const state: PillState = {
       id,
@@ -565,6 +689,8 @@ export class PillService extends EventEmitter {
       thermo: near?.thermo ?? null,
       thermoMono: near?.thermoMono ?? null,
       lastSampleMono: near?.lastSampleMono ?? null,
+      beacon: near?.beacon ?? null,
+      beaconMono: near?.beaconMono ?? null,
     };
     // A pill removed earlier may have left nothing behind; make sure its id is free.
     this.store.deletePill(id);
@@ -573,7 +699,7 @@ export class PillService extends EventEmitter {
     this.save(state);
     // Start recording with what it last sent, so the dashboard isn't empty until its next transmission. Its fingerprint
     // stays in `recent` so the pill re-sending it isn't stored again. Before the clock is trusted it's only shown.
-    if (near?.latest && this.now() - near.lastHeardAt < 30 * 60_000) {
+    if (near?.latest && this.now() - near.lastHeardAt < Math.max(30 * 60_000, near.expiryMs)) {
       if (this.clock.trusted) {
         this.commit(state, near.latest);
       } else {
@@ -602,12 +728,17 @@ export class PillService extends EventEmitter {
         throw new PillError('Working out gravity from the tilt needs at least two calibration points at different tilts');
       }
     }
+    if (patch.vessel !== undefined && s.config.kind !== 'laser-level') throw new PillError('Only a RAPT Laser Level has a keg to set up');
+    if (patch.servingUnit !== undefined && s.config.kind !== 'laser-level')
+      throw new PillError('Only a RAPT Laser Level has a unit of its own');
     if (patch.name !== undefined) s.config.name = patch.name.trim() || s.config.name;
     if (patch.color !== undefined) s.config.color = patch.color;
     if (patch.offsets !== undefined) s.config.offsets = patch.offsets;
     if (patch.archived !== undefined) s.config.archived = patch.archived;
     if (patch.order !== undefined) s.config.order = patch.order;
     if (model) s.config.model = model;
+    if (patch.vessel !== undefined) s.config.vessel = { ...patch.vessel };
+    if (patch.servingUnit !== undefined) s.config.servingUnit = patch.servingUnit ? { ...patch.servingUnit } : null;
     this.save(s);
     const recalculated = patch.offsets !== undefined || patch.model !== undefined;
     if (recalculated) this.refreshDerived(s);
@@ -694,6 +825,8 @@ export class PillService extends EventEmitter {
 
   handleAdvert(a: Advert): void {
     const address = normalizeAddress(a.address);
+    // iSpindels post over Wi-Fi (handleIspindel): nothing heard over Bluetooth is one.
+    if (isIspindelAddress(address)) return;
     const id = this.byAddress.get(address);
     const s = id ? this.pills.get(id) : undefined;
     if (s?.config.archived || (s && !KNOWN_KINDS.has(s.config.kind))) return;
@@ -713,8 +846,15 @@ export class PillService extends EventEmitter {
     // A thermometer is heard every second: only its readings (once a minute) are worth announcing.
     let changed = !a.cached && !onlyHeard && s.config.kind === 'pill';
     for (const [companyId, data] of a.manufacturer ?? []) {
-      const decoded = decodeRapt(companyId, data);
-      if (!decoded || !this.settleKind(s, decoded.kind === 'thermometer' ? 'thermometer' : 'pill')) continue;
+      const decoded = decodeAdvert(companyId, data);
+      if (!decoded || !this.settleKind(s, kindOfAdvert(decoded))) continue;
+      const info = infoFrom(decoded, s.config.info);
+      if (info !== s.config.info) {
+        s.config.info = info;
+        this.save(s);
+      }
+      const beacon = beaconOf(decoded);
+      if (beacon) takeBeacon(s, beacon, a);
       if (decoded.kind === 'thermometer') {
         takeThermo(s, decoded.temp, a);
       } else if (decoded.kind === 'firmware' && decoded.firmware !== s.config.info.firmware) {
@@ -742,6 +882,12 @@ export class PillService extends EventEmitter {
     if (s.config.kind === 'thermometer' && s.thermo !== null && !a.cached && sampleDue(s.lastSampleMono, a.mono)) {
       s.lastSampleMono = a.mono;
       this.record(s, thermometerReading(a.at, s.thermo, a.rssi ?? s.rssi), a.mono, false);
+      changed = true;
+    }
+    // A Tilt or Laser Level likewise: what it last sent, once a minute.
+    if (BEACON_KINDS.has(s.config.kind) && s.beacon !== null && !a.cached && sampleDue(s.lastSampleMono, a.mono)) {
+      s.lastSampleMono = a.mono;
+      this.record(s, { ...s.beacon, ts: a.at, rssi: a.rssi ?? s.rssi }, a.mono, false);
       changed = true;
     }
     const wasOnline = s.online;
@@ -775,6 +921,65 @@ export class PillService extends EventEmitter {
     if (this.pending.length < MAX_PENDING) this.pending.push({ pillId: s.id, raw, mono });
   }
 
+  // iSpindels (Wi-Fi)
+
+  /**
+   * A reading an iSpindel posted (see ispindel/decode.ts): recorded once it's been added, listed nearby until then.
+   * Every post is a new reading (an iSpindel doesn't repeat itself), so nothing is held back or skipped as a repeat.
+   */
+  handleIspindel(post: Extract<IspindelDecoded, { ok: true }>, mono: number): 'recorded' | 'nearby' | 'ignored' {
+    const { address, raw } = post;
+    const id = this.byAddress.get(address);
+    const s = id ? this.pills.get(id) : undefined;
+    if (!s) {
+      this.ispindelNearby(post, mono);
+      return this.ignored.has(address) ? 'ignored' : 'nearby';
+    }
+    if (s.config.archived || s.config.kind !== 'ispindel') return 'ignored';
+    s.lastHeardAt = Math.max(s.lastHeardAt ?? 0, raw.ts);
+    s.lastHeardMono = Math.max(s.lastHeardMono ?? -Infinity, mono);
+    if (raw.rssi !== null) s.rssi = raw.rssi;
+    if (s.config.info.deviceType !== 'iSpindel') {
+      s.config.info = { ...s.config.info, deviceType: 'iSpindel' };
+      this.save(s);
+    }
+    this.record(s, raw, mono, false);
+    s.online = this.isOnline(s);
+    this.emitPill(s);
+    return 'recorded';
+  }
+
+  private ispindelNearby(post: Extract<IspindelDecoded, { ok: true }>, mono: number): void {
+    const { address, raw } = post;
+    const isNew = !this.nearbyPills.has(address);
+    const n: NearbyState = this.nearbyPills.get(address) ?? {
+      address,
+      kind: 'ispindel',
+      firstHeardAt: raw.ts,
+      lastHeardAt: raw.ts,
+      lastHeardMono: null,
+      rssi: null,
+      latest: null,
+      info: ISPINDEL_INFO,
+      thermo: null,
+      thermoMono: null,
+      lastSampleMono: null,
+      beacon: null,
+      beaconMono: null,
+      name: null,
+      expiryMs: NEARBY_EXPIRY_MS,
+    };
+    n.name = post.name ?? n.name;
+    n.latest = raw;
+    n.lastHeardAt = Math.max(n.lastHeardAt, raw.ts);
+    n.lastHeardMono = Math.max(n.lastHeardMono ?? -Infinity, mono);
+    if (raw.rssi !== null) n.rssi = raw.rssi;
+    n.expiryMs = ispindelExpiryMs(post.intervalSec);
+    this.nearbyPills.set(address, n);
+    if (isNew) this.log.info({ address, name: n.name }, 'found an iSpindel');
+    if (!this.ignored.has(address)) this.emit('nearby');
+  }
+
   private handleNearby(address: string, a: Advert): void {
     let n = this.nearbyPills.get(address);
     if (!n) {
@@ -792,19 +997,28 @@ export class PillService extends EventEmitter {
         thermo: null,
         thermoMono: null,
         lastSampleMono: null,
+        beacon: null,
+        beaconMono: null,
+        name: null,
+        expiryMs: NEARBY_EXPIRY_MS,
       };
     }
     let isRapt = false;
     for (const [companyId, data] of a.manufacturer ?? []) {
-      const decoded = decodeRapt(companyId, data);
+      const decoded = decodeAdvert(companyId, data);
       if (!decoded) continue;
       isRapt = true;
+      n.info = infoFrom(decoded, n.info);
       if (decoded.kind === 'thermometer') {
         n.kind = 'thermometer';
         takeThermo(n, decoded.temp, a);
+      } else if (decoded.kind === 'tilt' || decoded.kind === 'laser') {
+        n.kind = kindOfAdvert(decoded);
+        const beacon = beaconOf(decoded);
+        if (beacon) takeBeacon(n, beacon, a);
       } else if (decoded.kind === 'firmware') n.info = { ...n.info, firmware: decoded.firmware };
       else if (decoded.kind === 'deviceType') n.info = { ...n.info, deviceType: decoded.deviceType };
-      else {
+      else if (decoded.kind === 'metrics') {
         const recent = this.nearbyRecent.get(address) ?? [];
         if (!recent.includes(decoded.fingerprint)) {
           this.nearbyRecent.set(address, [decoded.fingerprint, ...recent].slice(0, RECENT));
@@ -821,6 +1035,11 @@ export class PillService extends EventEmitter {
       n.latest = thermometerReading(a.at, n.thermo, a.rssi ?? n.rssi);
       sampled = true;
     }
+    if (BEACON_KINDS.has(n.kind) && n.beacon !== null && !a.cached && sampleDue(n.lastSampleMono, a.mono)) {
+      n.lastSampleMono = a.mono;
+      n.latest = { ...n.beacon, ts: a.at, rssi: a.rssi ?? n.rssi };
+      sampled = true;
+    }
     if (!a.cached) {
       n.lastHeardAt = Math.max(n.lastHeardAt, a.at);
       n.lastHeardMono = Math.max(n.lastHeardMono ?? -Infinity, a.mono);
@@ -828,7 +1047,7 @@ export class PillService extends EventEmitter {
     if (a.rssi !== null) n.rssi = a.rssi;
     const isNew = !this.nearbyPills.has(address);
     this.nearbyPills.set(address, n);
-    if (isNew) this.log.info({ address }, n.kind === 'thermometer' ? 'found a RAPT Thermometer nearby' : 'found a RAPT Pill nearby');
+    if (isNew) this.log.info({ address }, `found a ${FOUND[n.kind] ?? 'RAPT Pill'} nearby`);
     const onlyHeard = a.manufacturer === null && a.rssi === null;
     if (!this.ignored.has(address) && ((n.kind === 'pill' && !onlyHeard) || isNew || sampled)) this.emit('nearby');
   }
@@ -922,7 +1141,7 @@ export class PillService extends EventEmitter {
     }
     let changed = false;
     for (const [address, n] of this.nearbyPills) {
-      if (this.now() - n.lastHeardAt > NEARBY_EXPIRY_MS) {
+      if (this.now() - n.lastHeardAt > n.expiryMs) {
         this.nearbyPills.delete(address);
         this.nearbyRecent.delete(address);
         changed = true;

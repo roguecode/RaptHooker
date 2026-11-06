@@ -28,15 +28,9 @@ computer treated as the owner.
 | [src/web](../src/web)                 | React + Vite web app (uPlot charts, PWA)                                                                            |
 | [firmware/screen](../firmware/screen) | Firmware for the screens RaptHooker sets up (PlatformIO); its built image ships in the hub                          |
 | [deploy](../deploy)                   | Installer and updater, Pi setup script, systemd units, deploy and packaging scripts, Pi image stage, Docker config  |
-| [docs](.)                             | Guides, listed below                                                                                                |
+| [docs](.)                             | Guides: the list is in [docs/README.md](./README.md)                                                                |
 
 To check what the Pi hears, run the probe tool there: `node /opt/rapthooker/server/rapthooker-probe.cjs 120`.
-
-Guides: [Pi setup](./pi-setup.md), [configuration](./configuration.md), [features](./features.md),
-[webhooks](./webhooks.md), [alerts](./alerts.md), [brewing](./brewing.md), [calibration](./calibration.md),
-[Home Assistant](./home-assistant.md), [backups](./backups.md), [relays](./relay.md), [API](./api.md),
-[small screens](./screens.md), [RaptHooker screens](./rapthooker-screens.md), [updating](./updating.md),
-[translations](./translations.md), [Docker](./docker.md).
 
 Changing how anything is stored, identified or sent, or adding a kind of device? Read
 [Keeping people's data](./data-compatibility.md) first: updates must never lose or change what's on people's hubs. The
@@ -82,6 +76,19 @@ workflow does (`release/rapthooker-<version>.tar.gz`); install one with
 `sudo bash install.sh --file rapthooker-<version>.tar.gz`.
 
 Docker is also possible (for a Linux host with Bluetooth): see [Docker](./docker.md).
+
+## Releasing
+
+1. Update the version in `package.json` and `src/*/package.json`
+   (`npm version <x.y.z> --workspaces --include-workspace-root --no-git-tag-version`) and add a `## [x.y.z] - date`
+   section to [CHANGELOG.md](../CHANGELOG.md).
+2. Commit, then tag and push: `git tag vx.y.z && git push origin vx.y.z`.
+3. The [release workflow](../.github/workflows/release.yml) checks the tag matches `package.json`, runs the checks,
+   builds `rapthooker-<version>.tar.gz` with [deploy/package.mjs](../deploy/package.mjs) (try it with
+   `npm run package`), and publishes the release with that CHANGELOG section as its notes, the archive, `SHA256SUMS`
+   and `install.sh`. Then it builds the Raspberry Pi image (experimental) and attaches it.
+
+Hubs see the new release within a day.
 
 ## Pictures in the README
 

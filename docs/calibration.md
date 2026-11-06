@@ -54,7 +54,7 @@ readings where the pill doesn't look like it's floating:
 ## Readings caught
 
 The **Caught** tile shows how many of the readings the pill sent over the last day the hub actually received (from the
-interval it has learned). Below about 80%, try the hub, a USB Bluetooth dongle or a relay closer to the fermenter (see
+interval it has learned). Below about 80%, try moving the hub, a USB Bluetooth dongle or a relay closer to the fermenter (see
 [pi-setup.md](pi-setup.md#7-bluetooth-passive-scanning-usb-dongles-and-relays)).
 
 ## Calibration wizard

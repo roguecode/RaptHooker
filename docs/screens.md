@@ -61,10 +61,10 @@ Everything about the picture is in the link itself, so you can change it there t
 http://192.168.1.20:8080/api/image.jpg?w=240&h=240&theme=dark&palette=violet&show=name,status,gravity,temperature,brew,chart&range=brew&gravity=sg&temp=C&lang=en-GB&tz=Europe/London
 ```
 
-| Path                                        | Picture of                                                               |
-| ------------------------------------------- | ------------------------------------------------------------------------ |
-| `/api/image.png` (`.jpg`, `.bmp`)           | Every pill and thermometer that isn't archived, in the dashboard's order |
-| `/api/pills/:id/image.png` (`.jpg`, `.bmp`) | One pill or thermometer                                                  |
+| Path                                        | Picture of                                                                                                          |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `/api/image.png` (`.jpg`, `.bmp`)           | Every device that isn't archived (pills, thermometers, iSpindels, Tilts and Laser Levels), in the dashboard's order |
+| `/api/pills/:id/image.png` (`.jpg`, `.bmp`) | One device                                                                                                          |
 
 | Option    | Values                                                                                                                 | Left out                                     |
 | --------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |

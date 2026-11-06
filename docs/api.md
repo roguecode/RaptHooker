@@ -1,24 +1,25 @@
-# Read-only API
+# API
 
 Everything the web app shows comes from a small JSON API on the hub. Scripts, dashboards (Grafana, a spreadsheet,
-Home Assistant's REST sensor...) can read it too.
+Home Assistant's REST sensor...) can read it too. Changes need the owner: see [Changing things](#changing-things).
 
 ## Tokens
 
 Viewing is open to anyone on your network, so a script on your LAN can read without a token. Use an **API token**
 when you want a script to identify itself, or when the hub is reached in ways where open viewing isn't wanted.
 
-Create one under **Settings → API tokens** (owner only). There are two kinds:
+Create one under **Settings → API tokens** (owner only), as a **Read** or a **Relay** token. The hub makes a third
+kind itself, for iSpindels:
 
 | Kind         | Can                                                                                                                                                                                                         |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Read**     | Read pills, readings, brews and the rest of the read-only API. It can't change anything, and sees secrets (webhook URLs and keys) hidden, like any viewer.                                                  |
+| **Read**     | Read pills, readings, brews and everything else a viewer can see. It can't change anything, and sees secrets (webhook URLs and keys) hidden, like any viewer.                                               |
 | **Relay**    | Only post Bluetooth adverts from a relay (see [relay.md](relay.md)). It can't read anything.                                                                                                                |
 | **iSpindel** | Only post readings from [iSpindels](ispindel.md) (`POST /api/ispindel`). It can't read anything. The hub makes this one itself, and keeps it so the owner can see it again under **Add device → iSpindel**. |
 
-The token (`rh_read_…` or `rh_relay_…`) is shown **once**, when it's created; the hub only keeps a hash of it. Lost
-it? Delete it and make another. The list shows when each token was last used. Deleting a token stops it working
-straight away.
+A read or relay token (`rh_read_…` or `rh_relay_…`) is shown **once**, when it's created; the hub only keeps a hash of
+it. Lost it? Delete it and make another. The iSpindel token starts `rh_ispindel_…`. The list shows when each token was
+last used. Deleting a token stops it working straight away.
 
 Send it in the `Authorization` header:
 
@@ -28,26 +29,36 @@ TOKEN=rh_read_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 curl -H "Authorization: Bearer $TOKEN" $HUB/api/pills
 ```
 
-| Response | Why                                                                                                  |
-| -------- | ---------------------------------------------------------------------------------------------------- |
-| `401`    | The token is unknown or has been deleted (a wrong token is refused rather than treated as a viewer). |
-| `403`    | A read token tried to change something (only `GET` is allowed), or a relay token tried to read.      |
+| Response | Why                                                                                                         |
+| -------- | ----------------------------------------------------------------------------------------------------------- |
+| `401`    | The token is unknown or has been deleted (a wrong token is refused rather than treated as a viewer).        |
+| `403`    | A read token tried to change something (only `GET` is allowed), or a relay or iSpindel token tried to read. |
 
 ## Endpoints
 
-All times are milliseconds since 1970 (UTC). Gravity is SG and temperature °C, whatever units the app shows. Each pill
-has a `kind`: `"pill"`, `"thermometer"` for a RAPT Bluetooth Thermometer, whose readings have only a `temperature`
-and `rssi` (the rest is `null`), `"ispindel"` for an [iSpindel](ispindel.md), whose readings have a `tilt` (degrees)
-and a `voltage` (its battery, V; `battery` is the charge estimated from it), no accelerometer values (`x`, `y`, `z` are
-`null`), and whose `rssi` is its Wi-Fi signal. `voltage` is missing (or `null`) for everything else. A `"tilt"`
-([Tilt](tilt.md)) has a gravity and temperature but no battery, tilt or accelerometer values. A `"laser-level"`
-([RAPT Laser Level](laser-level.md)) has no gravity; its readings have a `distance` (mm down to the beer), and `fill`
-(%) and `volume` (litres) worked out from it and the pill's `vessel` (`capacity` litres, `emptyMm`, `fullMm`), which the
-owner sets with `PATCH /api/pills/:id` (`{ "vessel": { ... } }`). Other readings don't have those three, and the
-history only has a `distance` column for a Laser Level. A Laser Level also has a `keg`: the beer kegged up under it
-(below), or `null`, and a `servingUnit`: its own unit for showing how much is left (`{ "ml": 330, "name": "cans" }`, set
-the same way), or `null`. Other kinds don't have either. A device that
-hasn't been added yet but is heard nearby (`nearby` in `/api/state`) has a `name` if it says its own (iSpindels do).
+All times are milliseconds since 1970 (UTC). Gravity is SG and temperature °C, whatever units the app shows.
+
+Every device is a "pill" in the API, with a `kind` that says what it is and what its readings have. Whatever a device
+doesn't measure is `null`.
+
+| `kind`        | Device                             | Its readings have                                                                                                                                |
+| ------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pill`        | RAPT Pill                          | `gravity`, `temperature`, `velocity`, `battery`, `rssi`, `tilt` and the accelerometer (`x`, `y`, `z`)                                            |
+| `thermometer` | RAPT Bluetooth Thermometer         | Only `temperature` and `rssi`                                                                                                                    |
+| `ispindel`    | [iSpindel](ispindel.md)            | What a pill's have, plus `voltage` (its battery, V; `battery` is the charge estimated from it), but no `x`, `y`, `z`. `rssi` is its Wi-Fi signal |
+| `tilt`        | [Tilt](tilt.md)                    | `gravity`, `temperature`, `velocity` and `rssi`. No `battery`, `tilt` or `x`, `y`, `z`                                                           |
+| `laser-level` | [RAPT Laser Level](laser-level.md) | `distance` (mm down to the beer), `fill` (%) and `volume` (litres), `temperature` (the sensor's own), `battery` and `rssi`. No gravity           |
+
+`voltage` is only there for iSpindels, and `distance`, `fill` and `volume` only for Laser Levels: on other readings
+they're missing or `null`. The history only has a `distance` column for a Laser Level.
+
+A Laser Level's `fill` and `volume` are worked out from `distance` and its `vessel` (`capacity` litres, `emptyMm`,
+`fullMm`), which the owner sets with `PATCH /api/pills/:id` (`{ "vessel": { ... } }`). A Laser Level also has a `keg`:
+the beer kegged up under it (below), or `null`, and a `servingUnit`: its own unit for showing how much is left
+(`{ "ml": 330, "name": "cans" }`, set the same way), or `null`. Other kinds don't have either.
+
+A device that hasn't been added yet but is heard nearby (`nearby` in `/api/state`) has a `name` if it says its own
+(iSpindels do).
 
 | Endpoint                                                 | What                                                                                                                                                                                                                                                                                                                         |
 | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -66,7 +77,7 @@ hasn't been added yet but is heard nearby (`nearby` in `/api/state`) has a `name
 | `GET /api/status`                                        | Version, start time, database size, backups, disk space and warnings                                                                                                                                                                                                                                                         |
 | `GET /api/session`                                       | Who you are to the hub (`"via": "token"` for a token)                                                                                                                                                                                                                                                                        |
 | `GET /api/live` (WebSocket)                              | Live updates: a `hello` with everything, then `reading`, `pill`, `brew`, `webhook`... messages as they happen                                                                                                                                                                                                                |
-| `GET /api/image.png`, `GET /api/pills/:id/image.png`     | A picture of every pill, or of one, for a small screen; also `.jpg` and `.bmp`. Its size, look and contents are in the query: see [screens.md](./screens.md#whats-in-the-link)                                                                                                                                               |
+| `GET /api/image.png`, `GET /api/pills/:id/image.png`     | A picture of every device, or of one, for a small screen; also `.jpg` and `.bmp`. Its size, look and contents are in the query: see [screens.md](./screens.md#whats-in-the-link)                                                                                                                                             |
 | `GET /api/screens`, `GET /api/screens/:id`               | The hub's [screens](./rapthooker-screens.md): name, model, MAC and IP address, the pill each shows (`pillId`, `null` for all), look, `interval`, `brightness`, `firmware` and `status` (`state` is `online`, `late`, `offline` or `unknown`; also when it last fetched its picture, its signal, a firmware `update` waiting) |
 | `GET /api/screens/:id/image.jpg`                         | The picture a screen shows, as it gets it                                                                                                                                                                                                                                                                                    |
 

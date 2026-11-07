@@ -2221,5 +2221,14 @@
   "It notifies you every time it goes off (Don't repeat for is 0).": "Je krijgt elke keer een bericht als de melding afgaat (Niet herhalen gedurende is 0).",
   "More than 0: the points it drops a day (12 for a velocity of −12)": "Meer dan 0: de punten die het per dag daalt (12 bij een snelheid van −12)",
   "Readings that look wrong (a pill that isn't floating) are skipped.": "Metingen die niet lijken te kloppen (een pill die niet drijft) worden overgeslagen.",
-  "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.": "Terwijl een brouwsel loopt, wacht de melding tot de dichtheid 0,002 onder de OG is gezakt, zodat hij niet afgaat voordat de vergisting begint."
+  "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.": "Terwijl een brouwsel loopt, wacht de melding tot de dichtheid 0,002 onder de OG is gezakt, zodat hij niet afgaat voordat de vergisting begint.",
+  "Listen over Bluetooth": "Luisteren via Bluetooth",
+  "Listens for pills, thermometers and other Bluetooth devices. Switch it off on a machine without Bluetooth (in a container, say): relays and Wi-Fi devices like the iSpindel still work.": "Luistert naar pills, thermometers en andere Bluetooth-apparaten. Zet het uit op een machine zonder Bluetooth (bijvoorbeeld in een container): relays en wifi-apparaten zoals de iSpindel blijven werken.",
+  "Switched off in the hub's config file (bluetooth.enabled), for a machine without Bluetooth.": "Uitgezet in het configuratiebestand van de hub (bluetooth.enabled), voor een machine zonder Bluetooth.",
+  "Off: switched off in the hub's config file (bluetooth.enabled)": "Uit: uitgezet in het configuratiebestand van de hub (bluetooth.enabled)",
+  "Off: switched off in the Hub settings above": "Uit: uitgezet in de Hub-instellingen hierboven",
+  "Bluetooth off": "Bluetooth uit",
+  "Bluetooth is switched off on the hub: see {settings}.": "Bluetooth staat uit op de hub: zie {settings}.",
+  "Bluetooth is switched off on this hub.": "Bluetooth staat uit op deze hub.",
+  "It only hears these through a relay while it's off (see Settings → Hub).": "Zolang Bluetooth uit staat, hoort de hub ze alleen via een relay (zie Instellingen → Hub)."
 }

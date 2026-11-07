@@ -49,7 +49,7 @@ const snapshot: LiveSnapshot = {
   nearby: [],
   ble,
   clockSynced: true,
-  hub: { ...DEFAULT_HUB_SETTINGS, name: 'Garage hub', units: { gravity: 'plato', temperature: 'F' } },
+  hub: { ...DEFAULT_HUB_SETTINGS, name: 'Garage hub', units: { gravity: 'plato', temperature: 'F' }, bluetooth: false },
   screens: [
     {
       id: '025248000001',

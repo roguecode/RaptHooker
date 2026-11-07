@@ -119,7 +119,7 @@ of 8 GB or more, and a computer to write the card. It takes about 20 minutes, mo
 
 Every step in detail, with the settings to pick in Imager and what to do if something doesn't work:
 [docs/pi-setup.md](docs/pi-setup.md). It also covers HTTPS and access away from home with Tailscale, installing a
-particular version, and the ready-made Pi image.
+particular version, installing on a machine without Bluetooth (an LXC container, say), and the ready-made Pi image.
 
 ## Switch a RAPT Pill to Bluetooth
 

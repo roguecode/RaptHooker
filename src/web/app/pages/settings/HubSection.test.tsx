@@ -2,7 +2,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DEFAULT_HUB_SETTINGS, type HubSettings } from '@rapthooker/shared';
-import { renderWithHub, toastTexts, type FakeRequest } from '../../test/render';
+import { makeBle, renderWithHub, toastTexts, type FakeRequest } from '../../test/render';
 import { setThemePref } from '../../theme';
 import { HubSection } from './HubSection';
 
@@ -51,6 +51,25 @@ describe('Settings: Hub', () => {
     const view = await renderWithHub(<HubSection />);
     await view.push({ type: 'hub', hub: { ...DEFAULT_HUB_SETTINGS, name: 'Shed' } });
     expect(nameInput().value).toBe('Shed');
+  });
+
+  it("switches the hub's Bluetooth off", async () => {
+    const view = await renderWithHub(<HubSection />, { routes: { 'PUT /api/settings/hub': saved } });
+    const bluetooth = screen.getByRole('switch', { name: 'Listen over Bluetooth' }) as HTMLButtonElement;
+    expect(bluetooth.getAttribute('aria-checked')).toBe('true');
+    expect(bluetooth.disabled).toBe(false);
+    fireEvent.click(bluetooth);
+    fireEvent.click(save());
+    await waitFor(() => expect(toastTexts()).toContain('Hub settings saved'));
+    expect(view.calls('PUT /api/settings/hub')[0]!.body).toEqual({ ...DEFAULT_HUB_SETTINGS, bluetooth: false });
+  });
+
+  it('keeps Bluetooth off when the config file switched it off', async () => {
+    await renderWithHub(<HubSection />, { ble: makeBle({ state: 'off', offBy: 'config', adapter: null, adapters: [] }) });
+    const bluetooth = screen.getByRole('switch', { name: 'Listen over Bluetooth' }) as HTMLButtonElement;
+    expect(bluetooth.getAttribute('aria-checked')).toBe('false');
+    expect(bluetooth.disabled).toBe(true);
+    expect(screen.getByText(/Switched off in the hub's config file \(bluetooth\.enabled\)/)).toBeTruthy();
   });
 
   it('is read-only for a viewer, apart from this browser’s own choices', async () => {

@@ -31,8 +31,9 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
 - **Kind to Wi-Fi, with room to reach further.** The hub listens passively (BlueZ advertisement monitor), which leaves
   a Pi's shared Wi-Fi/Bluetooth radio far more time for Wi-Fi than ordinary scanning. It can listen with several
   adapters at once (a USB dongle closer to the fermenter) and take adverts from ESP32 relays running ESPHome, and shows
-  how many of each pill's readings it catches. See [docs/pi-setup.md](./pi-setup.md#7-bluetooth-passive-scanning-usb-dongles-and-relays)
-  and [docs/relay.md](./relay.md).
+  how many of each pill's readings it catches. On a machine without Bluetooth (a container, say), switch it off and
+  the hub hears devices through relays and iSpindels over Wi-Fi. See
+  [docs/pi-setup.md](./pi-setup.md#7-bluetooth-passive-scanning-usb-dongles-and-relays) and [docs/relay.md](./relay.md).
 - **Name your pills**, pick colours, fine-tune calibration offsets (or let the calibration wizard work them out from
   plain water and a thermometer you trust), archive or remove them.
 

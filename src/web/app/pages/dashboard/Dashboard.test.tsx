@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { makeBrew, makeNearby, makePill, makeReading, renderWithHub, toastTexts } from '../../test/render';
+import { makeBle, makeBrew, makeNearby, makePill, makeReading, renderWithHub, toastTexts } from '../../test/render';
 import { Dashboard } from '../Dashboard';
 
 const stout = () => makePill({ id: 'pill-1', name: 'Oatmeal Stout', brew: makeBrew({ name: 'Stout #2', pillId: 'pill-1' }) });
@@ -81,6 +81,13 @@ describe('Dashboard', () => {
     expect(screen.getByRole('link', { name: 'Sign in to add it' }).getAttribute('href')).toBe('#/settings');
     expect(screen.queryByRole('button', { name: 'Add pill' })).toBeNull();
     expect(screen.getByText(/sign in with the owner PIN to add it/)).toBeTruthy();
+  });
+
+  it("says Bluetooth is off, rather than that it isn't working", async () => {
+    await renderWithHub(<Dashboard />, { ble: makeBle({ state: 'off', offBy: 'settings', adapter: null, adapters: [] }) });
+    expect(screen.getByText('Bluetooth off')).toBeTruthy();
+    expect(screen.queryByText("Bluetooth isn't working.")).toBeNull();
+    expect(screen.getByText(/Bluetooth is switched off on the hub: see/)).toBeTruthy();
   });
 
   it('switches to the compact view and remembers it', async () => {

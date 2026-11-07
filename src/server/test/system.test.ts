@@ -168,6 +168,12 @@ describe('warnings', () => {
     expect(ids()).not.toContain('event-loop-slow');
   });
 
+  it("doesn't warn about Bluetooth that's switched off", () => {
+    const off = bleStatus({ state: 'off', offBy: 'settings', adapter: null, adapters: [], mode: null });
+    const { system } = setup({ scanner: { status: off, on: () => undefined, off: () => undefined } });
+    expect(system.warnings().filter((w) => w.id.startsWith('ble'))).toEqual([]);
+  });
+
   it('warns about a backup turned away because the clock is off', () => {
     const backups: BackupTargetStatus[] = [
       {

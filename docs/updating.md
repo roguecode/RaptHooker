@@ -55,6 +55,9 @@ curl -fsSL https://raw.githubusercontent.com/roguecode/RaptHooker/main/deploy/in
 curl -fsSL https://raw.githubusercontent.com/roguecode/RaptHooker/main/deploy/install.sh | sudo bash -s -- --version 0.3.0
 ```
 
+A hub installed with `--no-bluetooth` keeps Bluetooth off through updates, by hand or from the app: there's no need to
+give it again.
+
 or use the copy on the Pi, which does the same as **Update now**:
 
 ```bash

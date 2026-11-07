@@ -1728,6 +1728,16 @@
       "pages/dashboard/FirstRunGuide.tsx"
     ]
   },
+  "Bluetooth is switched off on the hub: see {settings}.": {
+    "files": [
+      "pages/dashboard/FirstRunGuide.tsx"
+    ]
+  },
+  "Bluetooth is switched off on this hub.": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
   "Bluetooth is unavailable": {
     "files": [
       "pages/settings/BluetoothSection.tsx"
@@ -1748,6 +1758,11 @@
     "files": [
       "pages/Dashboard.tsx",
       "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "Bluetooth off": {
+    "files": [
+      "pages/Dashboard.tsx"
     ]
   },
   "Bluetooth problem": {
@@ -4876,6 +4891,11 @@
       "pages/alerts/RuleExample.tsx"
     ]
   },
+  "It only hears these through a relay while it's off (see Settings → Hub).": {
+    "files": [
+      "pages/devices/AddDevice.tsx"
+    ]
+  },
   "It reads the iSpindel's settings and changes only these: the Wi-Fi it joins, Service Type (HTTP), where it sends to (this hub, {where}), the token, and how often it sends. Its name (unless you give it a new one), its gravity formula and everything else stay as they are.": {
     "files": [
       "pages/devices/IspindelTab.tsx"
@@ -5464,6 +5484,11 @@
       "components/ImageLink.tsx"
     ]
   },
+  "Listen over Bluetooth": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
   "Listening": {
     "files": [
       "pages/settings/BluetoothSection.tsx"
@@ -5493,6 +5518,11 @@
   "Listening for Tilts…": {
     "files": [
       "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "Listens for pills, thermometers and other Bluetooth devices. Switch it off on a machine without Bluetooth (in a container, say): relays and Wi-Fi devices like the iSpindel still work.": {
+    "files": [
+      "pages/settings/HubSection.tsx"
     ]
   },
   "Litres": {
@@ -6350,6 +6380,7 @@
   },
   "Off": {
     "files": [
+      "pages/settings/BluetoothSection.tsx",
       "pages/settings/MqttSection.tsx",
       "pages/settings/StatusSection.tsx"
     ]
@@ -6362,6 +6393,16 @@
   "Off by": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "Off: switched off in the Hub settings above": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
+    ]
+  },
+  "Off: switched off in the hub's config file (bluetooth.enabled)": {
+    "files": [
+      "pages/settings/BluetoothSection.tsx"
     ]
   },
   "Offline": {
@@ -8798,6 +8839,11 @@
   "Switched off": {
     "files": [
       "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Switched off in the hub's config file (bluetooth.enabled), for a machine without Bluetooth.": {
+    "files": [
+      "pages/settings/HubSection.tsx"
     ]
   },
   "Switched on": {

@@ -3,7 +3,8 @@
 A RAPT Pill floating in beer, inside a stainless fermenter or a fridge in the garage, can be too far from the Pi to
 hear. A **relay** is a small Wi-Fi board near the fermenter that listens for the pill (and RAPT Bluetooth Thermometers,
 RAPT Laser Levels and Tilts) and passes what it hears on to RaptHooker. You can have as many as you like, alongside the
-Pi's own Bluetooth: every reading is still stored once, however many of them hear it.
+Pi's own Bluetooth: every reading is still stored once, however many of them hear it. On a hub with no Bluetooth of its
+own (in a container, say: see [Without Bluetooth](pi-setup.md#without-bluetooth)), relays are how it hears them.
 
 The relay below is an ESP32 running [ESPHome](https://esphome.io). Anything else that can hear Bluetooth adverts and
 make an HTTP request can be a relay too: see [Posting adverts yourself](#posting-adverts-yourself).

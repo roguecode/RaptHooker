@@ -278,6 +278,8 @@ export const hubSettingsSchema = z.object({
   units: z.object({ temperature: z.enum(['C', 'F']), gravity: z.enum(['sg', 'plato']) }),
   abvFormula: z.enum(['standard', 'alternative']),
   updateCheck: z.boolean(),
+  /** Optional, so a client from before it existed keeps what's saved rather than switching Bluetooth back on. */
+  bluetooth: z.boolean().optional(),
 });
 
 export const mqttSettingsSchema = z.object({

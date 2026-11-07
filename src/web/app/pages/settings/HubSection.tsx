@@ -19,9 +19,9 @@ const TEMPERATURE: { id: TemperatureUnit; label: string; name: string }[] = [
   { id: 'F', label: '°F', name: tk('°F, Fahrenheit') },
 ];
 
-/** The hub's name, default units, ABV formula and update checks (owner only), plus this browser's own display choices. */
+/** The hub's name, default units, ABV formula, update checks and Bluetooth (owner only), plus this browser's own display choices. */
 export function HubSection() {
-  const { hub, isOwner, toast } = useLive();
+  const { hub, ble, isOwner, toast } = useLive();
   const { choice, setLocale } = useI18n();
   // One state, so following the hub (below) sees an edit queued just before it, instead of the value it was scheduled with.
   const [form, setForm] = useState<{ draft: HubSettings; dirty: boolean }>({ draft: hub, dirty: false });
@@ -29,6 +29,8 @@ export function HubSection() {
   const [busy, setBusy] = useState(false);
   const { errors, ok } = useFormCheck(hubSettingsSchema, draft, { name: tk('the hub name') });
   const id = useId();
+  // Switched off in the config file (a machine without Bluetooth): the hub settings can't switch it on.
+  const bluetoothLocked = ble?.offBy === 'config';
 
   // Follow changes made elsewhere, unless they'd overwrite an edit in progress.
   useEffect(() => {
@@ -156,6 +158,25 @@ export function HubSection() {
           <div>
             <strong>{t('Check for updates daily')}</strong>
             <p className="hint">{t("Asks GitHub once a day whether there's a newer RaptHooker. Nothing about your brews is sent.")}</p>
+          </div>
+        </div>
+
+        <div className="row" style={{ alignItems: 'flex-start', flexWrap: 'nowrap' }}>
+          <Switch
+            on={draft.bluetooth && !bluetoothLocked}
+            disabled={locked || bluetoothLocked}
+            label={t('Listen over Bluetooth')}
+            onChange={(on) => edit({ bluetooth: on })}
+          />
+          <div>
+            <strong>{t('Listen over Bluetooth')}</strong>
+            <p className="hint">
+              {bluetoothLocked
+                ? t("Switched off in the hub's config file (bluetooth.enabled), for a machine without Bluetooth.")
+                : t(
+                    'Listens for pills, thermometers and other Bluetooth devices. Switch it off on a machine without Bluetooth (in a container, say): relays and Wi-Fi devices like the iSpindel still work.',
+                  )}
+            </p>
           </div>
         </div>
 

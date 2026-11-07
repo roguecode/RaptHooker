@@ -70,6 +70,15 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
     fire it.
 - **Alerts on the chart.** A pill's History chart marks where each alert went off and where it cleared. **Alerts**,
   under the chart, hides them in this browser. `GET /api/alerts/events` takes `pillId=` for just one pill's.
+- **Switching Bluetooth off**, for a hub on a machine without it or where it can't be passed through (an LXC container,
+  say). Settings → Hub → **Listen over Bluetooth** switches the hub's own Bluetooth off or on straight away; the
+  installer's `--no-bluetooth` switches it off for good (`bluetooth.enabled: false` in the config file, kept through
+  updates; `--bluetooth` undoes it) and leaves the machine's Bluetooth alone. While it's off there's no _Bluetooth isn't
+  working_ warning, and [relays](docs/relay.md) and iSpindels carry on. See
+  [Without Bluetooth](docs/pi-setup.md#without-bluetooth).
+  - Hub settings gain `bluetooth` (true unless switched off; leaving it out of `PUT /api/settings/hub` keeps what's
+    saved). The Bluetooth status's `state` can be `off`, with `offBy` saying where (`settings` or `config`).
+  - An older version, if you go back, listens over Bluetooth again.
 
 ### Changed
 

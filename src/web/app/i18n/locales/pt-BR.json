@@ -2264,5 +2264,14 @@
   "It notifies you every time it goes off (Don't repeat for is 0).": "Avisa toda vez que disparar (Não repetir por é 0).",
   "More than 0: the points it drops a day (12 for a velocity of −12)": "Mais de 0: os pontos que cai por dia (12 para uma velocidade de −12)",
   "Readings that look wrong (a pill that isn't floating) are skipped.": "Leituras que parecem erradas (um Pill que não está flutuando) são ignoradas.",
-  "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.": "Enquanto um lote estiver em andamento, ele espera a densidade cair 0,002 a partir da OG, para não disparar antes de a fermentação começar."
+  "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.": "Enquanto um lote estiver em andamento, ele espera a densidade cair 0,002 a partir da OG, para não disparar antes de a fermentação começar.",
+  "Listen over Bluetooth": "Escutar via Bluetooth",
+  "Listens for pills, thermometers and other Bluetooth devices. Switch it off on a machine without Bluetooth (in a container, say): relays and Wi-Fi devices like the iSpindel still work.": "Escuta Pills, termômetros e outros dispositivos Bluetooth. Desligue em uma máquina sem Bluetooth (em um contêiner, por exemplo): repetidores e dispositivos Wi-Fi como o iSpindel continuam funcionando.",
+  "Switched off in the hub's config file (bluetooth.enabled), for a machine without Bluetooth.": "Desligado no arquivo de configuração do hub (bluetooth.enabled), para uma máquina sem Bluetooth.",
+  "Off: switched off in the hub's config file (bluetooth.enabled)": "Desligado no arquivo de configuração do hub (bluetooth.enabled)",
+  "Off: switched off in the Hub settings above": "Desligado nas configurações do Hub acima",
+  "Bluetooth off": "Bluetooth desligado",
+  "Bluetooth is switched off on the hub: see {settings}.": "O Bluetooth está desligado no hub: veja {settings}.",
+  "Bluetooth is switched off on this hub.": "O Bluetooth está desligado neste hub.",
+  "It only hears these through a relay while it's off (see Settings → Hub).": "Enquanto o Bluetooth estiver desligado, o hub só os ouve por meio de um repetidor (veja Configurações → Hub)."
 }

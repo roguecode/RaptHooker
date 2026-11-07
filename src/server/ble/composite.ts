@@ -18,31 +18,65 @@ export interface RecordedPill {
 }
 
 /**
- * The hub's one source of adverts: the Bluetooth scanner (BlueZ, simulated or unavailable) plus any relays posting
- * over HTTP. Both feed the same 'advert' stream, and the status lists the relays alongside the adapters.
+ * The hub's one source of adverts: the Bluetooth scanner (BlueZ, simulated, unavailable or switched off) plus any relays
+ * posting over HTTP. Both feed the same 'advert' stream, and the status lists the relays alongside the adapters. The
+ * scanner can be swapped while the hub runs (Bluetooth switched on or off in Settings); the relays carry on throughout.
  */
 export class CompositeScanner extends EventEmitter implements Scanner {
   /** When each address was last heard by the hub's own Bluetooth and by a relay. */
   private readonly heard = new Map<string, { radioAt: number | null; relayAt: number | null }>();
+  private current: Scanner;
+  private started = false;
+  /** Starting, stopping and swapping the radio, one at a time and in order. */
+  private queue: Promise<void> = Promise.resolve();
+  private readonly forward = (advert: Advert) => {
+    try {
+      this.note(advert);
+    } catch {
+      // Only bookkeeping for the radio's watchdog: the advert goes on regardless.
+    }
+    this.emit('advert', advert);
+  };
+  private readonly radioStatus = () => this.emit('status', this.status);
 
   constructor(
-    readonly radio: Scanner,
+    radio: Scanner,
     readonly relays: RelayHub,
     private readonly now: () => number = Date.now,
   ) {
     super();
-    const forward = (advert: Advert) => {
-      try {
-        this.note(advert);
-      } catch {
-        // Only bookkeeping for the radio's watchdog: the advert goes on regardless.
-      }
-      this.emit('advert', advert);
-    };
-    radio.on('advert', forward);
-    relays.on('advert', forward);
-    radio.on('status', () => this.emit('status', this.status));
+    this.current = radio;
+    radio.on('advert', this.forward);
+    radio.on('status', this.radioStatus);
+    relays.on('advert', this.forward);
     relays.on('status', () => this.emit('status', this.status));
+  }
+
+  /** The hub's own Bluetooth. */
+  get radio(): Scanner {
+    return this.current;
+  }
+
+  /** Stops the radio in use and starts this one in its place (if the hub is running). */
+  setRadio(next: Scanner): Promise<void> {
+    return this.inTurn(async () => {
+      const old = this.current;
+      if (old === next) return;
+      old.off('advert', this.forward);
+      old.off('status', this.radioStatus);
+      await old.stop().catch(() => undefined);
+      this.current = next;
+      next.on('advert', this.forward);
+      next.on('status', this.radioStatus);
+      this.emit('status', this.status);
+      if (this.started) await next.start();
+    });
+  }
+
+  private inTurn(job: () => Promise<void>): Promise<void> {
+    const run = this.queue.then(job);
+    this.queue = run.catch(() => undefined);
+    return run;
   }
 
   private note(advert: Advert): void {
@@ -78,7 +112,7 @@ export class CompositeScanner extends EventEmitter implements Scanner {
   }
 
   get status(): BleStatus {
-    const radio = this.radio.status;
+    const radio = this.current.status;
     const relays = this.relays.list();
     const lastRelayAt = relays.reduce<number | null>((max, r) => (max === null || r.lastAt > max ? r.lastAt : max), null);
     const lastAdvertAt =
@@ -88,11 +122,17 @@ export class CompositeScanner extends EventEmitter implements Scanner {
 
   async start(): Promise<void> {
     this.relays.start();
-    await this.radio.start();
+    await this.inTurn(async () => {
+      this.started = true;
+      await this.current.start();
+    });
   }
 
   async stop(): Promise<void> {
     this.relays.stop();
-    await this.radio.stop();
+    await this.inTurn(async () => {
+      this.started = false;
+      await this.current.stop();
+    });
   }
 }

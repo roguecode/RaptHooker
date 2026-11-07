@@ -6,7 +6,8 @@
 #   curl -fsSL https://raw.githubusercontent.com/roguecode/RaptHooker/main/deploy/install.sh | sudo bash -s -- --version 0.3.0 --hostname rapthooker --tailscale
 #
 # Supported: Raspberry Pi 3, 4, 5 and Zero 2 W with Raspberry Pi OS (64-bit recommended), or another Debian-based Linux
-# with systemd and Bluetooth. Not the original Pi Zero W / Pi 1 (ARMv6).
+# with systemd and Bluetooth (or without it, with --no-bluetooth: in a container, say). Not the original Pi Zero W / Pi 1
+# (ARMv6).
 set -euo pipefail
 
 REPO="${RAPTHOOKER_REPO:-roguecode/RaptHooker}"
@@ -21,6 +22,8 @@ VERSION=""
 FROM=""
 HOSTNAME_ARG=""
 WITH_TAILSCALE=0
+# on, off, or empty to leave it as the config file has it.
+BLUETOOTH=""
 ARCHIVE=""
 UPDATE=0
 ROLLBACK=0
@@ -44,6 +47,8 @@ Options:
   --version X.Y.Z   install this release instead of the latest one
   --hostname NAME   rename the Pi (it's then NAME.local); by default its name is left alone
   --tailscale       also install Tailscale (for HTTPS and access away from home)
+  --no-bluetooth    never use this machine's Bluetooth (one without it, like a container): relays and Wi-Fi devices
+                    still work. Kept through updates; --bluetooth switches it back on
   --file PATH       install a rapthooker-X.Y.Z.tar.gz you downloaded (checked against SHA256SUMS next to it)
   --rollback        go back to the version that was installed before the last update
   --update          used by the in-app updater: quieter, and does nothing if that version is already running
@@ -69,6 +74,14 @@ parse_args() {
         ;;
       --tailscale)
         WITH_TAILSCALE=1
+        shift
+        ;;
+      --bluetooth)
+        BLUETOOTH=on
+        shift
+        ;;
+      --no-bluetooth)
+        BLUETOOTH=off
         shift
         ;;
       --file)
@@ -207,6 +220,10 @@ unpack() {
   elif [[ -n "$packaged" && "$packaged" != "$VERSION" ]]; then
     die "The archive holds version $packaged, not $VERSION."
   fi
+  # Releases from before --bluetooth / --no-bluetooth would stop setting up at the option, after the swap.
+  if [[ -n "$BLUETOOTH" ]] && ! grep -qF -- '--no-bluetooth)' "$into/deploy/pi/setup.sh"; then
+    die "RaptHooker ${VERSION:-in $(basename "$ARCHIVE")} can't switch Bluetooth off or on when installing (later versions can): leave out --bluetooth and --no-bluetooth. Nothing was changed."
+  fi
 }
 
 # Moves the running version to previous/ and the new one in, folder by folder (as deploy.ps1 does), so the hub is
@@ -245,6 +262,8 @@ run_setup() {
   local args=()
   if [[ -n "$HOSTNAME_ARG" ]]; then args+=(--hostname "$HOSTNAME_ARG"); else args+=(--keep-hostname); fi
   if [[ $WITH_TAILSCALE -eq 1 ]]; then args+=(--tailscale); fi
+  if [[ "$BLUETOOTH" == on ]]; then args+=(--bluetooth); fi
+  if [[ "$BLUETOOTH" == off ]]; then args+=(--no-bluetooth); fi
   bash "$APP_DIR/deploy/pi/setup.sh" "${args[@]}" </dev/null
 }
 
@@ -265,6 +284,13 @@ hub_port() {
   local port
   port="$(config_value port)"
   echo "${port:-8080}"
+}
+
+# Switched off with --no-bluetooth (bluetooth.enabled is false in the config).
+bluetooth_off() {
+  [[ -f "$CONFIG" ]] && command -v node >/dev/null &&
+    node -e 'try{const c=require(process.argv[1]);process.exit(c.bluetooth&&c.bluetooth.enabled===false?0:1)}catch{process.exit(1)}' \
+      "$CONFIG" 2>/dev/null
 }
 
 status_url() {
@@ -332,7 +358,11 @@ print_addresses() {
   fi
   if [[ -z "$FROM" ]]; then
     echo
-    echo "Next: create your owner PIN under Settings, then put your RAPT Pill in Bluetooth mode (see the README)."
+    if bluetooth_off; then
+      echo "Next: create your owner PIN under Settings. Bluetooth is off, so devices are heard through a relay or over Wi-Fi."
+    else
+      echo "Next: create your owner PIN under Settings, then put your RAPT Pill in Bluetooth mode (see the README)."
+    fi
   fi
 }
 

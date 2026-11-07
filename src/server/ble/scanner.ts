@@ -53,3 +53,27 @@ export class UnavailableScanner extends EventEmitter implements Scanner {
 
   async stop(): Promise<void> {}
 }
+
+/** The hub's own Bluetooth switched off, in the hub settings or the config file: it's never touched. */
+export class OffScanner extends EventEmitter implements Scanner {
+  readonly status: BleStatus;
+
+  constructor(offBy: 'settings' | 'config') {
+    super();
+    this.status = {
+      state: 'off',
+      adapter: null,
+      adapters: [],
+      mode: null,
+      error: null,
+      offBy,
+      lastAdvertAt: null,
+      since: Date.now(),
+      relays: [],
+    };
+  }
+
+  async start(): Promise<void> {}
+
+  async stop(): Promise<void> {}
+}

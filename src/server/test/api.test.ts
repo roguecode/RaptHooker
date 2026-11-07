@@ -287,6 +287,38 @@ describe('API', () => {
     expect(JSON.parse(store.getMeta('backups')!)).toEqual({ ...b, s3: { ...b.s3, storageClass: 'STANDARD_IA' }, keepMonthly: 6 });
   });
 
+  it('saves the Bluetooth switch, and keeps it when a client from before the switch saves the hub settings', async () => {
+    const { app, store } = await setup();
+    // Hub settings saved before the switch existed: Bluetooth is on.
+    store.setMeta(
+      'hub',
+      JSON.stringify({ name: 'Shed', units: { gravity: 'sg', temperature: 'C' }, abvFormula: 'standard', updateCheck: true }),
+    );
+    expect((await app.inject({ url: '/api/settings/hub' })).json()).toMatchObject({ name: 'Shed', bluetooth: true });
+
+    const off = await app.inject({
+      method: 'PUT',
+      url: '/api/settings/hub',
+      headers: owner,
+      payload: { ...DEFAULT_HUB_SETTINGS, bluetooth: false },
+    });
+    expect(off.json()).toMatchObject({ bluetooth: false });
+
+    const { bluetooth: _, ...older } = { ...DEFAULT_HUB_SETTINGS, name: 'Cellar' };
+    const res = await app.inject({ method: 'PUT', url: '/api/settings/hub', headers: owner, payload: older });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ ...DEFAULT_HUB_SETTINGS, name: 'Cellar', bluetooth: false });
+    expect(JSON.parse(store.getMeta('hub')!)).toMatchObject({ name: 'Cellar', bluetooth: false });
+
+    const bad = await app.inject({
+      method: 'PUT',
+      url: '/api/settings/hub',
+      headers: owner,
+      payload: { ...DEFAULT_HUB_SETTINGS, bluetooth: 'no' },
+    });
+    expect(bad.statusCode).toBe(400);
+  });
+
   it('lists screens to anyone and leaves setting them up to the owner', async () => {
     const { app } = await setup();
     expect((await app.inject({ url: '/api/screens' })).json()).toEqual([]);

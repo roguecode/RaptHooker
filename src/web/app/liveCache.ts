@@ -69,6 +69,7 @@ function hubFrom(v: unknown): HubSettings {
     },
     abvFormula: v.abvFormula === 'alternative' ? 'alternative' : 'standard',
     updateCheck: v.updateCheck !== false,
+    bluetooth: v.bluetooth !== false,
   };
 }
 

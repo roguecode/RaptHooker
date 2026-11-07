@@ -172,6 +172,13 @@ export const MIGRATIONS: string[] = [
   );
   CREATE INDEX kegs_pill ON kegs (pill_id, kegged_at);
   `,
+  // v9: a brew event can last a while (a dry hop sitting for days): end_at, NULL for a moment, as every event before.
+  // hidden (1) leaves an event off the charts; 0 for every event before. Older versions name the columns they write,
+  // so an event they add is a moment and shown, and one they change keeps its end and whether it's hidden.
+  `
+  ALTER TABLE brew_events ADD COLUMN end_at INTEGER;
+  ALTER TABLE brew_events ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 /**
@@ -217,8 +224,12 @@ export interface BrewEventRow {
   id: string;
   brew_id: string;
   at: number;
+  /** When it ends (it can be planned, in the future), for an event that lasts a while; null for a moment. */
+  end_at: number | null;
   kind: string;
   text: string;
+  /** 1: left off the charts. */
+  hidden: number;
 }
 
 export interface WebhookStateRow {
@@ -864,22 +875,23 @@ export class Store {
 
   listBrewEvents(brewId: string): BrewEventRow[] {
     return this.db
-      .prepare('SELECT id, brew_id, at, kind, text FROM brew_events WHERE brew_id = ? ORDER BY at, id')
+      .prepare('SELECT id, brew_id, at, end_at, kind, text, hidden FROM brew_events WHERE brew_id = ? ORDER BY at, id')
       .all(brewId) as unknown as BrewEventRow[];
   }
 
   getBrewEvent(id: string): BrewEventRow | null {
-    const row = this.db.prepare('SELECT id, brew_id, at, kind, text FROM brew_events WHERE id = ?').get(id);
+    const row = this.db.prepare('SELECT id, brew_id, at, end_at, kind, text, hidden FROM brew_events WHERE id = ?').get(id);
     return (row as unknown as BrewEventRow | undefined) ?? null;
   }
 
   saveBrewEvent(row: BrewEventRow): void {
     this.db
       .prepare(
-        `INSERT INTO brew_events (id, brew_id, at, kind, text) VALUES (?, ?, ?, ?, ?)
-         ON CONFLICT (id) DO UPDATE SET at = excluded.at, kind = excluded.kind, text = excluded.text`,
+        `INSERT INTO brew_events (id, brew_id, at, end_at, kind, text, hidden) VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT (id) DO UPDATE SET
+           at = excluded.at, end_at = excluded.end_at, kind = excluded.kind, text = excluded.text, hidden = excluded.hidden`,
       )
-      .run(row.id, row.brew_id, row.at, row.kind, row.text);
+      .run(row.id, row.brew_id, row.at, row.end_at, row.kind, row.text, row.hidden);
   }
 
   deleteBrewEvent(id: string): boolean {

@@ -1,4 +1,12 @@
-import { ABV_FORMULAS, type AbvFormula, type Brew, type BrewEventKind, type BrewPrediction, type BrewStage } from '@rapthooker/shared';
+import {
+  ABV_FORMULAS,
+  type AbvFormula,
+  type Brew,
+  type BrewEvent,
+  type BrewEventKind,
+  type BrewPrediction,
+  type BrewStage,
+} from '@rapthooker/shared';
 import { dateTime, days, fixed } from '../../format';
 import { t, tk } from '../../i18n';
 
@@ -26,6 +34,13 @@ export const eventKind = (kind: BrewEventKind) => EVENT_KINDS.find((k) => k.kind
 /** Which day of the brew a time falls on ("Day 1" is the first 24 hours). */
 export const brewDay = (startedAt: number, at: number) =>
   at < startedAt ? t('Before the start') : t('Day {day}', { day: Math.floor((at - startedAt) / DAY) + 1 });
+
+/** When an event happened, or for one that lasted a while, from when to when and how long ("… → … (2.5 days)"). */
+export function eventTime(e: Pick<BrewEvent, 'at'> & { endAt?: number | null }): string {
+  const end = e.endAt ?? null;
+  if (end === null || end <= e.at) return dateTime(e.at);
+  return `${dateTime(e.at)} → ${dateTime(end)} (${days(end - e.at)})`;
+}
 
 export const STAGES: Record<BrewStage, { label: string; hint: string; chip: string }> = {
   lag: { label: tk('Lag phase'), hint: tk("The yeast is getting going: the gravity hasn't started dropping yet."), chip: '' },
@@ -123,7 +138,7 @@ export function summaryText(
     lines.push('', t('Timeline:'));
     for (const e of brew.events) {
       const label = e.kind === 'note' ? t('Note') : t(eventKind(e.kind).label);
-      lines.push(`- ${brewDay(brew.startedAt, e.at)}, ${dateTime(e.at)}: ${label}${e.text ? `: ${e.text}` : ''}`);
+      lines.push(`- ${brewDay(brew.startedAt, e.at)}, ${eventTime(e)}: ${label}${e.text ? `: ${e.text}` : ''}`);
     }
   }
   if (brew.notes.trim()) lines.push('', t('Notes:'), brew.notes.trim());

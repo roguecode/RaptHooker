@@ -2230,5 +2230,16 @@
   "Bluetooth off": "Bluetooth uit",
   "Bluetooth is switched off on the hub: see {settings}.": "Bluetooth staat uit op de hub: zie {settings}.",
   "Bluetooth is switched off on this hub.": "Bluetooth staat uit op deze hub.",
-  "It only hears these through a relay while it's off (see Settings → Hub).": "Zolang Bluetooth uit staat, hoort de hub ze alleen via een relay (zie Instellingen → Hub)."
+  "It only hears these through a relay while it's off (see Settings → Hub).": "Zolang Bluetooth uit staat, hoort de hub ze alleen via een relay (zie Instellingen → Hub).",
+  "Add an end time": "Eindtijd toevoegen",
+  "Couldn't hide the event": "Kon de gebeurtenis niet verbergen",
+  "Couldn't show the event": "Kon de gebeurtenis niet tonen",
+  "Hide {event} from the chart": "{event} in de grafiek verbergen",
+  "Not on the chart": "Niet in de grafiek",
+  "Remove the end": "Einde verwijderen",
+  "Show {event} on the chart": "{event} in de grafiek tonen",
+  "The chart shades the time in between.": "De grafiek kleurt de tijd ertussen in.",
+  "The end has to be after the start": "Het einde moet na het begin liggen",
+  "The end has to be after the start.": "Het einde moet na het begin liggen.",
+  "Until": "Tot"
 }

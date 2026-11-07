@@ -5,6 +5,8 @@ import { t, tk } from '../i18n';
 export interface ChartAnnotation {
   /** Unix ms. */
   ts: number;
+  /** Unix ms, for something that lasted a while (a dry hop sitting for days): the time between is shaded, with a line at each end. */
+  endTs?: number;
   label: string;
   /** Any CSS colour, including `var(--name)`. Defaults to the muted text colour. */
   color?: string;
@@ -31,17 +33,19 @@ const MAX_LABEL = 28;
 
 const short = (s: string) => (s.length > MAX_LABEL ? `${s.slice(0, MAX_LABEL - 1).trimEnd()}…` : s);
 
-/** A brew's start and its events, for `<Chart annotations>`. */
+/** A brew's start and its events (but not those hidden from the charts), for `<Chart annotations>`. */
 export function brewAnnotations(
   brew: (Pick<Brew, 'startedAt' | 'endedAt'> & { events?: Brew['events'] }) | null | undefined,
 ): ChartAnnotation[] {
   if (!brew) return [];
   const out: ChartAnnotation[] = [{ ts: brew.startedAt, label: t('Brew started'), color: 'var(--violet-2)' }];
   for (const e of brew.events ?? []) {
+    if (e.hidden) continue;
     const text = e.text.trim();
     const kind = t(EVENT_LABELS[e.kind] ?? 'Note');
     out.push({
       ts: e.at,
+      ...(e.endAt != null && e.endAt > e.at ? { endTs: e.endAt } : {}),
       label: short(text ? t('{kind}: {text}', { kind, text }) : kind),
       color: EVENT_COLORS[e.kind],
     });

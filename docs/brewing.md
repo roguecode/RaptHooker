@@ -92,6 +92,14 @@ finings…) or a plain **note**. Add them with **Add event** on the pill page or
 now and can be changed). They appear on the brew's timeline, as markers on the charts and in the summary. Only the
 owner can add, change or delete them; deleting a brew (or removing its pill) deletes its events too.
 
+Something that lasts a while, like a dry hop sitting in the fermenter for a few days, can have an end: **Add an end
+time** in the event. It can be in the future, for one you've planned (dry hop until Monday), or added later, when you
+take the hops out. The charts shade the time in between, and the timeline says how long it lasts.
+
+To keep a busy chart clean, the eye next to an event on the timeline takes it off the charts (the brew's, the pill's
+and the summary's) and puts it back. It stays on the timeline, marked _Not on the chart_. The hub remembers it, so
+every device shows the same.
+
 ## Comparing brews
 
 On the **Brews** page, tap **Compare** and pick two to eight brews, running or finished. Their gravity curves are drawn
@@ -113,13 +121,14 @@ page.
 
 Everything above is in the hub's HTTP API too (reading is open to anyone who can see the app; changes need the owner):
 
-| Method and path                         | What it does                                                                           |
-| --------------------------------------- | -------------------------------------------------------------------------------------- |
-| `GET /api/brews`, `GET /api/brews/:id`  | Brews with their stats (`og`, `abv`, `finalAbv`, `stable`, `prediction`…) and events   |
-| `GET /api/brews/:id/events`             | A brew's events, oldest first                                                          |
-| `POST /api/brews/:id/events`            | Add one: `{ "at": <unix ms>, "kind": "dry_hop", "text": "100 g Citra" }`               |
-| `PUT /api/brews/:id/events/:eventId`    | Change one (same body)                                                                 |
-| `DELETE /api/brews/:id/events/:eventId` | Delete one                                                                             |
-| `GET /api/brews/compare?ids=a,b,c`      | Up to 8 brews' gravity and temperature by hours since each started (≤ 400 points each) |
+| Method and path                         | What it does                                                                                                                                                                                   |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/brews`, `GET /api/brews/:id`  | Brews with their stats (`og`, `abv`, `finalAbv`, `stable`, `prediction`…) and events                                                                                                           |
+| `GET /api/brews/:id/events`             | A brew's events, oldest first                                                                                                                                                                  |
+| `POST /api/brews/:id/events`            | Add one: `{ "at": <unix ms>, "kind": "dry_hop", "text": "100 g Citra" }`, with `"endAt": <unix ms>` if it lasts a while (it can be in the future), `"hidden": true` to leave it off the charts |
+| `PUT /api/brews/:id/events/:eventId`    | Change one (same body; leaving out `endAt` or `hidden` keeps what's saved)                                                                                                                     |
+| `DELETE /api/brews/:id/events/:eventId` | Delete one                                                                                                                                                                                     |
+| `GET /api/brews/compare?ids=a,b,c`      | Up to 8 brews' gravity and temperature by hours since each started (≤ 400 points each)                                                                                                         |
 
-Event kinds: `dry_hop`, `temp_change`, `cold_crash`, `addition`, `note`.
+Event kinds: `dry_hop`, `temp_change`, `cold_crash`, `addition`, `note`. Each event has `endAt` (null for a moment)
+and `hidden` (left off the charts).

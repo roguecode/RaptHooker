@@ -4,12 +4,12 @@ import { ApiError, api, errorText } from '../../api';
 import { useLive, useLiveMessages } from '../../live';
 import { useUnits } from '../../units';
 import { href } from '../../router';
-import { dateOnly, dateTime, days, fixed } from '../../format';
+import { dateOnly, days, fixed } from '../../format';
 import { Icon } from '../../components/Icon';
 import { t, tp } from '../../i18n';
 import { brewApi } from './api';
 import { EventIcon } from './events';
-import { abvOf, brewDay, eventKind, finishText, formulaOf, formulaWords, summaryText } from './brewText';
+import { abvOf, brewDay, eventKind, eventTime, finishText, formulaOf, formulaWords, summaryText } from './brewText';
 import { SummaryChart } from './SummaryChart';
 import { LoadFailed } from './BrewPage';
 import './summary.css';
@@ -189,7 +189,7 @@ export function BrewSummaryPage({ id }: { id: string }) {
                     {e.text && <> {e.text}</>}
                   </span>
                   <span className="muted small num">
-                    {brewDay(brew.startedAt, e.at)} · {dateTime(e.at)}
+                    {brewDay(brew.startedAt, e.at)} · {eventTime(e)}
                   </span>
                 </li>
               ))}

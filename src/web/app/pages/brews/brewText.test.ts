@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ABV_FORMULAS, type Brew, type BrewStats } from '@rapthooker/shared';
-import { abvOf, brewDay, finishText, summaryText } from './brewText';
+import { dateTime } from '../../format';
+import { abvOf, brewDay, eventTime, finishText, summaryText } from './brewText';
 
 const DAY = 86_400_000;
 const START = Date.UTC(2026, 9, 1, 12);
@@ -34,7 +35,7 @@ const brew = (over: Partial<Brew> = {}): Brew => ({
   startedAt: START,
   endedAt: null,
   stats: stats(),
-  events: [{ id: 'e1', brewId: 'b1', at: START + 2.5 * DAY, kind: 'dry_hop', text: '100 g Citra' }],
+  events: [{ id: 'e1', brewId: 'b1', at: START + 2.5 * DAY, endAt: null, kind: 'dry_hop', text: '100 g Citra', hidden: false }],
   ...over,
 });
 
@@ -53,6 +54,13 @@ describe('brew text', () => {
     expect(brewDay(START, START + 1000)).toBe('Day 1');
     expect(brewDay(START, START + 2.5 * DAY)).toBe('Day 3');
     expect(brewDay(START, START - 1000)).toBe('Before the start');
+  });
+
+  it('says how long an event lasted', () => {
+    expect(eventTime({ at: START, endAt: null })).toBe(dateTime(START));
+    expect(eventTime({ at: START })).toBe(dateTime(START));
+    expect(eventTime({ at: START, endAt: START + 2.5 * DAY })).toBe(`${dateTime(START)} → ${dateTime(START + 2.5 * DAY)} (2.5 days)`);
+    expect(eventTime({ at: START, endAt: START + 3 * 3_600_000 })).toMatch(/ \(3 h\)$/);
   });
 
   it('says when a brew should finish', () => {
@@ -74,6 +82,16 @@ describe('brew text', () => {
     expect(text).toMatch(/- Day 3, .*: Dry hop: 100 g Citra/);
     expect(text).toContain('Notes:\nPitched warm.');
     expect(text).toContain('(7.0 days)');
+    const hop = {
+      id: 'e1',
+      brewId: 'b1',
+      at: START + 2.5 * DAY,
+      endAt: START + 4.5 * DAY,
+      kind: 'dry_hop',
+      text: 'Citra',
+      hidden: true,
+    } as const;
+    expect(summaryText(brew({ events: [hop] }), null, units, formula)).toMatch(/- Day 3, .* → .* \(2\.0 days\): Dry hop: Citra/);
 
     const running = summaryText(
       brew({ stats: stats({ prediction: { stage: 'active', fg: 1.011, finishAt: null, confidence: 'medium', fittedAt: START } }) }),

@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { brewEventInputSchema, type Brew, type BrewEvent, type BrewEventKind } from '@rapthooker/shared';
 import { errorText } from '../../api';
 import { useLive } from '../../live';
-import { dateTime, fromLocalInput, toLocalInput } from '../../format';
+import { fromLocalInput, toLocalInput } from '../../format';
 import { Icon } from '../../components/Icon';
 import { Modal } from '../../components/ui';
 import { FieldError, useFormCheck } from '../../validation';
 import { currentLocale, t, tk, tp } from '../../i18n';
 import { brewApi } from './api';
-import { brewDay, EVENT_KINDS, eventKind } from './brewText';
+import { brewDay, EVENT_KINDS, eventKind, eventTime } from './brewText';
 import './brews.css';
 
 export { brewDay, EVENT_KINDS, eventKind } from './brewText';
@@ -27,11 +27,17 @@ export function EventList({
   brew,
   events = brew.events,
   onEdit,
+  onToggleChart,
+  toggling,
   compact = false,
 }: {
   brew: Pick<Brew, 'startedAt' | 'events'>;
   events?: BrewEvent[];
   onEdit?: (e: BrewEvent) => void;
+  /** Shows or hides an event on the charts. */
+  onToggleChart?: (e: BrewEvent) => void;
+  /** The event being shown or hidden. */
+  toggling?: string | null;
   compact?: boolean;
 }) {
   if (events.length === 0) return null;
@@ -39,8 +45,10 @@ export function EventList({
     <ol className={`brew-timeline${compact ? ' compact' : ''}`}>
       {events.map((e) => {
         const k = eventKind(e.kind);
+        const name = t(k.label).toLocaleLowerCase(currentLocale());
+        const toggle = e.hidden ? t('Show {event} on the chart', { event: name }) : t('Hide {event} from the chart', { event: name });
         return (
-          <li key={e.id}>
+          <li key={e.id} className={e.hidden ? 'off-chart' : undefined}>
             <EventIcon kind={e.kind} />
             <div className="grow">
               <div className="ev-title">
@@ -48,16 +56,24 @@ export function EventList({
                 {e.text && <span>{e.text}</span>}
               </div>
               <div className="ev-when">
-                {brewDay(brew.startedAt, e.at)} · {dateTime(e.at)}
+                {brewDay(brew.startedAt, e.at)} · {eventTime(e)}
+                {e.hidden && <> · {t('Not on the chart')}</>}
               </div>
             </div>
-            {onEdit && (
+            {onToggleChart && (
               <button
                 type="button"
                 className="icon-btn"
-                onClick={() => onEdit(e)}
-                aria-label={t('Edit {event}', { event: t(k.label).toLocaleLowerCase(currentLocale()) })}
+                onClick={() => onToggleChart(e)}
+                disabled={toggling === e.id}
+                aria-label={toggle}
+                title={toggle}
               >
+                <Icon name={e.hidden ? 'eyeOff' : 'eye'} size={15} />
+              </button>
+            )}
+            {onEdit && (
+              <button type="button" className="icon-btn" onClick={() => onEdit(e)} aria-label={t('Edit {event}', { event: name })}>
                 <Icon name="pencil" size={15} />
               </button>
             )}
@@ -79,10 +95,25 @@ export function EventsSection({
   limit?: number;
   onChanged?: () => void;
 }) {
-  const { isOwner } = useLive();
+  const { isOwner, toast } = useLive();
   const [editing, setEditing] = useState<BrewEvent | 'new' | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
   const shown = limit ? brew.events.slice(-limit) : brew.events;
   const hidden = brew.events.length - shown.length;
+
+  // Leaving the end out keeps it as it is (and times that don't change aren't checked again).
+  const toggleChart = async (e: BrewEvent) => {
+    if (toggling) return;
+    setToggling(e.id);
+    try {
+      await brewApi.updateEvent(brew.id, e.id, { at: e.at, kind: e.kind, text: e.text, hidden: !e.hidden });
+      onChanged?.();
+    } catch (err) {
+      toast({ tone: 'error', title: e.hidden ? t("Couldn't show the event") : t("Couldn't hide the event"), body: errorText(err) });
+    } finally {
+      setToggling(null);
+    }
+  };
 
   return (
     <div className="stack" style={{ gap: '0.6rem' }}>
@@ -107,7 +138,14 @@ export function EventsSection({
               {tp(hidden, "{count} earlier event on the brew's page.", "{count} earlier events on the brew's page.")}
             </p>
           )}
-          <EventList brew={brew} events={shown} compact={limit !== undefined} onEdit={isOwner ? setEditing : undefined} />
+          <EventList
+            brew={brew}
+            events={shown}
+            compact={limit !== undefined}
+            onEdit={isOwner ? setEditing : undefined}
+            onToggleChart={isOwner ? (e) => void toggleChart(e) : undefined}
+            toggling={toggling}
+          />
         </>
       )}
       {editing && (
@@ -117,7 +155,10 @@ export function EventsSection({
   );
 }
 
-const LABELS = { at: tk('When'), kind: tk('What'), text: tk('Details') };
+const LABELS = { at: tk('When'), endAt: tk('Until'), kind: tk('What'), text: tk('Details') };
+
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
 
 export function EventModal({
   brew,
@@ -131,16 +172,30 @@ export function EventModal({
   onSaved?: () => void;
 }) {
   const { toast } = useLive();
+  const untilId = useId();
   const [kind, setKind] = useState<BrewEventKind>(event?.kind ?? 'dry_hop');
   const [opened] = useState(() => toLocalInput(event?.at ?? Math.min(Date.now(), brew.endedAt ?? Date.now())));
   const [when, setWhen] = useState(opened);
+  const [openedUntil] = useState(() => (event?.endAt != null ? toLocalInput(event.endAt) : null));
+  const [until, setUntil] = useState(openedUntil);
   const [text, setText] = useState(event?.text ?? '');
   const [busy, setBusy] = useState(false);
+  const [tried, setTried] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  // The box shows the time to the minute: keep an event's own time unless it's changed.
-  const body = { at: event && when === opened ? event.at : fromLocalInput(when), kind, text: text.trim() };
+  // The boxes show times to the minute: keep an event's own times unless they're changed.
+  const at = event && when === opened ? event.at : fromLocalInput(when);
+  const endAt = until === null ? null : event?.endAt != null && until === openedUntil ? event.endAt : fromLocalInput(until);
+  const body = { at, endAt, kind, text: text.trim() };
   const check = useFormCheck(brewEventInputSchema, body, LABELS);
+  const endFirst = endAt !== null && endAt <= at;
   const k = eventKind(kind);
+
+  // Something over is usually logged once it's done (it ended now); one that has only just begun gets a planned end, a day on.
+  const startUntil = () => {
+    const start = fromLocalInput(when);
+    const now = Math.min(Date.now(), brew.endedAt ?? Date.now());
+    setUntil(toLocalInput(Number.isFinite(start) && now < start + HOUR ? start + DAY : now));
+  };
 
   /** Runs `fn`, then closes; on failure shows `failed` as the error's title. */
   const run = async (failed: string, fn: () => Promise<unknown>) => {
@@ -162,11 +217,16 @@ export function EventModal({
         className="stack"
         onSubmit={(e) => {
           e.preventDefault();
+          setTried(true);
           if (kind === 'note' && !body.text) {
             toast({ tone: 'error', title: t("Couldn't save"), body: t('Write something for the note.') });
             return;
           }
           if (!check.ok(t("Couldn't save"))) return;
+          if (endFirst) {
+            toast({ tone: 'error', title: t("Couldn't save"), body: t('The end has to be after the start.') });
+            return;
+          }
           void run(t("Couldn't save the event"), () =>
             event ? brewApi.updateEvent(brew.id, event.id, body) : brewApi.addEvent(brew.id, body),
           );
@@ -202,6 +262,42 @@ export function EventModal({
           />
           <FieldError error={check.errors.at && tk('Pick a date and time')} />
         </label>
+        {until === null ? (
+          <div>
+            <button type="button" className="btn small ghost" onClick={startUntil}>
+              <Icon name="plus" size={14} /> {t('Add an end time')}
+            </button>
+          </div>
+        ) : (
+          <div className="field">
+            <label className="label" htmlFor={untilId}>
+              {t('Until')}
+            </label>
+            <div className="row ev-until">
+              <input
+                id={untilId}
+                className="input"
+                type="datetime-local"
+                value={until}
+                min={when}
+                onChange={(e) => setUntil(e.target.value)}
+              />
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label={t('Remove the end')}
+                title={t('Remove the end')}
+                onClick={() => setUntil(null)}
+              >
+                <Icon name="x" size={15} />
+              </button>
+            </div>
+            <FieldError
+              error={(check.errors.endAt && tk('Pick a date and time')) || (tried && endFirst && tk('The end has to be after the start'))}
+            />
+            <span className="hint">{t('The chart shades the time in between.')}</span>
+          </div>
+        )}
         <label className="field">
           <span>{kind === 'note' ? t('Note') : t('Details (optional)')}</span>
           <textarea

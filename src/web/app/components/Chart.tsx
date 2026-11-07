@@ -579,6 +579,24 @@ export function Chart({
       ctx.restore();
     };
 
+    /** How long marked things lasted (a dry hop over a few days): lightly shaded in their colour, under the grid and the lines. */
+    const drawSpans = (p: uPlot) => {
+      const spans = latest.current.annotations.filter((a) => a.endTs !== undefined && a.endTs > a.ts);
+      if (spans.length === 0) return;
+      const ctx = p.ctx;
+      const { left, top, width, height } = p.bbox;
+      ctx.save();
+      ctx.globalAlpha = 0.1;
+      for (const a of spans) {
+        const x0 = Math.max(left, p.valToPos(a.ts / 1000, 'x', true));
+        const x1 = Math.min(left + width, p.valToPos(a.endTs! / 1000, 'x', true));
+        if (!(x1 > x0)) continue;
+        ctx.fillStyle = resolveColor(a.color, muted);
+        ctx.fillRect(x0, top, x1 - x0, height);
+      }
+      ctx.restore();
+    };
+
     /** Curves standing in for the readings in excluded ranges, dashed: estimates, not readings. */
     const drawBridges = (p: uPlot) => {
       const cs = latest.current.cols;
@@ -712,13 +730,15 @@ export function Chart({
         const xMax = p.scales.x?.max ?? Infinity;
         const surface = cssVar('--surface-solid');
         ctx.font = `${10 * dpr}px system-ui, sans-serif`;
+        const inView = (ts: number) => ts / 1000 >= xMin && ts / 1000 <= xMax;
+        // Something that lasted a while shows while any of it is in view, its label at the left edge once its start is out.
         const shown = anns
-          .filter((a) => a.ts / 1000 >= xMin && a.ts / 1000 <= xMax)
+          .filter((a) => (a.endTs ?? a.ts) / 1000 >= xMin && a.ts / 1000 <= xMax)
           .sort((a, b) => a.ts - b.ts)
           .map((a) => {
             const x = p.valToPos(a.ts / 1000, 'x', true);
             const w = ctx.measureText(a.label).width + 8 * dpr;
-            return { a, x, w, color: resolveColor(a.color, muted), boxX: Math.max(left, Math.min(x + 3 * dpr, left + width - w)) };
+            return { a, w, color: resolveColor(a.color, muted), boxX: Math.max(left, Math.min(x + 3 * dpr, left + width - w)) };
           });
         const rows = stackLabels(
           shown.map((s) => ({ x: s.boxX, width: s.w })),
@@ -729,10 +749,13 @@ export function Chart({
           ctx.strokeStyle = alpha(s.color, 0.75);
           ctx.setLineDash([4 * dpr, 4 * dpr]);
           ctx.lineWidth = dpr;
-          const lineX = markLineX(s.x, left, width, dpr);
           ctx.beginPath();
-          ctx.moveTo(lineX, top);
-          ctx.lineTo(lineX, top + height);
+          for (const ts of s.a.endTs === undefined ? [s.a.ts] : [s.a.ts, s.a.endTs]) {
+            if (!inView(ts)) continue;
+            const lineX = markLineX(p.valToPos(ts / 1000, 'x', true), left, width, dpr);
+            ctx.moveTo(lineX, top);
+            ctx.lineTo(lineX, top + height);
+          }
           ctx.stroke();
           const row = rows[i]!;
           if (row < 0) return;
@@ -859,7 +882,7 @@ export function Chart({
             commit(win);
           },
         ],
-        drawClear: [drawBands],
+        drawClear: [drawSpans, drawBands],
         draw: [drawExtras],
         setCursor: [legendToLatest, trackHover],
       },
@@ -1106,7 +1129,7 @@ export function Chart({
     plot.current?.setScale('x', { min: from / 1000, max: to / 1000 });
   }, [from, to]);
 
-  const annKey = (annotations ?? []).map((a) => `${a.ts}:${a.label}:${a.color ?? ''}`).join('|');
+  const annKey = (annotations ?? []).map((a) => `${a.ts}-${a.endTs ?? ''}:${a.label}:${a.color ?? ''}`).join('|');
   useEffect(() => {
     plot.current?.redraw(false, false);
   }, [og, targetFg, annKey]);

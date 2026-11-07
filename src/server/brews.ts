@@ -92,8 +92,11 @@ const toEvent = (row: BrewEventRow): BrewEvent => ({
   id: row.id,
   brewId: row.brew_id,
   at: row.at,
+  // An older version (put back after an update) may have moved the start past the end: it's a moment then.
+  endAt: row.end_at !== null && row.end_at > row.at ? row.end_at : null,
   kind: row.kind as BrewEventKind,
   text: row.text,
+  hidden: row.hidden !== 0,
 });
 
 /**
@@ -301,7 +304,7 @@ export class BrewService extends EventEmitter {
     const row = this.store.getBrewRow(brewId);
     const existing = this.store.getBrewEvent(eventId);
     if (!row || !existing || existing.brew_id !== brewId) throw new BrewError('Unknown event', 404);
-    const event: BrewEventRow = { ...existing, ...this.checkEvent(row, input) };
+    const event: BrewEventRow = { ...existing, ...this.checkEvent(row, input, existing) };
     this.store.saveBrewEvent(event);
     this.eventsChanged(brewId);
     return toEvent(event);
@@ -314,14 +317,30 @@ export class BrewService extends EventEmitter {
     this.eventsChanged(brewId);
   }
 
-  private checkEvent(row: BrewRow, input: BrewEventInput): Pick<BrewEventRow, 'at' | 'kind' | 'text'> {
+  private checkEvent(row: BrewRow, input: BrewEventInput, existing?: BrewEventRow): Omit<BrewEventRow, 'id' | 'brew_id'> {
     const text = input.text.trim();
     if (input.kind === 'note' && !text) throw new BrewError('Write something for the note');
-    if (input.at > this.now() + 5 * MINUTE) throw new BrewError("An event can't be in the future");
-    if (input.at < row.started_at - DAY || input.at > (row.ended_at ?? this.now()) + DAY) {
+    // Left out (by a script from before they existed, say), they stay as they were.
+    const endAt = input.endAt === undefined ? (existing?.end_at ?? null) : input.endAt;
+    const hidden = input.hidden === undefined ? (existing?.hidden ?? 0) : input.hidden ? 1 : 0;
+    // Times that haven't changed aren't checked again: the brew's own may have moved since, and showing or hiding an
+    // event still has to work.
+    if (!existing || input.at !== existing.at || endAt !== existing.end_at) {
+      this.checkEventTime(row, input.at);
+      if (endAt !== null) {
+        if (endAt <= input.at) throw new BrewError('An event has to end after it starts');
+        // An end can be planned (a dry hop until Monday), but not for after a finished brew.
+        if (row.ended_at !== null && endAt > row.ended_at + DAY) throw new BrewError('Pick a time during the brew');
+      }
+    }
+    return { at: input.at, end_at: endAt, kind: input.kind, text, hidden };
+  }
+
+  private checkEventTime(row: BrewRow, at: number): void {
+    if (at > this.now() + 5 * MINUTE) throw new BrewError("An event can't be in the future");
+    if (at < row.started_at - DAY || at > (row.ended_at ?? this.now()) + DAY) {
       throw new BrewError('Pick a time during the brew');
     }
-    return { at: input.at, kind: input.kind, text };
   }
 
   private eventsChanged(brewId: string): void {

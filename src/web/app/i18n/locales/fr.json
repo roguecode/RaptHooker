@@ -2273,5 +2273,16 @@
   "Bluetooth off": "Bluetooth désactivé",
   "Bluetooth is switched off on the hub: see {settings}.": "Le Bluetooth est désactivé sur le hub : voir {settings}.",
   "Bluetooth is switched off on this hub.": "Le Bluetooth est désactivé sur ce hub.",
-  "It only hears these through a relay while it's off (see Settings → Hub).": "Tant qu'il est désactivé, le hub ne les capte que par un relais (voir Réglages → Hub)."
+  "It only hears these through a relay while it's off (see Settings → Hub).": "Tant qu'il est désactivé, le hub ne les capte que par un relais (voir Réglages → Hub).",
+  "Add an end time": "Ajouter une heure de fin",
+  "Couldn't hide the event": "Impossible de masquer l'événement",
+  "Couldn't show the event": "Impossible d'afficher l'événement",
+  "Hide {event} from the chart": "Masquer {event} sur le graphique",
+  "Not on the chart": "Masqué sur le graphique",
+  "Remove the end": "Retirer la fin",
+  "Show {event} on the chart": "Afficher {event} sur le graphique",
+  "The chart shades the time in between.": "Le graphique ombre la période entre les deux.",
+  "The end has to be after the start": "La fin doit être après le début",
+  "The end has to be after the start.": "La fin doit être après le début.",
+  "Until": "Jusqu'à"
 }

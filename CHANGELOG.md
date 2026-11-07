@@ -5,11 +5,16 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-11-07
+
+### Added
+
+- `GET /api/screens/wifi` has a `band` field: the band of the hub's own Wi-Fi network (2.4, 5 or 6 GHz).
+
 ### Fixed
 
 - Setting up a screen when the hub is on the 5 GHz band of a network that has the same name on 2.4 GHz: the screen was
   given the 5 GHz channel, and could fail to join ("couldn't join"). It now gets the network's 2.4 GHz channel.
-  `GET /api/screens/wifi` has a new `band` field for the hub's own network.
 - Screens a router turns away before they join ("couldn't join"), like one that only takes 802.11n: the screen now
   switches between 802.11g and n by itself after 10 s, as it already did when it joined but got no address. This is in
   screen firmware 1.1.2. A screen being set up gets it first, and set-up screens are offered it under **Screens**.
@@ -249,7 +254,8 @@ The first release.
 - **Translations**: Deutsch, Español, Français, Italiano, Nederlands, Polski and Português (Brasil).
 - **Docker** image for Linux hosts with Bluetooth.
 
-[Unreleased]: https://github.com/roguecode/RaptHooker/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/roguecode/RaptHooker/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/roguecode/RaptHooker/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/roguecode/RaptHooker/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/roguecode/RaptHooker/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/roguecode/RaptHooker/compare/v0.6.0...v0.7.0

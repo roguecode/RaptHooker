@@ -63,11 +63,21 @@ export class NetshWifi implements WifiController {
 
   async status(): Promise<WifiStatus> {
     const i = await this.iface().catch(() => null);
-    if (!i) return { canSetUp: false, reason: 'no-adapter', ssid: null, channel: null, goesOffline: false, knowsPassword: false };
+    if (!i)
+      return { canSetUp: false, reason: 'no-adapter', ssid: null, channel: null, band: null, goesOffline: false, knowsPassword: false };
     const connected = /^\s*State\s*:\s*connected/im.test(i.text);
     const ssid = connected ? field(i.text, 'SSID') : null;
     const channel = connected ? Number(field(i.text, 'Channel') ?? 0) || null : null;
-    return { canSetUp: true, reason: null, ssid, channel, goesOffline: ssid !== null && !this.otherLink(i.name), knowsPassword: false };
+    const band = channel === null ? null : Number.parseFloat(field(i.text, 'Band') ?? '') || (channel > 14 ? 5 : 2.4);
+    return {
+      canSetUp: true,
+      reason: null,
+      ssid,
+      channel,
+      band,
+      goesOffline: ssid !== null && !this.otherLink(i.name),
+      knowsPassword: false,
+    };
   }
 
   private otherLink(wifi: string): boolean {

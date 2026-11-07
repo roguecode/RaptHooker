@@ -168,8 +168,10 @@ export class ScreenSetup extends EventEmitter {
         if (!password) throw new SetupError('no-password');
       }
       // The channel the screen's network is on, while the hub can still see it: the screen moves its hotspot there
-      // before joining, so the hub's link to it drops once, when expected.
-      const channel = input.ssid === status.ssid && status.channel ? status.channel : await this.channelOf(input.ssid);
+      // before joining, so the hub's link to it drops once, when expected. The hub's own channel only does when the hub
+      // is on the network's 2.4 GHz band: a router can use the same name for its 5 GHz one, which screens can't use.
+      const channel =
+        input.ssid === status.ssid && status.band === 2.4 && status.channel ? status.channel : await this.channelOf(input.ssid);
 
       await this.join(input.hotspot, 45_000, 'hotspot-failed');
       this.step('identify');

@@ -117,6 +117,7 @@ export class NetworkManagerWifi implements WifiController {
       reason,
       ssid: null,
       channel: null,
+      band: null,
       goesOffline: false,
       knowsPassword: false,
     });
@@ -132,10 +133,13 @@ export class NetworkManagerWifi implements WifiController {
     const allowed = [`${NM}.network-control`, `${NM}.settings.modify.system`].every((p) => perms[p] === 'yes');
     let ssid: string | null = null;
     let channel: number | null = null;
+    let band: number | null = null;
     const ap = await this.prop<string>(device.path, WIRELESS, 'ActiveAccessPoint').catch(() => '/');
     if (ap && ap !== '/') {
       ssid = Buffer.from(await this.prop<Buffer>(ap, `${NM}.AccessPoint`, 'Ssid')).toString('utf8');
-      channel = channelOf(await this.prop<number>(ap, `${NM}.AccessPoint`, 'Frequency'));
+      const freq = await this.prop<number>(ap, `${NM}.AccessPoint`, 'Frequency');
+      channel = channelOf(freq);
+      band = bandOf(freq);
     }
     const knowsPassword = ssid !== null && allowed && (await this.password(ssid).catch(() => null)) !== null;
     return {
@@ -143,6 +147,7 @@ export class NetworkManagerWifi implements WifiController {
       reason: allowed ? null : 'not-allowed',
       ssid,
       channel,
+      band,
       goesOffline: ssid !== null && !(await this.otherLink(device.iface)),
       knowsPassword,
     };

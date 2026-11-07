@@ -10,7 +10,7 @@ vi.mock('../settings/copy', () => ({ copyText: vi.fn(async () => true) }));
 const INFO: IspindelInfo = {
   token: 'rh_ispindel_secret',
   server: { host: '192.168.1.20', hosts: ['192.168.1.20'], port: 8080, path: '/api/ispindel' },
-  wifi: { canSetUp: true, reason: null, ssid: 'Brewery', channel: 6, goesOffline: true, knowsPassword: true },
+  wifi: { canSetUp: true, reason: null, ssid: 'Brewery', channel: 6, band: 2.4, goesOffline: true, knowsPassword: true },
   hotspots: [{ ssid: 'iSpindel', bssid: '42:91:51:64:98:3F', chipId: '64983F', signal: 90, channel: 1, seenAt: Date.now() }],
   scannedAt: Date.now(),
   setup: null,

@@ -118,7 +118,14 @@ afterEach(async () => {
 });
 
 async function world(
-  opts: { stock?: boolean; firmware?: string; knowsPassword?: boolean; stockOta?: FakeScreenOptions['stockOta']; legacy?: boolean } = {},
+  opts: {
+    stock?: boolean;
+    firmware?: string;
+    knowsPassword?: boolean;
+    stockOta?: FakeScreenOptions['stockOta'];
+    legacy?: boolean;
+    on5GHz?: number;
+  } = {},
 ) {
   const t = tempStore();
   const fake = new FakeScreen({
@@ -131,7 +138,7 @@ async function world(
   });
   await fake.start();
   const fakes = [fake];
-  const wifi = new MockWifi(() => fakes, undefined, { knowsPassword: opts.knowsPassword });
+  const wifi = new MockWifi(() => fakes, undefined, { knowsPassword: opts.knowsPassword, on5GHz: opts.on5GHz });
   const settings = new Settings(t.store);
   const screens = new ScreenManager({
     store: t.store,
@@ -194,6 +201,7 @@ describe('setting a screen up', () => {
     expect(p).toMatchObject({ state: 'done', error: null, screenId: fake.id, hubBack: true });
     expect(p.steps.map((s) => s.step)).toEqual(['hotspot', 'identify', 'install', 'restart', 'screen', 'wifi', 'back', 'find', 'done']);
     expect(fake.events).toContain(`stock ota ${fw.version}`);
+    expect(fake.events).toContain('setup Brewery on channel 6');
     expect(fake.settings).toMatchObject({ ssid: 'Brewery', pass: 'hops-and-barley', hub: screens.hubId(), name: 'Kitchen' });
     expect(fake.settings.imageUrl).toBe(`http://192.168.50.104:8080/api/screens/${fake.id}/image.jpg`);
     expect(wifi.joins).toEqual(['Smart weather clock', 'RaptHooker-Screen-000001']);
@@ -248,6 +256,15 @@ describe('setting a screen up', () => {
     screens.startSetup(input);
     expect(await done).toMatchObject({ state: 'failed', error: 'on-network', detail: `rh-screen-${fake.id.slice(-6)}`, hubBack: true });
     expect(screens.list()).toEqual([]);
+  });
+
+  it("gives the screen the network's 2.4 GHz channel when the hub is on its 5 GHz band", async () => {
+    // A router with the same name on both bands, and the hub on 5 GHz: the screen can only use 2.4 GHz.
+    const { fake, screens } = await world({ stock: false, on5GHz: 116 });
+    const done = finished(screens);
+    screens.startSetup({ ...input, hotspot: 'RaptHooker-Screen-000001' });
+    expect(await done).toMatchObject({ state: 'done', screenId: fake.id });
+    expect(fake.events).toContain('setup Brewery on channel 6');
   });
 
   it("gets back on its network when it couldn't join the screen's", async () => {

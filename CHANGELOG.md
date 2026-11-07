@@ -5,6 +5,12 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Setting up a screen when the hub is on the 5 GHz band of a network that has the same name on 2.4 GHz: the screen was
+  given the 5 GHz channel, and could fail to join ("couldn't join"). It now gets the network's 2.4 GHz channel.
+  `GET /api/screens/wifi` has a new `band` field for the hub's own network.
+
 ## [0.9.0] - 2026-11-07
 
 Join us on Discord: https://discord.gg/qyaY6QXjdh

@@ -43,7 +43,7 @@ export class NoWifi implements WifiController {
   readonly name = 'none';
   constructor(private readonly reason: WifiUnavailableReason) {}
   async status(): Promise<WifiStatus> {
-    return { canSetUp: false, reason: this.reason, ssid: null, channel: null, goesOffline: false, knowsPassword: false };
+    return { canSetUp: false, reason: this.reason, ssid: null, channel: null, band: null, goesOffline: false, knowsPassword: false };
   }
   async scan(): Promise<WifiNetwork[]> {
     return [];

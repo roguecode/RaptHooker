@@ -322,7 +322,7 @@ export class FakeScreen extends EventEmitter {
       const b = json();
       const ssid = String(b.ssid ?? '');
       this.trial = { state: 'testing', error: '', saved: false };
-      this.events.push(`setup ${ssid}`);
+      this.events.push(`setup ${ssid} on channel ${Number(b.channel ?? 0)}`);
       setTimeout(() => {
         if (!(ssid in this.opts.networks)) this.trial = { state: 'failed', error: 'network not found', saved: false };
         else if (this.opts.networks[ssid] !== b.password) this.trial = { state: 'failed', error: 'wrong password', saved: false };
@@ -468,23 +468,29 @@ export class MockWifi implements WifiController {
   constructor(
     private readonly screens: () => HotspotDevice[],
     readonly home: { ssid: string; password: string; channel: number } = { ssid: 'Brewery', password: 'hops-and-barley', channel: 6 },
-    private readonly opts: { goesOffline?: boolean; knowsPassword?: boolean } = {},
+    /** on5GHz: the home network has a 5 GHz band too, with the same name, and the hub is on it (on that channel). */
+    private readonly opts: { goesOffline?: boolean; knowsPassword?: boolean; on5GHz?: number } = {},
   ) {
     this.current = home.ssid;
   }
 
   async status(): Promise<WifiStatus> {
+    const home = this.current === this.home.ssid;
+    const five = home ? this.opts.on5GHz : undefined;
     return {
       canSetUp: true,
       reason: null,
       ssid: this.current,
-      channel: this.current === this.home.ssid ? this.home.channel : 1,
+      channel: home ? (five ?? this.home.channel) : 1,
+      band: five ? 5 : 2.4,
       goesOffline: this.opts.goesOffline ?? true,
-      knowsPassword: this.current === this.home.ssid && (this.opts.knowsPassword ?? true),
+      knowsPassword: home && (this.opts.knowsPassword ?? true),
     };
   }
 
   async scan(): Promise<WifiNetwork[]> {
+    const home = this.current === this.home.ssid;
+    const five = this.opts.on5GHz;
     const nets: WifiNetwork[] = [
       {
         ssid: this.home.ssid,
@@ -494,10 +500,22 @@ export class MockWifi implements WifiController {
         band: 2.4,
         secure: true,
         kind: null,
-        current: this.current === this.home.ssid,
+        current: home && !five,
       },
       { ssid: 'Neighbours', bssid: '02:00:00:00:00:02', signal: 35, channel: 11, band: 2.4, secure: true, kind: null, current: false },
     ];
+    if (five) {
+      nets.push({
+        ssid: this.home.ssid,
+        bssid: '02:00:00:00:00:03',
+        signal: 90,
+        channel: five,
+        band: 5,
+        secure: true,
+        kind: null,
+        current: home,
+      });
+    }
     for (const s of this.screens()) {
       const h = s.hotspot;
       if (h)

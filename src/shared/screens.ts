@@ -146,8 +146,10 @@ export interface WifiStatus {
   reason: string | null;
   /** The hub's own Wi-Fi network, if it's on one. */
   ssid: string | null;
-  /** Its channel (a screen joining the same network is moved to it first). */
+  /** Its channel (a screen joining the same network is moved to it first, when it's 2.4 GHz). */
   channel: number | null;
+  /** Its band in GHz (2.4, 5 or 6). A network can have the same name on several. */
+  band: number | null;
   /** Setting a screen up takes the hub off the network for a minute (Wi-Fi is its only connection). */
   goesOffline: boolean;
   /** The hub can fill in its own network's password. */

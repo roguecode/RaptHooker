@@ -17,7 +17,7 @@ import { ScreenChips } from './ScreenCard';
 
 const picture = () => new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), { headers: { 'Content-Type': 'image/jpeg' } });
 
-const WIFI: WifiStatus = { canSetUp: true, reason: null, ssid: 'Brewery', channel: 6, goesOffline: true, knowsPassword: true };
+const WIFI: WifiStatus = { canSetUp: true, reason: null, ssid: 'Brewery', channel: 6, band: 2.4, goesOffline: true, knowsPassword: true };
 const NETS: WifiNetwork[] = [
   { ssid: 'Brewery', bssid: 'aa', signal: 80, channel: 6, band: 2.4, secure: true, kind: null, current: true },
   { ssid: 'Smart weather clock', bssid: 'bb', signal: 70, channel: 1, band: 2.4, secure: false, kind: 'sdpro', current: false },

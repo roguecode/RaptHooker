@@ -10,6 +10,9 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 - Setting up a screen when the hub is on the 5 GHz band of a network that has the same name on 2.4 GHz: the screen was
   given the 5 GHz channel, and could fail to join ("couldn't join"). It now gets the network's 2.4 GHz channel.
   `GET /api/screens/wifi` has a new `band` field for the hub's own network.
+- Screens a router turns away before they join ("couldn't join"), like one that only takes 802.11n: the screen now
+  switches between 802.11g and n by itself after 10 s, as it already did when it joined but got no address. This is in
+  screen firmware 1.1.2. A screen being set up gets it first, and set-up screens are offered it under **Screens**.
 
 ## [0.9.0] - 2026-11-07
 

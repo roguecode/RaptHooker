@@ -75,7 +75,8 @@ from that address (a second Wi-Fi adapter on the screen's hotspot). On Windows, 
   firmware is installed, so RaptHooker put on again later starts in set-up mode. Keys a newer version wrote are kept
   when an older one saves.
 - **Wi-Fi:** 802.11g by default on the ESP8266 (b/g/n on the ESP32), switching between g and n by itself when it joins
-  but gets no address (some mesh routers). A 169.254 address counts as none. After 5 minutes away from its network it
+  but gets no address (some mesh routers), or when the router turns it away before it joins for 10 s (some only take
+  802.11n). A 169.254 address counts as none. After 5 minutes away from its network it
   opens its own hotspot, `RaptHooker-Screen-XXXXXX`, as well, so it can be given new details, and keeps trying. For the
   first minutes it logs `net: still joining <ssid>: <why>` every 15 s, for whoever watches the serial port.
 - **Picture:** fetched from `imageUrl` every `interval` seconds (or what the hub's `X-Refresh` says), a baseline JPEG

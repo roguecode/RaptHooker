@@ -27,13 +27,18 @@ static bool apOn = false, stationTrying = false, mdnsOn = false;
 // password. On the ESP32 the Wi-Fi task sets these.
 static volatile int lastReason = 0;
 static volatile uint32_t associatedAt = 0, authFailures = 0;
+// When the station last started trying (in the 802.11 mode it has now).
+static uint32_t beganAt = 0;
 
 #if defined(ESP8266)
 static WiFiEventHandler onDisconnect, onConnect, onIp;
 typedef WiFiPhyMode_t Phy;
 static const Phy PHY_B = WIFI_PHY_MODE_11B, PHY_G = WIFI_PHY_MODE_11G, PHY_N = WIFI_PHY_MODE_11N;
 static void applyPhy(Phy p) { WiFi.setPhyMode(p); }
-static void beginStation(const String& ssid, const String& pass, int channel = 0) { WiFi.begin(ssid, pass, channel); }
+static void beginStation(const String& ssid, const String& pass, int channel = 0) {
+  beganAt = millis();
+  WiFi.begin(ssid, pass, channel);
+}
 enum : int {
   R_AUTH_EXPIRE = WIFI_DISCONNECT_REASON_AUTH_EXPIRE,
   R_AUTH_FAIL = WIFI_DISCONNECT_REASON_AUTH_FAIL,
@@ -63,7 +68,6 @@ enum : int {
 // Set by the Wi-Fi task, logged by net::loop.
 static volatile bool evLeft = false, evJoined = false, evGotIp = false;
 static volatile uint8_t evChannel = 0;
-static uint32_t beganAt = 0;
 static String txtHub, txtClaimed;
 
 static void beginStation(const String& ssid, const String& pass, int channel = 0) {
@@ -106,6 +110,19 @@ static void swapPhyIfStuck(uint32_t now, const String& ssid, const String& pass,
   phy = phy == PHY_G ? PHY_N : PHY_G;
   applyPhy(phy);
   logf("net: no address after 20 s, trying 802.11%s", net::phyName());
+  beginStation(ssid, pass, channel);
+}
+
+// Some routers turn a station away before it joins (802.11n only, say): after 10 s of that it tries the other mode.
+// The reason is forgotten, so the next refusal is logged in the new mode.
+static void swapPhyIfRefused(uint32_t now, const String& ssid, const String& pass, int channel) {
+  if (associatedAt || hasAddress() || lastReason != R_ASSOC_FAIL || now - beganAt < 10000) return;
+  WiFi.disconnect();
+  const char* was = net::phyName();
+  phy = phy == PHY_G ? PHY_N : PHY_G;
+  applyPhy(phy);
+  lastReason = 0;
+  logf("net: turned away in 802.11%s, trying 802.11%s", was, net::phyName());
   beginStation(ssid, pass, channel);
 }
 
@@ -346,6 +363,7 @@ void net::loop() {
     wl_status_t s = WiFi.status();
     uint32_t t = now - trialAt;
     swapPhyIfStuck(now, trialSsid, trialPass, trialChannel);
+    swapPhyIfRefused(now, trialSsid, trialPass, trialChannel);
 #if defined(ESP8266)
     bool wrongPassword = s == WL_WRONG_PASSWORD || authFailures >= 2;
 #else
@@ -379,7 +397,10 @@ void net::loop() {
     downAt = now;
     logf("net: lost the network (%s)", describe(lastReason));
   }
-  if (!up && stationTrying) swapPhyIfStuck(now, c.ssid, c.pass, 0);
+  if (!up && stationTrying) {
+    swapPhyIfStuck(now, c.ssid, c.pass, 0);
+    swapPhyIfRefused(now, c.ssid, c.pass, 0);
+  }
 #if defined(ESP32)
   if (!up) retryStation(now, c.ssid, c.pass);
 #endif

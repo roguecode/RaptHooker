@@ -1,12 +1,12 @@
 {
   "model": "esp32-2432s028",
   "chip": "esp32",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "api": 1,
   "file": "esp32-2432s028.bin",
-  "size": 948272,
-  "md5": "0ae914ec089a02dce4e2b3543c26a810",
-  "sha256": "05d0d12fc020f77201d8ae9342af1962c9f1050a5aa99ca5fb4baadb839483e5",
+  "size": 948512,
+  "md5": "a434a88f774cf59078379279d66cfeb7",
+  "sha256": "a3ea097908e686f21f063e653b0ed0af164153f301b073d9bbac21f0ebac4879",
   "boot": {
     "file": "esp32-2432s028.boot.bin",
     "at": 4096,

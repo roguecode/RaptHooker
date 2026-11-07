@@ -227,6 +227,9 @@ RaptHooker running on a computer, then add it to the Docker hub from **Found on 
 - **Wrong password, network not found.** Check the name (it's case-sensitive) and that the network has a 2.4 GHz band.
 - **No IP address.** The screen joined but the router gave it no address. It tries the older 802.11g mode first (some
   mesh routers don't hand out addresses to ESP8266s on 802.11n) and switches modes by itself if it gets no address.
+- **Couldn't join.** The router turned the screen away before it joined. The screen switches between 802.11g and n by
+  itself (some routers only take n). If it still can't join, check the router's 2.4 GHz network: WPA2 rather than WPA3
+  only, no MAC address filter, and room for another device.
 - **The screen shows as offline.** It hasn't fetched a picture for a while: check it has power, then look at its
   screen. **Find on network** follows a screen that has a new address.
 - **It says it belongs to another hub.** Add it from **Found on your network** with the code it shows, or reset it from

@@ -120,3 +120,8 @@ rather than damage it: update again, or restore the copy from before the update.
   (it reinstalls in place and sets it up).
 - "GitHub is limiting how often it can be asked": GitHub allows 60 questions an hour from one internet address without
   an account, shared by everything on your network. The hub tries again later by itself.
+- "Setting up RaptHooker x.y.z didn't finish", with `Job for bluetooth.service failed` in
+  `journalctl -u rapthooker-update`: Bluetooth couldn't start (in a container, say), which stopped updates to 0.9.1
+  and earlier. Switch Bluetooth off by running the installer once with `--no-bluetooth`
+  ([By hand](#by-hand), and [Without Bluetooth](pi-setup.md#without-bluetooth)); later updates keep it off. Updates
+  to later versions carry on without Bluetooth instead.

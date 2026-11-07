@@ -45,10 +45,12 @@ Installs or updates RaptHooker from https://github.com/$REPO/releases
 
 Options:
   --version X.Y.Z   install this release instead of the latest one
-  --hostname NAME   rename the Pi (it's then NAME.local); by default its name is left alone
+  --hostname NAME   rename the Pi (it's then NAME.local); by default its name is left alone. The name the app shows
+                    is its own: Settings > Hub > Hub name
   --tailscale       also install Tailscale (for HTTPS and access away from home)
   --no-bluetooth    never use this machine's Bluetooth (one without it, like a container): relays and Wi-Fi devices
-                    still work. Kept through updates; --bluetooth switches it back on
+                    still work. Kept through updates. A new install in a container has it off without this
+  --bluetooth       use Bluetooth again, or keep it on when installing in a container
   --file PATH       install a rapthooker-X.Y.Z.tar.gz you downloaded (checked against SHA256SUMS next to it)
   --rollback        go back to the version that was installed before the last update
   --update          used by the in-app updater: quieter, and does nothing if that version is already running

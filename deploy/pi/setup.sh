@@ -6,7 +6,8 @@
 # (ARMv6) isn't supported: current Node.js releases aren't built for it.
 #
 # --no-bluetooth (for a machine without Bluetooth, like a container) sets bluetooth.enabled to false in the config, so the
-# app never uses Bluetooth and later runs (updates) skip setting it up too. --bluetooth switches it back on.
+# app never uses Bluetooth and later runs (updates) skip setting it up too. --bluetooth switches it back on. A new hub in
+# a container starts with it off without being asked.
 set -euo pipefail
 
 if [[ $EUID -ne 0 ]]; then echo "Run with sudo" >&2; exit 1; fi
@@ -79,9 +80,20 @@ id rapthooker &>/dev/null || useradd --system --home-dir /var/lib/rapthooker --s
 usermod -aG bluetooth rapthooker
 install -d -o rapthooker -g rapthooker -m 750 /var/lib/rapthooker
 install -d -o root -g rapthooker -m 750 /etc/rapthooker
+NEW_CONFIG=0
 if [[ ! -f /etc/rapthooker/rapthooker.config.json ]]; then
   install -o root -g rapthooker -m 640 "$HERE/rapthooker.config.example.json" /etc/rapthooker/rapthooker.config.json
   echo "Created /etc/rapthooker/rapthooker.config.json"
+  NEW_CONFIG=1
+fi
+
+# A new hub in a container (an LXC on Proxmox, say), where Bluetooth usually can't be used, starts with it off as if
+# installed with --no-bluetooth. Only where systemd is running: not while building the Pi image (a chroot, maybe in
+# Docker). Existing hubs keep what their config says.
+if [[ -z "$BLUETOOTH_ARG" && $NEW_CONFIG -eq 1 && -d /run/systemd/system ]] &&
+  container="$(systemd-detect-virt --container 2>/dev/null)"; then
+  echo "This is a container (${container}), where Bluetooth usually can't be used: switching it off. The installer's --bluetooth switches it on."
+  BLUETOOTH_ARG=off
 fi
 
 # --bluetooth / --no-bluetooth go in the config, which the app reads and later runs (updates don't pass them) follow.
@@ -109,7 +121,12 @@ if [[ $BLUETOOTH_ON -eq 1 ]]; then
   install -m 644 "$HERE/rapthooker-dbus.conf" /etc/dbus-1/system.d/rapthooker.conf
   systemctl reload dbus || true
   rfkill unblock bluetooth || true
-  systemctl enable --now bluetooth
+  # Bluetooth not starting mustn't stop setting up (or an update, which would then go back to the version before): the
+  # hub still hears relays and Wi-Fi devices, and says Bluetooth isn't working.
+  if ! systemctl enable --now bluetooth; then
+    echo "Warning: Bluetooth didn't start (see: journalctl -u bluetooth -n 20). Carrying on: relays and Wi-Fi devices still work." >&2
+    echo "On a machine without Bluetooth (a container, say), switch it off: sudo bash /opt/rapthooker/deploy/install.sh --no-bluetooth" >&2
+  fi
 else
   echo "Off (bluetooth.enabled is false in $CONFIG): not setting it up. The installer's --bluetooth switches it back on."
 fi

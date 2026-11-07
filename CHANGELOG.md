@@ -5,6 +5,19 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- A new install in a container (an LXC on Proxmox, say), where Bluetooth usually can't be used, switches Bluetooth off
+  as `--no-bluetooth` does; add `--bluetooth` to keep it on. Hubs that are already installed keep what they have. It's
+  the same `bluetooth.enabled` in the config file, which versions before 0.9.0 ignore.
+
+### Fixed
+
+- Updating a hub whose Bluetooth can't start (in a container installed without `--no-bluetooth`, say): the update
+  stopped at "Bluetooth" with `Job for bluetooth.service failed`, and went back to the version before. Setting up now
+  carries on without Bluetooth and warns, so these hubs update, from the app too. Running the installer once with
+  `--no-bluetooth` still switches it off for good.
+
 ## [0.9.1] - 2026-11-07
 
 ### Added

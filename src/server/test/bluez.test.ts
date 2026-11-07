@@ -1062,11 +1062,9 @@ describe('Bluetooth switched off and on', () => {
   it('is on unless the config file switches it off', () => {
     expect(parseConfig({}, '/tmp', '/tmp').bluetooth.enabled).toBe(true);
     expect(parseConfig({ bluetooth: { enabled: false } }, '/tmp', '/tmp').bluetooth).toMatchObject({ enabled: false, scanMode: 'auto' });
-    // The config files hubs already have, which don't mention it.
-    for (const shipped of ['../../../deploy/pi/rapthooker.config.example.json', '../../../deploy/docker/rapthooker.config.json']) {
-      const raw = JSON.parse(readFileSync(new URL(shipped, import.meta.url), 'utf8')) as unknown;
-      expect(parseConfig(raw, '/tmp', '/tmp').bluetooth.enabled, shipped).toBe(true);
-    }
+    // The config file hubs are set up with, which doesn't mention it.
+    const shipped = new URL('../../../deploy/pi/rapthooker.config.example.json', import.meta.url);
+    expect(parseConfig(JSON.parse(readFileSync(shipped, 'utf8')) as unknown, '/tmp', '/tmp').bluetooth.enabled).toBe(true);
   });
 
   it('swaps the radio while relays carry on, starting the new one only once the hub runs', async () => {

@@ -49,7 +49,7 @@ npm run firmware     # the screens' firmware (needs PlatformIO); see firmware/sc
 ```
 
 `npm run test:compat` ([scripts/release-compat.mjs](../scripts/release-compat.mjs)) downloads each published release
-(every `v*` tag, betas too; `--releases 0.7.0,0.8.0` for some) and takes one data folder through: the release sets up a
+(every `v*` tag with a published release, betas too; `--releases 0.7.0,0.8.0` for some) and takes one data folder through: the release sets up a
 hub and records, this build upgrades it, the release runs on it again, then this build again. After each, every table,
 column, reading, device, brew and hub setting must still be there, unchanged. CI runs it on every push, and the release
 workflow won't publish anything (a beta included) that fails it. See [Keeping people's data](./data-compatibility.md).

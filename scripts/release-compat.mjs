@@ -2,7 +2,7 @@
 // losing or changing anything (see docs/data-compatibility.md). It runs the published releases themselves against the
 // data this version leaves, and this version against theirs:
 //
-//   npm run build && npm run test:compat                 every release tag in this clone
+//   npm run build && npm run test:compat                 every release tag in this clone (unpublished ones are skipped)
 //   npm run test:compat -- --releases 0.7.0,0.8.0        just these
 //   npm run test:compat -- --keep                        keep the data folders and logs to look at
 //
@@ -74,9 +74,12 @@ function releasesToTry() {
   return versions;
 }
 
+/** A tag without a published release (yet): no hub can run it, so there's nothing to switch to and from. */
+class NotPublished extends Error {}
+
 async function download(url) {
   const res = await fetch(url, { signal: AbortSignal.timeout(180_000) });
-  if (res.status === 404) throw new Error(`${url} isn't there (404): was that release published?`);
+  if (res.status === 404) throw new NotPublished(`it has no published release yet (${url} isn't there)`);
   if (!res.ok) throw new Error(`${url}: ${res.status} ${res.statusText}`);
   return Buffer.from(await res.arrayBuffer());
 }
@@ -427,10 +430,14 @@ async function main() {
         try {
           result = await scenario(await release(version));
         } catch (err) {
-          result = { name: version, ok: false, passed: [], error: err.message, home: null };
+          // Tagged but not published (the release workflow is still running, or failed): no hub has it.
+          result =
+            err instanceof NotPublished
+              ? { name: version, ok: true, skipped: err.message, passed: [], home: null }
+              : { name: version, ok: false, passed: [], error: err.message, home: null };
         }
         results.push(result);
-        console.log(`${result.ok ? 'ok  ' : 'FAIL'} ${version}`);
+        console.log(`${result.skipped ? 'skip' : result.ok ? 'ok  ' : 'FAIL'} ${version}`);
       }
     }),
   );
@@ -438,16 +445,18 @@ async function main() {
   results.sort((a, b) => versions.indexOf(a.name) - versions.indexOf(b.name));
   console.log('');
   for (const r of results) {
-    console.log(`${r.ok ? '✓' : '✗'} ${r.name}`);
+    console.log(`${r.skipped ? '-' : r.ok ? '✓' : '✗'} ${r.name}`);
+    if (r.skipped) console.log(`    skipped: ${r.skipped}`);
     for (const p of r.passed) console.log(`    ${p}`);
     if (!r.ok) {
       console.log(`    ${r.error.replace(/\n/g, '\n    ')}`);
       if (r.home) console.log(`    data and logs: ${r.home}`);
-    } else if (args.keep) console.log(`    data and logs: ${r.home}`);
+    } else if (args.keep && r.home) console.log(`    data and logs: ${r.home}`);
   }
   const failed = results.filter((r) => !r.ok);
+  const tried = results.filter((r) => !r.skipped);
   if (failed.length) {
-    console.log(`\n${failed.length} of ${results.length} release(s) can't be switched to and from this version without problems.`);
+    console.log(`\n${failed.length} of ${tried.length} release(s) can't be switched to and from this version without problems.`);
     for (const r of failed) {
       if (!r.home) continue;
       for (const step of ['1-release', '2-this-version', '3-back-to-release', '4-this-version-again']) {
@@ -457,9 +466,20 @@ async function main() {
         console.log(`\n--- ${r.name}: ${step}.log (last lines)\n${tail.join('\n')}`);
       }
     }
-    process.exit(1);
+    // Not process.exit(): downloads may still have connections open, and exiting under them can crash Node on Windows.
+    process.exitCode = 1;
+    return;
   }
-  console.log(`\nAll ${results.length} release(s) switch to and from this version without losing or changing anything.`);
+  if (!tried.length) {
+    console.error('release-compat: none of the releases has been published, so nothing was tried');
+    process.exitCode = 1;
+    return;
+  }
+  const skipped = results.length - tried.length;
+  console.log(
+    `\nAll ${tried.length} published release(s) switch to and from this version without losing or changing anything.` +
+      (skipped ? ` (${skipped} tag(s) without a published release skipped.)` : ''),
+  );
 }
 
 await main();

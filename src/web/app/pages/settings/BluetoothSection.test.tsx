@@ -71,4 +71,25 @@ describe('BluetoothSection', () => {
     render(createElement(BluetoothSection));
     expect(screen.getByText(/Not listening: No Bluetooth adapter found/)).toBeTruthy();
   });
+
+  it('says where Bluetooth was switched off, still listing the relays', () => {
+    live.ble = status({
+      state: 'off',
+      offBy: 'settings',
+      mode: null,
+      adapter: null,
+      adapters: [],
+      relays: [{ name: 'shed', lastAt: now, adverts: 3 }],
+    });
+    live.pills = [];
+    const { unmount } = render(createElement(BluetoothSection));
+    expect(screen.getByText('Off: switched off in the Hub settings above')).toBeTruthy();
+    expect(screen.getByText('Off')).toBeTruthy();
+    expect(screen.getByText('shed')).toBeTruthy();
+    unmount();
+
+    live.ble = status({ state: 'off', offBy: 'config', mode: null, adapter: null, adapters: [] });
+    render(createElement(BluetoothSection));
+    expect(screen.getByText("Off: switched off in the hub's config file (bluetooth.enabled)")).toBeTruthy();
+  });
 });

@@ -159,6 +159,11 @@ export function FirstRunGuide({ onHide }: { onHide: () => void }) {
                     t('The hub is listening now.')
                   ) : ble.state === 'starting' ? (
                     t('Bluetooth is starting…')
+                  ) : ble.state === 'off' ? (
+                    <Trans
+                      text={t('Bluetooth is switched off on the hub: see {settings}.')}
+                      values={{ settings: <a href="#/settings">{t('Settings')}</a> }}
+                    />
                   ) : (
                     <Trans
                       text={t("Bluetooth isn't working on the hub yet: see {settings}.")}

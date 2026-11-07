@@ -18,6 +18,7 @@ const BLE_STATE: Record<BleStatus['state'], string> = {
   error: tk('error'),
   unavailable: tk('unavailable'),
   mock: tk('mock'),
+  off: tk('off'),
 };
 const SCAN_MODE: Record<NonNullable<BleStatus['mode']>, string> = { passive: tk('passive'), active: tk('active') };
 

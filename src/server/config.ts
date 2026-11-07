@@ -12,6 +12,11 @@ export const configSchema = z.object({
   webDir: z.string().optional(),
   bluetooth: z
     .object({
+      /**
+       * False on a machine without Bluetooth (in a container, say): the hub never touches it, and it can't be switched
+       * on in Settings. Relays still pass on what they hear.
+       */
+      enabled: z.boolean().default(true),
       /** Older single-adapter setting, e.g. hci0 (used when `adapters` is empty). */
       adapter: z
         .string()
@@ -27,7 +32,7 @@ export const configSchema = z.object({
       /** Simulated pills instead of Bluetooth (development). */
       mock: z.boolean().default(false),
     })
-    .default({ adapter: '', adapters: [], scanMode: 'auto', mock: false }),
+    .default({ enabled: true, adapter: '', adapters: [], scanMode: 'auto', mock: false }),
   /** Raw readings older than this are deleted (15-minute averages are kept). 0 keeps everything. */
   rawRetentionDays: z.number().int().min(0).default(0),
   auth: z

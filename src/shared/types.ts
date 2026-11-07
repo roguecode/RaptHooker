@@ -515,7 +515,8 @@ export interface Session {
   pinSet: boolean;
 }
 
-export type BleState = 'starting' | 'scanning' | 'error' | 'unavailable' | 'mock';
+/** 'off': the hub's own Bluetooth is switched off (relays still pass on what they hear). */
+export type BleState = 'starting' | 'scanning' | 'error' | 'unavailable' | 'mock' | 'off';
 
 /**
  * 'passive': the adapter only listens, with the kernel filtering for RAPT adverts (kinder to the Pi's Wi-Fi).
@@ -535,6 +536,11 @@ export interface BleStatus {
   lastAdvertAt: number | null;
   /** When the hub last had the Bluetooth adapter reset because it looked stuck (null: never). */
   lastResetAt?: number | null;
+  /**
+   * Where Bluetooth was switched off (state 'off'): in the hub settings, or in the config file (`bluetooth.enabled`,
+   * for a machine without Bluetooth), which the hub settings can't switch back on.
+   */
+  offBy?: 'settings' | 'config' | null;
   since: number;
   /** Relays (e.g. an ESP32) that have posted adverts recently. */
   relays: RelayStatus[];
@@ -554,6 +560,8 @@ export interface HubSettings {
   abvFormula: AbvFormula;
   /** Check GitHub for new releases once a day. */
   updateCheck: boolean;
+  /** Listen with the hub's own Bluetooth. Off on a machine without it (in a container, say); relays still work. */
+  bluetooth: boolean;
 }
 
 export const DEFAULT_HUB_SETTINGS: HubSettings = {
@@ -561,6 +569,7 @@ export const DEFAULT_HUB_SETTINGS: HubSettings = {
   units: { gravity: 'sg', temperature: 'C' },
   abvFormula: 'standard',
   updateCheck: true,
+  bluetooth: true,
 };
 
 export interface MqttSettings {

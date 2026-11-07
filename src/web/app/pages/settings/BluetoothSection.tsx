@@ -13,6 +13,15 @@ const RELAY_GUIDE = 'https://github.com/roguecode/RaptHooker/blob/main/docs/rela
 function ModeLine({ ble }: { ble: BleStatus }) {
   if (ble.state === 'mock') return <>{t('Simulated pills (development mode)')}</>;
   if (ble.state === 'starting') return <>{t('Starting…')}</>;
+  if (ble.state === 'off') {
+    return (
+      <>
+        {ble.offBy === 'config'
+          ? t("Off: switched off in the hub's config file (bluetooth.enabled)")
+          : t('Off: switched off in the Hub settings above')}
+      </>
+    );
+  }
   if (ble.state !== 'scanning') return <>{t('Not listening: {error}', { error: ble.error ?? t('Bluetooth is unavailable') })}</>;
   if (ble.mode === 'passive') {
     return (
@@ -89,6 +98,7 @@ export function BluetoothSection() {
             {ble.mode === 'passive' ? t('Passive') : t('Active')}
           </span>
         )}
+        {ble.state === 'off' && <span className="chip">{t('Off')}</span>}
       </div>
 
       <dl className="kv">

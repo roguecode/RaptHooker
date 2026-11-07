@@ -16,7 +16,10 @@ export function settingsRoutes({ app, s, owner }: RouteContext): void {
 
   app.get('/api/settings/hub', async (): Promise<HubSettings> => settings.hub());
 
-  app.put('/api/settings/hub', owner, async (req): Promise<HubSettings> => settings.setHub(hubSettingsSchema.parse(req.body)));
+  // Saved over what's saved: a client from before the Bluetooth switch existed leaves it as it is.
+  app.put('/api/settings/hub', owner, async (req): Promise<HubSettings> =>
+    settings.setHub({ ...settings.hub(), ...hubSettingsSchema.parse(req.body) }),
+  );
 
   let rowCache = { at: 0, n: 0 };
   app.get('/api/status', async (): Promise<HubStatus> => {

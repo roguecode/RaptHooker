@@ -26,6 +26,9 @@ with [docker-compose.yml](../docker-compose.yml):
 The container runs as root so the host's D-Bus policy lets it talk to BlueZ. If you run it as another user, give that
 user access to `org.bluez` on the host (see [rapthooker-dbus.conf](../deploy/pi/rapthooker-dbus.conf)).
 
+On a host without Bluetooth, set `"bluetooth": { "enabled": false }` in the config (or switch it off under Settings →
+Hub): the hub stops trying, and doesn't need the D-Bus socket. [Relays](relay.md) and iSpindels still work.
+
 The config is [deploy/docker/rapthooker.config.json](../deploy/docker/rapthooker.config.json); mount your own over
 `/app/rapthooker.config.json` to change it, or set `RAPTHOOKER_PORT`.
 

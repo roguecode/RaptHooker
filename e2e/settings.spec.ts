@@ -1,3 +1,4 @@
+import type { HubSettings } from '@rapthooker/shared';
 import { expect, test } from './helpers';
 
 test('the hub gets a name, and this browser a theme, colours and a language', async ({ page }) => {
@@ -30,4 +31,32 @@ test('the hub gets a name, and this browser a theme, colours and a language', as
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.locator('html')).toHaveAttribute('data-palette', 'ocean');
   await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+});
+
+test("the hub's Bluetooth is switched off and back on", async ({ page, request }) => {
+  try {
+    await page.goto('/#/settings');
+    const hub = page.locator('section.panel').filter({ has: page.getByRole('heading', { level: 2, name: 'Hub' }) });
+    const listening = page.locator('section.bt-section');
+    const toggle = hub.getByRole('switch', { name: 'Listen over Bluetooth' });
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await expect(listening.getByText('Simulated pills (development mode)')).toBeVisible();
+
+    await toggle.click();
+    await hub.getByRole('button', { name: 'Save' }).click();
+    await expect(listening.getByText('Off: switched off in the Hub settings above')).toBeVisible();
+
+    await page.goto('/#/');
+    await expect(page.locator('.ble-chip')).toHaveText('Bluetooth off');
+    await expect(page.getByText("Bluetooth isn't working.")).toHaveCount(0);
+
+    await page.goto('/#/settings');
+    await toggle.click();
+    await hub.getByRole('button', { name: 'Save' }).click();
+    await expect(listening.getByText('Simulated pills (development mode)')).toBeVisible();
+  } finally {
+    // The other tests on this hub need the simulated pills, whatever happened here.
+    const hub = (await (await request.get('/api/settings/hub')).json()) as HubSettings;
+    expect((await request.put('/api/settings/hub', { data: { ...hub, bluetooth: true } })).ok()).toBe(true);
+  }
 });

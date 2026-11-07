@@ -203,6 +203,15 @@ function BluetoothPanel({ kind, onAdded }: { kind: BluetoothKind; onAdded: () =>
           </p>
         </div>
       )}
+      {ble?.state === 'off' && (
+        <div className="notice warning">
+          <Icon name="bluetooth" />
+          <p>
+            <strong>{t('Bluetooth is switched off on this hub.')}</strong>{' '}
+            {t("It only hears these through a relay while it's off (see Settings → Hub).")}
+          </p>
+        </div>
+      )}
       <section className="stack" aria-label={about.found()}>
         {found.length > 0 ? (
           found.map((n) => <NearbyCard key={n.address} pill={n} onAdded={onAdded} />)

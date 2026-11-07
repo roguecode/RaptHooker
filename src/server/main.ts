@@ -1,6 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import pino from 'pino';
+import type { HubSettings } from '@rapthooker/shared';
 import { loadConfig } from './config.js';
 import { Store } from './db.js';
 import { ClockGuard } from './clock.js';
@@ -23,7 +24,7 @@ import { TokenService } from './tokens.js';
 import { LogBuffer } from './logbuffer.js';
 import { BluezScanner } from './ble/bluez.js';
 import { MockScanner } from './ble/mock.js';
-import { UnavailableScanner, type Scanner } from './ble/scanner.js';
+import { OffScanner, UnavailableScanner, type Scanner } from './ble/scanner.js';
 import { CompositeScanner } from './ble/composite.js';
 import { RelayHub } from './ble/relays.js';
 import { createScreens } from './screens/index.js';
@@ -122,26 +123,31 @@ async function main(): Promise<void> {
   const tokens = new TokenService(store);
 
   const bt = config.bluetooth;
-  const radio: Scanner = bt.mock
-    ? new MockScanner()
-    : process.platform === 'linux'
-      ? new BluezScanner(log.child({ svc: 'ble' }), {
-          adapters: bt.adapters,
-          adapter: bt.adapter,
-          scanMode: bt.scanMode,
-          // Pills being recorded that the hub's own Bluetooth should hear: heard in the last day, and not only by relays.
-          expectPills: () =>
-            scanner.radioExpects(
-              pills
-                .list()
-                .filter((p) => !p.archived)
-                .map((p) => ({ address: p.address, lastHeardAt: p.live.lastHeardAt })),
-            ),
-          dataDir: config.dataDir,
-        })
-      : new UnavailableScanner('Bluetooth needs Linux with BlueZ (or set bluetooth.mock in the config to simulate pills)');
+  // The hub's own Bluetooth, made afresh each time it's switched on in Settings.
+  const makeRadio = (): Scanner => {
+    if (!bt.enabled) return new OffScanner('config');
+    if (!settings.hub().bluetooth) return new OffScanner('settings');
+    if (bt.mock) return new MockScanner();
+    if (process.platform !== 'linux') {
+      return new UnavailableScanner('Bluetooth needs Linux with BlueZ (or set bluetooth.mock in the config to simulate pills)');
+    }
+    return new BluezScanner(log.child({ svc: 'ble' }), {
+      adapters: bt.adapters,
+      adapter: bt.adapter,
+      scanMode: bt.scanMode,
+      // Pills being recorded that the hub's own Bluetooth should hear: heard in the last day, and not only by relays.
+      expectPills: () =>
+        scanner.radioExpects(
+          pills
+            .list()
+            .filter((p) => !p.archived)
+            .map((p) => ({ address: p.address, lastHeardAt: p.live.lastHeardAt })),
+        ),
+      dataDir: config.dataDir,
+    });
+  };
   // Relays (an ESP32 posting what it hears to /api/relay) feed the same stream as the hub's own Bluetooth.
-  const scanner = new CompositeScanner(radio, new RelayHub(log.child({ svc: 'relays' })));
+  const scanner = new CompositeScanner(makeRadio(), new RelayHub(log.child({ svc: 'relays' })));
   // shutdown is defined below; restart is only ever called once the hub is running.
   const system = new SystemService(config, store, log.child({ svc: 'system' }), {
     scanner,
@@ -200,6 +206,14 @@ async function main(): Promise<void> {
   });
   pills.on('offsets', (pillId: string) => guarded('refreshing the brew', () => brews.refresh(pillId)));
   settings.on('hub', () => guarded('updating brew ABV', () => brews.refreshAbv()));
+  // Switching Bluetooth on or off in Settings takes effect straight away (a config file that switches it off wins).
+  let radioOn = settings.hub().bluetooth;
+  settings.on('hub', (hub: HubSettings) => {
+    if (!bt.enabled || hub.bluetooth === radioOn) return;
+    radioOn = hub.bluetooth;
+    log.info(radioOn ? 'bluetooth switched on in Settings' : 'bluetooth switched off in Settings');
+    scanner.setRadio(makeRadio()).catch((err: Error) => log.error({ err: err.message }, 'bluetooth failed to start'));
+  });
   pills.on('removed', (pillId: string) => brews.forgetPill(pillId));
   clock.on('trusted', ({ synced }: { synced: boolean }) => {
     log.info({ synced }, synced ? 'clock synced' : 'gave up waiting for the clock to sync; using it as it is');

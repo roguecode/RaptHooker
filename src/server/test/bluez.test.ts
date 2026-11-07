@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DBusError, Message, MessageType, Variant, type MessageBus } from 'dbus-next';
+import type { BleStatus } from '@rapthooker/shared';
 import {
   BluezScanner,
   MONITOR_PATTERNS,
@@ -16,7 +17,8 @@ import {
 import { CompositeScanner } from '../ble/composite.js';
 import { RAPT_COMPANY_ID } from '../ble/rapt.js';
 import { RelayHub } from '../ble/relays.js';
-import { UnavailableScanner, type Advert } from '../ble/scanner.js';
+import { OffScanner, UnavailableScanner, type Advert, type Scanner } from '../ble/scanner.js';
+import { parseConfig } from '../config.js';
 import type { Logger } from '../log.js';
 import { CAPTURED, silent } from './helpers.js';
 
@@ -1012,5 +1014,108 @@ describe('BlueZ scanner, pills the radio should hear', () => {
       expect(scanner.status.state).toBe('scanning');
     }
     expect(asked).toEqual([20, 80, 260, 620]);
+  });
+});
+
+describe('Bluetooth switched off and on', () => {
+  /** A radio that only counts being started and stopped. */
+  class FakeRadio extends EventEmitter implements Scanner {
+    starts = 0;
+    stops = 0;
+    readonly status: BleStatus = {
+      state: 'scanning',
+      adapter: 'hci0',
+      adapters: ['hci0'],
+      mode: 'passive',
+      error: null,
+      lastAdvertAt: null,
+      since: START,
+      relays: [],
+    };
+
+    constructor(private readonly stopMs = 0) {
+      super();
+    }
+
+    async start(): Promise<void> {
+      this.starts++;
+    }
+
+    async stop(): Promise<void> {
+      if (this.stopMs) await new Promise((r) => setTimeout(r, this.stopMs));
+      this.stops++;
+    }
+
+    hear(): void {
+      this.emit('advert', {
+        address: '08:B6:1F:00:00:66',
+        rssi: -70,
+        manufacturer: null,
+        at: START,
+        mono: 0,
+        cached: false,
+        source: 'hci0',
+      });
+    }
+  }
+
+  it('is on unless the config file switches it off', () => {
+    expect(parseConfig({}, '/tmp', '/tmp').bluetooth.enabled).toBe(true);
+    expect(parseConfig({ bluetooth: { enabled: false } }, '/tmp', '/tmp').bluetooth).toMatchObject({ enabled: false, scanMode: 'auto' });
+    // The config files hubs already have, which don't mention it.
+    for (const shipped of ['../../../deploy/pi/rapthooker.config.example.json', '../../../deploy/docker/rapthooker.config.json']) {
+      const raw = JSON.parse(readFileSync(new URL(shipped, import.meta.url), 'utf8')) as unknown;
+      expect(parseConfig(raw, '/tmp', '/tmp').bluetooth.enabled, shipped).toBe(true);
+    }
+  });
+
+  it('swaps the radio while relays carry on, starting the new one only once the hub runs', async () => {
+    const relays = new RelayHub(silent, () => START);
+    const first = new FakeRadio();
+    const composite = new CompositeScanner(first, relays, () => START);
+    const sources: (string | undefined)[] = [];
+    composite.on('advert', (a: Advert) => sources.push(a.source));
+    const states: string[] = [];
+    composite.on('status', (s: BleStatus) => states.push(s.state));
+
+    // Switched off in Settings before the hub has started.
+    await composite.setRadio(new OffScanner('settings'));
+    expect(first).toMatchObject({ starts: 0, stops: 1 });
+    expect(composite.status).toMatchObject({ state: 'off', offBy: 'settings', adapters: [], error: null });
+    expect(states).toEqual(['off']);
+
+    await composite.start();
+    // The old radio is no longer listened to; relays are.
+    first.hear();
+    first.emit('status', first.status);
+    relays.ingest('shed', [{ address: '08:B6:1F:00:00:66', rssi: -80, manufacturerData: { [RAPT_COMPANY_ID]: CAPTURED.metricsFalling } }]);
+    expect(sources).toEqual(['relay:shed']);
+    expect(composite.status).toMatchObject({ state: 'off', lastAdvertAt: START, relays: [{ name: 'shed' }] });
+
+    // Switched on again: a fresh radio, started straight away.
+    const second = new FakeRadio();
+    await composite.setRadio(second);
+    expect(second).toMatchObject({ starts: 1, stops: 0 });
+    expect(composite.radio).toBe(second);
+    expect(composite.status).toMatchObject({ state: 'scanning', adapters: ['hci0'], relays: [{ name: 'shed' }] });
+    second.hear();
+    expect(sources).toEqual(['relay:shed', 'hci0']);
+
+    await composite.stop();
+    expect(second.stops).toBe(1);
+  });
+
+  it('swaps one at a time, in the order asked', async () => {
+    const slow = new FakeRadio(20);
+    const composite = new CompositeScanner(slow, new RelayHub(silent, () => START), () => START);
+    await composite.start();
+    const off = new OffScanner('settings');
+    const on = new FakeRadio();
+    // Off and straight back on, before the first radio has finished stopping.
+    await Promise.all([composite.setRadio(off), composite.setRadio(on)]);
+    expect(slow).toMatchObject({ starts: 1, stops: 1 });
+    expect(on).toMatchObject({ starts: 1, stops: 0 });
+    expect(composite.radio).toBe(on);
+    await composite.stop();
   });
 });

@@ -2307,5 +2307,14 @@
   "It notifies you every time it goes off (Don't repeat for is 0).": "Powiadamia za każdym razem, gdy się włączy (Nie powtarzaj przez = 0).",
   "More than 0: the points it drops a day (12 for a velocity of −12)": "Więcej niż 0: o ile punktów dziennie spada (12 dla tempa −12)",
   "Readings that look wrong (a pill that isn't floating) are skipped.": "Odczyty, które wyglądają na błędne (czujnik nie pływa), są pomijane.",
-  "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.": "Gdy trwa warka, czeka, aż gęstość spadnie o 0,002 od OG, żeby nie włączyć się przed startem fermentacji."
+  "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.": "Gdy trwa warka, czeka, aż gęstość spadnie o 0,002 od OG, żeby nie włączyć się przed startem fermentacji.",
+  "Listen over Bluetooth": "Nasłuchuj przez Bluetooth",
+  "Listens for pills, thermometers and other Bluetooth devices. Switch it off on a machine without Bluetooth (in a container, say): relays and Wi-Fi devices like the iSpindel still work.": "Nasłuchuje czujników, termometrów i innych urządzeń Bluetooth. Wyłącz to na komputerze bez Bluetooth (na przykład w kontenerze): przekaźniki i urządzenia Wi-Fi, takie jak iSpindel, nadal działają.",
+  "Switched off in the hub's config file (bluetooth.enabled), for a machine without Bluetooth.": "Wyłączone w pliku konfiguracyjnym huba (bluetooth.enabled), dla komputera bez Bluetooth.",
+  "Off: switched off in the hub's config file (bluetooth.enabled)": "Wyłączone w pliku konfiguracyjnym huba (bluetooth.enabled)",
+  "Off: switched off in the Hub settings above": "Wyłączone w ustawieniach Huba powyżej",
+  "Bluetooth off": "Bluetooth wyłączony",
+  "Bluetooth is switched off on the hub: see {settings}.": "Bluetooth na hubie jest wyłączony: zobacz {settings}.",
+  "Bluetooth is switched off on this hub.": "Bluetooth na tym hubie jest wyłączony.",
+  "It only hears these through a relay while it's off (see Settings → Hub).": "Dopóki Bluetooth jest wyłączony, hub słyszy je tylko przez przekaźnik (zobacz Ustawienia → Hub)."
 }

@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, within } from '@testing-library/react';
 import type { IspindelInfo, IspindelSetupProgress } from '@rapthooker/shared';
-import { makeNearby, makePill, makeReading, renderWithHub, settle, toastTexts } from '../../test/render';
+import { makeBle, makeNearby, makePill, makeReading, renderWithHub, settle, toastTexts } from '../../test/render';
 import { AddDeviceButton } from './AddDevice';
 
 vi.mock('../settings/copy', () => ({ copyText: vi.fn(async () => true) }));
@@ -100,6 +100,12 @@ describe('Add device', () => {
     expect(within(dialog).getByRole('heading', { name: '2-yolandi_[SG] is sending to this hub' })).toBeTruthy();
     expect(within(dialog).getByText(/Wi-Fi: Excellent \(-55 dBm\)/)).toBeTruthy();
     expect(within(dialog).getByRole('button', { name: /Add iSpindel/ })).toBeTruthy();
+  });
+
+  it('says Bluetooth devices are only heard through a relay while Bluetooth is off', async () => {
+    const { dialog } = await open({ ble: makeBle({ state: 'off', offBy: 'settings', adapter: null, adapters: [] }) });
+    expect(within(dialog).getByText('Bluetooth is switched off on this hub.')).toBeTruthy();
+    expect(within(dialog).queryByText("Bluetooth isn't working.")).toBeNull();
   });
 });
 

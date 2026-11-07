@@ -41,9 +41,11 @@ export function BleChip() {
         ? t('Simulated pills')
         : ble.state === 'starting'
           ? t('Starting Bluetooth')
-          : ble.state === 'unavailable'
-            ? t('No Bluetooth')
-            : t('Bluetooth problem');
+          : ble.state === 'off'
+            ? t('Bluetooth off')
+            : ble.state === 'unavailable'
+              ? t('No Bluetooth')
+              : t('Bluetooth problem');
   return (
     <div className="chips">
       {!clockSynced && (

@@ -94,6 +94,8 @@ Options go after `-s --`, for example
 - `--hostname NAME` renames the Pi (so it's `NAME.local`); without it the Pi keeps the name you gave it
 - `--tailscale` also installs [Tailscale](#5-https-and-access-away-from-home-tailscale)
 - `--version 0.3.0` installs that release instead of the latest
+- `--no-bluetooth` for a machine [without Bluetooth](#without-bluetooth), like a container; `--bluetooth` switches it
+  back on
 
 The installer checks the Pi is supported, downloads the latest [release](https://github.com/roguecode/RaptHooker/releases),
 checks it against its published checksums, puts it in `/opt/rapthooker` and runs [setup.sh](../deploy/pi/setup.sh),
@@ -154,7 +156,8 @@ To open it on your phone, **Settings → Open on another device** shows the hub'
 Tailscale one only for the owner). On a phone, use your browser's **Add to Home Screen** to open it like an app.
 
 Under **Settings → Hub** you can name the hub (shown in the top bar and the browser tab), pick the default units (used
-in notifications and by every browser that hasn't picked its own) and the ABV formula.
+in notifications and by every browser that hasn't picked its own) and the ABV formula, and switch its Bluetooth off on
+a machine [without it](#without-bluetooth).
 
 ### A screen for the brewery
 
@@ -257,6 +260,20 @@ becomes `hci0`, so leave `bluetooth.adapters` empty.
 
 For a fermenter the Pi can't hear at all (a garage, a chest freezer), an ESP32 next to it can pass on what it hears
 over Wi-Fi. See [relay.md](relay.md).
+
+### Without Bluetooth
+
+On a machine without Bluetooth, or where it can't be passed through (an LXC container on Proxmox, say), switch it off
+and the hub stops trying, without the _Bluetooth isn't working_ warning. [Relays](relay.md) and Wi-Fi devices like the
+[iSpindel](ispindel.md) still work.
+
+- **In the app:** Settings → Hub → _Listen over Bluetooth_. It takes effect straight away, and switches back on the same
+  way.
+- **When installing:** add `--no-bluetooth`, e.g.
+  `curl -fsSL https://raw.githubusercontent.com/roguecode/RaptHooker/main/deploy/install.sh | sudo bash -s -- --no-bluetooth`.
+  It sets `"bluetooth": { "enabled": false }` in `/etc/rapthooker/rapthooker.config.json`, and setup leaves Bluetooth
+  alone (BlueZ's experimental features, its restart and reset helpers). Updates keep it that way. The app's switch is
+  then locked off; to switch Bluetooth back on, run the installer again with `--bluetooth`.
 
 ## Troubleshooting
 

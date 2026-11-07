@@ -6,6 +6,7 @@ import {
   detailRange,
   flowLayout,
   isZoomed,
+  markLineX,
   mergeHistory,
   panWindow,
   pinchWindow,
@@ -311,6 +312,20 @@ describe('stackLabels', () => {
       2,
     );
     expect(rows).toEqual([0, 1, -1, 0, 0]);
+  });
+});
+
+describe('markLineX', () => {
+  it("draws a mark's line where it is, on a pixel", () => {
+    expect(markLineX(500.3, 80, 1000)).toBe(500.5);
+    expect(markLineX(80, 80, 1000)).toBe(80.5);
+  });
+
+  it('keeps a mark at the right edge just inside the plot, so its line is not clipped', () => {
+    expect(markLineX(1080, 80, 1000)).toBe(1079.5);
+    expect(markLineX(1079.8, 80, 1000)).toBe(1079.5);
+    // On a high-DPI screen the line is wider.
+    expect(markLineX(2160, 160, 2000, 2)).toBe(2158.5);
   });
 });
 

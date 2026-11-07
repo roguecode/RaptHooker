@@ -38,6 +38,8 @@ function Betas({ info, onChange }: { info: UpdateInfo; onChange: (info: UpdateIn
     }
   };
   const busy = info.state === 'updating';
+  // A development build's version number doesn't say what it runs: a beta with the same number isn't this hub.
+  const isThisHub = (version: string) => version === info.current && !info.devBuild;
 
   return (
     <details
@@ -60,11 +62,11 @@ function Betas({ info, onChange }: { info: UpdateInfo; onChange: (info: UpdateIn
               <li key={b.version} className="update-beta">
                 <div className="update-beta-head">
                   <strong>RaptHooker {b.version}</strong>
-                  {b.version === info.current && <span className="chip success">{t('This hub')}</span>}
+                  {isThisHub(b.version) && <span className="chip success">{t('This hub')}</span>}
                   {b.version === info.newerBeta && <span className="chip warning">{t('Newer')}</span>}
                   {b.publishedAt !== null && <span className="muted">{timeAgo(b.publishedAt, now)}</span>}
                   <span className="grow" />
-                  {b.version !== info.current && !busy && <InstallVersionButton info={info} version={b.version} onChange={onChange} />}
+                  {!isThisHub(b.version) && !busy && <InstallVersionButton info={info} version={b.version} onChange={onChange} />}
                 </div>
                 <details className="update-beta-notes">
                   <summary>{t("What's in it")}</summary>

@@ -187,6 +187,24 @@ describe('Settings: Updates', () => {
     expect(view.calls('POST /api/update/install').map((c) => c.body)).toEqual([{ version: '0.2.1' }]);
   });
 
+  it('lets a development build with the same version number install the beta', async () => {
+    await renderWithHub(<UpdateSection />, {
+      routes: {
+        'GET /api/update': info({
+          current: '0.3.0-beta.1',
+          devBuild: dev,
+          canSwitchToRelease: true,
+          canInstall: true,
+          betas: [BETA],
+          betasCheckedAt: Date.now(),
+        }),
+      },
+    });
+    await screen.findByText('RaptHooker 0.3.0-beta.1', { selector: 'strong' });
+    expect(screen.queryByText('This hub', { selector: '.chip' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Try this beta' })).toBeTruthy();
+  });
+
   it("doesn't offer betas on a hub that can't install them", async () => {
     await renderWithHub(<UpdateSection />, { routes: { 'GET /api/update': info() } });
     await screen.findByText('Updates');

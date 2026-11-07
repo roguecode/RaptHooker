@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_PILL_MODEL, type AlertRuleInput, type Pill, type Reading } from '@rapthooker/shared';
+import { DEFAULT_PILL_MODEL, type AlertRuleInput, type Brew, type Pill, type Reading } from '@rapthooker/shared';
 import { AlertService } from '../alerts.js';
 import { silent, tempStore } from './helpers.js';
 
@@ -33,7 +33,7 @@ const pill: Pill = {
   brew: null,
 };
 
-function setup(over: Partial<Reading> = {}, opts: { pill?: Pill } = {}) {
+function setup(over: Partial<Reading> = {}, opts: { pill?: Pill; brew?: () => Brew | null } = {}) {
   const t = tempStore();
   cleanup = t.cleanup;
   let now = Date.UTC(2026, 9, 1, 10);
@@ -67,7 +67,7 @@ function setup(over: Partial<Reading> = {}, opts: { pill?: Pill } = {}) {
           lastHeardAt: () => heardAt,
           offsets: () => ({ gravity: 0, temperature: 0 }),
         },
-        brews: { activeFor: () => null },
+        brews: { activeFor: opts.brew ?? (() => null) },
         units: () => ({ temperature: 'C', gravity: 'sg' }),
         clockTrusted: () => trusted,
         now: () => now,
@@ -217,6 +217,15 @@ describe('alert rules', () => {
     expect(saved).not.toHaveProperty('id');
   });
 
+  it("lists one pill's events", () => {
+    const t = setup({ temperature: 26 });
+    t.alerts.create(rule());
+    t.store.addAlertEvent({ ruleId: 'r2', ruleName: 'Other', pillId: 'p2', at: t.now(), kind: 'fired', message: 'm', value: null });
+    expect(t.alerts.events(10).map((e) => e.pillId)).toEqual(['p2', 'p1']);
+    expect(t.alerts.events(10, 'p1').map((e) => e.ruleName)).toEqual(['Too warm']);
+    expect(t.alerts.events(10, 'p3')).toEqual([]);
+  });
+
   it("judges fermentation stable by the gravity the pill's model gives", () => {
     // The gravity worked out from the tilt (steady at 1.012) rather than the pill's own (all over the place).
     const tilted: Pill = {
@@ -245,12 +254,113 @@ describe('alert rules', () => {
   });
 });
 
+describe('velocity alerts', () => {
+  /** A running brew with just what the alerts look at. */
+  const brew = (og: number | null): Brew => ({ id: 'b1', pillId: 'p1', startedAt: 0, endedAt: null, stats: { og } }) as unknown as Brew;
+
+  it('fires when fermentation slows to under the threshold, and lets go once it is clearly faster again', () => {
+    const current: Partial<Reading> = { velocity: -12 };
+    const t = setup(current);
+    t.alerts.create(rule({ name: 'Nearly done', kind: 'velocity_slow', threshold: 10 }));
+    expect(t.alerts.events(10)).toEqual([]);
+    current.velocity = -9.5;
+    t.alerts.evaluatePill('p1');
+    // Within a point of the threshold it stays as it is.
+    current.velocity = -10.6;
+    t.alerts.evaluatePill('p1');
+    current.velocity = -11.2;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10).map((e) => [e.kind, e.message, e.value])).toEqual([
+      ['resolved', "Back to normal: Kveik's gravity is dropping 11.2 points a day", 11.2],
+      ['fired', "Kveik's gravity is dropping 9.5 points a day, slower than 10.0 points a day", 9.5],
+    ]);
+  });
+
+  it('fires when fermentation is faster than the threshold', () => {
+    const current: Partial<Reading> = { velocity: -4 };
+    const t = setup(current);
+    t.alerts.create(rule({ name: 'Going strong', kind: 'velocity_fast', threshold: 10 }));
+    current.velocity = -14.3;
+    t.alerts.evaluatePill('p1');
+    current.velocity = -9.5;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.list()[0]!.active).toEqual(['p1']);
+    current.velocity = -8.9;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10).map((e) => [e.kind, e.message])).toEqual([
+      ['resolved', "Back to normal: Kveik's gravity is dropping 8.9 points a day"],
+      ['fired', "Kveik's gravity is dropping 14.3 points a day, faster than 10.0 points a day"],
+    ]);
+  });
+
+  it('clears a small threshold half of it back, not a whole point', () => {
+    const current: Partial<Reading> = { velocity: -0.3 };
+    const t = setup(current);
+    t.alerts.create(rule({ name: 'Done', kind: 'velocity_slow', threshold: 0.5 }));
+    current.velocity = -0.7;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.list()[0]!.active).toEqual(['p1']);
+    current.velocity = -0.8;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10).map((e) => e.kind)).toEqual(['resolved', 'fired']);
+  });
+
+  it('counts a rising or steady gravity as slow', () => {
+    const current: Partial<Reading> = { velocity: 2 };
+    const t = setup(current);
+    t.alerts.create(rule({ name: 'Slow', kind: 'velocity_slow', threshold: 1 }));
+    t.alerts.create(rule({ name: 'Fast', kind: 'velocity_fast', threshold: 1 }));
+    current.velocity = 0.01;
+    t.alerts.create(rule({ name: 'Slow again', kind: 'velocity_slow', threshold: 1 }));
+    expect(t.alerts.events(10).map((e) => [e.ruleName, e.message])).toEqual([
+      ['Slow again', "Kveik's gravity is steady, slower than 1.0 points a day"],
+      ['Slow', "Kveik's gravity is rising 2.0 points a day, slower than 1.0 points a day"],
+    ]);
+  });
+
+  it('waits for a velocity and for a reading that looks real', () => {
+    const current: Partial<Reading> = { velocity: null };
+    const t = setup(current);
+    t.alerts.create(rule({ kind: 'velocity_slow', threshold: 10 }));
+    expect(t.alerts.events(10)).toEqual([]);
+    Object.assign(current, { velocity: -1, plausible: false });
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10)).toEqual([]);
+    current.plausible = true;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10).map((e) => e.kind)).toEqual(['fired']);
+  });
+
+  it("doesn't call a brew slow before it has started fermenting", () => {
+    const current: Partial<Reading> = { gravity: 1.0495, velocity: -0.3 };
+    const t = setup(current, { brew: () => brew(1.05) });
+    t.alerts.create(rule({ name: 'Slow', kind: 'velocity_slow', threshold: 2 }));
+    t.alerts.create(rule({ name: 'Fast', kind: 'velocity_fast', threshold: 0.2 }));
+    expect(t.alerts.events(10).map((e) => e.ruleName)).toEqual(['Fast']);
+    // Once the gravity has dropped two points from the OG, it counts.
+    current.gravity = 1.0479;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10).map((e) => [e.ruleName, e.message])).toEqual([
+      ['Slow', "Kveik's gravity is dropping 0.3 points a day, slower than 2.0 points a day"],
+      ['Fast', "Kveik's gravity is dropping 0.3 points a day, faster than 0.2 points a day"],
+    ]);
+  });
+
+  it("doesn't wait for a brew that has no OG yet", () => {
+    const t = setup({ gravity: 1.05, velocity: -0.3 }, { brew: () => brew(null) });
+    t.alerts.create(rule({ kind: 'velocity_slow', threshold: 2 }));
+    expect(t.alerts.events(10)).toHaveLength(1);
+  });
+});
+
 describe('alerts on a thermometer', () => {
   it('leaves out gravity and battery rules, and still watches the temperature', async () => {
     const t = setup({ gravity: null, pillGravity: null, battery: null, tilt: null, x: null, y: null, z: null, temperature: 26 });
     for (const [kind, threshold] of [
       ['gravity_below', 1.1],
       ['gravity_stable', 5],
+      ['velocity_slow', 100],
+      ['velocity_fast', -100],
       ['battery_below', 50],
       ['temp_above', 25],
     ] as const) {

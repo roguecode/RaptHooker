@@ -2181,5 +2181,46 @@
   "They've been tested with a few screens only, and how screens work may still change.": "Solo se ha probado con unas pocas pantallas, y su funcionamiento aún puede cambiar.",
   "Where a working one was bought ({site})": "Dónde se compró una que funcionaba ({site})",
   "Which screens work": "Qué pantallas funcionan",
-  "Won't work": "No funcionará"
+  "Won't work": "No funcionará",
+  "Fermentation slows": "La fermentación se ralentiza",
+  "Gravity drops fewer points a day than this": "La densidad baja menos de estos puntos al día",
+  "Fermentation speeds up": "La fermentación se acelera",
+  "Gravity drops more points a day than this": "La densidad baja más de estos puntos al día",
+  "points/day": "puntos/día",
+  "Slower than": "Más lento que",
+  "Faster than": "Más rápido que",
+  "Gravity dropping less than {count} point a day|Gravity dropping less than {count} points a day": {
+    "one": "La densidad baja menos de {count} punto al día",
+    "other": "La densidad baja menos de {count} puntos al día"
+  },
+  "Gravity dropping more than {count} point a day|Gravity dropping more than {count} points a day": {
+    "one": "La densidad baja más de {count} punto al día",
+    "other": "La densidad baja más de {count} puntos al día"
+  },
+  "Alert: {alert}": "Alerta: {alert}",
+  "OK: {alert}": "OK: {alert}",
+  "When alerts went off and cleared is marked on the chart.": "El gráfico marca cuándo saltaron las alertas y cuándo se resolvieron.",
+  "Turn on to mark when alerts went off and cleared.": "Actívalo para marcar cuándo saltaron las alertas y cuándo se resolvieron.",
+  "A point is 0.001, so a velocity of −12 /day is 12 points: 0.012 a day.": "Un punto es 0,001, así que una velocidad de −12 /día son 12 puntos: 0,012 al día.",
+  "A point is 0.001.": "Un punto es 0,001.",
+  "Alerts when the gravity drops by less than {amount} in a day (that's {from} to {to}).": "Avisa cuando la densidad baja menos de {amount} en un día (es decir, de {from} a {to}).",
+  "Alerts when the gravity drops by more than {amount} in a day (that's {from} to {to}).": "Avisa cuando la densidad baja más de {amount} en un día (es decir, de {from} a {to}).",
+  "Alerts when the gravity moves by less than {amount} over {count} hour (that's {from} to {to}).|Alerts when the gravity moves by less than {amount} over {count} hours (that's {from} to {to}).": {
+    "one": "Avisa cuando la densidad varía menos de {amount} en {count} hora (es decir, de {from} a {to}).",
+    "other": "Avisa cuando la densidad varía menos de {amount} en {count} horas (es decir, de {from} a {to})."
+  },
+  "In °P, that's about {amount}.": "En °P, son unos {amount}.",
+  "It clears once the gravity drops by less than {amount} a day.": "Se resuelve cuando la densidad baja menos de {amount} al día.",
+  "It clears once the gravity drops by more than {amount} a day.": "Se resuelve cuando la densidad baja más de {amount} al día.",
+  "It clears once the gravity moves by more than {amount} over the window.": "Se resuelve cuando la densidad varía más de {amount} en el intervalo.",
+  "It goes by the velocity on each pill's page (the pill's own, or RaptHooker's over the hours set there): a trend, so it follows changes a little late.": "Usa la velocidad de la página de cada Pill (la de la propia Pill, o la de RaptHooker con las horas indicadas allí): es una tendencia, así que sigue los cambios con algo de retraso.",
+  "It needs readings covering the whole window, and a running brew must have been going that long.": "Necesita lecturas de todo el intervalo, y un lote en marcha debe llevar al menos ese tiempo en marcha.",
+  "It notifies you at most once every {count} minute (Don't repeat for).|It notifies you at most once every {count} minutes (Don't repeat for).": {
+    "one": "Avisa como mucho una vez cada {count} minuto (No repetir durante).",
+    "other": "Avisa como mucho una vez cada {count} minutos (No repetir durante)."
+  },
+  "It notifies you every time it goes off (Don't repeat for is 0).": "Avisa cada vez que salta (No repetir durante es 0).",
+  "More than 0: the points it drops a day (12 for a velocity of −12)": "Más de 0: los puntos que baja al día (12 para una velocidad de −12)",
+  "Readings that look wrong (a pill that isn't floating) are skipped.": "Se omiten las lecturas que parecen incorrectas (una Pill que no flota).",
+  "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.": "Mientras haya un lote en marcha, espera a que la densidad haya bajado 0,002 desde la OG, para no saltar antes de que empiece la fermentación."
 }

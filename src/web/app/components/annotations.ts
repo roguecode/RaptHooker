@@ -1,4 +1,4 @@
-import type { Brew, BrewEventKind } from '@rapthooker/shared';
+import type { AlertEvent, Brew, BrewEventKind } from '@rapthooker/shared';
 import { t, tk } from '../i18n';
 
 /** A moment marked on a chart: a dashed vertical line with a small label at the top. */
@@ -48,4 +48,16 @@ export function brewAnnotations(
   }
   if (brew.endedAt) out.push({ ts: brew.endedAt, label: t('Brew ended'), color: 'var(--violet-2)' });
   return out.sort((a, b) => a.ts - b.ts);
+}
+
+/** When alerts went off and cleared, for `<Chart annotations>` (in the colours of the Alerts page's Recent list). */
+export function alertAnnotations(events: readonly AlertEvent[]): ChartAnnotation[] {
+  return events
+    .map((e) => {
+      const fired = e.kind === 'fired';
+      // i18n: on a chart, where an alert went off ("Alert: Too warm") and where it went back to normal ("OK: Too warm")
+      const label = fired ? t('Alert: {alert}', { alert: e.ruleName }) : t('OK: {alert}', { alert: e.ruleName });
+      return { ts: e.at, label: short(label), color: fired ? 'var(--warning)' : 'var(--success)' };
+    })
+    .sort((a, b) => a.ts - b.ts);
 }

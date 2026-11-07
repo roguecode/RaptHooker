@@ -77,9 +77,10 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
 - **MQTT and Home Assistant.** Publish every reading to an MQTT broker. With Home Assistant discovery each pill shows up
   as a device with gravity, temperature, battery and brew sensors, no YAML needed. Without MQTT, the Home Assistant
   webhook preset feeds automations, or sensors you define in YAML. See [docs/home-assistant.md](./home-assistant.md).
-- **Alerts**: too warm/cold, target gravity reached, fermentation finished (gravity stable), low battery, pill gone
-  quiet. Sent as browser notifications and through ntfy, Pushover, Telegram, Discord or email, chosen per alert. See
-  [docs/alerts.md](./alerts.md).
+- **Alerts**: too warm/cold, target gravity reached, fermentation slowing down or speeding up (points a day),
+  fermentation finished (gravity stable), low battery, pill gone quiet, marked on the pill's chart where they went off
+  and cleared. Sent as browser notifications and through ntfy, Pushover, Telegram, Discord or email, chosen per alert.
+  See [docs/alerts.md](./alerts.md).
 
 ## Screens
 

@@ -21,6 +21,7 @@ import type { ChartAnnotation } from './annotations';
 import {
   clampWindow,
   isZoomed,
+  markLineX,
   MIN_SPAN_MS,
   panWindow,
   pinchWindow,
@@ -728,9 +729,10 @@ export function Chart({
           ctx.strokeStyle = alpha(s.color, 0.75);
           ctx.setLineDash([4 * dpr, 4 * dpr]);
           ctx.lineWidth = dpr;
+          const lineX = markLineX(s.x, left, width, dpr);
           ctx.beginPath();
-          ctx.moveTo(Math.round(s.x) + 0.5, top);
-          ctx.lineTo(Math.round(s.x) + 0.5, top + height);
+          ctx.moveTo(lineX, top);
+          ctx.lineTo(lineX, top + height);
           ctx.stroke();
           const row = rows[i]!;
           if (row < 0) return;

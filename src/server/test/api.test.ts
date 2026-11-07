@@ -106,6 +106,19 @@ describe('API', () => {
     expect((await app.inject({ url: `/api/kegs/${keg.id}` })).statusCode).toBe(404);
   });
 
+  it("lists one pill's alerts, and takes velocity alerts", async () => {
+    const { app, store } = await setup();
+    for (const pillId of ['p1', 'p2'])
+      store.addAlertEvent({ ruleId: 'r1', ruleName: 'Too warm', pillId, at: 1, kind: 'fired', message: `${pillId} is warm`, value: 25 });
+    expect((await app.inject({ url: '/api/alerts/events?pillId=p2' })).json()).toEqual([
+      expect.objectContaining({ pillId: 'p2', message: 'p2 is warm' }),
+    ]);
+    expect((await app.inject({ url: '/api/alerts/events' })).json()).toHaveLength(2);
+    const payload = { name: 'Nearly done', kind: 'velocity_slow', threshold: 2 };
+    const made = await app.inject({ method: 'POST', url: '/api/alerts/rules', payload, headers: owner });
+    expect(made.json()).toMatchObject({ kind: 'velocity_slow', threshold: 2, hours: 48, channelIds: 'all' });
+  });
+
   it('lets anyone look but only the owner change things', async () => {
     const { app } = await setup();
     expect((await app.inject({ url: '/api/session' })).json()).toMatchObject({ role: 'viewer', pinSet: false });

@@ -2180,5 +2180,46 @@
   "They've been tested with a few screens only, and how screens work may still change.": "Die Funktion wurde erst mit wenigen Bildschirmen getestet, und wie Bildschirme funktionieren, kann sich noch ändern.",
   "Where a working one was bought ({site})": "Wo ein funktionierendes Exemplar gekauft wurde ({site})",
   "Which screens work": "Welche Bildschirme funktionieren",
-  "Won't work": "Funktioniert nicht"
+  "Won't work": "Funktioniert nicht",
+  "Fermentation slows": "Gärung wird langsamer",
+  "Gravity drops fewer points a day than this": "Dichte sinkt um weniger als so viele Punkte pro Tag",
+  "Fermentation speeds up": "Gärung wird schneller",
+  "Gravity drops more points a day than this": "Dichte sinkt um mehr als so viele Punkte pro Tag",
+  "points/day": "Punkte/Tag",
+  "Slower than": "Langsamer als",
+  "Faster than": "Schneller als",
+  "Gravity dropping less than {count} point a day|Gravity dropping less than {count} points a day": {
+    "one": "Dichte sinkt um weniger als {count} Punkt pro Tag",
+    "other": "Dichte sinkt um weniger als {count} Punkte pro Tag"
+  },
+  "Gravity dropping more than {count} point a day|Gravity dropping more than {count} points a day": {
+    "one": "Dichte sinkt um mehr als {count} Punkt pro Tag",
+    "other": "Dichte sinkt um mehr als {count} Punkte pro Tag"
+  },
+  "Alert: {alert}": "Alarm: {alert}",
+  "OK: {alert}": "OK: {alert}",
+  "When alerts went off and cleared is marked on the chart.": "Im Diagramm ist markiert, wann Alarme ausgelöst und aufgehoben wurden.",
+  "Turn on to mark when alerts went off and cleared.": "Einschalten, um zu markieren, wann Alarme ausgelöst und aufgehoben wurden.",
+  "A point is 0.001, so a velocity of −12 /day is 12 points: 0.012 a day.": "Ein Punkt ist 0,001, eine Gärrate von −12 /Tag sind also 12 Punkte: 0,012 pro Tag.",
+  "A point is 0.001.": "Ein Punkt ist 0,001.",
+  "Alerts when the gravity drops by less than {amount} in a day (that's {from} to {to}).": "Alarm, wenn die Dichte an einem Tag um weniger als {amount} sinkt (also von {from} auf {to}).",
+  "Alerts when the gravity drops by more than {amount} in a day (that's {from} to {to}).": "Alarm, wenn die Dichte an einem Tag um mehr als {amount} sinkt (also von {from} auf {to}).",
+  "Alerts when the gravity moves by less than {amount} over {count} hour (that's {from} to {to}).|Alerts when the gravity moves by less than {amount} over {count} hours (that's {from} to {to}).": {
+    "one": "Alarm, wenn sich die Dichte in {count} Stunde um weniger als {amount} ändert (also von {from} auf {to}).",
+    "other": "Alarm, wenn sich die Dichte in {count} Stunden um weniger als {amount} ändert (also von {from} auf {to})."
+  },
+  "In °P, that's about {amount}.": "In °P sind das etwa {amount}.",
+  "It clears once the gravity drops by less than {amount} a day.": "Er wird aufgehoben, sobald die Dichte um weniger als {amount} pro Tag sinkt.",
+  "It clears once the gravity drops by more than {amount} a day.": "Er wird aufgehoben, sobald die Dichte um mehr als {amount} pro Tag sinkt.",
+  "It clears once the gravity moves by more than {amount} over the window.": "Er wird aufgehoben, sobald sich die Dichte im Zeitfenster um mehr als {amount} ändert.",
+  "It goes by the velocity on each pill's page (the pill's own, or RaptHooker's over the hours set there): a trend, so it follows changes a little late.": "Er richtet sich nach der Gärrate auf der Seite jeder Pill (der eigenen der Pill oder der von RaptHooker über die dort eingestellten Stunden): ein Trend, der Änderungen etwas verzögert folgt.",
+  "It needs readings covering the whole window, and a running brew must have been going that long.": "Er braucht Messwerte über das ganze Zeitfenster, und ein laufender Sud muss schon so lange laufen.",
+  "It notifies you at most once every {count} minute (Don't repeat for).|It notifies you at most once every {count} minutes (Don't repeat for).": {
+    "one": "Benachrichtigt höchstens einmal alle {count} Minute (Nicht wiederholen für).",
+    "other": "Benachrichtigt höchstens einmal alle {count} Minuten (Nicht wiederholen für)."
+  },
+  "It notifies you every time it goes off (Don't repeat for is 0).": "Benachrichtigt jedes Mal, wenn er ausgelöst wird (Nicht wiederholen für ist 0).",
+  "More than 0: the points it drops a day (12 for a velocity of −12)": "Mehr als 0: die Punkte, um die sie pro Tag sinkt (12 bei einer Gärrate von −12)",
+  "Readings that look wrong (a pill that isn't floating) are skipped.": "Messwerte, die falsch aussehen (eine Pill, die nicht schwimmt), werden übersprungen.",
+  "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.": "Während ein Sud läuft, wartet er, bis die Dichte um 0,002 unter die OG gefallen ist, damit er nicht vor Gärbeginn auslöst."
 }

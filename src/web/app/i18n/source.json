@@ -852,6 +852,16 @@
       "components/ImageLink.tsx"
     ]
   },
+  "A point is 0.001, so a velocity of −12 /day is 12 points: 0.012 a day.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
+  "A point is 0.001.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
   "A removed pill": {
     "files": [
       "pages/screens/ScreenCard.tsx",
@@ -1182,9 +1192,15 @@
       "pages/alerts/AlertsPage.tsx"
     ]
   },
+  "Alert: {alert}": {
+    "files": [
+      "components/annotations.ts"
+    ]
+  },
   "Alerts": {
     "files": [
       "App.tsx",
+      "components/ChartAlerts.tsx",
       "pages/alerts/AlertsPage.tsx"
     ]
   },
@@ -1197,6 +1213,22 @@
     "files": [
       "pages/alerts/PushPanel.tsx"
     ]
+  },
+  "Alerts when the gravity drops by less than {amount} in a day (that's {from} to {to}).": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
+  "Alerts when the gravity drops by more than {amount} in a day (that's {from} to {to}).": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
+  "Alerts when the gravity moves by less than {amount} over {count} hour (that's {from} to {to}).|Alerts when the gravity moves by less than {amount} over {count} hours (that's {from} to {to}).": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ],
+    "plural": true
   },
   "Alerts won't be sent here any more.": {
     "files": [
@@ -3602,6 +3634,11 @@
       "pages/webhooks/WebhooksPage.tsx"
     ]
   },
+  "Faster than": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
   "Fermentation": {
     "files": [
       "pages/brews/BrewPage.tsx"
@@ -3611,6 +3648,16 @@
     "files": [
       "components/Ferment.tsx",
       "components/imageLinkOptions.ts"
+    ]
+  },
+  "Fermentation slows": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Fermentation speeds up": {
+    "files": [
+      "pages/alerts/strings.ts"
     ]
   },
   "Fermentation stable": {
@@ -4133,6 +4180,28 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "Gravity dropping less than {count} point a day|Gravity dropping less than {count} points a day": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ],
+    "plural": true
+  },
+  "Gravity dropping more than {count} point a day|Gravity dropping more than {count} points a day": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ],
+    "plural": true
+  },
+  "Gravity drops fewer points a day than this": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Gravity drops more points a day than this": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
   "Gravity drops to a target": {
     "files": [
       "pages/alerts/strings.ts"
@@ -4575,6 +4644,11 @@
       "format.ts"
     ]
   },
+  "In °P, that's about {amount}.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
   "In a browser, open api.telegram.org/bot<your token>/getUpdates and copy the number after \"chat\":{\"id\":": {
     "files": [
       "pages/alerts/strings.ts"
@@ -4730,9 +4804,29 @@
       "pages/devices/IspindelTab.tsx"
     ]
   },
+  "It clears once the gravity drops by less than {amount} a day.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
+  "It clears once the gravity drops by more than {amount} a day.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
+  "It clears once the gravity moves by more than {amount} over the window.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
   "It doesn't restart by itself here: start it again.": {
     "files": [
       "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "It goes by the velocity on each pill's page (the pill's own, or RaptHooker's over the hours set there): a trend, so it follows changes a little late.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
     ]
   },
   "It hasn't sent a reading yet. It's added as soon as one arrives (for the next 2 hours), or it shows up here to add. If nothing comes:": {
@@ -4764,6 +4858,22 @@
   "It moves to the earlier kegs. The Laser Level carries on recording either way.": {
     "files": [
       "pages/pill/KegPanel.tsx"
+    ]
+  },
+  "It needs readings covering the whole window, and a running brew must have been going that long.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
+  "It notifies you at most once every {count} minute (Don't repeat for).|It notifies you at most once every {count} minutes (Don't repeat for).": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ],
+    "plural": true
+  },
+  "It notifies you every time it goes off (Don't repeat for is 0).": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
     ]
   },
   "It reads the iSpindel's settings and changes only these: the Wi-Fi it joins, Service Type (HTTP), where it sends to (this hub, {where}), the token, and how often it sends. Its name (unless you give it a new one), its gravity formula and everything else stay as they are.": {
@@ -5597,6 +5707,11 @@
       "components/ChartSmoothing.tsx"
     ]
   },
+  "More than 0: the points it drops a day (12 for a velocity of −12)": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
   "Most of the drop is in: a fair guess.": {
     "files": [
       "pages/brews/Prediction.tsx"
@@ -6303,6 +6418,11 @@
       "pages/settings/BackupSection.tsx"
     ]
   },
+  "OK: {alert}": {
+    "files": [
+      "components/annotations.ts"
+    ]
+  },
   "On": {
     "files": [
       "pages/alerts/ChannelEditor.tsx"
@@ -6977,6 +7097,11 @@
       "pages/pill/CalibrationWizard.tsx"
     ]
   },
+  "points/day": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
   "Port": {
     "files": [
       "pages/alerts/strings.ts"
@@ -7278,6 +7403,11 @@
     "files": [
       "pages/webhooks/ScheduleFields.tsx",
       "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Readings that look wrong (a pill that isn't floating) are skipped.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
     ]
   },
   "Readings will be missing until it's back; the hub keeps trying.": {
@@ -8316,6 +8446,11 @@
   "Skip to content": {
     "files": [
       "App.tsx"
+    ]
+  },
+  "Slower than": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
     ]
   },
   "Slowing down: under a quarter of its fastest rate.": {
@@ -9896,6 +10031,11 @@
       "components/ExclusionControls.tsx"
     ]
   },
+  "Turn on to mark when alerts went off and cleared.": {
+    "files": [
+      "components/ChartAlerts.tsx"
+    ]
+  },
   "TV mode": {
     "files": [
       "App.tsx",
@@ -10517,6 +10657,11 @@
       "pages/webhooks/ScheduleFields.tsx"
     ]
   },
+  "When alerts went off and cleared is marked on the chart.": {
+    "files": [
+      "components/ChartAlerts.tsx"
+    ]
+  },
   "When and what": {
     "files": [
       "pages/webhooks/ScheduleFields.tsx"
@@ -10570,6 +10715,11 @@
   "Which screens work": {
     "files": [
       "pages/screens/ScreensPage.tsx"
+    ]
+  },
+  "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
     ]
   },
   "while brewing": {

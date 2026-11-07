@@ -103,6 +103,68 @@ describe('alert rule editor', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
+  it('sets up an alert on how fast the gravity is dropping', async () => {
+    const { onSave } = await open();
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'velocity_slow' } });
+    expect((screen.getByLabelText(/^Name/) as HTMLInputElement).value).toBe('Fermentation slows');
+    const threshold = screen.getByLabelText(/^Slower than \(points\/day\)/) as HTMLInputElement;
+    expect(threshold.value).toBe('3');
+    fireEvent.change(threshold, { target: { value: '10' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save alert' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0]![0]).toMatchObject({ kind: 'velocity_slow', name: 'Fermentation slows', threshold: 10 });
+  });
+
+  it('says what a velocity threshold means as it is typed, and what else decides when it goes off', async () => {
+    await open();
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'velocity_slow' } });
+    const example = () => document.querySelector('.rule-example')?.textContent ?? '';
+    expect(example()).toContain("Alerts when the gravity drops by less than 0.003 in a day (that's 1.050 to 1.047).");
+    expect(example()).toContain('a velocity of −12 /day is 12 points: 0.012 a day.');
+
+    const threshold = screen.getByLabelText(/^Slower than/);
+    fireEvent.change(threshold, { target: { value: '0.5' } });
+    expect(example()).toContain("Alerts when the gravity drops by less than 0.0005 in a day (that's 1.0500 to 1.0495).");
+    expect(example()).toContain('It clears once the gravity drops by more than 0.00075 a day.');
+    expect(example()).toContain('it waits until the gravity has dropped 0.002 from the OG');
+    expect(example()).toContain("It notifies you at most once every 60 minutes (Don't repeat for).");
+    expect(example()).not.toContain('°P');
+
+    fireEvent.change(screen.getByLabelText(/^Don't repeat for/), { target: { value: '0' } });
+    expect(example()).toContain('It notifies you every time it goes off');
+
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'velocity_fast' } });
+    expect(example()).toContain("Alerts when the gravity drops by more than 0.010 in a day (that's 1.050 to 1.040).");
+    expect(example()).toContain('It clears once the gravity drops by less than 0.009 a day.');
+    expect(example()).not.toContain('from the OG');
+  });
+
+  it('wants a velocity threshold as the points it drops, not the velocity', async () => {
+    const { onSave } = await open();
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'velocity_slow' } });
+    const threshold = screen.getByLabelText(/^Slower than/);
+    fireEvent.change(threshold, { target: { value: '-12' } });
+    expect(document.querySelector('.rule-example')).toBeNull();
+    fireEvent.submit(threshold.closest('form')!);
+    await waitFor(() => expect(screen.getByText('More than 0: the points it drops a day (12 for a velocity of −12)')).toBeTruthy());
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('gives the example in °P too, and explains fermentation stable', async () => {
+    await open(emptyRule(), { hub: { units: { gravity: 'plato', temperature: 'C' } } });
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'velocity_slow' } });
+    const example = () => document.querySelector('.rule-example')?.textContent ?? '';
+    expect(example()).toMatch(/In °P, that's about 0\.\d+\./);
+
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'gravity_stable' } });
+    expect(example()).toContain("Alerts when the gravity moves by less than 0.001 over 48 hours (that's 1.012 to 1.011).");
+    expect(example()).toContain('It clears once the gravity moves by more than 0.002 over the window.');
+    expect(example()).toContain('It needs readings covering the whole window');
+    expect(example()).toContain('A point is 0.001.');
+    fireEvent.change(screen.getByLabelText(/^Over \(hours\)/), { target: { value: '' } });
+    expect(document.querySelector('.rule-example')).toBeNull();
+  });
+
   it('lets a number be cleared and typed again', async () => {
     const { onSave } = await open({ ...emptyRule(), kind: 'gravity_stable', name: 'Fermentation done', threshold: 1 });
     const hours = screen.getByLabelText(/^Over \(hours\)/) as HTMLInputElement;

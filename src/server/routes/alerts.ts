@@ -27,7 +27,7 @@ export function alertRoutes({ app, s, owner }: RouteContext): void {
   });
 
   app.get('/api/alerts/events', async (req) => {
-    const { limit } = alertEventsQuerySchema.parse(req.query);
-    return alerts.events(limit);
+    const { limit, pillId } = alertEventsQuerySchema.parse(req.query);
+    return alerts.events(limit, pillId);
   });
 }

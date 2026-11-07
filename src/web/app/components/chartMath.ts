@@ -353,6 +353,16 @@ export function stackLabels(boxes: { x: number; width: number }[], rows: number,
   });
 }
 
+/**
+ * Where to draw a mark's vertical line, in canvas px on a pixel's centre: at `x`, but kept a line's width inside the
+ * plot, so a mark right at its edge (an alert that has just gone off, at the end of the chart) isn't clipped away.
+ */
+export function markLineX(x: number, left: number, width: number, lineWidth = 1): number {
+  const first = Math.ceil(left);
+  const last = Math.max(first, Math.floor(left + width) - Math.ceil(lineWidth));
+  return Math.min(Math.max(Math.round(x), first), last) + 0.5;
+}
+
 /** Lays items out left to right, wrapping onto new rows. */
 export function flowLayout(widths: number[], maxWidth: number, gap: number): { x: number; row: number }[] {
   let x = 0;

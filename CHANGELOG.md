@@ -58,6 +58,18 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 - **Add device.** A new **Add device** button on the dashboard opens one dialog with a tab for each kind of device: RAPT
   Pills, RAPT Thermometers, RAPT Laser Levels and Tilts heard nearby, ready to name and add as on the dashboard, and
   iSpindels.
+- **Alerts on how fast fermentation is going** ([#21](https://github.com/roguecode/RaptHooker/issues/21)). Two new
+  kinds of [alert](docs/alerts.md), **Fermentation slows** and **Fermentation speeds up**, go off when the gravity drops
+  fewer or more points a day than you pick, going by the pill's velocity. "Fermentation slows" at 10, say, tells you
+  fermentation is nearing its end. While a brew is running, it waits until the gravity has dropped 2 points from the
+  OG, so it doesn't go off before fermentation gets going. As you type a threshold, the alert editor says what it means
+  in SG (0.5 points a day: "drops by less than 0.0005 in a day (that's 1.0500 to 1.0495)"), where it clears and what
+  else decides when it goes off; "Fermentation stable" gets the same.
+  - Their kinds in the API are `velocity_slow` and `velocity_fast`, with the `threshold` in points a day dropped (a
+    velocity of −12 is 12), which has to be more than 0. An older version, if you go back, keeps such a rule but doesn't
+    fire it.
+- **Alerts on the chart.** A pill's History chart marks where each alert went off and where it cleared. **Alerts**,
+  under the chart, hides them in this browser. `GET /api/alerts/events` takes `pillId=` for just one pill's.
 
 ### Changed
 

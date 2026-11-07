@@ -29,6 +29,17 @@ describe('request schemas', () => {
     expect(checkInput(alertInputSchema, { name: 'Warm', kind: 'temp_above', threshold: 24 })).toEqual({});
   });
 
+  it('want velocity alerts in points dropped, so more than 0', () => {
+    const velocity = { name: 'Done', kind: 'velocity_slow', threshold: 0.5 };
+    expect(checkInput(alertInputSchema, velocity)).toEqual({});
+    for (const threshold of [0, -12])
+      expect(checkInput(alertInputSchema, { ...velocity, kind: 'velocity_fast', threshold })).toEqual({
+        threshold: 'More than 0: the points it drops a day (12 for a velocity of −12)',
+      });
+    // Other kinds can still go below 0 (a temperature, say).
+    expect(checkInput(alertInputSchema, { name: 'Cold', kind: 'temp_below', threshold: -2 })).toEqual({});
+  });
+
   it('leave the API its own wording', () => {
     const result = alertInputSchema.safeParse({ name: '', kind: 'temp_above', threshold: 1 });
     expect(result.error?.issues[0]?.message).toMatch(/^Too small/);

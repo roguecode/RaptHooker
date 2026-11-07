@@ -213,23 +213,42 @@ export const webhookTestSchema = z.object({
 
 // Alerts
 
-export const alertInputSchema = z.object({
-  name: z.string().trim().min(1).max(80),
-  enabled: z.boolean().default(true),
-  pillIds: pillIdsSchema.default('all'),
-  kind: z.enum(['temp_above', 'temp_below', 'gravity_below', 'gravity_stable', 'battery_below', 'offline']),
-  threshold: z.number().finite(),
-  hours: z
-    .number()
-    .min(1)
-    .max(24 * 14)
-    .default(48),
-  onlyDuringBrew: z.boolean().default(false),
-  cooldownMin: z.number().int().min(0).max(10_080).default(60),
-  channelIds: z.union([z.literal('all'), z.array(z.string().min(1).max(64)).max(50)]).default('all'),
-});
+export const alertInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    enabled: z.boolean().default(true),
+    pillIds: pillIdsSchema.default('all'),
+    kind: z.enum([
+      'temp_above',
+      'temp_below',
+      'gravity_below',
+      'gravity_stable',
+      'velocity_slow',
+      'velocity_fast',
+      'battery_below',
+      'offline',
+    ]),
+    threshold: z.number().finite(),
+    hours: z
+      .number()
+      .min(1)
+      .max(24 * 14)
+      .default(48),
+    onlyDuringBrew: z.boolean().default(false),
+    cooldownMin: z.number().int().min(0).max(10_080).default(60),
+    channelIds: z.union([z.literal('all'), z.array(z.string().min(1).max(64)).max(50)]).default('all'),
+  })
+  // The velocity is negative while fermenting, but these count the points it drops: 12 for a velocity of −12.
+  .refine((r) => (r.kind !== 'velocity_slow' && r.kind !== 'velocity_fast') || r.threshold > 0, {
+    path: ['threshold'],
+    message: 'More than 0: the points it drops a day (12 for a velocity of −12)',
+  });
 
-export const alertEventsQuerySchema = z.object({ limit: z.coerce.number().int().min(1).max(500).default(50) });
+export const alertEventsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(500).default(50),
+  /** Only one pill's. */
+  pillId: z.string().min(1).max(64).optional(),
+});
 
 // Notification channels
 

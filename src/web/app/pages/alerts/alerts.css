@@ -29,6 +29,32 @@
   gap: 0.35rem;
 }
 
+/* The worked example under an alert's threshold (RuleExample). */
+.rule-example {
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.rule-example p {
+  margin: 0;
+}
+
+.rule-example strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.rule-example ul {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.45rem 0 0;
+  padding-left: 1.1rem;
+}
+
 .list-item.channel-row {
   flex-wrap: wrap;
 }

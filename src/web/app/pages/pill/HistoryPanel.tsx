@@ -11,7 +11,8 @@ import { t } from '../../i18n';
 import { Chart, SERIES, type ChartHandle, type SeriesKey } from '../../components/Chart';
 import { OverviewStrip } from '../../components/OverviewStrip';
 import { RangePicker } from '../../components/RangePicker';
-import { brewAnnotations } from '../../components/annotations';
+import { alertAnnotations, brewAnnotations } from '../../components/annotations';
+import { AlertsToggle, useAlertEvents, useShowAlerts } from '../../components/ChartAlerts';
 import { clampWindow, isZoomed, pngFileName, SMOOTHING_STEPS_MS, type TimeWindow } from '../../components/chartMath';
 import { contextWindow, fillHistory, windowsIn } from '../../components/exclusions';
 import { ExcludeRangeButton, ExclusionsToggle, useRemoveExclusion, useShowExclusions } from '../../components/ExclusionControls';
@@ -117,7 +118,13 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
   const win = view ? clampWindow(view, bounds) : bounds;
   const zoomed = view !== null && isZoomed(win, bounds);
 
-  const annotations = useMemo(() => brewAnnotations(brew), [brew]);
+  const [showAlerts, setShowAlerts] = useShowAlerts();
+  const alertEvents = useAlertEvents(open ? pill.id : null);
+  const alertsHere = alertEvents.some((e) => e.at >= bounds.from && e.at <= bounds.to);
+  const annotations = useMemo(
+    () => (showAlerts && alertEvents.length ? [...brewAnnotations(brew), ...alertAnnotations(alertEvents)] : brewAnnotations(brew)),
+    [brew, showAlerts, alertEvents],
+  );
   const [smoothing, setSmoothing] = useChartSmoothing();
 
   const removeExclusion = useRemoveExclusion(pill);
@@ -270,6 +277,7 @@ export function HistoryPanel({ pill }: { pill: Pill }) {
         <span className="chip-option">
           <span className="chips-divider" aria-hidden="true" />
           {exclusionsHere.length > 0 && <ExclusionsToggle on={showExclusions} onChange={setShowExclusions} />}
+          {alertsHere && <AlertsToggle on={showAlerts} onChange={setShowAlerts} />}
           <SmoothingStepper step={smoothing} onChange={setSmoothing} />
         </span>
       </div>

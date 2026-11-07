@@ -1,13 +1,20 @@
 // @vitest-environment happy-dom
 import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { AlertEvent } from '@rapthooker/shared';
+import type { ChartAnnotation } from '../../components/annotations';
 import { makeBrew, makePill, makeReading, renderWithHub } from '../../test/render';
 import { PillPage } from './PillPage';
+
+const chart = vi.hoisted(() => ({ annotations: [] as ChartAnnotation[] }));
 
 // The chart draws on a canvas, which happy-dom doesn't have.
 vi.mock('../../components/Chart', async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  Chart: () => null,
+  Chart: (props: { annotations?: ChartAnnotation[] }) => {
+    chart.annotations = props.annotations ?? [];
+    return null;
+  },
 }));
 
 /** The button that folds a panel, by its heading. */
@@ -59,6 +66,44 @@ describe('pill page', () => {
     const pill = makePill({ brew: makeBrew() });
     await renderWithHub(<PillPage id={pill.id} />, { pills: [pill] });
     expect(pressed('Since the brew started')).toBe('true');
+  });
+
+  it('marks when alerts went off and cleared on the chart, unless turned off', async () => {
+    const pill = makePill();
+    const now = Date.now();
+    const event = (id: number, kind: AlertEvent['kind'], minutesAgo: number): AlertEvent => ({
+      id,
+      ruleId: 'r1',
+      ruleName: 'Too warm',
+      pillId: pill.id,
+      at: now - minutesAgo * 60_000,
+      kind,
+      message: '',
+      value: 25,
+    });
+    const view = await renderWithHub(<PillPage id={pill.id} />, {
+      pills: [pill],
+      routes: { 'GET /api/alerts/events': [event(2, 'resolved', 30), event(1, 'fired', 90)] },
+    });
+    expect(view.calls('GET /api/alerts/events').map((r) => r.query.get('pillId'))).toContain(pill.id);
+    const labels = () => chart.annotations.map((a) => a.label);
+    expect(labels()).toEqual(['Alert: Too warm', 'OK: Too warm']);
+
+    // One going off while the page is open is added.
+    await view.push({ type: 'alert', event: event(3, 'fired', 1) });
+    expect(labels()).toEqual(['Alert: Too warm', 'OK: Too warm', 'Alert: Too warm']);
+
+    expect(pressed('Alerts')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Alerts' }));
+    expect(labels()).toEqual([]);
+    expect(localStorage.getItem('rapthooker.chart.alerts')).toBe('0');
+  });
+
+  it("doesn't offer to mark alerts when there are none", async () => {
+    const pill = makePill();
+    await renderWithHub(<PillPage id={pill.id} />, { pills: [pill] });
+    expect(screen.queryByRole('button', { name: 'Alerts' })).toBeNull();
+    expect(chart.annotations).toEqual([]);
   });
 
   it("warns that the pill doesn't seem to be floating with the data folded", async () => {

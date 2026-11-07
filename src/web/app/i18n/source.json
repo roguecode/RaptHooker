@@ -2281,6 +2281,11 @@
       "pages/settings/HubSection.tsx"
     ]
   },
+  "Come chat with us": {
+    "files": [
+      "components/HelpMenu.tsx"
+    ]
+  },
   "Commit {commit} with uncommitted changes, built {time}": {
     "files": [
       "pages/settings/UpdateSection.tsx"
@@ -4415,6 +4420,7 @@
   },
   "Help": {
     "files": [
+      "components/HelpMenu.tsx",
       "components/UpdateBanner.tsx"
     ]
   },
@@ -5996,6 +6002,11 @@
   "Name, gravity and temperature": {
     "files": [
       "components/imageLinkOptions.ts"
+    ]
+  },
+  "Need Help?": {
+    "files": [
+      "components/HelpMenu.tsx"
     ]
   },
   "Needs a tilt calibration first: at least 2 points.": {
@@ -7808,6 +7819,11 @@
   "Replace the <PLACEHOLDERS> from the preset with your own details": {
     "files": [
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "Report a problem, suggest an idea or read the guides": {
+    "files": [
+      "components/HelpMenu.tsx"
     ]
   },
   "Report on GitHub": {

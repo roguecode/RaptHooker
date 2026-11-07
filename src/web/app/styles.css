@@ -408,6 +408,13 @@ main:focus,
   gap: 0.6rem;
 }
 
+/* The ⋮ menu has the units too, so on narrower screens the top bar leaves them out to make room. */
+@media (max-width: 1260px) {
+  .topbar-units {
+    display: none;
+  }
+}
+
 /* The top bar's display options (units, theme, TV mode) */
 .menu-wrap {
   position: relative;
@@ -467,6 +474,29 @@ main:focus,
 .menu-item svg {
   grid-row: span 2;
   color: var(--violet-2);
+}
+
+/* The top bar's help: Discord and GitHub, with their own logos */
+.help-pop {
+  gap: 0.4rem;
+  width: 19rem;
+}
+
+.help-intro {
+  margin: 0 0 0.3rem;
+  font-weight: 650;
+}
+
+.help-pop .menu-item {
+  margin-bottom: 0;
+}
+
+.menu-item svg.help-logo {
+  color: var(--text);
+}
+
+.menu-item svg.help-logo.discord {
+  color: #5865f2;
 }
 
 /* Problems the hub reports, under the top bar */
@@ -673,6 +703,18 @@ main > .notice {
 
   .hide-mobile {
     display: none;
+  }
+
+  /*
+   * Help sits further from the edge than "⋮", so its panel is lined up with the screen's edge instead of the button's;
+   * with top at auto, it still opens just under the button.
+   */
+  .help-pop {
+    position: fixed;
+    top: auto;
+    right: 0.75rem;
+    margin-top: 0.5rem;
+    width: min(19rem, calc(100% - 1.5rem));
   }
 
   .hub-warning {

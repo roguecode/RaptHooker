@@ -2270,5 +2270,8 @@
   "Try RaptHooker {version}?": "¿Probar RaptHooker {version}?",
   "Try this beta": "Probar esta beta",
   "What's in it": "Qué incluye",
-  "If the beta doesn't start, the hub goes back to this build by itself.": "Si la beta no arranca, el hub vuelve solo a esta compilación."
+  "If the beta doesn't start, the hub goes back to this build by itself.": "Si la beta no arranca, el hub vuelve solo a esta compilación.",
+  "Need Help?": "¿Necesitas ayuda?",
+  "Come chat with us": "Ven a charlar con nosotros",
+  "Report a problem, suggest an idea or read the guides": "Informa de un problema, sugiere una idea o lee las guías"
 }

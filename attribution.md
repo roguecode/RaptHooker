@@ -141,6 +141,9 @@ The channels in [src/server/channels.ts](src/server/channels.ts) follow each ser
 - **[Lucide](https://lucide.dev)** (ISC licence: [src/web/public/LICENSE-lucide.txt](src/web/public/LICENSE-lucide.txt)):
   most interface icons in [src/web/app/components/Icon.tsx](src/web/app/components/Icon.tsx) are adapted from Lucide,
   as are the service icons in [src/web/app/pages/alerts/ChannelIcon.tsx](src/web/app/pages/alerts/ChannelIcon.tsx).
+- **[Simple Icons](https://simpleicons.org)** (CC0): the GitHub and Discord logos in the top bar's Help menu
+  ([src/web/app/components/HelpMenu.tsx](src/web/app/components/HelpMenu.tsx)). The logos are trademarks of GitHub and
+  Discord, used only to link to RaptHooker's pages there.
 - The RaptHooker logo and the pill illustration were drawn for this project.
 - Preset badges are standard Unicode emoji, rendered by your device's emoji font.
 

@@ -5,128 +5,30 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-07
+
+Join us on Discord: https://discord.gg/qyaY6QXjdh
+
 ### Added
 
-- **iSpindels.** RaptHooker now records [iSpindels](docs/ispindel.md), the DIY Wi-Fi hydrometer, like a
-  pill: dashboard, charts, brews, calibration, alerts, webhooks, MQTT and Home Assistant, CSV export. An iSpindel sends
-  its readings over your Wi-Fi to the hub (`/api/ispindel`), with a token the hub makes for it. **Add device →
-  iSpindel** can set one up for you: the hub finds iSpindels in setup mode (it keeps looking, every 15 seconds while
-  the tab is open), joins one's hotspot for about a minute, changes only the settings it needs (Wi-Fi, the HTTP
-  service, the hub's address, the token and how often it sends) and adds it when its first reading arrives. Or set it
-  up by hand, with every value to type shown on the same screen, ready to copy. Tested with a real iSpindel on firmware
-  6.5.1.
-  - Stored in the same tables as pills, with two new columns for readings, `tilt` (degrees) and `voltage` (battery
-    volts), and their sums in the rollups (schema 6). Older versions leave them alone: they list an iSpindel you've
-    added but don't record it.
-  - An iSpindel's `kind` is `ispindel`, its address `ISPINDEL:<chip id>` and its id `ispindel-<chip id>`.
-  - A new kind of API token, made by the hub and listed as _iSpindels_ under Settings → API tokens, can only post
-    iSpindel readings.
-  - Readings in the API gain `voltage`, and devices heard nearby a `name`. New webhook variable `battery_voltage`, MQTT
-    state field `battery_voltage` and, for iSpindels, a _Battery voltage_ entity in Home Assistant. An iSpindel's CSV
-    export has its own columns.
-- **Tilt hydrometers (experimental).** A [Tilt](docs/tilt.md) of any colour, Pro too, is found over Bluetooth (or
-  through a relay) and added like a pill, then recorded once a minute: gravity and temperature, with brews, charts,
-  calibration, alerts, webhooks, MQTT and Home Assistant, CSV export. Not tried with a real Tilt yet: please report back
-  if you have one.
-  - A Tilt's `kind` is `tilt`; its id comes from its Bluetooth address, like a pill's. It's named and coloured after its
-    colour when added.
-  - The ESP32 relay's ESPHome configuration passes Tilts on too: update yours from
-    [docs/esphome-relay.yaml](docs/esphome-relay.yaml) to relay them.
-- **RAPT Laser Levels (experimental).** A [RAPT Laser Level](docs/laser-level.md) on a keg says how far down the beer
-  is; RaptHooker shows how full the keg is (litres and %) from the keg's size, set on its page (KegLand's 19 L keg to
-  start with). It has its own dashboard card with a bar, a volume chart, TV mode and screens, and webhooks, MQTT, Home
-  Assistant and CSV export get the volume, fill and distance. Not tried with a real one yet: its Bluetooth format comes
-  from two community projects, checked against a third's captures (see [attribution.md](attribution.md)). Please
-  report back if you have one.
-  - A new `distance` column for readings (mm), NULL for every other device, and its sums in the rollups (schema 7).
-    Older versions leave it alone.
-  - A Laser Level's `kind` is `laser-level`, and its settings have a `vessel` (`capacity` litres, `emptyMm`, `fullMm`).
-    Only the distance is stored, so changing the keg changes how full it was everywhere.
-  - Readings in the API gain `distance`, `fill` and `volume`, and the history `distance`. New webhook variables
-    `volume_l`, `fill_percent` and `distance_mm`, MQTT state fields `volume`, `fill` and `distance`, and _Volume_,
-    _Fill_ and _Distance to the beer_ entities in Home Assistant for Laser Levels.
-  - **Keg up.** [Keg up](docs/laser-level.md#keg-up) a beer under a Laser Level, with its name, style and ABV (all
-    optional, and they can be filled in from any brew). Its card then shows the beer with how much went in, is left and
-    has been poured (in place of how full the keg is), and its chart starts at the new **Kegged** range. **Keg empty**
-    moves it to the earlier kegs on its page.
-    - Kept in a new `kegs` table (schema 8), which older versions leave alone. How much went in is the fullest reading in
-      the 6 hours after kegging up.
-    - New `/api/kegs` endpoints, `keg` and `keg-removed` live messages, and a `keg` on each Laser Level in the API.
-  - **Volume units.** With a Laser Level, a volume unit next to °C/°F shows kegs in litres, US gallons, UK or US pints, or
-    each Laser Level's own unit (330 ml cans, say: set in its settings, and in the API as its `servingUnit`). Picked per
-    browser; the hub keeps litres.
-- **Add device.** A new **Add device** button on the dashboard opens one dialog with a tab for each kind of device: RAPT
-  Pills, RAPT Thermometers, RAPT Laser Levels and Tilts heard nearby, ready to name and add as on the dashboard, and
-  iSpindels.
-- **Alerts on how fast fermentation is going** ([#21](https://github.com/roguecode/RaptHooker/issues/21)). Two new
-  kinds of [alert](docs/alerts.md), **Fermentation slows** and **Fermentation speeds up**, go off when the gravity drops
-  fewer or more points a day than you pick, going by the pill's velocity. "Fermentation slows" at 10, say, tells you
-  fermentation is nearing its end. While a brew is running, it waits until the gravity has dropped 2 points from the
-  OG, so it doesn't go off before fermentation gets going. As you type a threshold, the alert editor says what it means
-  in SG (0.5 points a day: "drops by less than 0.0005 in a day (that's 1.0500 to 1.0495)"), where it clears and what
-  else decides when it goes off; "Fermentation stable" gets the same.
-  - Their kinds in the API are `velocity_slow` and `velocity_fast`, with the `threshold` in points a day dropped (a
-    velocity of −12 is 12), which has to be more than 0. An older version, if you go back, keeps such a rule but doesn't
-    fire it.
-- **Alerts on the chart.** A pill's History chart marks where each alert went off and where it cleared. **Alerts**,
-  under the chart, hides them in this browser. `GET /api/alerts/events` takes `pillId=` for just one pill's.
-- **Events that last a while, and taking events off the chart**
-  ([#20](https://github.com/roguecode/RaptHooker/issues/20)). A brew event can have an end (**Add an end time** in
-  the event), now or planned: a dry hop sitting in the fermenter for three days, say, is shaded on the charts from
-  start to end, and the timeline says how long it lasts. The eye next to an event on the timeline takes it off the
-  charts (the brew's, the pill's and the summary's) and puts it back; it stays on the timeline. The hub remembers it,
-  so every device shows the same. See [Events](docs/brewing.md#events).
-  - Stored in two new columns of `brew_events` (schema 9): `end_at`, empty for every event so far, and `hidden`. An
-    older version, if you go back, shows every event as a moment, on the chart, and keeps both when it changes one.
-  - Events in the API gain `endAt` (null for a moment) and `hidden`. `POST` and `PUT /api/brews/:id/events` take both;
-    leaving them out of a `PUT` keeps what's saved.
-- **Switching Bluetooth off**, for a hub on a machine without it or where it can't be passed through (an LXC container,
-  say). Settings → Hub → **Listen over Bluetooth** switches the hub's own Bluetooth off or on straight away; the
-  installer's `--no-bluetooth` switches it off for good (`bluetooth.enabled: false` in the config file, kept through
-  updates; `--bluetooth` undoes it) and leaves the machine's Bluetooth alone. While it's off there's no _Bluetooth isn't
-  working_ warning, and [relays](docs/relay.md) and iSpindels carry on. See
-  [Without Bluetooth](docs/pi-setup.md#without-bluetooth).
-  - Hub settings gain `bluetooth` (true unless switched off; leaving it out of `PUT /api/settings/hub` keeps what's
-    saved). The Bluetooth status's `state` can be `off`, with `offBy` saying where (`settings` or `config`).
-  - An older version, if you go back, listens over Bluetooth again.
-- **Beta versions.** Settings → Updates → **Beta versions** lists the betas published on GitHub (pre-releases, like
-  `0.9.0-beta.1`) with what's in each, and the owner can install one with **Try this beta**. A hub on a beta says so
-  (**Beta** in the top bar), points out a later beta of the same one, and can **Go back to release x.y.z** at any time;
-  when the release the beta leads up to is out, it's offered as an ordinary update. Hubs never install a beta by
-  themselves. See [Trying a beta](docs/updating.md#trying-a-beta).
-  - Your data stays through every switch: every release keeps working with what any other has left, older or newer.
-    Every release is now tested against every published one, both ways, before it's published
-    ([Keeping people's data](docs/data-compatibility.md)).
-  - `GET /api/update` gains `prerelease`, `canInstall`, `betas`, `betasCheckedAt`, `betasError`, `newerBeta` and
-    `target` (the version an update is installing, or didn't). `POST /api/update/betas` looks for betas, and
-    `POST /api/update/install` (`{ "version": "0.9.0-beta.1" }`) installs one of them, or the latest release.
-  - `update.sh --version` takes a beta's version too.
-- A **Help** button in the top bar, with links to the RaptHooker Discord server and GitHub.
+- Support for new devices:
+  - iSpindel
+  - Tilt Hydrometer (experimental)
+  - RAPT Laser Level (experimental)
+- Alerts for when fermentation speeds up or stalls, and alerts now show on charts.
+- Brew events can now have a start and end time (like a dry hop), and can be hidden from the chart.
+- Bluetooth can be switched off, for hubs that only use relays or iSpindels.
+- Beta versions. Add support to switch between mainline and betas from Settings → Updates.
+- A Help button in the top bar, linking to the Discord server and GitHub.
 
 ### Changed
 
-- The **MeadTools** webhook preset is now marked **Verified**: it's been tried against MeadTools and works.
-- The **Pills** page is now **Devices**, as it has every kind of device on it.
-- The small charts on the dashboard's cards and in TV mode cover a running brew (or the beer on tap) from its start,
-  or else the last 24 hours, or everything when there's less than that (they always showed the last 24 hours).
-- For an iSpindel, the `rssi` webhook variable and the _Signal strength_ entity are its Wi-Fi signal.
-- `screens.wifi` and `screens.hubUrl` also apply to setting up iSpindels; the hub sets up one screen or iSpindel at a
-  time.
-- The `device` webhook variable can also be `tilt` or `laser-level`. A Tilt has no _Battery_ or _Tilt_ entity in Home
-  Assistant (it sends neither), and a Laser Level only the entities it has.
-- A backup taken by a newer version (on a beta, before going back to the release, say) can now be restored: every
-  version keeps working on what a newer one has added. A backup is only turned away if a newer version said older ones
-  can't use it (no release does), or a development build changed the database in a way of its own.
-- The database notes each change an update makes to how it's stored. A version that would make a different change of
-  the same number (a development build's) refuses the database instead of running on data it doesn't understand, and
-  the installer puts the previous version back.
+- The Pills page is now Devices.
+- The dashboard and TV charts cover the whole brew instead of the last 24 hours.
 
 ### Fixed
 
-- Ranges left out of a pill's charts (**Exclude this range**) showed their readings, or a break where nothing was
-  recorded, on the dashboard's cards, in TV mode and on image links. They now draw the same curve as the pill's and the
-  brew's charts (unless **Exclusions** is switched off in that browser; image links always do). A Laser Level's volume
-  is filled in too, on the overview strip under its chart as well.
+- Excluded chart ranges now also apply on the dashboard, in TV mode and on image links.
 
 ## [0.8.0] - 2026-11-02
 
@@ -338,7 +240,8 @@ The first release.
 - **Translations**: Deutsch, Español, Français, Italiano, Nederlands, Polski and Português (Brasil).
 - **Docker** image for Linux hosts with Bluetooth.
 
-[Unreleased]: https://github.com/roguecode/RaptHooker/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/roguecode/RaptHooker/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/roguecode/RaptHooker/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/roguecode/RaptHooker/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/roguecode/RaptHooker/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/roguecode/RaptHooker/compare/v0.5.0...v0.6.0

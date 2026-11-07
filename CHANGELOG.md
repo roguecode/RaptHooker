@@ -92,6 +92,13 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 - The `device` webhook variable can also be `tilt` or `laser-level`. A Tilt has no _Battery_ or _Tilt_ entity in Home
   Assistant (it sends neither), and a Laser Level only the entities it has.
 
+### Fixed
+
+- Ranges left out of a pill's charts (**Exclude this range**) showed their readings, or a break where nothing was
+  recorded, on the dashboard's cards, in TV mode and on image links. They now draw the same curve as the pill's and the
+  brew's charts (unless **Exclusions** is switched off in that browser; image links always do). A Laser Level's volume
+  is filled in too, on the overview strip under its chart as well.
+
 ## [0.8.0] - 2026-11-02
 
 ### Added

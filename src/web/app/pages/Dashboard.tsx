@@ -3,7 +3,7 @@ import { plausibleGravity, type Pill } from '@rapthooker/shared';
 import { api, errorText } from '../api';
 import { useLive } from '../live';
 import { useUnits } from '../units';
-import { historyGapMs, useCardRange, useHistory } from '../hooks';
+import { useCardHistory, useCardRange } from '../hooks';
 import { href } from '../router';
 import { fixed, signalQuality, timeAgo, timeUntil, useNow } from '../format';
 import { t, tp } from '../i18n';
@@ -301,7 +301,7 @@ export function PillCard({ pill }: { pill: Pill }) {
   const { cachedAt } = useLive();
   const now = useNow(15_000);
   const range = useCardRange(pill);
-  const { history } = useHistory(pill.id, range, 160, historyGapMs(pill.live.intervalSec));
+  const { history } = useCardHistory(pill, range);
   const r = pill.live.latest;
   const g = u.gravityParts(r?.gravity);
   const v = r?.velocity ?? null;

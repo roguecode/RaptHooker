@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { History, Pill, Reading } from '@rapthooker/shared';
+import { fillHistory, type History, type Pill, type Reading } from '@rapthooker/shared';
 import { ApiError, api, errorText } from './api';
 import { useLiveMessages } from './live';
 import { useNow } from './format';
 import { detailRange, mergeHistory, presetRange, type HistoryRange, type RangePreset, type TimeWindow } from './components/chartMath';
+import { useShowExclusions } from './components/ExclusionControls';
 
 export type { HistoryRange, RangePreset, TimeWindow } from './components/chartMath';
 
@@ -167,6 +168,21 @@ export function useCardRange(pill: Pick<Pill, 'brew' | 'keg' | 'live' | 'created
     // Started since the window last moved: it runs from then.
     return { from, to: Math.max(tick, from), live: true };
   }, [tick, start, first]);
+}
+
+/**
+ * The history for a device's small chart (the dashboard's cards and TV mode), with its excluded ranges filled in from
+ * the curves the pill's own charts draw, unless they're switched off in this browser.
+ */
+export function useCardHistory(pill: Pick<Pill, 'id' | 'exclusions' | 'live'>, range: HistoryRange) {
+  const [showExclusions] = useShowExclusions();
+  const exclusions = showExclusions ? (pill.exclusions ?? []) : [];
+  const exclusionKey = exclusions.map((e) => `${e.from}-${e.to}`).join(',');
+  const leaveOut = exclusions.length > 0;
+  const { history, ...rest } = useHistory(pill.id, range, 160, historyGapMs(pill.live.intervalSec), exclusionKey, leaveOut);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const shown = useMemo(() => (leaveOut ? fillHistory(history, exclusions) : history), [history, exclusionKey]);
+  return { ...rest, history: shown };
 }
 
 /**

@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 
 import { plausibleGravity, type Pill } from '@rapthooker/shared';
 import { useLive } from '../../live';
 import { useUnits, volumeNumber } from '../../units';
-import { historyGapMs, useCardRange, useHistory } from '../../hooks';
+import { useCardHistory, useCardRange } from '../../hooks';
 import { navigate } from '../../router';
 import { fixed, signalQuality, timeAgo, timeOnly, useNow } from '../../format';
 import { t } from '../../i18n';
@@ -268,7 +268,7 @@ export function Kiosk({ offline }: { offline: boolean }) {
 function KioskTile({ pill, now, stale }: { pill: Pill; now: number; stale: boolean }) {
   const u = useUnits();
   const range = useCardRange(pill);
-  const { history } = useHistory(pill.id, range, 160, historyGapMs(pill.live.intervalSec));
+  const { history } = useCardHistory(pill, range);
   const r = pill.live.latest;
   const g = u.gravityParts(r?.gravity);
   const v = r?.velocity ?? null;

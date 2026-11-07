@@ -12,3 +12,4 @@ export * from './screen.js';
 export * from './screens.js';
 export * from './ispindel.js';
 export * from './devices.js';
+export * from './exclusions.js';

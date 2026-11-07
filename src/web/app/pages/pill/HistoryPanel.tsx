@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { Pill } from '@rapthooker/shared';
+import { fillHistory, windowsIn, type Pill } from '@rapthooker/shared';
 import { api, errorText } from '../../api';
 import { historyGapMs, useHistoryRange, useZoomableHistory } from '../../hooks';
 import { useLive } from '../../live';
@@ -13,8 +13,7 @@ import { OverviewStrip } from '../../components/OverviewStrip';
 import { RangePicker } from '../../components/RangePicker';
 import { alertAnnotations, brewAnnotations } from '../../components/annotations';
 import { AlertsToggle, useAlertEvents, useShowAlerts } from '../../components/ChartAlerts';
-import { clampWindow, isZoomed, pngFileName, SMOOTHING_STEPS_MS, type TimeWindow } from '../../components/chartMath';
-import { contextWindow, fillHistory, windowsIn } from '../../components/exclusions';
+import { clampWindow, contextWindow, isZoomed, pngFileName, SMOOTHING_STEPS_MS, type TimeWindow } from '../../components/chartMath';
 import { ExcludeRangeButton, ExclusionsToggle, useRemoveExclusion, useShowExclusions } from '../../components/ExclusionControls';
 import { SmoothingStepper, useChartSmoothing } from '../../components/ChartSmoothing';
 import { kegName } from '../devices/keg';

@@ -1,11 +1,7 @@
-import type { History } from '@rapthooker/shared';
+import type { History, TimeWindow } from '@rapthooker/shared';
 import { t, tk } from '../i18n';
 
-/** A span of time, Unix ms. */
-export interface TimeWindow {
-  from: number;
-  to: number;
-}
+export type { TimeWindow } from '@rapthooker/shared';
 
 export interface HistoryRange extends TimeWindow {
   /** Follows new readings as they arrive. */
@@ -100,6 +96,13 @@ export function resizeWindow(start: TimeWindow, edge: 'from' | 'to', delta: numb
 
 /** True when the window shows less than the whole range. */
 export const isZoomed = (win: TimeWindow, bounds: TimeWindow): boolean => win.to - win.from < (bounds.to - bounds.from) * 0.995;
+
+/** A view of a range just excluded with some of the readings either side (as much again), or null for everything. */
+export function contextWindow(range: TimeWindow, bounds: TimeWindow): TimeWindow | null {
+  const span = range.to - range.from;
+  const next = clampWindow({ from: range.from - span, to: range.to + span }, bounds);
+  return isZoomed(next, bounds) ? next : null;
+}
 
 // Ranges
 

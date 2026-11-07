@@ -125,7 +125,8 @@ export const api = {
   createAlert: (input: AlertRuleInput) => post<AlertRule>('/api/alerts/rules', input),
   updateAlert: (id: string, input: AlertRuleInput) => request<AlertRule>('PUT', `/api/alerts/rules/${encodeURIComponent(id)}`, input),
   deleteAlert: (id: string) => request<void>('DELETE', `/api/alerts/rules/${encodeURIComponent(id)}`),
-  alertEvents: (limit = 30) => get<AlertEvent[]>(`/api/alerts/events?limit=${limit}`),
+  alertEvents: (limit = 30, pillId?: string) =>
+    get<AlertEvent[]>(`/api/alerts/events?limit=${limit}${pillId ? `&pillId=${encodeURIComponent(pillId)}` : ''}`),
 
   pushKey: () => get<{ publicKey: string }>('/api/push/key'),
   pushSubscribe: (sub: PushSubscriptionJSON) => post<void>('/api/push/subscribe', sub),

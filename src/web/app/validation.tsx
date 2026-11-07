@@ -16,6 +16,7 @@ export const SCHEMA_MESSAGES = [
   tk('A broker address like mqtt://homeassistant.local:1883'),
   tk('No spaces, # or +'),
   tk('A URL like https://s3.eu-west-1.amazonaws.com'),
+  tk('More than 0: the points it drops a day (12 for a velocity of −12)'),
 ];
 
 const NONE: FieldErrors = {};

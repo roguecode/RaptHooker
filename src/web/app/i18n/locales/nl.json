@@ -2180,5 +2180,46 @@
   "They've been tested with a few screens only, and how screens work may still change.": "De functie is maar met een paar schermen getest, en hoe schermen werken kan nog veranderen.",
   "Where a working one was bought ({site})": "Waar een werkend exemplaar is gekocht ({site})",
   "Which screens work": "Welke schermen werken",
-  "Won't work": "Werkt niet"
+  "Won't work": "Werkt niet",
+  "Fermentation slows": "Vergisting vertraagt",
+  "Gravity drops fewer points a day than this": "Dichtheid daalt minder dan dit aantal punten per dag",
+  "Fermentation speeds up": "Vergisting versnelt",
+  "Gravity drops more points a day than this": "Dichtheid daalt meer dan dit aantal punten per dag",
+  "points/day": "punten/dag",
+  "Slower than": "Langzamer dan",
+  "Faster than": "Sneller dan",
+  "Gravity dropping less than {count} point a day|Gravity dropping less than {count} points a day": {
+    "one": "Dichtheid daalt minder dan {count} punt per dag",
+    "other": "Dichtheid daalt minder dan {count} punten per dag"
+  },
+  "Gravity dropping more than {count} point a day|Gravity dropping more than {count} points a day": {
+    "one": "Dichtheid daalt meer dan {count} punt per dag",
+    "other": "Dichtheid daalt meer dan {count} punten per dag"
+  },
+  "Alert: {alert}": "Melding: {alert}",
+  "OK: {alert}": "OK: {alert}",
+  "When alerts went off and cleared is marked on the chart.": "Op de grafiek staat wanneer meldingen afgingen en weer in orde waren.",
+  "Turn on to mark when alerts went off and cleared.": "Zet aan om te markeren wanneer meldingen afgingen en weer in orde waren.",
+  "A point is 0.001, so a velocity of −12 /day is 12 points: 0.012 a day.": "Een punt is 0,001, dus een snelheid van −12 /dag is 12 punten: 0,012 per dag.",
+  "A point is 0.001.": "Een punt is 0,001.",
+  "Alerts when the gravity drops by less than {amount} in a day (that's {from} to {to}).": "Meldt wanneer de dichtheid op een dag minder dan {amount} daalt (dus van {from} naar {to}).",
+  "Alerts when the gravity drops by more than {amount} in a day (that's {from} to {to}).": "Meldt wanneer de dichtheid op een dag meer dan {amount} daalt (dus van {from} naar {to}).",
+  "Alerts when the gravity moves by less than {amount} over {count} hour (that's {from} to {to}).|Alerts when the gravity moves by less than {amount} over {count} hours (that's {from} to {to}).": {
+    "one": "Meldt wanneer de dichtheid in {count} uur minder dan {amount} verandert (dus van {from} naar {to}).",
+    "other": "Meldt wanneer de dichtheid in {count} uur minder dan {amount} verandert (dus van {from} naar {to})."
+  },
+  "In °P, that's about {amount}.": "In °P is dat ongeveer {amount}.",
+  "It clears once the gravity drops by less than {amount} a day.": "De melding is weer in orde zodra de dichtheid minder dan {amount} per dag daalt.",
+  "It clears once the gravity drops by more than {amount} a day.": "De melding is weer in orde zodra de dichtheid meer dan {amount} per dag daalt.",
+  "It clears once the gravity moves by more than {amount} over the window.": "De melding is weer in orde zodra de dichtheid in het tijdvenster meer dan {amount} verandert.",
+  "It goes by the velocity on each pill's page (the pill's own, or RaptHooker's over the hours set there): a trend, so it follows changes a little late.": "De melding gebruikt de snelheid op de pagina van elke pill (die van de pill zelf, of die van RaptHooker over de daar ingestelde uren): een trend, die veranderingen wat later volgt.",
+  "It needs readings covering the whole window, and a running brew must have been going that long.": "Er zijn metingen over het hele tijdvenster nodig, en een lopend brouwsel moet al zo lang lopen.",
+  "It notifies you at most once every {count} minute (Don't repeat for).|It notifies you at most once every {count} minutes (Don't repeat for).": {
+    "one": "Je krijgt hoogstens één bericht per {count} minuut (Niet herhalen gedurende).",
+    "other": "Je krijgt hoogstens één bericht per {count} minuten (Niet herhalen gedurende)."
+  },
+  "It notifies you every time it goes off (Don't repeat for is 0).": "Je krijgt elke keer een bericht als de melding afgaat (Niet herhalen gedurende is 0).",
+  "More than 0: the points it drops a day (12 for a velocity of −12)": "Meer dan 0: de punten die het per dag daalt (12 bij een snelheid van −12)",
+  "Readings that look wrong (a pill that isn't floating) are skipped.": "Metingen die niet lijken te kloppen (een pill die niet drijft) worden overgeslagen.",
+  "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.": "Terwijl een brouwsel loopt, wacht de melding tot de dichtheid 0,002 onder de OG is gezakt, zodat hij niet afgaat voordat de vergisting begint."
 }

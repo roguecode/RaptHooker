@@ -2,10 +2,14 @@ import { EventEmitter } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import {
   BROWSER_PUSH,
+  FERMENTATION_LIMITS,
   gravityIn,
   plausibleGravity,
+  stableClearsAt,
   temperatureIn,
+  velocityClearsAt,
   type AlertEvent,
+  type AlertKind,
   type AlertRule,
   type AlertRuleInput,
   type Brew,
@@ -63,6 +67,9 @@ interface Check {
 }
 
 const HYSTERESIS = { temperature: 0.5, gravity: 0.003, battery: 5 };
+
+/** Rules that go by the gravity, so wait for a reading that looks real. */
+const GRAVITY_KINDS: ReadonlySet<AlertKind> = new Set<AlertKind>(['gravity_below', 'gravity_stable', 'velocity_slow', 'velocity_fast']);
 
 /** What's saved for a rule: everything but what's worked out while running (fields a newer version added are kept). */
 const ruleInput = ({ id: _id, createdAt: _c, active: _a, ...input }: AlertRule): AlertRuleInput => input;
@@ -157,8 +164,9 @@ export class AlertService extends EventEmitter {
     }
   }
 
-  events(limit: number): AlertEvent[] {
-    return this.store.listAlertEvents(limit).map((r) => ({
+  /** The latest events, newest first (just one pill's with `pillId`). */
+  events(limit: number, pillId?: string): AlertEvent[] {
+    return this.store.listAlertEvents(limit, pillId).map((r) => ({
       id: Number(r.id),
       ruleId: String(r.rule_id),
       ruleName: String(r.rule_name),
@@ -233,8 +241,7 @@ export class AlertService extends EventEmitter {
     const r = this.deps.pills.latest(pillId);
     if (!r || now - r.ts > 6 * 3_600_000) return { firing: null, value: null, message: '' };
     // A pill out of the beer (lying on a table) reports a nonsense gravity: gravity alerts wait for a real one.
-    if (!r.plausible && (rule.kind === 'gravity_below' || rule.kind === 'gravity_stable'))
-      return { firing: null, value: null, message: '' };
+    if (!r.plausible && GRAVITY_KINDS.has(rule.kind)) return { firing: null, value: null, message: '' };
     const th = rule.threshold;
     // The message when it clears is "Back to normal: …" (see record()), so it says only where things are.
     switch (rule.kind) {
@@ -278,7 +285,7 @@ export class AlertService extends EventEmitter {
         if (range.n < 3 || range.min === null || range.max === null || !spansWindow)
           return { firing: active ? null : false, value: null, message: '' };
         const pts = (range.max - range.min) * 1000;
-        const firing = pts < th ? true : pts > th + 1 ? false : null;
+        const firing = pts < th ? true : pts > stableClearsAt(th) ? false : null;
         return {
           firing,
           value: Math.round(pts * 10) / 10,
@@ -286,6 +293,33 @@ export class AlertService extends EventEmitter {
             firing === false
               ? `${name}'s gravity has moved ${pts.toFixed(1)} points over the last ${rule.hours} hours`
               : `${name} has been steady at ${this.fmtG(g)} for ${rule.hours} hours (moved ${pts.toFixed(1)} points). Fermentation looks finished.`,
+        };
+      }
+      case 'velocity_slow':
+      case 'velocity_fast': {
+        // The velocity the pill's page shows (the pill's or RaptHooker's): null until there's enough data, and for a
+        // device without a gravity.
+        const g = r.gravity;
+        const v = g === null ? null : r.velocity;
+        if (g === null || v === null) return { firing: null, value: null, message: '' };
+        const slow = rule.kind === 'velocity_slow';
+        // Before fermentation gets going the gravity isn't dropping either: with a brew running, a slow one waits until
+        // the gravity has dropped from the brew's OG.
+        const og = slow ? (this.deps.brews.activeFor(pillId)?.stats.og ?? null) : null;
+        if (og !== null && og - g < FERMENTATION_LIMITS.minDrop) return { firing: null, value: null, message: '' };
+        const drop = -v;
+        // Past the threshold it fires; once it's back past where it clears (velocityClearsAt), it clears.
+        const clearsAt = velocityClearsAt(rule.kind, th);
+        const past = slow ? drop < th : drop > th;
+        const back = slow ? drop > clearsAt : drop < clearsAt;
+        const firing = past ? true : back ? false : null;
+        const rate = `${name}'s gravity is ${
+          Math.abs(drop) < 0.05 ? 'steady' : `${drop > 0 ? 'dropping' : 'rising'} ${Math.abs(drop).toFixed(1)} points a day`
+        }`;
+        return {
+          firing,
+          value: Math.round(drop * 10) / 10,
+          message: firing === false ? rate : `${rate}, ${slow ? 'slower' : 'faster'} than ${th.toFixed(1)} points a day`,
         };
       }
       default:

@@ -1049,7 +1049,9 @@ export class Store {
     return Number(res.lastInsertRowid);
   }
 
-  listAlertEvents(limit: number): Row[] {
+  listAlertEvents(limit: number, pillId?: string): Row[] {
+    if (pillId !== undefined)
+      return this.db.prepare('SELECT * FROM alert_events WHERE pill_id = ? ORDER BY id DESC LIMIT ?').all(pillId, limit) as Row[];
     return this.db.prepare('SELECT * FROM alert_events ORDER BY id DESC LIMIT ?').all(limit) as Row[];
   }
 

@@ -443,14 +443,19 @@ export interface RenderedRequest {
   warnings: string[];
 }
 
-export type AlertKind = 'temp_above' | 'temp_below' | 'gravity_below' | 'gravity_stable' | 'battery_below' | 'offline';
+/**
+ * `velocity_slow` and `velocity_fast` compare how fast the gravity is dropping (points per day, so the reading's
+ * velocity with its sign turned round: 12 while the velocity is −12) with the threshold.
+ */
+export type AlertKind =
+  'temp_above' | 'temp_below' | 'gravity_below' | 'gravity_stable' | 'velocity_slow' | 'velocity_fast' | 'battery_below' | 'offline';
 
 export interface AlertRuleInput {
   name: string;
   enabled: boolean;
   pillIds: string[] | 'all';
   kind: AlertKind;
-  /** °C, SG, %, gravity points (stable) or minutes (offline), depending on the kind. */
+  /** °C, SG, %, gravity points (stable), points per day dropped (velocity) or minutes (offline), depending on the kind. */
   threshold: number;
   /** Window for 'gravity_stable', hours. */
   hours: number;

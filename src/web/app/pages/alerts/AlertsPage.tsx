@@ -71,6 +71,10 @@ export function AlertsPage() {
         return tp(r.threshold, 'Less than {count} point change in {hours} h', 'Less than {count} points change in {hours} h', {
           hours: r.hours,
         });
+      case 'velocity':
+        return r.kind === 'velocity_slow'
+          ? tp(r.threshold, 'Gravity dropping less than {count} point a day', 'Gravity dropping less than {count} points a day')
+          : tp(r.threshold, 'Gravity dropping more than {count} point a day', 'Gravity dropping more than {count} points a day');
       case 'percent':
         return `${t(info.label)} ${r.threshold}%`;
       default:

@@ -40,8 +40,8 @@ export function raptIdFromAddress(address: string): string {
 export interface AlertKindInfo {
   kind: AlertKind;
   label: string;
-  /** What the threshold measures. */
-  measure: 'temperature' | 'gravity' | 'points' | 'percent' | 'minutes';
+  /** What the threshold measures ('velocity': points per day the gravity is dropping). */
+  measure: 'temperature' | 'gravity' | 'points' | 'velocity' | 'percent' | 'minutes';
   defaultThreshold: number;
   describe: string;
 }
@@ -57,6 +57,21 @@ export const ALERT_KINDS: AlertKindInfo[] = [
     defaultThreshold: 1,
     describe: 'Gravity has changed less than this many points over the window',
   },
+  {
+    kind: 'velocity_slow',
+    label: 'Fermentation slows',
+    measure: 'velocity',
+    // About when most brewers dry hop: 2–3 points above the final gravity, where a typical ale drops about 3 a day.
+    defaultThreshold: 3,
+    describe: 'Gravity drops fewer points a day than this',
+  },
+  {
+    kind: 'velocity_fast',
+    label: 'Fermentation speeds up',
+    measure: 'velocity',
+    defaultThreshold: 10,
+    describe: 'Gravity drops more points a day than this',
+  },
   { kind: 'battery_below', label: 'Battery below', measure: 'percent', defaultThreshold: 20, describe: 'The pill needs charging' },
   {
     kind: 'offline',
@@ -68,3 +83,15 @@ export const ALERT_KINDS: AlertKindInfo[] = [
 ];
 
 export const alertKindInfo = (kind: AlertKind): AlertKindInfo => ALERT_KINDS.find((k) => k.kind === kind) ?? ALERT_KINDS[0]!;
+
+/**
+ * Where a velocity alert clears, in points a day dropped: a point a day back past its threshold, or half the threshold
+ * if that's less (so one at 0.5 clears at 0.75, not 1.5).
+ */
+export function velocityClearsAt(kind: 'velocity_slow' | 'velocity_fast', threshold: number): number {
+  const band = Math.min(1, Math.abs(threshold) / 2);
+  return kind === 'velocity_slow' ? threshold + band : threshold - band;
+}
+
+/** Where "Fermentation stable" clears: once the gravity has moved a point more than its threshold over the window. */
+export const stableClearsAt = (threshold: number): number => threshold + 1;

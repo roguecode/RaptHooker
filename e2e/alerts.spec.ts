@@ -25,3 +25,25 @@ test('an alert rule is created', async ({ page, request }) => {
   const rules = (await (await request.get('/api/alerts/rules')).json()) as AlertRule[];
   expect(rules.find((r) => r.name === name)).toMatchObject({ kind: 'temp_above', threshold: 23.5, channelIds: ['push'], enabled: true });
 });
+
+test('an alert on how fast the gravity drops is created', async ({ page, request }) => {
+  const name = `Nearly done (${test.info().project.name})`;
+  await page.goto('/#/alerts');
+  await page.getByRole('button', { name: 'New alert' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'New alert' });
+  await dialog.getByRole('combobox').selectOption('velocity_slow');
+  await dialog.getByRole('spinbutton', { name: /^Slower than \(points\/day\)/ }).fill('10');
+  await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill(name);
+  await dialog.getByRole('button', { name: 'Save alert' }).click();
+  await expect(dialog).toHaveCount(0);
+
+  const rule = page.locator('.list-item').filter({ has: page.getByRole('heading', { level: 4, name }) });
+  await expect(rule).toContainText('Gravity dropping less than 10 points a day');
+
+  const rules = (await (await request.get('/api/alerts/rules')).json()) as AlertRule[];
+  const made = rules.find((r) => r.name === name);
+  expect(made).toMatchObject({ kind: 'velocity_slow', threshold: 10 });
+  // Other tests start brews on this hub: keep it from going off in them.
+  await request.delete(`/api/alerts/rules/${made!.id}`);
+});

@@ -16,6 +16,7 @@ import { NumberInput } from '../../components/NumberInput';
 import { FieldError, useFormCheck } from '../../validation';
 import { currentLocale, t, tk } from '../../i18n';
 import { ChannelIcon } from './ChannelIcon';
+import { RuleExample } from './RuleExample';
 
 export const emptyRule = (): AlertRuleInput => ({
   name: t('Too warm'),
@@ -120,11 +121,24 @@ export function RuleModal({
         : v;
   const [threshold, setThreshold] = useState(String(toDisplay(rule.threshold)));
   const [busy, setBusy] = useState(false);
-  const unit = { temperature: u.tempLabel, gravity: u.gravityLabel, points: t('points'), percent: '%', minutes: t('minutes') }[
-    info.measure
-  ];
+  const unit = {
+    temperature: u.tempLabel,
+    gravity: u.gravityLabel,
+    points: t('points'),
+    velocity: t('points/day'),
+    percent: '%',
+    minutes: t('minutes'),
+  }[info.measure];
   const thresholdLabel =
-    info.measure === 'points' ? tk('Changed less than') : info.measure === 'minutes' ? tk('Quiet for') : tk('Threshold');
+    info.measure === 'points'
+      ? tk('Changed less than')
+      : info.measure === 'minutes'
+        ? tk('Quiet for')
+        : info.measure === 'velocity'
+          ? rule.kind === 'velocity_slow'
+            ? tk('Slower than')
+            : tk('Faster than')
+          : tk('Threshold');
   const n = Number(threshold);
   const input = {
     ...rule,
@@ -234,6 +248,7 @@ export function RuleModal({
             <FieldError error={errors.cooldownMin} />
           </label>
         </div>
+        <RuleExample rule={input} threshold={threshold.trim() === '' ? NaN : n} plato={u.gravity === 'plato'} />
         <label className="field">
           <span>{t('Name')}</span>
           <input className="input" required maxLength={80} value={rule.name} onChange={(e) => setRule({ ...rule, name: e.target.value })} />
@@ -269,7 +284,7 @@ export function RuleModal({
                 );
               })}
           </div>
-          {['gravity_below', 'gravity_stable', 'battery_below'].includes(rule.kind) &&
+          {['gravity_below', 'gravity_stable', 'velocity_slow', 'velocity_fast', 'battery_below'].includes(rule.kind) &&
             pills.some(
               (p) =>
                 !p.archived && (rule.kind === 'battery_below' ? p.kind === 'thermometer' || p.kind === 'tilt' : !measuresGravity(p.kind)),

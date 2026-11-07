@@ -1,30 +1,49 @@
 # Alerts
 
 Alerts tell you when something needs your attention: the beer gets too warm or too cold, it reaches its target
-gravity, fermentation looks finished, a pill's battery is low or a pill goes quiet. Add them under **Alerts → New
-alert**, and choose under **Where alerts go** how they reach you.
+gravity, fermentation slows down or looks finished, a pill's battery is low or a pill goes quiet. Add them under
+**Alerts → New alert**, and choose under **Where alerts go** how they reach you.
 
 ## Kinds of alert
 
-| Alert                   | Fires when                                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------------------- |
-| **Temperature above**   | The temperature goes over the threshold. It clears once it's 0.5 °C below again.            |
-| **Temperature below**   | The temperature drops under the threshold. It clears once it's 0.5 °C above again.          |
-| **Gravity reaches**     | The gravity drops to the target (it clears if it rises 3 points above it).                  |
-| **Fermentation stable** | The gravity has moved less than _N_ points over the window (48 hours unless you change it). |
-| **Battery below**       | The battery drops under the percentage (it clears 5% above it).                             |
-| **Pill goes quiet**     | Nothing has been heard from the pill for _N_ minutes.                                       |
+| Alert                      | Fires when                                                                                                                             |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Temperature above**      | The temperature goes over the threshold. It clears once it's 0.5 °C below again.                                                       |
+| **Temperature below**      | The temperature drops under the threshold. It clears once it's 0.5 °C above again.                                                     |
+| **Gravity reaches**        | The gravity drops to the target (it clears if it rises 3 points above it).                                                             |
+| **Fermentation stable**    | The gravity has moved less than _N_ points over the window (48 hours unless you change it).                                            |
+| **Fermentation slows**     | The gravity drops fewer than _N_ points a day. It clears once it's dropping a point a day faster (or half _N_ faster, if that's less). |
+| **Fermentation speeds up** | The gravity drops more than _N_ points a day. It clears once it's dropping a point a day slower (or half _N_ slower, if that's less).  |
+| **Battery below**          | The battery drops under the percentage (it clears 5% above it).                                                                        |
+| **Pill goes quiet**        | Nothing has been heard from the pill for _N_ minutes.                                                                                  |
+
+A gravity point is 0.001: 1.012 is 12 points above water (1.000), and 1.050 to 1.038 is a drop of 12 points.
+"Fermentation slows" and "Fermentation speeds up" go by the pill's velocity, the one its page shows (the pill's own, or
+RaptHooker's if you've picked that: see [calibration](./calibration.md)). The threshold is how many points a day the
+gravity is dropping, so a velocity of −12 /day is 12 points (0.012) a day, and it has to be more than 0. For example,
+"Fermentation slows" at 10 tells you fermentation is nearing its end, so you can plan the next step. A gravity that
+isn't dropping at all, or is rising, counts as slower than any threshold. Right after pitching the gravity isn't
+dropping yet either, so while a brew is running "Fermentation slows" waits until the gravity has dropped 2 points from
+the brew's OG. Either velocity is a trend over hours, so these alerts follow a change a little late.
+
+As you type a threshold for these alerts and "Fermentation stable", the alert editor says what it means in SG
+("Alerts when the gravity drops by less than 0.0005 in a day (that's 1.0500 to 1.0495)", for 0.5), where it clears,
+and what else decides when it goes off.
 
 Each alert can watch all pills or just some, and can be limited to **only while a brew is running**. **Don't repeat
 for** stops an alert that clears and fires again from notifying you more often than that.
 
 Gravity alerts ignore readings that look wrong: a pill lying on its side out of the beer still sends a gravity worked
-out from its tilt, which can be nonsense like 0.2. "Gravity reaches" and "Fermentation stable" wait for a real reading
-instead. Temperature, battery and "goes quiet" alerts still use those readings.
+out from its tilt, which can be nonsense like 0.2. "Gravity reaches", "Fermentation stable", "Fermentation slows" and
+"Fermentation speeds up" wait for a real reading instead. Temperature, battery and "goes quiet" alerts still use those
+readings.
 
 ## What you get
 
 - **In the app**, always: a pop-up while the app is open, and the **Recent** list on the Alerts page.
+- **On the pill's chart**: a mark where each alert went off (**Alert: Too warm**) and where it cleared
+  (**OK: Too warm**). **Alerts**, under the chart, hides them in this browser. The hub keeps the latest 500 alerts
+  of all the pills, so ones from long ago may no longer be marked.
 - **A notification** when an alert fires, sent to the places the alert's **Send to** picks. "Pill goes quiet" also
   tells you when the pill is heard again.
 - The notification's title is the alert's name ("Too warm") and the text says what happened ("Kveik is at 24.6 °C,

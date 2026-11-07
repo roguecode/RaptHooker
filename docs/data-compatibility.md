@@ -5,8 +5,12 @@ it: not the readings, not the brews, not the settings, not the things people hav
 Assistant, webhooks, scripts using the API). This page is the checklist for any change to how things are stored,
 identified or sent, and for adding a new kind of device.
 
-The version before an update matters too: if a new version doesn't start, the installer puts the previous one back,
-and it carries on with the data the new one has already upgraded.
+**Any release, either way.** People switch between releases in both directions: the installer puts the previous version
+back if an update doesn't start, owners try a [beta](./updating.md#trying-a-beta) and go back to the release, or move
+from one beta to another. So every release has to keep working with the data that any other release has left, older or
+newer, and then hand it on again, with nothing lost or changed whichever order they run in. That's not left to care:
+the [tests](#tests) run every published release against what the current code leaves, and nothing is released that
+fails them. If a change can't be made that way, stop and ask.
 
 ## Where the data is
 
@@ -31,6 +35,14 @@ Outside the database: `rapthooker.config.json`, the push keys, and the backups (
 - **Only through migrations.** A schema change is a new entry at the end of `MIGRATIONS` in
   [db.ts](../src/server/db.ts). Never edit, reorder or remove one that has been released (`git tag` lists the
   releases). All the migrations an update brings run in one transaction, so if any of them fails nothing changes.
+- **Betas are releases.** A published beta's migrations can't change either, and every later version, betas included,
+  has to have them in the same place. A beta that changes the schema is cut from `main` with its migrations merged
+  there first; two betas never each add a different migration with the same number. `npm test`
+  ([compatibility.test.ts](../src/server/test/compatibility.test.ts)) compares `MIGRATIONS` with every release tag.
+- **The database knows its migrations.** Each version notes a hash of every migration it runs (`migrationHashes` in
+  `meta`, by number). A version whose migration of that number is different (a development build's, before it was
+  changed and released) refuses the database instead of taking the migration as done (`checkCompatible`), so it never
+  runs on a schema it doesn't understand; the installer then puts the previous version back.
 - **A copy first.** Before upgrading an existing database the hub keeps a copy of it (`pre-update-<time>.db` in the
   data folder, the last 3, listed under Settings → Backups as **From before an update**). If the copy can't be made,
   the database isn't upgraded and the hub doesn't start. If the upgrade fails, the copy is deleted again, as the
@@ -41,17 +53,16 @@ Outside the database: `rapthooker.config.json`, the push keys, and the backups (
 - **Rebuilding a table** (SQLite can't drop `NOT NULL` or change a column's type) copies every row, in one migration:
   `CREATE TABLE x_vN (...)`, `INSERT INTO x_vN (...) SELECT ... FROM x` with no `WHERE`, `DROP TABLE x`,
   `ALTER TABLE x_vN RENAME TO x`. Migration 4 is an example.
-- **The previous release must still work on the upgraded database**, as the installer may put it back and it records
-  with its own SQL. A new column needs a default that's right for the rows an older version writes without knowing
+- **Every older release must still work on the upgraded database**, as people go back to them and they record with
+  their own SQL. A new column needs a default that's right for the rows an older version writes without knowing
   the column. The rollups' `*_missing` counts are an example: counting the readings that lacked a measurement, rather
   than those that had it, keeps a bucket right when an older version adds a pill's reading (which has everything).
   For a measurement no older version ever records (an iSpindel's `tilt` and `voltage`, a Laser Level's `distance`),
   it's the other way round: the rollups count the readings that had it (`tilt_n`, `voltage_n`, `distance_n`), so a row
   an older version adds rightly counts as having none of them.
-- **When older versions really can't cope**, the migration sets `minSchema` in `meta` (`MIN_SCHEMA_KEY`) to its own
-  schema version. Versions that don't know that many migrations then refuse to open the database instead of damaging
-  it, and say to update again or restore the pre-update copy. Releases from before this check was added don't check,
-  so avoid it while people may still go back to one of them.
+- **Never shut older versions out.** `minSchema` in `meta` (`MIN_SCHEMA_KEY`) makes versions that don't know that many
+  migrations refuse the database. No migration and no code may set it (a test checks): people must always be able to
+  go back. Versions still honour it, in case a build ever did, and refuse rather than damage the data.
 - **What a device doesn't measure is NULL**, never a made-up 0. A new kind of measurement is a new nullable column in
   `readings`, plus a sum and a `<name>_missing` count in `rollups` (see migration 4), or a `<name>_n` count if older
   versions never record it (migrations 6 and 7), written in `Store.addReading` and averaged in `Store.history` and
@@ -119,7 +130,8 @@ People's own setups depend on these, and changes break them silently:
 - **CSV exports**: for an existing kind of device, new columns go at the end.
 - **The config file** (`rapthooker.config.json`): new keys get defaults. Unknown keys are ignored, so older versions
   cope with newer files.
-- **Backups**: a backup from any earlier version must restore. It's upgraded like the live database.
+- **Backups**: a backup from any version must restore on any other. One from an older version is upgraded like the
+  live database; one from a newer version (taken on a beta, say) is used as it is, as after going back.
 - **The web app's saved choices** (`localStorage` keys): renaming one forgets what people picked.
 - **Screens' firmware** ([firmware/screen](../firmware/screen/README.md)): screens in people's homes run whatever
   firmware they last got, and a hub may be put back to an older version. The screens' HTTP API only gains things (a new
@@ -136,11 +148,20 @@ People's own setups depend on these, and changes break them silently:
   something in every table), upgrades it and checks every row and value came through, and that the release's own SQL
   still works on the upgraded database. When a release changes the schema, add a fixture for it the same way and keep
   the old ones.
+- [compatibility.test.ts](../src/server/test/compatibility.test.ts) checks that every release tag's migrations are
+  still the first ones in `MIGRATIONS`, unchanged, and that nothing sets `minSchema`. CI checks out with the tags
+  (`fetch-depth: 0`) so it can.
+- `npm run test:compat` ([release-compat.mjs](../scripts/release-compat.mjs), after `npm run build`) runs every
+  published release, betas included, on one data folder with the current build: the release sets up a hub and records,
+  the current build upgrades it, the release runs on it again (going back), then the current build again. Each has to
+  start, show the devices and the brew, and record; after each, every table, column, reading, device, brew and hub
+  setting must still be there, unchanged. CI runs it, and the release workflow runs it before publishing anything.
 - Never change a fixture or an expectation to make an upgrade test pass: fix the change.
 
 ## Before a release
 
 - The changelog says what's stored differently.
+- `npm run build && npm run test:compat` passes (the release workflow won't publish otherwise).
 - Try the new version on a copy of a real hub's database: download one from Settings → Backups, put it in an empty
   folder as `rapthooker.db` and start the development server on it (`RAPTHOOKER_DATA_DIR=<folder> npm run dev:server`,
   with `npm run dev:web` to look at it). Check the log says it upgraded and kept a copy, and that the dashboard, a long

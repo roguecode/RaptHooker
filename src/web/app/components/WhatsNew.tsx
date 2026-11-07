@@ -36,9 +36,11 @@ export function changelogBetween(from: string, to: string): ChangelogSection[] {
   const a = core(from);
   const b = core(to);
   if (!a || !b) return [];
+  // A beta of x.y.z comes before x.y.z, so x.y.z's entry is new to someone who had the beta.
+  const fromBeta = /^v?\d+\.\d+\.\d+-/.test(from);
   return SECTIONS.filter((s) => {
     const v = core(s.version);
-    return v !== null && compare(v, a) > 0 && compare(v, b) <= 0;
+    return v !== null && (compare(v, a) > 0 || (fromBeta && compare(v, a) === 0)) && compare(v, b) <= 0;
   });
 }
 

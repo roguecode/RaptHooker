@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { MIGRATIONS, Store } from './db.js';
+import { checkCompatible, IncompatibleDatabaseError, Store } from './db.js';
 import type { Logger } from './log.js';
 import { localStamp, PRE_RESTORE_RE } from './backup/files.js';
 
@@ -54,7 +54,8 @@ export function foldWal(file: string): void {
 
 /**
  * Checks, without changing it, that a file is a RaptHooker database this version can use: an SQLite database with
- * the meta, pills and readings tables, a schema no newer than this version's, that passes SQLite's quick check.
+ * the meta, pills and readings tables and a schema version, that this version can safely open (see checkCompatible)
+ * and that passes SQLite's quick check.
  */
 export function inspectBackup(file: string): BackupSummary {
   let db: DatabaseSync;
@@ -79,8 +80,17 @@ export function inspectBackup(file: string): BackupSummary {
     }
     const schema = (db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version;
     if (schema < 1) throw new RestoreError("That database isn't a RaptHooker backup (it has no schema version)");
-    if (schema > MIGRATIONS.length) {
-      throw new RestoreError('That backup is from a newer version of RaptHooker. Update the hub first, then restore it.');
+    // A backup from a newer version (a beta, before going back from it) restores like the database it was taken
+    // from: this version keeps working on it. Not if that version said older ones can't, or it went differently.
+    try {
+      checkCompatible(db);
+    } catch (err) {
+      if (!(err instanceof IncompatibleDatabaseError)) throw err;
+      throw new RestoreError(
+        err.reason === 'newer'
+          ? "That backup is from a newer version of RaptHooker that this one can't use. Update the hub first, then restore it."
+          : "That backup was made by a development build whose database changes this version doesn't have, so it can't use it safely.",
+      );
     }
     const check = db.prepare('PRAGMA quick_check').all() as unknown as { quick_check: string }[];
     if (check[0]?.quick_check !== 'ok') throw new RestoreError(`That backup is damaged (${check[0]?.quick_check ?? 'unknown problem'})`);

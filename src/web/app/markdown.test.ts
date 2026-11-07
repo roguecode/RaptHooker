@@ -44,6 +44,11 @@ describe('changelogSections', () => {
     const sections = changelogSections(changelog);
     expect(sections[0]?.version).toBe('Unreleased');
     const current = sections.find((s) => s.version === version);
+    if (version.includes('-') && !current) {
+      // A beta needn't have its own section: its notes are what's unreleased (deploy/package.mjs).
+      expect(sections[0]?.body, `CHANGELOG.md's [Unreleased] section is ${version}'s notes`).toContain('### ');
+      return;
+    }
     expect(current, `CHANGELOG.md needs a section for ${version}`).toBeDefined();
     expect(current?.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(current?.body).toContain('### Added');

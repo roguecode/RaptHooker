@@ -89,6 +89,18 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   - Hub settings gain `bluetooth` (true unless switched off; leaving it out of `PUT /api/settings/hub` keeps what's
     saved). The Bluetooth status's `state` can be `off`, with `offBy` saying where (`settings` or `config`).
   - An older version, if you go back, listens over Bluetooth again.
+- **Beta versions.** Settings → Updates → **Beta versions** lists the betas published on GitHub (pre-releases, like
+  `0.9.0-beta.1`) with what's in each, and the owner can install one with **Try this beta**. A hub on a beta says so
+  (**Beta** in the top bar), points out a later beta of the same one, and can **Go back to release x.y.z** at any time;
+  when the release the beta leads up to is out, it's offered as an ordinary update. Hubs never install a beta by
+  themselves. See [Trying a beta](docs/updating.md#trying-a-beta).
+  - Your data stays through every switch: every release keeps working with what any other has left, older or newer.
+    Every release is now tested against every published one, both ways, before it's published
+    ([Keeping people's data](docs/data-compatibility.md)).
+  - `GET /api/update` gains `prerelease`, `canInstall`, `betas`, `betasCheckedAt`, `betasError`, `newerBeta` and
+    `target` (the version an update is installing, or didn't). `POST /api/update/betas` looks for betas, and
+    `POST /api/update/install` (`{ "version": "0.9.0-beta.1" }`) installs one of them, or the latest release.
+  - `update.sh --version` takes a beta's version too.
 
 ### Changed
 
@@ -101,6 +113,12 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   time.
 - The `device` webhook variable can also be `tilt` or `laser-level`. A Tilt has no _Battery_ or _Tilt_ entity in Home
   Assistant (it sends neither), and a Laser Level only the entities it has.
+- A backup taken by a newer version (on a beta, before going back to the release, say) can now be restored: every
+  version keeps working on what a newer one has added. A backup is only turned away if a newer version said older ones
+  can't use it (no release does), or a development build changed the database in a way of its own.
+- The database notes each change an update makes to how it's stored. A version that would make a different change of
+  the same number (a development build's) refuses the database instead of running on data it doesn't understand, and
+  the installer puts the previous version back.
 
 ### Fixed
 

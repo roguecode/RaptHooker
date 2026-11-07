@@ -146,15 +146,103 @@ export function SwitchToReleaseButton({ info, onChange }: { info: UpdateInfo; on
   );
 }
 
-/** Says in the top bar that the hub runs a development build, so it's never mistaken for a release. */
+/** "Try this beta", or "Go back to release x.y.z" from a beta, with a confirmation first. */
+export function InstallVersionButton({
+  info,
+  version,
+  onChange,
+}: {
+  info: UpdateInfo;
+  version: string;
+  onChange: (info: UpdateInfo) => void;
+}) {
+  const { toast } = useLive();
+  const [confirming, setConfirming] = useState(false);
+  const beta = version.includes('-');
+  return (
+    <>
+      <button type="button" className={`btn${beta ? '' : ' primary'}`} onClick={() => setConfirming(true)}>
+        <Icon name={beta ? 'flask' : 'undo'} size={17} /> {beta ? t('Try this beta') : t('Go back to release {version}', { version })}
+      </button>
+      {confirming && (
+        <Confirm
+          title={beta ? t('Try RaptHooker {version}?', { version }) : t('Go back to RaptHooker {version}?', { version })}
+          body={
+            beta ? (
+              <>
+                <p>
+                  {t(
+                    'The hub downloads beta {version}, installs it and restarts. That takes a few minutes; recording carries on straight after (a reading or two may be missed while it restarts).',
+                    { version },
+                  )}
+                </p>
+                <p>
+                  {t(
+                    "Betas are for trying out what's coming, so they can have rough edges. Your brews, readings and settings stay, and you can go back to the latest release under Settings → Updates whenever you like.",
+                  )}
+                </p>
+                <p>
+                  {info.devBuild
+                    ? t("If the beta doesn't start, the hub goes back to this build by itself.")
+                    : t("If the beta doesn't start, the hub goes back to {version} by itself.", { version: info.current })}
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  {t(
+                    'The hub downloads release {version}, installs it in place of this beta and restarts. From then on it updates from releases.',
+                    {
+                      version,
+                    },
+                  )}
+                </p>
+                <p>
+                  {t(
+                    'Everything recorded on the beta stays. Anything only the beta has is kept, unused, until the hub is on a version that has it.',
+                  )}
+                </p>
+                <p>{t("If the release doesn't start, the hub goes back to this beta by itself.")}</p>
+              </>
+            )
+          }
+          confirm={beta ? t('Install the beta') : t('Go back to the release')}
+          onConfirm={async () => {
+            try {
+              onChange(await http.post<UpdateInfo>('/api/update/install', { version }));
+            } catch (err) {
+              toast({
+                tone: 'error',
+                title: beta ? t("Couldn't install the beta") : t("Couldn't go back to the release"),
+                body: errorText(err),
+              });
+            }
+          }}
+          onClose={() => setConfirming(false)}
+        />
+      )}
+    </>
+  );
+}
+
+/** Says in the top bar that the hub runs a development build or a beta, so it's never mistaken for a release. */
 export function DevBuildBadge() {
   const [info] = useUpdateInfo();
-  if (!info?.devBuild) return null;
-  return (
-    <a className="chip warning dev-build-badge" href="#/settings" title={t('This hub runs a development build.')}>
-      {t('Development build')}
-    </a>
-  );
+  if (info?.devBuild) {
+    return (
+      <a className="chip warning dev-build-badge" href="#/settings" title={t('This hub runs a development build.')}>
+        {t('Development build')}
+      </a>
+    );
+  }
+  if (info?.prerelease) {
+    return (
+      <a className="chip warning dev-build-badge" href="#/settings" title={t('This hub runs beta {version}.', { version: info.current })}>
+        {t('Beta')}
+      </a>
+    );
+  }
+  return null;
 }
 
 /** What the hub runs: a development build can have the same version number as a release, or as the last build. */
@@ -203,6 +291,8 @@ export function UpdateBanner() {
   }, [info, firstBuild]);
 
   if (!info) return null;
+  // What an update is installing, or didn't: a beta, or a release older than the beta it replaces, isn't `latest`.
+  const target = info.target ?? info.latest;
 
   if (info.state === 'updating') {
     const back = connection === 'open';
@@ -211,9 +301,7 @@ export function UpdateBanner() {
         <Icon name="refresh" className="update-spin" />
         <p className="grow">
           <strong>
-            {info.latest
-              ? t('Updating to RaptHooker {version}…', { version: info.latest })
-              : t('Updating RaptHooker to the latest version…')}
+            {target ? t('Updating to RaptHooker {version}…', { version: target }) : t('Updating RaptHooker to the latest version…')}
           </strong>{' '}
           {back
             ? t('The hub restarts by itself when the new version is in; this page reconnects when it is back.')
@@ -244,12 +332,12 @@ export function UpdateBanner() {
         <Icon name="alert" />
         <p className="grow">
           <strong>
-            {info.latest ? t("The update to RaptHooker {version} didn't work.", { version: info.latest }) : t("The update didn't work.")}
+            {target ? t("The update to RaptHooker {version} didn't work.", { version: target }) : t("The update didn't work.")}
           </strong>{' '}
           {info.error}
         </p>
         <div className="update-actions">
-          {isOwner && info.canSelfUpdate && info.available && (
+          {isOwner && info.canSelfUpdate && info.available && (!info.target || info.target === info.latest) && (
             <UpdateNowButton info={info} onChange={setInfo} small label={t('Try again')} />
           )}
           <a className="btn ghost small" href={UPDATE_DOCS_URL} target="_blank" rel="noreferrer noopener">

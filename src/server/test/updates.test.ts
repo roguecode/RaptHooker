@@ -6,11 +6,13 @@ import type { UpdateInfo } from '@rapthooker/shared';
 import { Settings } from '../settings.js';
 import {
   LATEST_RELEASE_API,
+  RELEASES_API,
   REQUEST_FILE,
   STATUS_FILE,
   UpdateError,
   UpdateService,
   compareVersions,
+  isBetaVersion,
   isNewer,
   type UpdateOptions,
 } from '../updates.js';
@@ -99,6 +101,13 @@ describe('compareVersions', () => {
     expect(compareVersions('latest', '1.0.0')).toBeNull();
     expect(compareVersions('1.0', '1.0.0')).toBeNull();
     expect(isNewer('nonsense', '0.1.0')).toBe(false);
+  });
+
+  it('tells betas from releases', () => {
+    expect(isBetaVersion('0.9.0-beta.1')).toBe(true);
+    expect(isBetaVersion('v0.9.0-tilt.2')).toBe(true);
+    expect(isBetaVersion('0.9.0')).toBe(false);
+    expect(isBetaVersion('nonsense')).toBe(false);
   });
 });
 
@@ -308,13 +317,13 @@ describe('UpdateService self-update', () => {
       JSON.stringify({ ok: false, version: '0.3.0', from: '0.2.0', at: Date.now(), error: "Couldn't download the release" }),
     );
     await vi.advanceTimersByTimeAsync(1000);
-    expect(service.info()).toMatchObject({ state: 'failed', error: "Couldn't download the release" });
+    expect(service.info()).toMatchObject({ state: 'failed', error: "Couldn't download the release", target: '0.3.0' });
     expect(events.at(-1)?.state).toBe('failed');
     expect(existsSync(join(t.dir, REQUEST_FILE))).toBe(false);
 
     // Trying again clears the failure.
     await service.apply();
-    expect(service.info()).toMatchObject({ state: 'updating', error: null });
+    expect(service.info()).toMatchObject({ state: 'updating', error: null, target: '0.3.0' });
   });
 
   it('after the restart, the new version picks up the result', async () => {
@@ -333,7 +342,7 @@ describe('UpdateService self-update', () => {
     vi.useFakeTimers();
     restarted.service.start();
     await vi.advanceTimersByTimeAsync(1000);
-    expect(restarted.service.info()).toMatchObject({ state: 'idle', error: null, current: '0.3.0' });
+    expect(restarted.service.info()).toMatchObject({ state: 'idle', error: null, current: '0.3.0', target: null });
     restarted.service.stop();
 
     // Seen once: another restart doesn't report it again.
@@ -438,6 +447,176 @@ describe('UpdateService development builds', () => {
   });
 });
 
+describe('UpdateService betas', () => {
+  /** A beta as the release workflow publishes it: a pre-release with the archive the installer downloads. */
+  const beta = (tag: string, publishedAt: string, extra: Record<string, unknown> = {}) =>
+    release(tag, {
+      prerelease: true,
+      published_at: publishedAt,
+      assets: [{ name: `rapthooker-${tag.slice(1)}.tar.gz` }, { name: 'SHA256SUMS' }, { name: 'install.sh' }],
+      ...extra,
+    });
+  const LIST = [
+    beta('v0.9.0-beta.3', '2026-11-06T00:00:00Z', { draft: true }),
+    beta('v0.9.0-beta.2', '2026-11-05T00:00:00Z'),
+    beta('v0.9.0-ui.1', '2026-11-04T00:00:00Z', { assets: [] }),
+    beta('v0.9.0-tilt.1', '2026-11-03T00:00:00Z'),
+    beta('v0.9.0-beta.1', '2026-11-01T00:00:00Z'),
+    release('v0.8.0', { published_at: '2026-10-20T00:00:00Z' }),
+    beta('v0.8.0-beta.1', '2026-10-10T00:00:00Z'),
+    beta('nonsense', '2026-10-01T00:00:00Z'),
+  ];
+  /** GitHub: /releases/latest answers `latest`, /releases the list. */
+  const github = (latest = 'v0.8.0', list: unknown[] = LIST) =>
+    vi.fn(async (url: string | URL | Request) => (String(url) === RELEASES_API ? json(list) : json(release(latest))));
+  const asFetch = (f: ReturnType<typeof github>) => f as unknown as typeof globalThis.fetch;
+
+  it('lists the betas when asked: newest first, without drafts, ones without an archive, or ones a release has overtaken', async () => {
+    const fetch = github();
+    const { service } = make({ version: '0.8.0', fetch: asFetch(fetch), now: () => 4000 });
+    expect(service.info()).toMatchObject({ betas: [], betasCheckedAt: null, prerelease: false, newerBeta: null });
+
+    const info = await service.checkBetas();
+    expect(info.betas.map((b) => b.version)).toEqual(['0.9.0-beta.2', '0.9.0-tilt.1', '0.9.0-beta.1']);
+    expect(info.betas[0]).toEqual({
+      version: '0.9.0-beta.2',
+      name: 'v0.9.0-beta.2',
+      notes: "## What's new in v0.9.0-beta.2\n\n- Things",
+      url: 'https://github.com/roguecode/RaptHooker/releases/tag/v0.9.0-beta.2',
+      publishedAt: Date.parse('2026-11-05T00:00:00Z'),
+    });
+    expect(info).toMatchObject({ betasCheckedAt: 4000, betasError: null, prerelease: false, newerBeta: null });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(String(fetch.mock.calls[0]![0])).toBe(RELEASES_API);
+  });
+
+  it('hides betas older than a release in the list, even before the daily check has seen it', async () => {
+    const list = [release('v0.9.0', { published_at: '2026-11-10T00:00:00Z' }), ...LIST, beta('v0.9.1-beta.1', '2026-11-11T00:00:00Z')];
+    const { service } = make({ version: '0.8.0', fetch: asFetch(github('v0.8.0', list)) });
+    expect((await service.checkBetas()).betas.map((b) => b.version)).toEqual(['0.9.1-beta.1']);
+  });
+
+  it('cuts very long notes at the end of a line', async () => {
+    const body = Array.from({ length: 400 }, (_, i) => `- Change number ${i} in this beta`).join('\n');
+    const { service } = make({ fetch: asFetch(github('v0.8.0', [beta('v0.9.0-beta.1', '2026-11-01T00:00:00Z', { body })])) });
+    const notes = (await service.checkBetas()).betas[0]!.notes!;
+    expect(notes.length).toBeLessThanOrEqual(8_003);
+    expect(notes).toMatch(/in this beta\n\n…$/);
+  });
+
+  it('keeps the list across restarts, and stops listing betas once the latest release overtakes them', async () => {
+    const first = make({ version: '0.8.0', fetch: asFetch(github()) });
+    await first.service.checkBetas();
+    first.service.stop();
+
+    const second = make({ version: '0.8.0', fetch: asFetch(github('v0.9.0')) });
+    expect(second.service.info().betas).toHaveLength(3);
+    expect((await second.service.check()).betas).toEqual([]);
+  });
+
+  it('asks GitHub about betas in the daily check only when the hub runs one', async () => {
+    const onRelease = github();
+    await make({ version: '0.8.0', fetch: asFetch(onRelease) }).service.check();
+    expect(onRelease.mock.calls.map((c) => String(c[0]))).toEqual([LATEST_RELEASE_API]);
+
+    const onBeta = github();
+    const info = await make({ version: '0.9.0-beta.1', fetch: asFetch(onBeta) }).service.check();
+    expect(onBeta.mock.calls.map((c) => String(c[0]))).toEqual([LATEST_RELEASE_API, RELEASES_API]);
+    // Going back to 0.8.0 isn't an update, and a later beta of the same line is pointed out (not one of another line).
+    expect(info).toMatchObject({ prerelease: true, available: false, latest: '0.8.0', newerBeta: '0.9.0-beta.2' });
+    expect((await make({ version: '0.9.0-beta.2', fetch: asFetch(github()) }).service.check()).newerBeta).toBeNull();
+  });
+
+  it("keeps the last list when GitHub can't be asked", async () => {
+    let answer: () => Promise<Response> = async () => json(LIST);
+    let now = 1_000_000;
+    const { service } = make({ fetch: (() => answer()) as typeof fetch, now: () => now });
+    await service.checkBetas();
+    answer = async () => json({ message: 'API rate limit exceeded' }, 403);
+    now += 60_000;
+    let info = await service.checkBetasNow();
+    expect(info.betas).toHaveLength(3);
+    expect(info.betasError).toMatch(/limiting/);
+    answer = async () => {
+      throw new TypeError('fetch failed');
+    };
+    info = await service.checkBetas();
+    expect(info.betas).toHaveLength(3);
+    expect(info.betasError).toMatch(/Couldn't reach GitHub/);
+  });
+
+  it('opening the list again straight away reuses the answer', async () => {
+    const fetch = github();
+    let now = 1_000_000;
+    const { service } = make({ fetch: asFetch(fetch), now: () => now });
+    await service.checkBetasNow();
+    now += 10_000;
+    await service.checkBetasNow();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    now += 60_000;
+    await service.checkBetasNow();
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('installs a beta that is listed', async () => {
+    installed();
+    const { service } = make({ version: '0.8.0', fetch: asFetch(github()), now: () => 9000 });
+    await service.checkBetas();
+    expect(service.info().canInstall).toBe(true);
+    const info = await service.install('v0.9.0-beta.1');
+    expect(info).toMatchObject({ state: 'updating', target: '0.9.0-beta.1' });
+    expect(JSON.parse(readFileSync(join(t.dir, REQUEST_FILE), 'utf8'))).toEqual({ version: '0.9.0-beta.1', requestedAt: 9000 });
+    // Asking again while it's updating doesn't start another.
+    expect((await service.install('0.9.0-beta.2')).state).toBe('updating');
+    expect(JSON.parse(readFileSync(join(t.dir, REQUEST_FILE), 'utf8')).version).toBe('0.9.0-beta.1');
+  });
+
+  it('looks again before saying no to a beta it has no list for', async () => {
+    installed();
+    const fetch = github();
+    const { service } = make({ version: '0.8.0', fetch: asFetch(fetch) });
+    expect((await service.install('0.9.0-tilt.1')).state).toBe('updating');
+    expect(fetch.mock.calls.map((c) => String(c[0]))).toEqual([RELEASES_API]);
+  });
+
+  it('goes back from a beta to the latest release, though that is older', async () => {
+    installed();
+    const { service } = make({ version: '0.9.0-beta.1', fetch: asFetch(github()), now: () => 3000 });
+    expect((await service.check()).available).toBe(false);
+    const info = await service.install('0.8.0');
+    expect(info.state).toBe('updating');
+    expect(JSON.parse(readFileSync(join(t.dir, REQUEST_FILE), 'utf8'))).toEqual({ version: '0.8.0', requestedAt: 3000 });
+  });
+
+  it("refuses what it doesn't offer, the version it runs, nonsense, and hubs that can't install", async () => {
+    const fetch = github();
+    await expect(make({ version: '0.8.0', fetch: asFetch(fetch) }).service.install('0.9.0-beta.1')).rejects.toThrow(/installer/);
+    installed();
+    const { service } = make({ version: '0.8.0', fetch: asFetch(fetch) });
+    await expect(service.install('0.7.0')).rejects.toMatchObject({ statusCode: 404 });
+    await expect(service.install('0.8.0-beta.1')).rejects.toThrow(/isn't a version this hub can install/);
+    await expect(service.install('0.9.0-beta.3')).rejects.toThrow(/isn't a version this hub can install/);
+    await expect(service.install('0.8.0')).rejects.toThrow(/already runs RaptHooker 0\.8\.0/);
+    for (const nonsense of ['latest', '0.9', '0.9.0+build', '0.9.0-beta.1; reboot', '../0.9.0']) {
+      await expect(service.install(nonsense)).rejects.toMatchObject({ statusCode: 400 });
+    }
+    expect(existsSync(join(t.dir, REQUEST_FILE))).toBe(false);
+  });
+
+  it('lets a development build try a beta, but not the dev server', async () => {
+    devDeployed();
+    await expect(make({ fromSource: true, fetch: asFetch(github()) }).service.install('0.9.0-beta.2')).rejects.toBeInstanceOf(UpdateError);
+    const { service } = make({ fetch: asFetch(github()) });
+    expect(service.info()).toMatchObject({ canInstall: true, prerelease: false });
+    expect((await service.install('0.9.0-beta.2')).state).toBe('updating');
+  });
+
+  it("a development build with a beta's version number isn't a beta", () => {
+    devDeployed();
+    expect(make({ version: '0.9.0-beta.1' }).service.info()).toMatchObject({ prerelease: false, newerBeta: null });
+  });
+});
+
 describe('update routes', () => {
   async function app(owner: boolean, dev = false) {
     if (dev) devDeployed();
@@ -464,6 +643,8 @@ describe('update routes', () => {
     expect((await viewer.inject({ method: 'POST', url: '/api/update/check' })).statusCode).toBe(403);
     expect((await viewer.inject({ method: 'POST', url: '/api/update/apply' })).statusCode).toBe(403);
     expect((await viewer.inject({ method: 'POST', url: '/api/update/switch' })).statusCode).toBe(403);
+    expect((await viewer.inject({ method: 'POST', url: '/api/update/betas' })).statusCode).toBe(403);
+    expect((await viewer.inject({ method: 'POST', url: '/api/update/install', payload: { version: '0.3.0' } })).statusCode).toBe(403);
     await viewer.close();
 
     const owner = await app(true);
@@ -476,6 +657,15 @@ describe('update routes', () => {
     const owner = await app(true, true);
     expect((await owner.inject({ method: 'GET', url: '/api/update' })).json()).toMatchObject({ canSwitchToRelease: true });
     expect((await owner.inject({ method: 'POST', url: '/api/update/switch' })).json()).toMatchObject({ state: 'updating' });
+    await owner.close();
+  });
+
+  it('lets the owner list the betas and install a chosen version', async () => {
+    const owner = await app(true);
+    expect((await owner.inject({ method: 'POST', url: '/api/update/betas' })).json()).toMatchObject({ betasError: null });
+    expect((await owner.inject({ method: 'POST', url: '/api/update/install', payload: { version: 'latest' } })).statusCode).toBe(400);
+    const res = await owner.inject({ method: 'POST', url: '/api/update/install', payload: { version: '0.3.0' } });
+    expect(res.json()).toMatchObject({ state: 'updating' });
     await owner.close();
   });
 });

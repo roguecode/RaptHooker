@@ -4,7 +4,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { ClockGuard } from '../clock.js';
-import { COMPACT_AFTER_UPGRADE_KEY, IncompatibleDatabaseError, MIGRATIONS, MIN_SCHEMA_KEY, ROLLUP_MS, Store, tiltOf } from '../db.js';
+import {
+  COMPACT_AFTER_UPGRADE_KEY,
+  IncompatibleDatabaseError,
+  MIGRATION_HASHES_KEY,
+  MIGRATIONS,
+  MIN_SCHEMA_KEY,
+  migrationHash,
+  ROLLUP_MS,
+  Store,
+  tiltOf,
+} from '../db.js';
 import { keepPreUpdateCopy, PRE_UPDATE_KEEP } from '../backup/files.js';
 import { Maintenance } from '../maintenance.js';
 import { PillService } from '../pills.js';
@@ -182,6 +192,11 @@ function dump(db: DatabaseSync, columns?: Record<string, string[]>): { rows: Row
   return { rows, columns: cols };
 }
 
+/** A meta row an upgrade adds for itself (it wasn't there before): every row that was there must stay as it was. */
+function addedBookkeeping(row: Record<string, unknown>, before: Record<string, unknown>[]): boolean {
+  return (row.key === COMPACT_AFTER_UPGRADE_KEY || row.key === MIGRATION_HASHES_KEY) && !before.some((b) => b.key === row.key);
+}
+
 describe('upgrading the database', () => {
   it('keeps every row and value a released version stored', () => {
     const file = join(tempDir(), 'rapthooker.db');
@@ -198,9 +213,10 @@ describe('upgrading the database', () => {
       expect(Object.keys(after.rows).sort()).toEqual(Object.keys(before.rows).sort());
       for (const table of Object.keys(before.rows)) {
         // An upgrade may add bookkeeping to meta; everything that was there stays as it was.
-        const rows = table === 'meta' ? after.rows[table]!.filter((r) => r.key !== COMPACT_AFTER_UPGRADE_KEY) : after.rows[table];
+        const rows = table === 'meta' ? after.rows[table]!.filter((r) => !addedBookkeeping(r, before.rows.meta!)) : after.rows[table];
         expect(rows, table).toEqual(before.rows[table]);
       }
+      expect(JSON.parse(store.getMeta(MIGRATION_HASHES_KEY)!)).toEqual([null, null, null, ...MIGRATIONS.slice(3).map(migrationHash)]);
     } finally {
       store.close();
     }
@@ -450,9 +466,17 @@ describe('upgrading a database from 0.7.0 and 0.8.0 (schema 5)', () => {
       expect(store.schemaVersion).toBe(MIGRATIONS.length);
       const after = dump(store.db, before.columns);
       for (const table of Object.keys(before.rows)) {
-        const rows = table === 'meta' ? after.rows[table]!.filter((r) => r.key !== COMPACT_AFTER_UPGRADE_KEY) : after.rows[table];
+        const rows = table === 'meta' ? after.rows[table]!.filter((r) => !addedBookkeeping(r, before.rows.meta!)) : after.rows[table];
         expect(rows, table).toEqual(before.rows[table]);
       }
+      expect(JSON.parse(store.getMeta(MIGRATION_HASHES_KEY)!)).toEqual([
+        null,
+        null,
+        null,
+        null,
+        null,
+        ...MIGRATIONS.slice(5).map(migrationHash),
+      ]);
       expect(store.db.prepare('SELECT COUNT(*) AS n FROM readings WHERE tilt IS NOT NULL OR voltage IS NOT NULL').get()).toEqual({ n: 0 });
       expect(
         store.db.prepare('SELECT TOTAL(tilt) AS t, TOTAL(tilt_n) AS tn, TOTAL(voltage) AS v, TOTAL(voltage_n) AS vn FROM rollups').get(),
@@ -625,6 +649,57 @@ describe('a database from a newer version', () => {
 
     expect(() => new Store(file)).toThrow(IncompatibleDatabaseError);
     expect(() => new Store(file)).toThrow(/newer version of RaptHooker/);
+    const after = new DatabaseSync(file, { readOnly: true });
+    expect(after.prepare('SELECT COUNT(*) AS n FROM readings').get()).toEqual({ n: 3 });
+    after.close();
+  });
+
+  it('notes the migrations it runs, and is used as it is when a newer version has noted more', () => {
+    // However it was built: a checkout with CRLF line endings notes the same as one with LF.
+    expect(migrationHash('CREATE TABLE x (id TEXT);\r\nCREATE INDEX x_id ON x (id);\r\n')).toBe(
+      migrationHash('CREATE TABLE x (id TEXT);\nCREATE INDEX x_id ON x (id);\n'),
+    );
+    // Pinned: hubs keep these, so how a migration is hashed can never change (this is migration 1 as 0.3.0 released it).
+    expect(migrationHash(MIGRATIONS[0]!)).toBe('4451e42118c48ed1');
+    const fresh = new Store(join(tempDir(), 'fresh.db'));
+    expect(JSON.parse(fresh.getMeta(MIGRATION_HASHES_KEY)!)).toEqual(MIGRATIONS.map(migrationHash));
+    fresh.close();
+
+    // A release from before migrations were noted left this one: the ones it ran stay unknown.
+    const file = join(tempDir(), 'rapthooker.db');
+    schema3Database(file);
+    const store = new Store(file);
+    const noted = JSON.parse(store.getMeta(MIGRATION_HASHES_KEY)!) as (string | null)[];
+    expect(noted).toEqual([null, null, null, ...MIGRATIONS.slice(3).map(migrationHash)]);
+    // A newer version (since put back) ran one more and noted it.
+    store.setMeta(MIGRATION_HASHES_KEY, JSON.stringify([...noted, migrationHash('CREATE TABLE added_later (id TEXT)')]));
+    store.db.exec(`CREATE TABLE added_later (id TEXT); PRAGMA user_version = ${MIGRATIONS.length + 1}`);
+    store.close();
+
+    const reopened = new Store(file);
+    expect(reopened.schemaVersion).toBe(MIGRATIONS.length + 1);
+    expect(reopened.countReadings()).toBe(3);
+    reopened.close();
+  });
+
+  it("refuses a database that had a migration this version has, but a different one, and doesn't touch it", () => {
+    const file = join(tempDir(), 'rapthooker.db');
+    schema3Database(file);
+    new Store(file).close();
+    const db = new DatabaseSync(file);
+    // A development build's migration 5, before it was changed and released: the database went its own way.
+    const noted = JSON.parse((db.prepare('SELECT value FROM meta WHERE key = ?').get(MIGRATION_HASHES_KEY) as { value: string }).value);
+    noted[4] = migrationHash('ALTER TABLE readings ADD COLUMN something_else REAL');
+    db.prepare('UPDATE meta SET value = ? WHERE key = ?').run(JSON.stringify(noted), MIGRATION_HASHES_KEY);
+    db.close();
+
+    expect(() => new Store(file)).toThrow(IncompatibleDatabaseError);
+    expect(() => new Store(file)).toThrow(/database change 5 isn't the same as this version's/);
+    try {
+      new Store(file);
+    } catch (err) {
+      expect((err as IncompatibleDatabaseError).reason).toBe('diverged');
+    }
     const after = new DatabaseSync(file, { readOnly: true });
     expect(after.prepare('SELECT COUNT(*) AS n FROM readings').get()).toEqual({ n: 3 });
     after.close();

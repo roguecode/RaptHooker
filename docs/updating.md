@@ -22,10 +22,35 @@ The page reconnects by itself and loads the new version, then shows what's new.
 When a new version changes how the data is stored, it keeps a copy of the database from before first (listed under
 Settings → Backups as **From before an update**; see [Backups](./backups.md#before-an-update)).
 
+## Trying a beta
+
+Betas are early versions, for trying out what's coming before it's released. They're published on GitHub as
+pre-releases, with versions like `0.9.0-beta.1` (or `0.9.0-tilt.1` for one that tries out one thing). A hub never
+installs one by itself.
+
+Under Settings → Updates → **Beta versions**, the owner sees the betas there are, newest first, with what's in each,
+and picks one with **Try this beta**. It installs the same way as **Update now**: if it doesn't start, the hub goes back
+to the version it had. While the hub runs a beta:
+
+- the top bar says **Beta**, and Settings → Updates says which one, and when a later beta of it is out;
+- **Go back to release x.y.z** under Settings → Updates installs the latest release again, whenever you like;
+- when the release the beta leads up to comes out, it's offered as an ordinary update.
+
+Your brews, readings and settings stay whichever way you go: every release keeps working with the data any other has
+left, older or newer, and that's tested against every published release before a new one is made (see
+[Keeping people's data](./data-compatibility.md)). Anything only the beta has (a new kind of device, say) is kept, unused
+by a version that doesn't know it, and is back when the hub is on one that does. A backup taken on a beta can be
+restored after going back.
+
+Only betas newer than the latest release are listed: once a release has what a beta was trying out, the beta goes.
+
+To point someone at a beta, tell them its version: they'll find it under Settings → Updates → **Beta versions**.
+
 ### How it works
 
 The app runs as the `rapthooker` user and can't change its own files (that's on purpose). To ask for an update it
-creates `/var/lib/rapthooker/update-request`. `rapthooker-update.path`, a systemd unit installed by setup, notices the
+creates `/var/lib/rapthooker/update-request`, naming the version (a release, or a beta when you try one or go back from
+one). `rapthooker-update.path`, a systemd unit installed by setup, notices the
 file and starts `rapthooker-update.service`, which runs [update.sh](../deploy/pi/update.sh) as root. That runs
 [install.sh](../deploy/install.sh) `--update` and leaves the result in `/var/lib/rapthooker/update-status.json`, which
 the app reads.
@@ -61,8 +86,9 @@ give it again.
 or use the copy on the Pi, which does the same as **Update now**:
 
 ```bash
-sudo bash /opt/rapthooker/deploy/pi/update.sh                    # the latest release
-sudo bash /opt/rapthooker/deploy/pi/update.sh --version 0.3.0    # a given one
+sudo bash /opt/rapthooker/deploy/pi/update.sh                          # the latest release
+sudo bash /opt/rapthooker/deploy/pi/update.sh --version 0.3.0          # a given one
+sudo bash /opt/rapthooker/deploy/pi/update.sh --version 0.9.0-beta.1   # a beta
 ```
 
 Without internet access on the Pi, download `rapthooker-<version>.tar.gz` and `SHA256SUMS` from
@@ -74,14 +100,17 @@ If you deploy from a PC with `deploy.ps1`/`deploy.sh`, update by pulling the new
 
 ## Going back
 
+From a beta, use **Go back to release x.y.z** under Settings → Updates ([Trying a beta](#trying-a-beta)). Otherwise:
+
 ```bash
 sudo bash /opt/rapthooker/deploy/install.sh --rollback
 ```
 
 swaps back to the version in `/opt/rapthooker/previous` (and keeps the newer one there, so running it again undoes the
 rollback). Your data isn't touched. A newer version may have added to the database; older versions ignore what they
-don't know about. In the rare case that a newer version has changed the data in a way the older one can't use, the
-older one won't start rather than damage it: update again, or restore the copy from before the update.
+don't know about, and the newer one finds it all again when you update. No release changes the data in a way an older
+one can't use (that's tested against every release). If a development build ever did, the older version won't start
+rather than damage it: update again, or restore the copy from before the update.
 
 ## When something goes wrong
 

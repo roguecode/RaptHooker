@@ -161,7 +161,8 @@ like and select **Add pill**: from then on every reading is recorded.
 
 RaptHooker checks for a new version once a day and shows a banner when there is one. Select **Update now** and it
 updates itself, going back to the version you had if the new one doesn't start. You can also run the install line
-again at any time: your data and settings stay. See [docs/updating.md](docs/updating.md).
+again at any time: your data and settings stay. To try what's coming, pick a beta under Settings → Updates → **Beta
+versions**, and go back to the release from there whenever you like. See [docs/updating.md](docs/updating.md).
 
 ## Configuration
 

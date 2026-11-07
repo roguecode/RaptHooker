@@ -22,6 +22,9 @@ jobs:
         node: [22, 24]
     steps:
       - uses: actions/checkout@v5
+        with:
+          # The release tags: src/server/test/compatibility.test.ts checks no released migration has changed.
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
@@ -35,6 +38,29 @@ jobs:
       - run: npm run build
       - name: Package (as a release would be)
         run: node deploy/package.mjs
+
+  # Every published release (betas included) has to run on the data this version leaves, and this version on theirs:
+  # people switch between any two, either way (docs/data-compatibility.md).
+  compat:
+    name: Switching to and from every release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Releases downloaded before
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/rapthooker-releases
+          key: rapthooker-releases-${{ github.run_id }}
+          restore-keys: rapthooker-releases-
+      - run: npm run build
+      - run: npm run test:compat
 
   shellcheck:
     name: Shell scripts

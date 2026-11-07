@@ -43,9 +43,16 @@ npm test             # unit and component tests (Vitest; components run in happy
 npm run build        # the end-to-end tests use the built app
 npx playwright install chromium   # once
 npm run test:e2e     # Playwright: a real hub with simulated pills, on a desktop and a phone screen
+npm run test:compat  # every published release on this build's data and back (needs the build; see below)
 npm run i18n:check   # every translatable string is extractable and every translation's placeholders match
 npm run firmware     # the screens' firmware (needs PlatformIO); see firmware/screen/README.md
 ```
+
+`npm run test:compat` ([scripts/release-compat.mjs](../scripts/release-compat.mjs)) downloads each published release
+(every `v*` tag, betas too; `--releases 0.7.0,0.8.0` for some) and takes one data folder through: the release sets up a
+hub and records, this build upgrades it, the release runs on it again, then this build again. After each, every table,
+column, reading, device, brew and hub setting must still be there, unchanged. CI runs it on every push, and the release
+workflow won't publish anything (a beta included) that fails it. See [Keeping people's data](./data-compatibility.md).
 
 Screens are simulated in tests and development (`src/server/screens/simulator.ts`: a stock screen that becomes a
 RaptHooker one, and pretend Wi-Fi). To try a real one from a Windows PC with a Wi-Fi adapter, run the built server with
@@ -83,12 +90,32 @@ Docker is also possible (for a Linux host with Bluetooth): see [Docker](./docker
    (`npm version <x.y.z> --workspaces --include-workspace-root --no-git-tag-version`) and add a `## [x.y.z] - date`
    section to [CHANGELOG.md](../CHANGELOG.md).
 2. Commit, then tag and push: `git tag vx.y.z && git push origin vx.y.z`.
-3. The [release workflow](../.github/workflows/release.yml) checks the tag matches `package.json`, runs the checks,
-   builds `rapthooker-<version>.tar.gz` with [deploy/package.mjs](../deploy/package.mjs) (try it with
-   `npm run package`), and publishes the release with that CHANGELOG section as its notes, the archive, `SHA256SUMS`
-   and `install.sh`. Then it builds the Raspberry Pi image (experimental) and attaches it.
+3. The [release workflow](../.github/workflows/release.yml) checks the tag matches `package.json`, runs the checks and
+   `npm run test:compat` (every earlier release has to switch to it and back), builds `rapthooker-<version>.tar.gz` with
+   [deploy/package.mjs](../deploy/package.mjs) (try it with `npm run package`), and publishes the release with that
+   CHANGELOG section as its notes, the archive, `SHA256SUMS` and `install.sh`. Then it builds the Raspberry Pi image
+   (experimental) and attaches it.
 
 Hubs see the new release within a day.
+
+### Betas
+
+A beta is published the same way, with a pre-release version: `x.y.z-beta.N` for the release it leads up to
+(`0.9.0-beta.1`), or `x.y.z-<name>.N` for one that tries out one thing (`0.9.0-tilt.1`). The workflow publishes it as a
+GitHub pre-release, without a Pi image. Hubs don't update to it: the owner picks it under Settings → Updates → **Beta
+versions** ([Trying a beta](./updating.md#trying-a-beta)) and can go back to the release from there. Its notes are its
+own `## [x.y.z-beta.N] - date` section of the changelog (say what to try), or else the `[Unreleased]` section.
+
+A published beta is a release like any other, for people's data:
+
+- **Its migrations are released.** They can never change, and every later version, betas included, has to have them,
+  in the same place. So a beta that changes the database is cut from `main` with its migrations merged there first, and
+  two betas never each add a different migration with the same number. `npm test` compares `MIGRATIONS` with every
+  release tag; a hub refuses a database whose migration of a number differs from its own.
+- **Any release has to run on what it leaves, and it on theirs**, so people can go back. `npm run test:compat` checks
+  that against every published release, betas included, before anything is published.
+
+The [release skill](../.github/skills/release/SKILL.md) has the steps as a checklist.
 
 ## Pictures in the README
 

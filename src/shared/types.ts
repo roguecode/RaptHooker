@@ -719,6 +719,29 @@ export interface UpdateInfo {
   /** A development build that can replace itself with the latest release. */
   canSwitchToRelease: boolean;
   state: 'idle' | 'updating' | 'failed';
+  /** The version being installed while `state` is 'updating', or the one that didn't install when it's 'failed'. */
+  target: string | null;
+  /** The hub runs a beta: a release with a pre-release version (0.9.0-beta.1), not a development build. */
+  prerelease: boolean;
+  /** The owner can install a chosen release from here: one of `betas`, or the latest release (going back from a beta). */
+  canInstall: boolean;
+  /** Beta versions published on GitHub, newest first, as of `betasCheckedAt`. Ones older than the latest release aren't listed. */
+  betas: BetaRelease[];
+  betasCheckedAt: number | null;
+  betasError: string | null;
+  /** On a beta: the newest later beta of the same line (0.9.0-beta.2 for 0.9.0-beta.1), if one is out. */
+  newerBeta: string | null;
+}
+
+/** A beta version (a GitHub pre-release) that a hub can install from Settings → Updates. */
+export interface BetaRelease {
+  version: string;
+  /** The release's title on GitHub. */
+  name: string | null;
+  /** Release notes (markdown). */
+  notes: string | null;
+  url: string;
+  publishedAt: number | null;
 }
 
 /** Where a development build came from, as far as the build knew. */

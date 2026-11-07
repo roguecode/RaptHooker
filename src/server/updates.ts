@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import type { DevBuild, HubSettings, UpdateInfo } from '@rapthooker/shared';
+import type { BetaRelease, DevBuild, HubSettings, UpdateInfo } from '@rapthooker/shared';
 import type { Store } from './db.js';
 import type { Logger } from './log.js';
 import type { Settings } from './settings.js';
@@ -9,6 +9,8 @@ import type { Settings } from './settings.js';
 export const REPO = 'roguecode/RaptHooker';
 export const RELEASES_URL = `https://github.com/${REPO}/releases`;
 export const LATEST_RELEASE_API = `https://api.github.com/repos/${REPO}/releases/latest`;
+/** Every release, newest first: where the betas (pre-releases) are, as /releases/latest skips them. */
+export const RELEASES_API = `https://api.github.com/repos/${REPO}/releases?per_page=30`;
 /** The app asks for an update by creating this file in the data folder; rapthooker-update.path notices it. */
 export const REQUEST_FILE = 'update-request';
 /** Written by deploy/pi/update.sh when it has finished. */
@@ -23,6 +25,12 @@ const PICKUP_TIMEOUT_MS = 2 * MINUTE;
 /** Downloading, installing packages and restarting on a slow Pi with a slow connection. */
 const UPDATE_TIMEOUT_MS = 20 * MINUTE;
 const MAX_NOTES = 20_000;
+const MAX_BETAS = 10;
+/** Each beta's notes are sent with every update to the app, so long ones are cut (GitHub has them whole). */
+const MAX_BETA_NOTES = 8_000;
+/** A version update.sh installs: x.y.z, or a beta like x.y.z-beta.1. */
+const INSTALLABLE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+const RATE_LIMITED = 'GitHub is limiting how often it can be asked. The hub will try again later.';
 
 export class UpdateError extends Error {
   constructor(
@@ -68,6 +76,13 @@ interface SavedCheck {
   nextAt: number;
 }
 
+/** The beta versions last fetched (kept apart from SavedCheck, which versions from before betas read and write). */
+interface SavedBetas {
+  betas: BetaRelease[];
+  checkedAt: number;
+  error: string | null;
+}
+
 interface Pending {
   version: string;
   requestedAt: number;
@@ -82,13 +97,15 @@ export interface UpdaterStatus {
   error?: string | null;
 }
 
-interface Release {
+export interface Release {
   tag_name?: string;
   name?: string | null;
   body?: string | null;
   html_url?: string;
   draft?: boolean;
   prerelease?: boolean;
+  published_at?: string | null;
+  assets?: { name?: string }[];
 }
 
 interface Version {
@@ -133,9 +150,55 @@ export function isNewer(candidate: string, current: string): boolean {
   return (compareVersions(candidate, current) ?? 0) > 0;
 }
 
+/** A beta: a version with a pre-release part (0.9.0-beta.1). */
+export function isBetaVersion(version: string): boolean {
+  return (parseVersion(version)?.pre.length ?? 0) > 0;
+}
+
+/** Betas of the same line: the same x.y.z and the same name before the number (0.9.0-beta.1 and 0.9.0-beta.2). */
+function sameLine(a: string, b: string): boolean {
+  const x = parseVersion(a);
+  const y = parseVersion(b);
+  return Boolean(x && y && x.core.join('.') === y.core.join('.') && x.pre[0] === y.pre[0]);
+}
+
+/**
+ * The betas in GitHub's list of releases that a hub can install: published (not drafts), with the archive the installer
+ * downloads, and not older than the newest release (which has what they were trying out). Newest first.
+ */
+export function betasFrom(releases: Release[], latest: string | null): BetaRelease[] {
+  let newest = latest;
+  for (const r of releases) {
+    const tag = typeof r.tag_name === 'string' ? r.tag_name : '';
+    const v = parseVersion(tag);
+    if (v && !v.pre.length && !r.draft && !r.prerelease && (!newest || isNewer(tag, newest))) newest = tag.replace(/^v/, '');
+  }
+  const seen = new Set<string>();
+  const betas: BetaRelease[] = [];
+  for (const r of releases) {
+    if (r.draft || typeof r.tag_name !== 'string') continue;
+    const version = r.tag_name.replace(/^v/, '');
+    if (!INSTALLABLE.test(version) || !isBetaVersion(version) || seen.has(version)) continue;
+    if (newest && !isNewer(version, newest)) continue;
+    if (!Array.isArray(r.assets) || !r.assets.some((a) => a?.name === `rapthooker-${version}.tar.gz`)) continue;
+    seen.add(version);
+    const published = r.published_at ? Date.parse(r.published_at) : NaN;
+    betas.push({
+      version,
+      name: typeof r.name === 'string' && r.name.trim() ? r.name.trim() : null,
+      notes: typeof r.body === 'string' && r.body ? shorten(r.body, MAX_BETA_NOTES) : null,
+      url: typeof r.html_url === 'string' ? r.html_url : `${RELEASES_URL}/tag/${r.tag_name}`,
+      publishedAt: Number.isFinite(published) ? published : null,
+    });
+  }
+  betas.sort((a, b) => (b.publishedAt ?? 0) - (a.publishedAt ?? 0) || (compareVersions(b.version, a.version) ?? 0));
+  return betas.slice(0, MAX_BETAS);
+}
+
 /**
  * Checks GitHub for new releases (once a day, if enabled) and starts a self-update on hubs installed with install.sh.
  * A development build (deployed from source) isn't offered updates, but can be switched back to the latest release.
+ * The owner can also try a beta (a pre-release, listed when asked for) and go back to the latest release from it.
  * Emits 'update' (UpdateInfo).
  *
  * The service can't write outside its data folder, so updating is done by root: the app writes <dataDir>/update-request,
@@ -158,10 +221,14 @@ export class UpdateService extends EventEmitter {
   private readonly pollMs: number;
 
   private saved: SavedCheck | null = null;
+  private savedBetas: SavedBetas | null = null;
   private pending: Pending | null = null;
   private state: UpdateInfo['state'] = 'idle';
   private failure: string | null = null;
+  /** The version the last update was to install, when it didn't. */
+  private failedTarget: string | null = null;
   private checking: Promise<UpdateInfo> | null = null;
+  private checkingBetas: Promise<UpdateInfo> | null = null;
   private timer: NodeJS.Timeout | undefined;
   private watcher: NodeJS.Timeout | undefined;
   private started = false;
@@ -199,6 +266,9 @@ export class UpdateService extends EventEmitter {
     const s = this.saved;
     const latest = s?.latest ?? null;
     const dev = this.devBuild();
+    const canSwitchToRelease = dev !== null && !this.fromSource && this.updaterReady();
+    const prerelease = !dev && isBetaVersion(this.version);
+    const betas = this.listedBetas();
     return {
       current: this.version,
       latest,
@@ -210,8 +280,15 @@ export class UpdateService extends EventEmitter {
       error: this.state === 'failed' ? this.failure : (s?.error ?? null),
       canSelfUpdate: !dev && this.canSelfUpdate(),
       devBuild: dev,
-      canSwitchToRelease: dev !== null && !this.fromSource && this.updaterReady(),
+      canSwitchToRelease,
       state: this.state,
+      target: this.state === 'updating' ? this.pending?.version || null : this.state === 'failed' ? this.failedTarget : null,
+      prerelease,
+      canInstall: dev ? canSwitchToRelease : this.canSelfUpdate(),
+      betas,
+      betasCheckedAt: this.savedBetas?.checkedAt ?? null,
+      betasError: this.savedBetas?.error ?? null,
+      newerBeta: prerelease ? newestOfLine(betas, this.version) : null,
     };
   }
 
@@ -247,6 +324,26 @@ export class UpdateService extends EventEmitter {
     return this.check();
   }
 
+  /** Asks GitHub for the beta versions now. Never throws: problems end up in `betasError`. */
+  async checkBetas(): Promise<UpdateInfo> {
+    this.checkingBetas ??= this.fetchBetas()
+      .then(() => {
+        this.publish();
+        return this.info();
+      })
+      .finally(() => {
+        this.checkingBetas = null;
+      });
+    return this.checkingBetas;
+  }
+
+  /** The owner opened the list of betas: a repeat within half a minute gets the answer just fetched. */
+  async checkBetasNow(): Promise<UpdateInfo> {
+    const b = this.savedBetas;
+    if (b && !b.error && this.now() - b.checkedAt < 30_000) return this.info();
+    return this.checkBetas();
+  }
+
   /** Asks the system to install the latest release (the hub restarts). */
   async apply(): Promise<UpdateInfo> {
     if (this.state === 'updating') return this.info();
@@ -278,6 +375,54 @@ export class UpdateService extends EventEmitter {
     return this.request(this.dataDir, info.latest);
   }
 
+  /**
+   * Installs a chosen release (the hub restarts): one of the betas, or the latest release, also when it's older than
+   * the beta the hub runs (going back). Every release keeps working with the data any other has left (see
+   * docs/data-compatibility.md), so this can go either way.
+   */
+  async install(version: string): Promise<UpdateInfo> {
+    if (this.state === 'updating') return this.info();
+    const wanted = version.trim().replace(/^v/, '');
+    if (!INSTALLABLE.test(wanted)) throw new UpdateError(`"${version}" isn't a version like 0.9.0 or 0.9.0-beta.1.`, 400);
+    const dev = this.devBuild();
+    const ready = dev ? !this.fromSource && this.updaterReady() : this.canSelfUpdate();
+    if (!this.dataDir || !ready) {
+      throw new UpdateError("This hub can't install a release by itself. Run the installer on it instead (see the update instructions).");
+    }
+    if (!dev && wanted === this.version) throw new UpdateError(`This hub already runs RaptHooker ${wanted}.`);
+    if (!this.offers(wanted)) {
+      // The list may be out of date: look again before saying no.
+      if (isBetaVersion(wanted)) await this.checkBetas();
+      else await this.check();
+      if (!this.offers(wanted)) {
+        throw new UpdateError(
+          `RaptHooker ${wanted} isn't a version this hub can install from here: only the latest release and the betas listed under Settings → Updates.`,
+          404,
+        );
+      }
+      // Another request may have started an update while GitHub was asked.
+      if (this.updating()) return this.info();
+    }
+    return this.request(this.dataDir, wanted);
+  }
+
+  /** The latest release, or a beta that's listed. */
+  private offers(version: string): boolean {
+    return version === this.saved?.latest || this.listedBetas().some((b) => b.version === version);
+  }
+
+  /** Read through a method, so a check after an await isn't narrowed away by one before it. */
+  private updating(): boolean {
+    return this.state === 'updating';
+  }
+
+  /** The betas last fetched, without any the latest release has overtaken since. */
+  private listedBetas(): BetaRelease[] {
+    const latest = this.saved?.latest ?? null;
+    const betas = this.savedBetas?.betas ?? [];
+    return latest ? betas.filter((b) => isNewer(b.version, latest)) : betas;
+  }
+
   private request(dataDir: string, version: string): UpdateInfo {
     const request: Pending = { version, requestedAt: this.now() };
     const file = join(dataDir, REQUEST_FILE);
@@ -291,6 +436,7 @@ export class UpdateService extends EventEmitter {
     this.setMeta('update-pending', JSON.stringify(request));
     this.state = 'updating';
     this.failure = null;
+    this.failedTarget = null;
     this.log.info({ from: this.version, to: request.version, devBuild: this.devBuild() !== null }, 'update requested');
     this.watch();
     this.publish();
@@ -320,6 +466,8 @@ export class UpdateService extends EventEmitter {
   private load(): void {
     const saved = this.getMeta<SavedCheck>('update-check');
     if (saved && typeof saved.checkedAt === 'number') this.saved = saved;
+    const betas = this.getMeta<SavedBetas>('update-betas');
+    if (betas && typeof betas.checkedAt === 'number' && Array.isArray(betas.betas)) this.savedBetas = betas;
     const pending = this.getMeta<Pending>('update-pending');
     if (pending && typeof pending.requestedAt === 'number') this.pending = pending;
     if (!this.pending && this.dataDir) {
@@ -339,31 +487,31 @@ export class UpdateService extends EventEmitter {
     if (status && (status.at ?? 0) > seen) this.finish(status, false);
   }
 
+  /** A GET to GitHub's API, the way it asks to be asked. */
+  private askGitHub(url: string): Promise<Response> {
+    return this.fetchFn(url, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        'User-Agent': `RaptHooker/${this.version} (+https://github.com/${REPO})`,
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+  }
+
   private async runCheck(): Promise<UpdateInfo> {
     const now = this.now();
     const previous = this.saved;
     let next: SavedCheck;
     try {
-      const res = await this.fetchFn(LATEST_RELEASE_API, {
-        headers: {
-          Accept: 'application/vnd.github+json',
-          'User-Agent': `RaptHooker/${this.version} (+https://github.com/${REPO})`,
-          'X-GitHub-Api-Version': '2022-11-28',
-        },
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      });
+      const res = await this.askGitHub(LATEST_RELEASE_API);
       if (res.status === 404) {
         next = { latest: null, notes: null, url: null, checkedAt: now, error: null, nextAt: now + DAY };
       } else if (res.status === 403 || res.status === 429) {
         const reset = Number(res.headers.get('x-ratelimit-reset')) * 1000;
         const retryAfter = Number(res.headers.get('retry-after')) * 1000;
         const at = Math.max(now + HOUR, Number.isFinite(reset) ? reset + MINUTE : 0, Number.isFinite(retryAfter) ? now + retryAfter : 0);
-        next = this.failed(
-          previous,
-          now,
-          'GitHub is limiting how often it can be asked. The hub will try again later.',
-          Math.min(at, now + DAY),
-        );
+        next = this.failed(previous, now, RATE_LIMITED, Math.min(at, now + DAY));
       } else if (!res.ok) {
         next = this.failed(previous, now, `GitHub answered ${res.status}. The hub will try again later.`, now + 6 * HOUR);
       } else {
@@ -384,21 +532,41 @@ export class UpdateService extends EventEmitter {
           : { latest: null, notes: null, url: null, checkedAt: now, error: null, nextAt: now + DAY };
       }
     } catch (err) {
-      const name = (err as Error).name;
-      const message =
-        name === 'TimeoutError' || name === 'AbortError'
-          ? "GitHub didn't answer in time. The hub will try again later."
-          : "Couldn't reach GitHub. Is the hub online? It will try again later.";
       this.log.debug({ err: (err as Error).message }, 'update check failed');
-      next = this.failed(previous, now, message, now + HOUR);
+      next = this.failed(previous, now, unreachable(err), now + HOUR);
     }
     this.saved = next;
     this.setMeta('update-check', JSON.stringify(next));
+    // A hub on a beta hears about later betas too: one more question to GitHub a day.
+    if (isBetaVersion(this.version) && !this.devBuild()) await this.fetchBetas();
     const info = this.info();
     if (info.available && previous?.latest !== next.latest)
       this.log.info({ current: this.version, latest: next.latest }, 'a new version is out');
     this.publish();
     return info;
+  }
+
+  /** Fetches the list of releases for the betas in it. Keeps the last list if GitHub can't be asked. */
+  private async fetchBetas(): Promise<void> {
+    const now = this.now();
+    const previous = this.savedBetas?.betas ?? [];
+    let next: SavedBetas;
+    try {
+      const res = await this.askGitHub(RELEASES_API);
+      if (res.status === 404) next = { betas: [], checkedAt: now, error: null };
+      else if (res.status === 403 || res.status === 429) {
+        next = { betas: previous, checkedAt: now, error: 'GitHub is limiting how often it can be asked. Try again in an hour.' };
+      } else if (!res.ok) next = { betas: previous, checkedAt: now, error: `GitHub answered ${res.status}. Try again later.` };
+      else {
+        const list = (await res.json()) as unknown;
+        next = { betas: Array.isArray(list) ? betasFrom(list as Release[], this.saved?.latest ?? null) : [], checkedAt: now, error: null };
+      }
+    } catch (err) {
+      this.log.debug({ err: (err as Error).message }, 'checking for betas failed');
+      next = { betas: previous, checkedAt: now, error: unreachable(err, false) };
+    }
+    this.savedBetas = next;
+    this.setMeta('update-betas', JSON.stringify(next));
   }
 
   /** Keeps what was known (an update stays on offer while offline) along with the problem. */
@@ -476,6 +644,7 @@ export class UpdateService extends EventEmitter {
     clearInterval(this.watcher);
     this.watcher = undefined;
     if (status.at) this.setMeta('update-status-seen', String(status.at));
+    const target = status.version || this.pending?.version || null;
     this.pending = null;
     this.store?.deleteMeta('update-pending');
     // update.sh removes the request when it takes it; one still here was never taken, and mustn't start an update later.
@@ -489,10 +658,12 @@ export class UpdateService extends EventEmitter {
     if (status.ok) {
       this.state = 'idle';
       this.failure = null;
+      this.failedTarget = null;
       this.log.info({ from: status.from ?? null, to: status.version ?? this.version }, 'updated');
     } else {
       this.state = 'failed';
       this.failure = status.error?.trim() || "The update didn't work. The hub is still on the version it had.";
+      this.failedTarget = target;
       this.log.warn({ error: this.failure, version: status.version ?? null }, 'update failed');
     }
     if (publish) this.publish();
@@ -534,4 +705,30 @@ function readJson<T>(file: string): T | null {
   } catch {
     return null;
   }
+}
+
+function unreachable(err: unknown, retries = true): string {
+  const name = (err as Error).name;
+  if (name === 'TimeoutError' || name === 'AbortError') {
+    return retries ? "GitHub didn't answer in time. The hub will try again later." : "GitHub didn't answer in time. Try again later.";
+  }
+  return retries
+    ? "Couldn't reach GitHub. Is the hub online? It will try again later."
+    : "Couldn't reach GitHub. Is the hub online? Try again later.";
+}
+
+/** Markdown cut to at most `max` characters, at the end of a line. */
+function shorten(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.lastIndexOf('\n', max);
+  return `${text.slice(0, cut > 0 ? cut : max).trimEnd()}\n\n…`;
+}
+
+/** The newest of `betas` that's a later beta of the same line as `current`. */
+function newestOfLine(betas: BetaRelease[], current: string): string | null {
+  let best: string | null = null;
+  for (const b of betas) {
+    if (sameLine(b.version, current) && isNewer(b.version, current) && (!best || isNewer(b.version, best))) best = b.version;
+  }
+  return best;
 }

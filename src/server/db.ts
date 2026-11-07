@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { rmSync } from 'node:fs';
 import { DatabaseSync, backup as sqliteBackup, type SQLInputValue, type StatementSync } from 'node:sqlite';
 import { DEFAULT_PILL_MODEL, rollingSlope, SMOOTHING_MS, smooth, tiltGravity } from '@rapthooker/shared';
@@ -34,7 +35,9 @@ const READING_COLUMNS = 'ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, v
 
 /**
  * Schema versions, applied in order; the database's user_version says how many have run. People's brewing history is
- * in these tables: read docs/data-compatibility.md before adding one. Never edit, reorder or remove one once released.
+ * in these tables: read docs/data-compatibility.md before adding one. Never edit, reorder or remove one once released,
+ * betas included (test/compatibility.test.ts checks every release tag), and every release must keep working on a
+ * database that any other release, older or newer, has used.
  */
 export const MIGRATIONS: string[] = [
   `
@@ -184,8 +187,20 @@ export const MIGRATIONS: string[] = [
 /**
  * A meta key a migration sets when versions of RaptHooker that don't know it can't use the database safely any more:
  * the lowest schema version (MIGRATIONS.length) that can. Older versions then refuse to open it rather than damage it.
+ * No migration may set it: every release has to keep working on a database any other has used, so people can go back
+ * from a beta or a bad update (test/compatibility.test.ts checks). It's still read, in case a build ever did.
  */
 export const MIN_SCHEMA_KEY = 'minSchema';
+
+/**
+ * A meta key with a hash of each migration a database has had (by index), recorded by the version that ran it, so a
+ * version whose migration of that number is different (a development build's, before it was released) is noticed
+ * rather than taken as done. Null where a version from before this was recorded ran it.
+ */
+export const MIGRATION_HASHES_KEY = 'migrationHashes';
+
+/** Line endings don't count (a Windows checkout has CRLF): whatever builds it, a migration hashes the same. Never change this. */
+export const migrationHash = (sql: string): string => createHash('sha256').update(sql.replace(/\r\n?/g, '\n')).digest('hex').slice(0, 16);
 
 /** Bits in readings.flags. (2 was a development build's; don't use it.) */
 export const FLAG_IMPLAUSIBLE = 1;
@@ -282,8 +297,50 @@ export function tiltOf(x: number | null, y: number | null, z: number | null): nu
 export const readingTilt = (r: { x: number | null; y: number | null; z: number | null; tilt?: number | null }): number | null =>
   tiltOf(r.x, r.y, r.z) ?? r.tilt ?? null;
 
-/** The database was upgraded by a newer version of RaptHooker that said older ones can't use it any more. */
-export class IncompatibleDatabaseError extends Error {}
+/** This version can't safely use the database (see `reason`): opening it fails rather than damage it. */
+export class IncompatibleDatabaseError extends Error {
+  constructor(
+    message: string,
+    /** 'newer': a newer version said older ones can't use it. 'diverged': it had a migration this version has, but different. */
+    readonly reason: 'newer' | 'diverged' = 'newer',
+  ) {
+    super(message);
+  }
+}
+
+/**
+ * Throws IncompatibleDatabaseError if this version can't safely use a database (one with a schema version, so a meta
+ * table): a newer version said older ones can't, or a migration it has had differs from this version's of that number.
+ * A database a newer version has simply added to is fine: every release keeps working on what the others leave.
+ */
+export function checkCompatible(db: DatabaseSync): void {
+  const schema = (db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version;
+  if (schema < 1) return;
+  const meta = (key: string) => (db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined)?.value;
+  if (schema > MIGRATIONS.length && Number(meta(MIN_SCHEMA_KEY) ?? 0) > MIGRATIONS.length) {
+    throw new IncompatibleDatabaseError(
+      `The database was upgraded by a newer version of RaptHooker (schema ${schema}) that this one (schema ${MIGRATIONS.length}) ` +
+        "can't use safely. Update RaptHooker again, or restore the copy saved before that update.",
+    );
+  }
+  let recorded: unknown;
+  try {
+    recorded = JSON.parse(meta(MIGRATION_HASHES_KEY) ?? '[]');
+  } catch {
+    recorded = [];
+  }
+  if (!Array.isArray(recorded)) return;
+  for (let i = 0; i < Math.min(schema, MIGRATIONS.length); i++) {
+    const hash: unknown = recorded[i];
+    if (typeof hash === 'string' && hash !== migrationHash(MIGRATIONS[i]!)) {
+      throw new IncompatibleDatabaseError(
+        `The database was upgraded by a build of RaptHooker whose database change ${i + 1} isn't the same as this version's ` +
+          "(a development build, most likely), so this version can't use it safely. Go back to that build, or restore the copy saved before it upgraded the database.",
+        'diverged',
+      );
+    }
+  }
+}
 
 export interface StoreOptions {
   /**
@@ -314,20 +371,17 @@ export class Store {
     private readonly opts: StoreOptions = {},
   ) {
     this.db = new DatabaseSync(path);
-    this.db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = OFF;');
+    // Whatever fails while opening, the file is let go of (so a restore that can't use it can move it aside).
     try {
+      this.db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = OFF;');
       this.migrate();
-    } catch (err) {
-      this.db.close();
-      throw err;
-    }
-    this.insertReadingStmt = this.db.prepare(
-      'INSERT OR IGNORE INTO readings (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, distance, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    );
-    // Each measurement is a sum, with a count of the readings that didn't have it (see migration v4), or of those that
-    // did for tilt and voltage (v6) and distance (v7). sg/sg_n only count plausible readings; sg_all covers every
-    // reading with a gravity, for buckets where none were plausible.
-    this.upsertRollupStmt = this.db.prepare(`
+      this.insertReadingStmt = this.db.prepare(
+        'INSERT OR IGNORE INTO readings (pill_id, ts, sg, temp, velocity, battery, rssi, x, y, z, tilt, voltage, distance, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      );
+      // Each measurement is a sum, with a count of the readings that didn't have it (see migration v4), or of those that
+      // did for tilt and voltage (v6) and distance (v7). sg/sg_n only count plausible readings; sg_all covers every
+      // reading with a gravity, for buckets where none were plausible.
+      this.upsertRollupStmt = this.db.prepare(`
       INSERT INTO rollups (pill_id, bucket, n, sg, sg_n, sg_all, sg_missing, temp, temp_missing, velocity, velocity_n, battery,
         battery_missing, rssi, rssi_n, x, y, z, xyz_missing, tilt, tilt_n, voltage, voltage_n, distance, distance_n)
       VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -340,6 +394,10 @@ export class Store {
         x = x + excluded.x, y = y + excluded.y, z = z + excluded.z, xyz_missing = xyz_missing + excluded.xyz_missing,
         tilt = tilt + excluded.tilt, tilt_n = tilt_n + excluded.tilt_n, voltage = voltage + excluded.voltage,
         voltage_n = voltage_n + excluded.voltage_n, distance = distance + excluded.distance, distance_n = distance_n + excluded.distance_n`);
+    } catch (err) {
+      this.db.close();
+      throw err;
+    }
   }
 
   get schemaVersion(): number {
@@ -348,22 +406,14 @@ export class Store {
 
   private migrate(): void {
     const from = this.schemaVersion;
-    if (from > MIGRATIONS.length) {
-      // Upgraded by a newer version (since put back, say). Its changes keep older versions working unless it says not.
-      const min = Number(this.getMeta(MIN_SCHEMA_KEY) ?? 0);
-      if (min > MIGRATIONS.length) {
-        throw new IncompatibleDatabaseError(
-          `The database was upgraded by a newer version of RaptHooker (schema ${from}) that this one (schema ${MIGRATIONS.length}) ` +
-            "can't use safely. Update RaptHooker again, or restore the copy saved before that update.",
-        );
-      }
-      return;
-    }
+    // A database a newer version has upgraded (and been put back from) is used as it is: its changes keep older
+    // versions working. Not if that version said they can't, or a migration this version has went differently.
+    checkCompatible(this.db);
+    if (from >= MIGRATIONS.length) return;
     let copy: string | void = undefined;
-    if (from > 0 && from < MIGRATIONS.length && this.opts.beforeUpgrade) {
+    if (from > 0 && this.opts.beforeUpgrade) {
       copy = this.opts.beforeUpgrade((file) => this.copyTo(file), from, MIGRATIONS.length);
     }
-    if (from === MIGRATIONS.length) return;
     // All in one transaction: if any of it fails, the database is exactly as it was.
     try {
       this.transaction(() => {
@@ -371,6 +421,7 @@ export class Store {
           this.db.exec(MIGRATIONS[v]!);
           this.db.exec(`PRAGMA user_version = ${v + 1}`);
         }
+        this.recordMigrations(from);
         if (from > 0) this.setMeta(COMPACT_AFTER_UPGRADE_KEY, String(MIGRATIONS.length));
       });
     } catch (err) {
@@ -379,6 +430,19 @@ export class Store {
     }
     // The write-ahead log grew with the upgrade: give the space back.
     this.db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
+  }
+
+  /** Notes the hash of each migration just run (from `from` on), keeping what was noted of the earlier ones. */
+  private recordMigrations(from: number): void {
+    let hashes: unknown;
+    try {
+      hashes = JSON.parse(this.getMeta(MIGRATION_HASHES_KEY) ?? '[]');
+    } catch {
+      hashes = [];
+    }
+    const next: (string | null)[] = Array.isArray(hashes) ? hashes.map((h) => (typeof h === 'string' ? h : null)) : [];
+    for (let i = 0; i < MIGRATIONS.length; i++) next[i] = i >= from ? migrationHash(MIGRATIONS[i]!) : (next[i] ?? null);
+    this.setMeta(MIGRATION_HASHES_KEY, JSON.stringify(next));
   }
 
   /** A consistent, self-contained copy of the database in `file` (which mustn't exist yet). */

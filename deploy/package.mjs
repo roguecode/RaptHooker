@@ -66,10 +66,13 @@ function main() {
     fail('nothing built yet: run npm run build first (or npm run package, which does both)');
   }
 
-  let section = changelogSection(readFileSync(join(root, 'CHANGELOG.md'), 'utf8'), version);
+  const changelog = readFileSync(join(root, 'CHANGELOG.md'), 'utf8');
+  let section = changelogSection(changelog, version);
   if (!section) {
     if (!version.includes('-')) fail(`CHANGELOG.md has no section for ${version}: add one before releasing`);
-    section = `Pre-release of RaptHooker ${version.replace(/-.*$/, '')}, for testing.`;
+    // A beta without its own section: what's in it is what hasn't been released yet.
+    const unreleased = changelogSection(changelog, 'Unreleased');
+    section = `A beta of RaptHooker ${version.replace(/-.*$/, '')}, for trying out what's coming.${unreleased ? `\n\n${unreleased}` : ''}`;
   }
 
   const name = `rapthooker-${version}`;

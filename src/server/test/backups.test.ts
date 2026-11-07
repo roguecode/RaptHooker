@@ -8,7 +8,7 @@ import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { DEFAULT_BACKUP_SETTINGS, DEFAULT_PILL_MODEL, type BackupSettings, type Brew, type Pill } from '@rapthooker/shared';
-import { MIGRATIONS, Store } from '../db.js';
+import { MIGRATION_HASHES_KEY, MIGRATIONS, MIN_SCHEMA_KEY, Store } from '../db.js';
 import { Maintenance, type MaintenanceOptions } from '../maintenance.js';
 import { Settings } from '../settings.js';
 import { applyPendingRestore, inspectBackup, RestoreError } from '../restore.js';
@@ -209,12 +209,24 @@ describe('restoring', () => {
     o.close();
     expect(() => inspectBackup(other)).toThrow(/no meta, pills, readings tables/);
 
-    const newer = join(t.dir, 'newer.db');
-    const n = new DatabaseSync(newer);
-    n.exec(MIGRATIONS[0]!);
-    n.exec(`PRAGMA user_version = ${MIGRATIONS.length + 1}`);
-    n.close();
-    expect(() => inspectBackup(newer)).toThrow(/newer version of RaptHooker/);
+    /** A database as a version with one more migration than this one left it. */
+    const fromNewer = (name: string, extra = '') => {
+      const file = join(t.dir, name);
+      const db = new DatabaseSync(file);
+      for (const sql of MIGRATIONS) db.exec(sql);
+      db.exec(`CREATE TABLE added_later (id TEXT PRIMARY KEY); PRAGMA user_version = ${MIGRATIONS.length + 1}; ${extra}`);
+      db.close();
+      return file;
+    };
+    // A newer version's backup (taken on a beta before going back, say) restores: this version runs on what it added.
+    expect(inspectBackup(fromNewer('newer.db'))).toEqual({ schema: MIGRATIONS.length + 1, pills: 0, brews: 0, readings: 0 });
+    // Not if that version said older ones can't use it, though no release may.
+    const barred = fromNewer('barred.db', `INSERT INTO meta (key, value) VALUES ('${MIN_SCHEMA_KEY}', '${MIGRATIONS.length + 1}')`);
+    expect(() => inspectBackup(barred)).toThrow(/newer version of RaptHooker that this one can't use/);
+    // Nor if a migration this version has went differently there (a development build's).
+    const hashes = JSON.stringify(MIGRATIONS.map((_, i) => (i === 1 ? '0123456789abcdef' : null)));
+    const diverged = fromNewer('diverged.db', `INSERT INTO meta (key, value) VALUES ('${MIGRATION_HASHES_KEY}', '${hashes}')`);
+    expect(() => inspectBackup(diverged)).toThrow(/development build/);
 
     const good = await databaseFile(t.dir, 'good.db', 'x');
     expect(inspectBackup(good)).toEqual({ schema: MIGRATIONS.length, pills: 0, brews: 0, readings: 0 });
@@ -331,6 +343,30 @@ describe('restoring', () => {
     expect(applyPendingRestore(dir, silent, SUNDAY)).toBe(false);
     expect(marker(join(dir, 'rapthooker.db'))).toBe('current');
     expect(readdirSync(dir).filter((f) => f.startsWith('pre-restore'))).toEqual([]);
+  });
+
+  it('restores a backup a newer version took (on a beta, before going back), and keeps what that version added', async () => {
+    const t = temp();
+    const dir = join(t.dir, 'data');
+    mkdirSync(dir);
+    const current = new Store(join(dir, 'rapthooker.db'));
+    current.setMeta('marker', 'current');
+    current.close();
+
+    const backup = await databaseFile(t.dir, 'from-beta.db', 'beta');
+    const b = new DatabaseSync(backup);
+    b.exec(
+      `CREATE TABLE added_later (id TEXT PRIMARY KEY); INSERT INTO added_later VALUES ('kept'); PRAGMA user_version = ${MIGRATIONS.length + 1}`,
+    );
+    b.close();
+    copyFileSync(backup, join(dir, 'restore-pending.db'));
+
+    expect(applyPendingRestore(dir, silent, SATURDAY)).toBe(true);
+    expect(marker(join(dir, 'rapthooker.db'))).toBe('beta');
+    const restored = new DatabaseSync(join(dir, 'rapthooker.db'), { readOnly: true });
+    expect(restored.prepare('PRAGMA user_version').get()).toEqual({ user_version: MIGRATIONS.length + 1 });
+    expect(restored.prepare('SELECT id FROM added_later').all()).toEqual([{ id: 'kept' }]);
+    restored.close();
   });
 
   it('finishes a swap that was cut short', async () => {

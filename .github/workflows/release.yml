@@ -1,6 +1,8 @@
 name: Release
 
-# Push a tag like v0.2.0 (matching package.json's version, with a CHANGELOG.md section) to publish a release.
+# Push a tag like v0.2.0 (matching package.json's version, with a CHANGELOG.md section) to publish a release, or one
+# like v0.3.0-beta.1 to publish a beta: a GitHub pre-release, which hubs list under Settings → Updates → Beta versions
+# and don't update to by themselves. See docs/updating.md.
 on:
   push:
     tags: ['v*']
@@ -20,6 +22,9 @@ jobs:
       prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          # The earlier releases' tags: the tests and the switching test below check this one against all of them.
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -40,6 +45,9 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # Nothing is published, a beta included, that an earlier release can't switch to and back from.
+      - name: Switching to and from every earlier release
+        run: npm run test:compat
       - name: Package
         run: node deploy/package.mjs --notes release/notes.md
       - name: Publish the release

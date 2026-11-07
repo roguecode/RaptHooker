@@ -71,8 +71,10 @@ everywhere. CSV files open in any spreadsheet, so they're handy even without Rap
 
 1. Upload a backup file (from **Download a copy now**, the USB stick or your bucket; up to 500 MB), or pick one of the
    backups on the hub.
-2. The hub checks it's a RaptHooker database it can use: an SQLite file with RaptHooker's tables, not from a newer
-   version of RaptHooker, that passes SQLite's integrity check. Anything else is turned away and nothing changes.
+2. The hub checks it's a RaptHooker database it can use: an SQLite file with RaptHooker's tables that passes SQLite's
+   integrity check. A backup from a newer version (say one taken on a beta, before going back to the release) restores
+   too, as every version keeps working on data a newer one has added to. Anything else is turned away and nothing
+   changes.
 3. Confirm, and the hub restarts (it takes about half a minute). At start-up, before opening the database, it moves the
    current database aside as `pre-restore-<date and time>.db`, puts the backup in its place and brings it up to date if
    it came from an older version. The page reloads by itself once the hub is back.

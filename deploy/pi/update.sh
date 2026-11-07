@@ -2,7 +2,7 @@
 # Updates RaptHooker to a new release and tells the app how it went. rapthooker-update.service runs it as root when the
 # app asks for an update: the app creates /var/lib/rapthooker/update-request, which rapthooker-update.path watches.
 # You can also run it yourself:
-#   sudo bash /opt/rapthooker/deploy/pi/update.sh [--version X.Y.Z]
+#   sudo bash /opt/rapthooker/deploy/pi/update.sh [--version X.Y.Z | --version X.Y.Z-beta.N]
 #
 # The work is done by deploy/install.sh --update: download and check the release, swap the folders (keeping the old
 # version in /opt/rapthooker/previous), set up, restart, and go back to the old version if the new one doesn't answer
@@ -80,7 +80,8 @@ main() {
     as_service rm -f "$REQUEST"
     if [[ -z "$version" ]]; then version="$requested"; fi
   fi
-  if [[ -n "$version" && ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  # A release (0.3.0) or a beta (0.9.0-beta.1), as install.sh downloads them.
+  if [[ -n "$version" && ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
     echo "Ignoring the requested version '$version': updating to the latest release instead."
     version=""
   fi

@@ -832,6 +832,11 @@
       "pages/screens/AddScreen.tsx"
     ]
   },
+  "A newer beta of it is out: {version}.": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
   "A number (group chats start with -), or @name for a public channel.": {
     "files": [
       "pages/alerts/strings.ts"
@@ -1696,6 +1701,27 @@
       "pages/brews/brewText.ts"
     ]
   },
+  "Beta": {
+    "files": [
+      "components/UpdateBanner.tsx",
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Beta versions": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Betas are early versions, for trying out what's coming before it's released. They can have rough edges. Your brews, readings and settings stay whichever version the hub is on, and you can go back to the latest release from here at any time.": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Betas are for trying out what's coming, so they can have rough edges. Your brews, readings and settings stay, and you can go back to the latest release under Settings → Updates whenever you like.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
   "Between 0 and 30": {
     "files": [
       "pages/pill/KegPanel.tsx"
@@ -2539,6 +2565,11 @@
       "pages/screens/ScreenEditor.tsx"
     ]
   },
+  "Couldn't go back to the release": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
   "Couldn't hide the event": {
     "files": [
       "pages/brews/events.tsx"
@@ -2547,6 +2578,11 @@
   "Couldn't import": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Couldn't install the beta": {
+    "files": [
+      "components/UpdateBanner.tsx"
     ]
   },
   "Couldn't keep the screen on. Tap the screen to try again, or turn off screen sleep in the device's settings.": {
@@ -2607,6 +2643,11 @@
   "Couldn't load where alerts go": {
     "files": [
       "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "Couldn't look for betas": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
     ]
   },
   "Couldn't look for iSpindels": {
@@ -3544,6 +3585,11 @@
       "components/chartMath.ts"
     ]
   },
+  "Everything recorded on the beta stays. Anything only the beta has is kept, unused, until the hub is on a version that has it.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
   "Everything that uses the numbers follows: the tiles, the charts (worked out again from the stored readings), brew stats, alerts, webhooks and MQTT. What the pill sent is kept, so you can switch back any time.": {
     "files": [
       "pages/pill/DataSources.tsx"
@@ -4135,6 +4181,21 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Go back to RaptHooker {version}?": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Go back to release {version}": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Go back to the release": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
   "Got a screen RaptHooker supports ({names})? It can set it up to show this by itself.": {
     "files": [
       "components/ImageLink.tsx"
@@ -4583,6 +4644,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "If the beta doesn't start, the hub goes back to {version} by itself.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
   "If the device says the network has no internet, choose to stay connected. Don't reload this page.": {
     "files": [
       "pages/screens/BrowserSetup.tsx"
@@ -4594,6 +4660,11 @@
     ]
   },
   "If the new version doesn't start, the hub goes back to {version} by itself. Your brews and settings stay.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "If the release doesn't start, the hub goes back to this beta by itself.": {
     "files": [
       "components/UpdateBanner.tsx"
     ]
@@ -4765,6 +4836,11 @@
   "Info": {
     "files": [
       "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Install the beta": {
+    "files": [
+      "components/UpdateBanner.tsx"
     ]
   },
   "Install the ntfy app on your phone, or open ntfy.sh in a browser.": {
@@ -4996,6 +5072,11 @@
   "It was kegged earlier": {
     "files": [
       "pages/pill/KegPanel.tsx"
+    ]
+  },
+  "It's an early version, for trying out what's coming. Your brews, readings and settings stay whichever version the hub is on.": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
     ]
   },
   "It’s empty now": {
@@ -5618,7 +5699,13 @@
   "Look again": {
     "files": [
       "pages/screens/AddScreen.tsx",
-      "pages/screens/FoundScreens.tsx"
+      "pages/screens/FoundScreens.tsx",
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Look for betas": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
     ]
   },
   "Look up your mail provider's SMTP settings: server, port and security.": {
@@ -5629,6 +5716,11 @@
   "Looked {ago}": {
     "files": [
       "pages/devices/IspindelTab.tsx"
+    ]
+  },
+  "Looked {time}": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
     ]
   },
   "Looking for Wi-Fi networks…": {
@@ -5978,6 +6070,11 @@
     "files": [
       "pages/webhooks/WebhookEditor.tsx",
       "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Newer": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
     ]
   },
   "Next": {
@@ -6521,7 +6618,8 @@
   },
   "On GitHub": {
     "files": [
-      "components/UpdateBanner.tsx"
+      "components/UpdateBanner.tsx",
+      "pages/settings/UpdateSection.tsx"
     ]
   },
   "On tap": {
@@ -9341,6 +9439,16 @@
       "pages/devices/ispindelApi.ts"
     ]
   },
+  "The hub downloads beta {version}, installs it and restarts. That takes a few minutes; recording carries on straight after (a reading or two may be missed while it restarts).": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "The hub downloads release {version}, installs it in place of this beta and restarts. From then on it updates from releases.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
   "The hub downloads release {version}, installs it in place of this development build and restarts. From then on it updates from releases like any other hub.": {
     "files": [
       "components/UpdateBanner.tsx"
@@ -9738,6 +9846,11 @@
       "components/DisplayMenu.tsx"
     ]
   },
+  "There are no betas to try right now.": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
   "Thermometer": {
     "files": [
       "pages/dashboard/PillRow.tsx",
@@ -9856,10 +9969,20 @@
       "pages/settings/BackupSection.tsx"
     ]
   },
+  "This hub runs a beta.": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
   "This hub runs a development build.": {
     "files": [
       "components/UpdateBanner.tsx",
       "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "This hub runs beta {version}.": {
+    "files": [
+      "components/UpdateBanner.tsx"
     ]
   },
   "This hub wasn't set up with the one-line installer, so it can't update itself from here.": {
@@ -9924,7 +10047,8 @@
   },
   "This release came without notes.": {
     "files": [
-      "components/UpdateBanner.tsx"
+      "components/UpdateBanner.tsx",
+      "pages/settings/UpdateSection.tsx"
     ]
   },
   "This replaces everything on the hub with the backup.": {
@@ -10105,6 +10229,16 @@
       "pages/devices/IspindelTab.tsx",
       "pages/screens/BrowserSetup.tsx",
       "pages/screens/SetupPanel.tsx"
+    ]
+  },
+  "Try RaptHooker {version}?": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
+  "Try this beta": {
+    "files": [
+      "components/UpdateBanner.tsx"
     ]
   },
   "Turn it upside down": {
@@ -10727,6 +10861,11 @@
     ]
   },
   "What's in {version} (this version)": {
+    "files": [
+      "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "What's in it": {
     "files": [
       "pages/settings/UpdateSection.tsx"
     ]

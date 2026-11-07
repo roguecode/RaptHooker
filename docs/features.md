@@ -117,6 +117,7 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
   the hub notices (a full SD card, Bluetooth trouble) show as a banner at the top.
 - **In your language:** English, Deutsch, Español, Français, Italiano, Nederlands, Polski and Português (Brasil),
   following the browser or picked per browser. See [docs/translations.md](./translations.md) to improve one.
+- **Help** is a click away: the **?** in the top bar links to the RaptHooker Discord server and GitHub.
 - **Accessible:** works with the keyboard and screen readers, with large touch targets on phones and less motion for
   people who ask their device for it.
 - **Owner PIN** for changes; anyone on your network can look. Works with Tailscale for HTTPS and access away from home.

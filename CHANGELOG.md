@@ -101,6 +101,7 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
     `target` (the version an update is installing, or didn't). `POST /api/update/betas` looks for betas, and
     `POST /api/update/install` (`{ "version": "0.9.0-beta.1" }`) installs one of them, or the latest release.
   - `update.sh --version` takes a beta's version too.
+- A **Help** button in the top bar, with links to the RaptHooker Discord server and GitHub.
 
 ### Changed
 

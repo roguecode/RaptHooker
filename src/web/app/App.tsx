@@ -17,6 +17,7 @@ import { Kiosk } from './pages/kiosk/Kiosk';
 import { DevBuildBadge, UpdateBanner } from './components/UpdateBanner';
 import { WhatsNew } from './components/WhatsNew';
 import { DisplayMenu } from './components/DisplayMenu';
+import { HelpMenu } from './components/HelpMenu';
 import { HubWarnings } from './components/HubWarnings';
 import { I18nProvider, t, tk } from './i18n';
 import { Trans } from './i18n/Trans';
@@ -179,9 +180,10 @@ function Shell() {
         </nav>
         <div className="topbar-end">
           <DevBuildBadge />
-          <div className="hide-mobile">
+          <div className="topbar-units">
             <UnitToggles />
           </div>
+          <HelpMenu />
           <DisplayMenu />
           <span
             className={`live-dot ${connection}`}

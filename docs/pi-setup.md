@@ -1,28 +1,53 @@
 # Raspberry Pi setup
 
+(Click to play quickstart install video)
+
+<a href="https://www.youtube.com/watch?v=ly00YsKGYaY"><img src="images/video-install.jpg" alt="RaptHooker Pi Install Quickstart" width="480"></a>
+
 RaptHooker runs on a **Raspberry Pi 3, 4, 5 or Zero 2 W**. It needs very little: a few MB of disk a month per pill
 and a sliver of CPU. The original Pi Zero W (ARMv6) isn't supported.
 
-## 1. Hardware
+Setting it up takes about 20 minutes, most of it waiting. No experience needed: just follow the steps.
 
-- **Power:** a proper supply (5 V / 2.5 A for a Pi 3). Under-voltage causes random Bluetooth and SD card problems.
-- **Storage:** a decent microSD card (A1/A2), or a USB SSD.
-- **Placement:** within Bluetooth range of your fermenters. A pill floating in beer inside a fridge or a stainless
-  fermenter is harder to hear: keep the Pi close, and check the signal on the pill's page. It should say **OK** or
-  better (better than −85 dBm); **Weak** or **Very weak** means some readings will be missed. A
-  [USB Bluetooth dongle](#a-usb-bluetooth-dongle-more-range) on an extension lead, or a [relay](relay.md) next to the
-  fermenter, reaches further.
-- **Network:** Ethernet if you can. Wi-Fi works too: the Pi's Wi-Fi and Bluetooth share one radio, so RaptHooker
-  listens [passively](#passive-scanning-kinder-to-wi-fi) to leave Wi-Fi as much of it as possible.
+## 1. What you need
+
+- A **Raspberry Pi 3, 4, 5 or Zero 2 W** with a proper power supply (5 V / 2.5 A for a Pi 3). Under-voltage causes
+  random Bluetooth and SD card problems.
+- A decent **microSD card** (A1/A2), 8 GB or bigger, or a USB SSD.
+- A **computer** (Windows, Mac or Linux) that can write to the card. Most laptops have a slot; otherwise use a cheap
+  USB card reader.
+- A **network cable** for the Pi if you can, or else your **Wi-Fi name and password**. Wi-Fi works too: the Pi's
+  Wi-Fi and Bluetooth share one radio, so RaptHooker listens [passively](#passive-scanning-kinder-to-wi-fi) to leave
+  Wi-Fi as much of it as possible.
+- Your **RAPT Pills set to Bluetooth**, so they broadcast their readings for RaptHooker to pick up (instead of sending
+  them to KegLand's cloud). If one's on Wi-Fi, [switch it to Bluetooth](../README.md#switch-a-rapt-pill-to-bluetooth).
+
+**Where to put it:** within Bluetooth range of your fermenters. A pill floating in beer inside a fridge or a stainless
+fermenter is harder to hear: keep the Pi close, and check the signal on the pill's page. It should say **OK** or better
+(better than −85 dBm); **Weak** or **Very weak** means some readings will be missed. A
+[USB Bluetooth dongle](#a-usb-bluetooth-dongle-more-range) on an extension lead, or a [relay](relay.md) next to the
+fermenter, reaches further.
 
 ## 2. Flash the SD card
 
-1. Install [Raspberry Pi Imager](https://www.raspberrypi.com/software/).
-2. Choose your Pi model, **Raspberry Pi OS Lite (64-bit)** and your card.
-3. In the settings: a hostname (`rapthooker` is a good choice: you'll open `http://rapthooker.local:8080`), a username
-   and password (`pi` is assumed by the PC deploy scripts), Wi-Fi if needed, your time zone, and **enable SSH**
-   (ideally with your public key).
-4. Boot the Pi and check you can log in: `ssh pi@<hostname>.local`.
+1. On your computer, download and install the official **Raspberry Pi Imager** from
+   [raspberrypi.com/software](https://www.raspberrypi.com/software/), and put the microSD card in.
+2. Open Imager and choose:
+   - **Device:** your Raspberry Pi model.
+   - **Operating system:** **Raspberry Pi OS (other)**, then **Raspberry Pi OS Lite (64-bit)**.
+   - **Storage:** your microSD card. Double-check it's the card: everything on it is wiped.
+3. Imager then asks for some settings (on older versions, select **Edit settings** when it asks about OS
+   customisation). Fill in:
+   - **Hostname:** `rapthooker`, so you'll open `http://rapthooker.local:8080`.
+   - **Username and password:** choose your own, e.g. username `pi` (the PC deploy scripts assume it), and write them
+     down.
+   - **Wi-Fi:** your network's name and password, and your country. Skip this if the Pi will use a network cable.
+   - **Time zone and keyboard:** yours.
+   - **SSH** (called **Remote access** in newer versions): turn it **on**, with password login (or your public key, if
+     you have one).
+4. Write the card. It takes a few minutes, and Imager tells you when it's done.
+5. Put the card in the Pi, plug in the network cable if you're using one, then plug in the power. The first start
+   takes about 3 minutes.
 
 (Or write the ready-made [Raspberry Pi image](#the-ready-made-image-experimental), experimental, with RaptHooker
 already on it. Then skip step 3.)
@@ -38,11 +63,30 @@ and hasn't been tried on every model yet: the one-line installer is the tried an
 
 ## 3. Install RaptHooker
 
-Logged in to the Pi, run:
+1. On your computer, open a terminal:
+   - **Windows:** right-click the Start button and choose **Terminal** (or **Windows PowerShell**).
+   - **Mac:** open **Terminal** (in Applications → Utilities).
+   - **Linux:** open your terminal app.
+2. Connect to the Pi by typing this and pressing Enter (use the username you chose instead of `pi`):
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/roguecode/RaptHooker/main/deploy/install.sh | sudo bash
-```
+   ```bash
+   ssh pi@rapthooker.local
+   ```
+
+   The first time, it asks whether you trust the Pi: type `yes` and press Enter. Then type your password and press
+   Enter. Nothing shows on the screen while you type the password; that's normal.
+
+3. Copy this line, paste it into the terminal (right-click pastes in the Windows terminal, Cmd+V on a Mac) and press
+   Enter:
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/roguecode/RaptHooker/main/deploy/install.sh | sudo bash
+   ```
+
+   It may ask for your password again. Installing takes 5 to 15 minutes. When it's finished, it prints the address to
+   open.
+
+Something not working? See [Troubleshooting](#troubleshooting).
 
 Options go after `-s --`, for example
 `curl -fsSL https://raw.githubusercontent.com/roguecode/RaptHooker/main/deploy/install.sh | sudo bash -s -- --hostname rapthooker --tailscale`:
@@ -95,7 +139,8 @@ update itself from the app.
 
 ## 4. First visit
 
-Open `http://rapthooker.local:8080`. The dashboard shows a short guide that ticks itself off as you go:
+On any phone or computer on the same network, open `http://rapthooker.local:8080`. The dashboard shows a short guide
+that ticks itself off as you go:
 
 1. **Create an owner PIN** (right there in the guide, or in Settings). Anyone on your network can look; adding pills,
    brews and webhooks needs the owner.
@@ -104,6 +149,9 @@ Open `http://rapthooker.local:8080`. The dashboard shows a short guide that tick
    **Found a RAPT Pill nearby** after its next broadcast. Click **Add pill**: from then on it's recorded around the
    clock.
 3. Start a brew from the pill's page, and add webhooks and alerts as you like.
+
+To open it on your phone, **Settings → Open on another device** shows the hub's addresses with QR codes to scan (the
+Tailscale one only for the owner). On a phone, use your browser's **Add to Home Screen** to open it like an app.
 
 Under **Settings → Hub** you can name the hub (shown in the top bar and the browser tab), pick the default units (used
 in notifications and by every browser that hasn't picked its own) and the ABV formula.
@@ -212,37 +260,26 @@ over Wi-Fi. See [relay.md](relay.md).
 
 ## Troubleshooting
 
-- **Logs:** **Settings → Logs** (as the owner) shows the hub's recent log lines, filtered by level, with a Copy button
-  and auto-refresh. Everything since boot is in the journal: `journalctl -u rapthooker -f`.
-- **Warnings:** **Settings → Hub status** lists anything that needs attention, each with what to do: storage running
-  low, a big database, the clock not set from the network, Bluetooth not working, a failed backup, or the hub
-  responding slowly. It also shows storage use, MQTT and how each backup went.
-- **Asking for help:** **Settings → Restart and diagnostics → Download diagnostics** saves a file with the hub's status,
-  settings, Bluetooth details, its last 500 log lines and the last 200 Bluetooth broadcasts it heard. Bluetooth and IP
-  addresses, names, web addresses, tokens and passwords are taken out, so it's safe to attach to a
-  [GitHub issue](https://github.com/roguecode/RaptHooker/issues), but look it over first.
-- **Something seems stuck:** **Restart** in the same place stops the hub and systemd starts it again a few seconds later
-  (or `sudo systemctl restart rapthooker`).
-- **Hangs restart themselves:** the service runs with a systemd watchdog (`Type=notify`, `WatchdogSec=60` in
-  [rapthooker.service](../deploy/pi/rapthooker.service)). The hub pings it every 20 seconds from its main loop, through
-  `systemd-notify`; if it ever hangs, the pings stop and systemd restarts it within a minute. `journalctl -u rapthooker`
-  then shows `Watchdog timeout`. A slow first start (a database upgrade) has 5 minutes before it counts as failed.
-- **Storage:** once a week, in the quiet hours after the nightly backup, the hub compacts its database if over a fifth
-  of it is unused space (and the disk has room for the copy). If the disk gets nearly full (under 100 MB), it deletes
-  webhook delivery logs and alert history older than a week to keep recording. Readings are never deleted that way.
-- **Opening the app on your phone:** **Settings → Open on another device** shows the hub's addresses with QR codes to
-  scan (the Tailscale one only for the owner).
-- **`rapthooker.local` not found:** Windows sometimes fails to look up `.local` names. Try again, or use the Pi's IP
-  address instead (shown by your router, or `hostname -I` on the Pi), e.g. `-PiHost 192.168.1.50`.
-- **Is the pill heard?** `node /opt/rapthooker/server/rapthooker-probe.cjs 300` prints every RAPT advert the Pi hears
-  for 5 minutes, decoded, with the adapter that heard it. Nothing at all usually means the pill is in Wi-Fi mode, out of
-  range, or between broadcasts (they're only every few minutes). `RAPTHOOKER_SCAN_MODE=active` (or `passive`) in front
-  of the command tries one way of listening; `RAPTHOOKER_ADAPTER=hci1` one adapter.
-- **Bluetooth state:** Settings → Bluetooth shows whether the hub is listening, passively or actively and why, and the
-  dashboard shows a warning if Bluetooth stops. `sudo systemctl restart bluetooth` (RaptHooker reconnects by itself;
-  if nothing is heard afterwards, see the next point) and `rfkill list`. If bluetoothd itself stops, setup has told
-  systemd to start it again (`/etc/systemd/system/bluetooth.service.d/rapthooker-restart.conf`), and RaptHooker keeps
-  trying until it's back.
+### Common problems
+
+- **`rapthooker.local` can't be found:** some networks (and some Windows computers) don't handle `.local` names
+  well. Try again, or use the Pi's IP address instead (shown in your router's list of connected devices as
+  "rapthooker", or by `hostname -I` on the Pi), e.g. `ssh pi@192.168.1.23` and `http://192.168.1.23:8080`. When
+  deploying from a PC, that's `-PiHost 192.168.1.23`.
+- **`ssh` says the connection was refused or timed out:** give the Pi another minute. If it still doesn't work, SSH
+  probably wasn't switched on: write the card again ([step 2](#2-flash-the-sd-card)) and check the SSH setting.
+- **No pill appears:** check the pill is in [Bluetooth mode](../README.md#switch-a-rapt-pill-to-bluetooth) and close
+  to the Pi. A fridge or a stainless steel fermenter makes it harder to hear. To see what the Pi hears, use the probe
+  under [Finding out what's wrong](#finding-out-whats-wrong).
+- **Gaps in the chart** are times nothing was recorded: the Pi was off, restarting, or the pill was out of range.
+- **Wi-Fi slow while the hub runs:** check Settings → Bluetooth says **Passive**. If it says active because BlueZ's
+  experimental features are off, run setup again (`sudo bash /opt/rapthooker/deploy/pi/setup.sh --keep-hostname`), or
+  use Ethernet.
+- **Off the network after the router restarted:** NetworkManager stops trying a Wi-Fi network after a few failures,
+  and can decide the password is wrong while a router is still starting. A hub on Wi-Fi alone (no Ethernet) notices
+  when it has been disconnected for 2 minutes and asks NetworkManager to connect it again, every 2 minutes until it's
+  back, so it returns by itself a few minutes after the router. Its log says `asked NetworkManager to connect it
+again` when that happens. It leaves the Wi-Fi alone while it's setting up a screen.
 - **Bluetooth stuck:** now and then the Pi's Bluetooth controller stops hearing anything although everything looks fine
   (Settings → Bluetooth says it's listening, but _Last pill heard_ keeps growing). Restarting Bluetooth in the middle of
   a scan can do it. The hub notices: when the pills it records go unheard for about 5 of their intervals (at least 15
@@ -253,12 +290,36 @@ over Wi-Fi. See [relay.md](relay.md).
   Bluetooth shows the last reset, and `journalctl -u rapthooker-bt-reset` what the helper did. On a
   hub set up before the helper existed, the log suggests doing it by hand (running setup again adds the helper):
   `sudo rfkill block bluetooth && sleep 2 && sudo rfkill unblock bluetooth && sudo systemctl restart rapthooker`
-- **Wi-Fi slow while the hub runs:** check Settings → Bluetooth says **Passive**. If it says active because BlueZ's
-  experimental features are off, run setup again (`sudo bash /opt/rapthooker/deploy/pi/setup.sh --keep-hostname`), or
-  use Ethernet.
-- **Off the network after the router restarted:** NetworkManager stops trying a Wi-Fi network after a few failures,
-  and can decide the password is wrong while a router is still starting. A hub on Wi-Fi alone (no Ethernet) notices
-  when it has been disconnected for 2 minutes and asks NetworkManager to connect it again, every 2 minutes until it's
-  back, so it returns by itself a few minutes after the router. Its log says `asked NetworkManager to connect it
-again` when that happens. It leaves the Wi-Fi alone while it's setting up a screen.
-- **Gaps in the chart** are times nothing was recorded: the Pi was off, restarting, or the pill was out of range.
+- **Something seems stuck:** **Restart** under **Settings → Restart and diagnostics** stops the hub and systemd starts
+  it again a few seconds later (or `sudo systemctl restart rapthooker`).
+
+### Finding out what's wrong
+
+- **Logs:** **Settings → Logs** (as the owner) shows the hub's recent log lines, filtered by level, with a Copy button
+  and auto-refresh. Everything since boot is in the journal: `journalctl -u rapthooker -f`.
+- **Warnings:** **Settings → Hub status** lists anything that needs attention, each with what to do: storage running
+  low, a big database, the clock not set from the network, Bluetooth not working, a failed backup, or the hub
+  responding slowly. It also shows storage use, MQTT and how each backup went.
+- **Is the pill heard?** `node /opt/rapthooker/server/rapthooker-probe.cjs 300` prints every RAPT advert the Pi hears
+  for 5 minutes, decoded, with the adapter that heard it. Nothing at all usually means the pill is in Wi-Fi mode, out of
+  range, or between broadcasts (they're only every few minutes). `RAPTHOOKER_SCAN_MODE=active` (or `passive`) in front
+  of the command tries one way of listening; `RAPTHOOKER_ADAPTER=hci1` one adapter.
+- **Bluetooth state:** Settings → Bluetooth shows whether the hub is listening, passively or actively and why, and the
+  dashboard shows a warning if Bluetooth stops. `sudo systemctl restart bluetooth` (RaptHooker reconnects by itself;
+  if nothing is heard afterwards, see _Bluetooth stuck_ above) and `rfkill list`. If bluetoothd itself stops, setup
+  has told systemd to start it again (`/etc/systemd/system/bluetooth.service.d/rapthooker-restart.conf`), and
+  RaptHooker keeps trying until it's back.
+- **Asking for help:** **Settings → Restart and diagnostics → Download diagnostics** saves a file with the hub's status,
+  settings, Bluetooth details, its last 500 log lines and the last 200 Bluetooth broadcasts it heard. Bluetooth and IP
+  addresses, names, web addresses, tokens and passwords are taken out, so it's safe to attach to a
+  [GitHub issue](https://github.com/roguecode/RaptHooker/issues), but look it over first.
+
+## How the hub looks after itself
+
+- **Hangs restart themselves:** the service runs with a systemd watchdog (`Type=notify`, `WatchdogSec=60` in
+  [rapthooker.service](../deploy/pi/rapthooker.service)). The hub pings it every 20 seconds from its main loop, through
+  `systemd-notify`; if it ever hangs, the pings stop and systemd restarts it within a minute. `journalctl -u rapthooker`
+  then shows `Watchdog timeout`. A slow first start (a database upgrade) has 5 minutes before it counts as failed.
+- **Storage:** once a week, in the quiet hours after the nightly backup, the hub compacts its database if over a fifth
+  of it is unused space (and the disk has room for the copy). If the disk gets nearly full (under 100 MB), it deletes
+  webhook delivery logs and alert history older than a week to keep recording. Readings are never deleted that way.

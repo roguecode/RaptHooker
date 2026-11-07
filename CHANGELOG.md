@@ -73,6 +73,7 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The **MeadTools** webhook preset is now marked **Verified**: it's been tried against MeadTools and works.
 - The **Pills** page is now **Devices**, as it has every kind of device on it.
 - The small charts on the dashboard's cards and in TV mode cover a running brew (or the beer on tap) from its start,
   or else the last 24 hours, or everything when there's less than that (they always showed the last 24 hours).

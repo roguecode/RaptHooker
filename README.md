@@ -1,9 +1,6 @@
-# RaptHooker
+✨ Need help or want to chat? Join our new [Discord Server](https://discord.gg/qyaY6QXjdh) ✨
 
-<small>~~In a smart move that isn't
-[controversial or anti-consumer](https://www.reddit.com/r/Homebrewing/comments/1xc1nl6/kegland_forcing_rapt_users_into_subscription/),
-Kegland has added subscriptions to their highly rated Rapt software (1.6⭐ on PlayStore!), removing features that
-"[cheap arse customers and freeloaders](docs/receipts.md)" were using.~~ (Since reversed, nice job team!)</small>
+# RaptHooker
 
 RaptHooker - A fully local dashboard for Kegland Rapt devices that runs on a Raspberry Pi.
 
@@ -20,7 +17,8 @@ RaptHooker - A fully local dashboard for Kegland Rapt devices that runs on a Ras
 
 <a href="https://www.youtube.com/watch?v=8DBBo27G_4w"><img src="docs/images/video-intro.jpg" alt="RaptHooker Intro - A local Raspberry Pi dashboard for RAPT Pills and other devices" width="480"></a>
 
-Everything it does, in detail: [docs/features.md](docs/features.md).
+Everything it does, in detail: [docs/features.md](docs/features.md). All the guides are listed in
+[docs/README.md](docs/README.md).
 
 ![Dashboard](docs/images/dashboard.png)
 
@@ -71,11 +69,11 @@ can show a picture from a web address can use an [image link](docs/screens.md) i
 - ✅ **Grainfather**
 - ✅ **BrewSpy**
 - ✅ **Discord**
+- ✅ **MeadTools**
 - ❔ **Home Assistant** by MQTT: each pill added as a device automatically ([guide](docs/home-assistant.md))
 - ❔ **Brewfather**
 - ❔ **Brewer's Friend**
 - ❔ **Bricks (BierBot)**
-- ❔ **MeadTools**
 - ❔ **Fermentrack**
 - ❔ **Ubidots**
 - ❔ **ThingSpeak**
@@ -85,8 +83,7 @@ notes for each service are in [docs/webhooks.md](docs/webhooks.md#presets).
 
 ## Experimental
 
-RaptHooker is a Work-In-Progress, and cuckcoded based on my previous projects. Kegland are an inspiration to us, so
-just like their software, RaptHooker's features may not all work and may break at any time. Feel free to submit PR's or
+RaptHooker is a Work-In-Progress - features may not all work and may break at any time. Feel free to submit PR's or
 put the details in a [GitHub issue](https://github.com/roguecode/RaptHooker/issues).
 
 ## How it works
@@ -105,89 +102,24 @@ ESP32 relay can pass on broadcasts from pills that are too far from the Pi.
 
 <a href="https://www.youtube.com/watch?v=ly00YsKGYaY"><img src="docs/images/video-install.jpg" alt="RaptHooker Pi Install Quickstart" width="480"></a>
 
-It takes about 20 minutes, most of it waiting. No experience needed: just follow the steps.
+You need a **Raspberry Pi 3, 4, 5 or Zero 2 W** (not the original Pi Zero W) with its power supply, a **microSD card**
+of 8 GB or more, and a computer to write the card. It takes about 20 minutes, most of it waiting.
 
-### What you need
-
-- A **Raspberry Pi 3, 4, 5 or Zero 2 W** with its power supply. (The original Pi Zero W is currently not supported.)
-- A **microSD card**, 8 GB or bigger.
-- A **computer** (Windows, Mac or Linux) that can write to the card. Most laptops have a slot; otherwise use a cheap
-  USB card reader.
-- Your **Wi-Fi name and password**, or a network cable for the Pi.
-- Your **RAPT Pill/s set to Bluetooth**, so it broadcasts its readings for RaptHooker to pick up (instead of sending them
-  to KegLand's cloud). If it's on Wi-Fi, [switch it to Bluetooth](#switch-a-rapt-pill-to-bluetooth).
-
-### 1. Prepare the SD card
-
-1. On your computer, download and install the official **Raspberry Pi Imager** from
-   [raspberrypi.com/software](https://www.raspberrypi.com/software/), and put the microSD card in.
-2. Open Imager and choose:
-   - **Device:** your Raspberry Pi model.
-   - **Operating system:** **Raspberry Pi OS (other)**, then **Raspberry Pi OS Lite (64-bit)**.
-   - **Storage:** your microSD card. Double-check it's the card: everything on it is wiped.
-3. Imager then asks for some settings (on older versions, select **Edit settings** when it asks about OS
-   customisation). Fill in:
-   - **Hostname:** `rapthooker`
-   - **Username and password:** choose your own, e.g. username `pi`, and write them down.
-   - **Wi-Fi:** your network's name and password, and your country. Skip this if the Pi will use a network cable.
-   - **Time zone and keyboard:** yours.
-   - **SSH** (called **Remote access** in newer versions): turn it **on**, with password login.
-4. Write the card. It takes a few minutes, and Imager tells you when it's done.
-
-### 2. Start the Pi
-
-Put the card in the Pi, plug in the network cable if you're using one, then plug in the power. The first start takes
-about 3 minutes.
-
-### 3. Install RaptHooker
-
-1. On your computer, open a terminal:
-   - **Windows:** right-click the Start button and choose **Terminal** (or **Windows PowerShell**).
-   - **Mac:** open **Terminal** (in Applications → Utilities).
-   - **Linux:** open your terminal app.
-2. Connect to the Pi by typing this and pressing Enter (use the username you chose instead of `pi`):
-
-   ```bash
-   ssh pi@rapthooker.local
-   ```
-
-   The first time, it asks whether you trust the Pi: type `yes` and press Enter. Then type your password and press
-   Enter. Nothing shows on the screen while you type the password; that's normal.
-
-3. Copy this line, paste it into the terminal (right-click pastes in the Windows terminal, Cmd+V on a Mac) and press
-   Enter:
+1. Write **Raspberry Pi OS Lite (64-bit)** to the card with
+   [Raspberry Pi Imager](https://www.raspberrypi.com/software/). In its settings, set the hostname to `rapthooker`,
+   pick a username and password, add your Wi-Fi and switch SSH on.
+2. Start the Pi, connect to it with `ssh pi@rapthooker.local` (with your username) and run:
 
    ```bash
    curl -fsSL https://raw.githubusercontent.com/roguecode/RaptHooker/main/deploy/install.sh | sudo bash
    ```
 
-   It may ask for your password again. Installing takes 5 to 15 minutes. When it's finished, it prints the address to
-   open.
+3. Open **http://rapthooker.local:8080**, create an owner PIN and add your pill (once it's
+   [set to Bluetooth](#switch-a-rapt-pill-to-bluetooth)).
 
-### 4. Open RaptHooker
-
-On any phone or computer on the same network, open **http://rapthooker.local:8080**. A short guide on the dashboard
-walks you through the rest:
-
-1. **Create an owner PIN**, so only you can change things. Anyone on your network can look.
-2. **Add your pill.** It appears under **Found a RAPT Pill nearby** the next time it broadcasts. Select **Add pill**.
-3. That's it: from now on every reading is recorded, day and night. Start a brew, add webhooks (Brewfather and the
-   others are in the list) and set up alerts whenever you like.
-
-On a phone, use your browser's **Add to Home Screen** to open it like an app.
-
-### If something doesn't work
-
-- **`rapthooker.local` can't be found:** some networks (and some Windows computers) don't handle `.local` names well.
-  Find the Pi's IP address in your router's list of connected devices (look for "rapthooker"), and use that instead,
-  e.g. `ssh pi@192.168.1.23` and `http://192.168.1.23:8080`.
-- **`ssh` says the connection was refused or timed out:** give the Pi another minute. If it still doesn't work, SSH
-  probably wasn't switched on: write the card again (step 1) and check the SSH setting.
-- **No pill appears:** check the pill is in [Bluetooth mode](#switch-a-rapt-pill-to-bluetooth) and close to the Pi. A
-  fridge or a stainless steel fermenter makes it harder to hear. More help:
-  [troubleshooting](docs/pi-setup.md#troubleshooting).
-- More options (HTTPS and access away from home with Tailscale, a particular version, a ready-made Pi image) are in
-  [docs/pi-setup.md](docs/pi-setup.md).
+Every step in detail, with the settings to pick in Imager and what to do if something doesn't work:
+[docs/pi-setup.md](docs/pi-setup.md). It also covers HTTPS and access away from home with Tailscale, installing a
+particular version, and the ready-made Pi image.
 
 ## Switch a RAPT Pill to Bluetooth
 
@@ -252,6 +184,5 @@ To the maximum extent permitted by applicable law, you agree to indemnify, defen
 
 ## Alternatives and related projects
 
-While we have no idea why someone would want to avoid being locked into the Kegland subscriptions after purchasing
-full-priced hardware, here is an incomplete list of related open-source projects:
+Here is an incomplete list of related open-source projects:
 [docs/alternatives.md](docs/alternatives.md).

@@ -269,7 +269,7 @@ export const PRESETS: WebhookPreset[] = [
       'After the first reading, the pill appears in the Device List in MeadTools: start a brew for it there.',
     ],
     notes: ['MeadTools identifies the device by its name, so renaming the pill creates a new device there.'],
-    verified: false,
+    verified: true,
     onePillPerWebhook: false,
     oneReadingPerRequest: true,
   },

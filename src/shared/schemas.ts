@@ -141,8 +141,10 @@ export const endBrewSchema = z.object({ endedAt: z.number().int().positive().opt
 
 export const brewEventInputSchema = z.object({
   at: z.number().int().positive(),
+  endAt: z.number().int().positive().nullable().optional(),
   kind: z.enum(['dry_hop', 'temp_change', 'cold_crash', 'addition', 'note']),
   text: z.string().trim().max(500).default(''),
+  hidden: z.boolean().optional(),
 });
 
 export const brewCompareQuerySchema = z.object({

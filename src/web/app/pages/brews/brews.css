@@ -87,6 +87,21 @@
   height: 0.6rem;
 }
 
+/* Hidden from the charts: still on the timeline, faded. */
+.brew-timeline li.off-chart .ev-icon,
+.brew-timeline li.off-chart .ev-title {
+  opacity: 0.55;
+}
+
+.ev-until {
+  flex-wrap: nowrap;
+}
+
+.ev-until .input {
+  flex: 1;
+  min-width: 0;
+}
+
 .kind-picker {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr));

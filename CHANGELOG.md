@@ -70,6 +70,16 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
     fire it.
 - **Alerts on the chart.** A pill's History chart marks where each alert went off and where it cleared. **Alerts**,
   under the chart, hides them in this browser. `GET /api/alerts/events` takes `pillId=` for just one pill's.
+- **Events that last a while, and taking events off the chart**
+  ([#20](https://github.com/roguecode/RaptHooker/issues/20)). A brew event can have an end (**Add an end time** in
+  the event), now or planned: a dry hop sitting in the fermenter for three days, say, is shaded on the charts from
+  start to end, and the timeline says how long it lasts. The eye next to an event on the timeline takes it off the
+  charts (the brew's, the pill's and the summary's) and puts it back; it stays on the timeline. The hub remembers it,
+  so every device shows the same. See [Events](docs/brewing.md#events).
+  - Stored in two new columns of `brew_events` (schema 9): `end_at`, empty for every event so far, and `hidden`. An
+    older version, if you go back, shows every event as a moment, on the chart, and keeps both when it changes one.
+  - Events in the API gain `endAt` (null for a moment) and `hidden`. `POST` and `PUT /api/brews/:id/events` take both;
+    leaving them out of a `PUT` keeps what's saved.
 - **Switching Bluetooth off**, for a hub on a machine without it or where it can't be passed through (an LXC container,
   say). Settings → Hub → **Listen over Bluetooth** switches the hub's own Bluetooth off or on straight away; the
   installer's `--no-bluetooth` switches it off for good (`bluetooth.enabled: false` in the config file, kept through

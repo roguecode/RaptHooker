@@ -241,13 +241,22 @@ export type BrewEventKind = 'dry_hop' | 'temp_change' | 'cold_crash' | 'addition
 
 export interface BrewEventInput {
   at: number;
+  /**
+   * When it ends, for something that lasts a while (a dry hop sitting for days); it can be planned, in the future. Null
+   * for a moment. Left out of a change, it stays as it was.
+   */
+  endAt?: number | null;
   kind: BrewEventKind;
   text: string;
+  /** Left off the charts (it stays on the timeline). Left out of a change, it stays as it was. */
+  hidden?: boolean;
 }
 
 export interface BrewEvent extends BrewEventInput {
   id: string;
   brewId: string;
+  endAt: number | null;
+  hidden: boolean;
 }
 
 export type AbvFormula = 'standard' | 'alternative';

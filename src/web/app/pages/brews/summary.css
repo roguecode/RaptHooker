@@ -129,6 +129,10 @@
   stroke-dasharray: 3 3;
 }
 
+.sc-span {
+  opacity: 0.12;
+}
+
 .sc-event text {
   fill: #fff;
   font:
@@ -286,6 +290,7 @@
 
   .sc-gravity,
   .sc-event,
+  .sc-span,
   .ev-icon,
   .summary-legend i {
     print-color-adjust: exact;

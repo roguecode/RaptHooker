@@ -1039,6 +1039,11 @@
       "pages/dashboard/FirstRunGuide.tsx"
     ]
   },
+  "Add an end time": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
   "Add an event": {
     "files": [
       "pages/brews/events.tsx"
@@ -2534,6 +2539,11 @@
       "pages/screens/ScreenEditor.tsx"
     ]
   },
+  "Couldn't hide the event": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
   "Couldn't import": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
@@ -2698,6 +2708,11 @@
     "files": [
       "pages/webhooks/Preview.tsx",
       "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Couldn't show the event": {
+    "files": [
+      "pages/brews/events.tsx"
     ]
   },
   "Couldn't start setting the iSpindel up": {
@@ -4345,6 +4360,11 @@
   "Hide": {
     "files": [
       "pages/alerts/ChannelEditor.tsx"
+    ]
+  },
+  "Hide {event} from the chart": {
+    "files": [
+      "pages/brews/events.tsx"
     ]
   },
   "Hide for a week": {
@@ -6218,6 +6238,11 @@
       "pages/screens/SetupPanel.tsx"
     ]
   },
+  "Not on the chart": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
   "Not plugged in": {
     "files": [
       "pages/settings/BackupSection.tsx"
@@ -7605,6 +7630,11 @@
       "pages/pill/PillSettings.tsx"
     ]
   },
+  "Remove the end": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
   "Remove thermometer": {
     "files": [
       "pages/pill/PillSettings.tsx"
@@ -8251,6 +8281,11 @@
       "pages/settings/StatusSection.tsx"
     ],
     "plural": true
+  },
+  "Show {event} on the chart": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
   },
   "Show all devices": {
     "files": [
@@ -9176,6 +9211,11 @@
       "components/Chart.tsx"
     ]
   },
+  "The chart shades the time in between.": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
   "The code on the screen": {
     "files": [
       "pages/screens/FoundScreens.tsx"
@@ -9194,6 +9234,16 @@
   "The data from before is kept as {file} (in the list below).": {
     "files": [
       "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "The end has to be after the start": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "The end has to be after the start.": {
+    "files": [
+      "pages/brews/events.tsx"
     ]
   },
   "The file has everything needed to set them up on another hub, {secrets} in URLs, headers and bodies.": {
@@ -10178,6 +10228,11 @@
   "Untested": {
     "files": [
       "pages/webhooks/PresetGrid.tsx"
+    ]
+  },
+  "Until": {
+    "files": [
+      "pages/brews/events.tsx"
     ]
   },
   "Until I resume it": {

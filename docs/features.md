@@ -46,6 +46,7 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
 - **Predictions.** A fermentation curve fitted to each running brew shows its stage (lag, fermenting, finishing, done),
   the expected final gravity and when it should get there. The final ABV is called once the gravity stops moving.
 - **Brew timeline.** Log dry hops, temperature changes, cold crashes, additions and notes; they show on the charts.
+  Give one an end (now or planned) and the charts shade how long it lasts; hide any you don't want on the charts.
 - **Compare brews** side by side: overlay up to eight brews' gravity and temperature by days since they started.
 - **Batch summary** for each brew: a one-page, printable (or save-as-PDF) summary, or copy it as plain text to share.
 

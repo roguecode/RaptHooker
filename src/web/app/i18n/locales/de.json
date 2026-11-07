@@ -2230,5 +2230,16 @@
   "Bluetooth off": "Bluetooth aus",
   "Bluetooth is switched off on the hub: see {settings}.": "Bluetooth ist auf dem Hub ausgeschaltet: siehe {settings}.",
   "Bluetooth is switched off on this hub.": "Bluetooth ist auf diesem Hub ausgeschaltet.",
-  "It only hears these through a relay while it's off (see Settings → Hub).": "Solange Bluetooth aus ist, empfängt er diese nur über ein Relais (siehe Einstellungen → Hub)."
+  "It only hears these through a relay while it's off (see Settings → Hub).": "Solange Bluetooth aus ist, empfängt er diese nur über ein Relais (siehe Einstellungen → Hub).",
+  "Add an end time": "Endzeit hinzufügen",
+  "Couldn't hide the event": "Ereignis konnte nicht ausgeblendet werden",
+  "Couldn't show the event": "Ereignis konnte nicht eingeblendet werden",
+  "Hide {event} from the chart": "{event} im Diagramm ausblenden",
+  "Not on the chart": "Nicht im Diagramm",
+  "Remove the end": "Ende entfernen",
+  "Show {event} on the chart": "{event} im Diagramm anzeigen",
+  "The chart shades the time in between.": "Das Diagramm hinterlegt die Zeit dazwischen.",
+  "The end has to be after the start": "Das Ende muss nach dem Start liegen",
+  "The end has to be after the start.": "Das Ende muss nach dem Start liegen.",
+  "Until": "Bis"
 }

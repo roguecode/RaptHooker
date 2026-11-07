@@ -466,6 +466,8 @@ describe('upgrading a database from 0.7.0 and 0.8.0 (schema 5)', () => {
       expect(store.db.prepare('SELECT TOTAL(distance) AS d, TOTAL(distance_n) AS dn FROM rollups').get()).toEqual({ d: 0, dn: 0 });
       // v8: kegs, empty.
       expect(store.db.prepare('SELECT COUNT(*) AS n FROM kegs').get()).toEqual({ n: 0 });
+      // v9: every brew event is a moment, shown on the charts.
+      expect(store.db.prepare('SELECT id, end_at, hidden FROM brew_events').all()).toEqual([{ id: 'ev1', end_at: null, hidden: 0 }]);
     } finally {
       store.close();
     }
@@ -509,6 +511,37 @@ describe('upgrading a database from 0.7.0 and 0.8.0 (schema 5)', () => {
       expect(h.tilt[i]).toBeCloseTo(tiltOf(400, -10, 925)!, 6);
     } finally {
       store.close();
+    }
+  });
+
+  it("keeps a brew event's end, and whether it's hidden, when 0.8.0 is put back and changes events", () => {
+    const file = join(tempDir(), 'rapthooker.db');
+    schema5Database(file);
+    const store = new Store(file);
+    store.saveBrewEvent({ id: 'ev2', brew_id: 'brew1', at: T0 + 60_000, end_at: T0 + DAY, kind: 'dry_hop', text: 'Mosaic', hidden: 1 });
+    store.close();
+    // What 0.8.0 runs to add or change an event, and to list them: it doesn't know the new columns.
+    const db = new DatabaseSync(file);
+    const save = db.prepare(
+      `INSERT INTO brew_events (id, brew_id, at, kind, text) VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT (id) DO UPDATE SET at = excluded.at, kind = excluded.kind, text = excluded.text`,
+    );
+    save.run('ev2', 'brew1', T0 + 120_000, 'dry_hop', 'Mosaic, 50 g');
+    save.run('ev3', 'brew1', T0 + 180_000, 'note', 'Krausen dropped');
+    expect(db.prepare('SELECT id, brew_id, at, kind, text FROM brew_events WHERE brew_id = ? ORDER BY at, id').all('brew1')).toHaveLength(
+      3,
+    );
+    db.close();
+
+    const again = new Store(file);
+    try {
+      expect(again.listBrewEvents('brew1')).toEqual([
+        { id: 'ev1', brew_id: 'brew1', at: T0, end_at: null, kind: 'dryhop', text: 'Citra', hidden: 0 },
+        { id: 'ev2', brew_id: 'brew1', at: T0 + 120_000, end_at: T0 + DAY, kind: 'dry_hop', text: 'Mosaic, 50 g', hidden: 1 },
+        { id: 'ev3', brew_id: 'brew1', at: T0 + 180_000, end_at: null, kind: 'note', text: 'Krausen dropped', hidden: 0 },
+      ]);
+    } finally {
+      again.close();
     }
   });
 

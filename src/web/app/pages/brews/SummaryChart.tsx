@@ -40,7 +40,8 @@ function paths(xs: number[], ys: (number | null)[]): string[] {
 
 /**
  * A static gravity and temperature chart for the printable summary: drawn as SVG so it stays sharp on paper, sized to
- * fit an A4 page. Events show as numbered markers matching the timeline.
+ * fit an A4 page. Events show as numbered markers matching the timeline (those hidden from the charts don't), and how
+ * long one lasted as a shaded band.
  */
 export function SummaryChart({
   curve,
@@ -60,7 +61,12 @@ export function SummaryChart({
   const tVals = temps.filter((v): v is number => v !== null);
   if (gVals.length < 2) return <p className="muted">{t('Not enough readings for a chart.')}</p>;
 
-  const lastH = Math.max(1, curve.hours[curve.hours.length - 1] ?? 1, ...events.map((e) => (e.at - curve.startedAt) / 3_600_000));
+  const hoursIn = (ts: number) => (ts - curve.startedAt) / 3_600_000;
+  const marks = events.flatMap((e, i) =>
+    e.hidden ? [] : [{ e, n: i + 1, end: e.endAt != null && e.endAt > e.at ? hoursIn(e.endAt) : null }],
+  );
+  // Ends don't stretch the chart (a planned one can be days ahead): their spans stop at its edge.
+  const lastH = Math.max(1, curve.hours[curve.hours.length - 1] ?? 1, ...marks.map((m) => hoursIn(m.e.at)));
   const target = targetFg === null ? null : u.gravityValue(targetFg);
   let gMin = Math.min(...gVals, ...(target === null ? [] : [target]));
   let gMax = Math.max(...gVals);
@@ -116,6 +122,21 @@ export function SummaryChart({
             </text>
           ))}
         </g>
+        {marks.map(({ e, end }) => {
+          if (end === null) return null;
+          const x0 = x(hoursIn(e.at));
+          return (
+            <rect
+              key={`s${e.id}`}
+              className="sc-span"
+              x={x0}
+              y={M.top}
+              width={Math.max(0, x(Math.min(end, lastH)) - x0)}
+              height={ih}
+              style={{ fill: eventKind(e.kind).color }}
+            />
+          );
+        })}
         {target !== null && target >= gMin && target <= gMax && (
           <g className="sc-target">
             <line x1={M.left} x2={W - M.right} y1={yG(target)} y2={yG(target)} style={{ stroke: gColor }} />
@@ -136,15 +157,16 @@ export function SummaryChart({
         ).map((d, i) => (
           <path key={`g${i}`} className="sc-gravity" d={d} style={{ stroke: gColor }} />
         ))}
-        {events.map((e, i) => {
-          const ex = x((e.at - curve.startedAt) / 3_600_000);
+        {marks.map(({ e, n, end }) => {
+          const ex = x(hoursIn(e.at));
           const c = eventKind(e.kind).color;
           return (
             <g key={e.id} className="sc-event">
               <line x1={ex} x2={ex} y1={M.top + 10} y2={M.top + ih} style={{ stroke: c }} />
+              {end !== null && end <= lastH && <line x1={x(end)} x2={x(end)} y1={M.top} y2={M.top + ih} style={{ stroke: c }} />}
               <circle cx={ex} cy={M.top + 8} r={8} style={{ fill: c }} />
               <text x={ex} y={M.top + 11.5} textAnchor="middle">
-                {i + 1}
+                {n}
               </text>
             </g>
           );

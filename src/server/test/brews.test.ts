@@ -246,6 +246,55 @@ describe('brew events', () => {
     expect(() => t.brews.deleteEvent('nope', hop.id)).toThrow(/Unknown/);
   });
 
+  it('last a while when given an end, and can be left off the charts', () => {
+    const t = setup();
+    const brew = t.brews.start(t.id, { name: 'IPA' });
+    t.advance(3 * 24 * HOUR);
+    const hop = t.brews.addEvent(brew.id, { at: t.now() - 48 * HOUR, endAt: t.now() - HOUR, kind: 'dry_hop', text: '100 g Citra' });
+    expect(hop).toMatchObject({ endAt: t.now() - HOUR, hidden: false });
+    expect(t.brews.addEvent(brew.id, { at: t.now(), kind: 'note', text: 'Krausen dropped' })).toMatchObject({ endAt: null, hidden: false });
+
+    // A change that leaves them out, as a script from before them would, keeps them.
+    t.brews.updateEvent(brew.id, hop.id, { at: hop.at, kind: 'dry_hop', text: '120 g Citra' });
+    expect(t.brews.events(brew.id)[0]).toMatchObject({ text: '120 g Citra', endAt: hop.endAt, hidden: false });
+    expect(t.brews.updateEvent(brew.id, hop.id, { ...hop, hidden: true })).toMatchObject({ endAt: hop.endAt, hidden: true });
+    expect(t.brews.activeFor(t.id)!.events[0]!.hidden).toBe(true);
+    expect(t.store.getBrewEvent(hop.id)).toMatchObject({ end_at: hop.endAt, hidden: 1 });
+    const moment = t.brews.updateEvent(brew.id, hop.id, { at: hop.at, endAt: null, kind: 'dry_hop', text: '' });
+    expect(moment).toMatchObject({ endAt: null, hidden: true });
+
+    const at = t.now() - HOUR;
+    expect(() => t.brews.addEvent(brew.id, { at, endAt: at, kind: 'dry_hop', text: '' })).toThrow(/end after/);
+    // An end can be planned.
+    const planned = t.brews.addEvent(brew.id, { at, endAt: t.now() + 72 * HOUR, kind: 'dry_hop', text: 'Until Monday' });
+    expect(planned.endAt).toBe(t.now() + 72 * HOUR);
+    expect(() => t.brews.addEvent(brew.id, { at: t.now() + HOUR, endAt: t.now() + 2 * HOUR, kind: 'dry_hop', text: '' })).toThrow(/future/);
+    // Not after a finished brew, though.
+    t.brews.end(brew.id);
+    expect(() => t.brews.addEvent(brew.id, { at, endAt: t.now() + 2 * 24 * HOUR, kind: 'dry_hop', text: '' })).toThrow(/during/);
+    expect(t.brews.addEvent(brew.id, { at, endAt: t.now() + 12 * HOUR, kind: 'dry_hop', text: '' }).endAt).toBe(t.now() + 12 * HOUR);
+  });
+
+  it("can still be hidden once the brew's start has moved past it", () => {
+    const t = setup();
+    const brew = t.brews.start(t.id, { name: 'IPA' });
+    t.advance(3 * 24 * HOUR);
+    const ev = t.brews.addEvent(brew.id, { at: brew.startedAt, kind: 'addition', text: 'Yeast nutrient' });
+    t.brews.update(brew.id, { startedAt: brew.startedAt + 2 * 24 * HOUR });
+    expect(t.brews.updateEvent(brew.id, ev.id, { ...ev, hidden: true }).hidden).toBe(true);
+    expect(() => t.brews.updateEvent(brew.id, ev.id, { ...ev, at: ev.at + MIN })).toThrow(/during/);
+  });
+
+  it('are a moment when an older version has moved the start past the end', () => {
+    const t = setup();
+    const brew = t.brews.start(t.id, { name: 'IPA' });
+    t.advance(3 * 24 * HOUR);
+    const hop = t.brews.addEvent(brew.id, { at: t.now() - 48 * HOUR, endAt: t.now() - 24 * HOUR, kind: 'dry_hop', text: '' });
+    // What 0.8.0 runs to change an event: it doesn't know the end.
+    t.store.db.prepare('UPDATE brew_events SET at = ? WHERE id = ?').run(t.now() - HOUR, hop.id);
+    expect(t.brews.events(brew.id)[0]).toMatchObject({ at: t.now() - HOUR, endAt: null });
+  });
+
   it('go with their brew, and with a removed pill', () => {
     const t = setup();
     const one = t.brews.start(t.id, { name: 'One' });
@@ -333,6 +382,40 @@ describe('brew API', () => {
     expect((await app.inject({ method: 'DELETE', url: `${url}/${event.id}`, headers: owner })).statusCode).toBe(204);
     expect((await app.inject({ method: 'DELETE', url: `${url}/${event.id}`, headers: owner })).statusCode).toBe(404);
     expect((await app.inject({ url: '/api/brews/nope/events' })).statusCode).toBe(404);
+  });
+
+  it('takes an end and hides events, and a change without them keeps both', async () => {
+    const { app, pills } = await api();
+    const pill = pills.adopt(ADDR, { name: 'Red' });
+    const startedAt = Date.now() - 3 * 24 * HOUR;
+    const brew = (
+      await app.inject({ method: 'POST', url: '/api/brews', headers: owner, payload: { pillId: pill.id, name: 'Saison', startedAt } })
+    ).json<Brew>();
+    const url = `/api/brews/${brew.id}/events`;
+    const at = startedAt + 24 * HOUR;
+    const endAt = at + 24 * HOUR;
+    const added = await app.inject({ method: 'POST', url, headers: owner, payload: { at, endAt, kind: 'dry_hop', text: 'Saaz' } });
+    const event = added.json<BrewEvent>();
+    expect(event).toMatchObject({ at, endAt, hidden: false });
+
+    // The body from before events had an end or could be hidden.
+    const old = { at, kind: 'dry_hop', text: 'Saaz, 80 g' };
+    const put = await app.inject({ method: 'PUT', url: `${url}/${event.id}`, headers: owner, payload: old });
+    expect(put.json<BrewEvent>()).toMatchObject({ text: 'Saaz, 80 g', endAt, hidden: false });
+    const hide = await app.inject({ method: 'PUT', url: `${url}/${event.id}`, headers: owner, payload: { ...old, hidden: true } });
+    expect(hide.json<BrewEvent>()).toMatchObject({ endAt, hidden: true });
+    expect((await app.inject({ url: `/api/brews/${brew.id}` })).json<Brew>().events[0]).toMatchObject({ endAt, hidden: true });
+    expect((await app.inject({ url })).json<BrewEvent[]>()[0]).toMatchObject({ endAt, hidden: true });
+
+    const backwards = await app.inject({
+      method: 'POST',
+      url,
+      headers: owner,
+      payload: { at, endAt: at - MIN, kind: 'dry_hop', text: '' },
+    });
+    expect(backwards.statusCode).toBe(400);
+    expect(backwards.json().error).toMatch(/end after it starts/);
+    expect((await app.inject({ method: 'POST', url, headers: owner, payload: { ...old, hidden: 'yes' } })).statusCode).toBe(400);
   });
 
   it('compares brews by time since they started', async () => {

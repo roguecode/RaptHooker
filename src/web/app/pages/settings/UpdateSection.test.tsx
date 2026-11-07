@@ -202,7 +202,9 @@ describe('Settings: Updates', () => {
     });
     await screen.findByText('RaptHooker 0.3.0-beta.1', { selector: 'strong' });
     expect(screen.queryByText('This hub', { selector: '.chip' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Try this beta' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try this beta' }));
+    // Its version number doesn't say what it runs: if the beta doesn't start, it's this build that comes back.
+    expect(screen.getByRole('dialog').textContent).toContain('goes back to this build by itself');
   });
 
   it("doesn't offer betas on a hub that can't install them", async () => {

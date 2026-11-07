@@ -2268,5 +2268,6 @@
   "This hub runs beta {version}.": "Dieser Hub läuft mit der Beta {version}.",
   "Try RaptHooker {version}?": "RaptHooker {version} ausprobieren?",
   "Try this beta": "Diese Beta ausprobieren",
-  "What's in it": "Was drin ist"
+  "What's in it": "Was drin ist",
+  "If the beta doesn't start, the hub goes back to this build by itself.": "Wenn die Beta nicht startet, kehrt der Hub von selbst zu diesem Build zurück."
 }

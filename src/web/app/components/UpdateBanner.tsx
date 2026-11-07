@@ -181,7 +181,11 @@ export function InstallVersionButton({
                     "Betas are for trying out what's coming, so they can have rough edges. Your brews, readings and settings stay, and you can go back to the latest release under Settings → Updates whenever you like.",
                   )}
                 </p>
-                <p>{t("If the beta doesn't start, the hub goes back to {version} by itself.", { version: info.current })}</p>
+                <p>
+                  {info.devBuild
+                    ? t("If the beta doesn't start, the hub goes back to this build by itself.")
+                    : t("If the beta doesn't start, the hub goes back to {version} by itself.", { version: info.current })}
+                </p>
               </>
             ) : (
               <>

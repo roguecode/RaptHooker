@@ -4649,6 +4649,11 @@
       "components/UpdateBanner.tsx"
     ]
   },
+  "If the beta doesn't start, the hub goes back to this build by itself.": {
+    "files": [
+      "components/UpdateBanner.tsx"
+    ]
+  },
   "If the device says the network has no internet, choose to stay connected. Don't reload this page.": {
     "files": [
       "pages/screens/BrowserSetup.tsx"

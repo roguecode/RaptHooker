@@ -28,14 +28,33 @@ function releaseTags(): string[] | null {
   }
 }
 
-/** MIGRATIONS as db.ts had it at a tag, or null if that release had no db.ts. */
-function migrationsAt(tag: string): string[] | null {
-  let source: string;
-  try {
-    source = git('show', `${tag}:src/server/db.ts`);
-  } catch {
-    return null;
+/** Each tag's src/server/db.ts, read in one go (null where that release had none). */
+function dbSources(list: string[]): Map<string, string | null> {
+  const out = execFileSync('git', ['cat-file', '--batch'], {
+    cwd: ROOT,
+    input: `${list.map((t) => `${t}:src/server/db.ts`).join('\n')}\n`,
+    maxBuffer: 256 << 20,
+  });
+  const sources = new Map<string, string | null>();
+  let at = 0;
+  for (const tag of list) {
+    // "<object> blob <size>", then that many bytes and a newline; or "<name> missing".
+    const eol = out.indexOf(0x0a, at);
+    const header = /^\S+ blob (\d+)$/.exec(out.subarray(at, eol).toString('utf8'));
+    at = eol + 1;
+    if (!header) {
+      sources.set(tag, null);
+      continue;
+    }
+    const size = Number(header[1]);
+    sources.set(tag, out.subarray(at, at + size).toString('utf8'));
+    at += size + 1;
   }
+  return sources;
+}
+
+/** MIGRATIONS as a release's db.ts has it. */
+function migrationsIn(tag: string, source: string): string[] {
   const file = ts.createSourceFile('db.ts', source, ts.ScriptTarget.Latest, true);
   let found: string[] | null = null;
   const visit = (node: ts.Node): void => {
@@ -70,9 +89,9 @@ describe('every release', () => {
   it.runIf(Boolean(tags?.length))("still has its migrations, unchanged and in order, at the start of this version's", () => {
     const problems: string[] = [];
     let checked = 0;
-    for (const tag of tags!) {
-      const released = migrationsAt(tag);
-      if (!released) continue;
+    for (const [tag, source] of dbSources(tags!)) {
+      if (source === null) continue;
+      const released = migrationsIn(tag, source);
       checked++;
       if (released.length > MIGRATIONS.length) {
         problems.push(`${tag} has ${released.length} migrations and this version only ${MIGRATIONS.length}: one was removed`);

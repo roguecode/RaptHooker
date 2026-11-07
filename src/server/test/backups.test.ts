@@ -209,25 +209,6 @@ describe('restoring', () => {
     o.close();
     expect(() => inspectBackup(other)).toThrow(/no meta, pills, readings tables/);
 
-    /** A database as a version with one more migration than this one left it. */
-    const fromNewer = (name: string, extra = '') => {
-      const file = join(t.dir, name);
-      const db = new DatabaseSync(file);
-      for (const sql of MIGRATIONS) db.exec(sql);
-      db.exec(`CREATE TABLE added_later (id TEXT PRIMARY KEY); PRAGMA user_version = ${MIGRATIONS.length + 1}; ${extra}`);
-      db.close();
-      return file;
-    };
-    // A newer version's backup (taken on a beta before going back, say) restores: this version runs on what it added.
-    expect(inspectBackup(fromNewer('newer.db'))).toEqual({ schema: MIGRATIONS.length + 1, pills: 0, brews: 0, readings: 0 });
-    // Not if that version said older ones can't use it, though no release may.
-    const barred = fromNewer('barred.db', `INSERT INTO meta (key, value) VALUES ('${MIN_SCHEMA_KEY}', '${MIGRATIONS.length + 1}')`);
-    expect(() => inspectBackup(barred)).toThrow(/newer version of RaptHooker that this one can't use/);
-    // Nor if a migration this version has went differently there (a development build's).
-    const hashes = JSON.stringify(MIGRATIONS.map((_, i) => (i === 1 ? '0123456789abcdef' : null)));
-    const diverged = fromNewer('diverged.db', `INSERT INTO meta (key, value) VALUES ('${MIGRATION_HASHES_KEY}', '${hashes}')`);
-    expect(() => inspectBackup(diverged)).toThrow(/development build/);
-
     const good = await databaseFile(t.dir, 'good.db', 'x');
     expect(inspectBackup(good)).toEqual({ schema: MIGRATIONS.length, pills: 0, brews: 0, readings: 0 });
     // Looking at it leaves nothing behind.
@@ -239,6 +220,36 @@ describe('restoring', () => {
       expect(err).toBeInstanceOf(RestoreError);
       expect((err as RestoreError).statusCode).toBe(400);
     }
+  });
+
+  it("takes a newer version's backup, unless that version said it can't, or it went its own way", () => {
+    const t = temp();
+    // A database as a version with one more migration than this one left it, built once (in one transaction, so it
+    // doesn't wait on the disk for every statement) and copied for each case.
+    const newer = join(t.dir, 'newer.db');
+    const db = new DatabaseSync(newer);
+    db.exec('BEGIN');
+    for (const sql of MIGRATIONS) db.exec(sql);
+    db.exec(`CREATE TABLE added_later (id TEXT PRIMARY KEY); PRAGMA user_version = ${MIGRATIONS.length + 1}; COMMIT`);
+    db.close();
+    const variant = (name: string, sql: string) => {
+      const file = join(t.dir, name);
+      copyFileSync(newer, file);
+      const v = new DatabaseSync(file);
+      v.exec(sql);
+      v.close();
+      return file;
+    };
+
+    // A newer version's backup (taken on a beta before going back, say) restores: this version runs on what it added.
+    expect(inspectBackup(newer)).toEqual({ schema: MIGRATIONS.length + 1, pills: 0, brews: 0, readings: 0 });
+    // Not if that version said older ones can't use it, though no release may.
+    const barred = variant('barred.db', `INSERT INTO meta (key, value) VALUES ('${MIN_SCHEMA_KEY}', '${MIGRATIONS.length + 1}')`);
+    expect(() => inspectBackup(barred)).toThrow(/newer version of RaptHooker that this one can't use/);
+    // Nor if a migration this version has went differently there (a development build's).
+    const hashes = JSON.stringify(MIGRATIONS.map((_, i) => (i === 1 ? '0123456789abcdef' : null)));
+    const diverged = variant('diverged.db', `INSERT INTO meta (key, value) VALUES ('${MIGRATION_HASHES_KEY}', '${hashes}')`);
+    expect(() => inspectBackup(diverged)).toThrow(/development build/);
   });
 
   it('accepts an uploaded database or a listed backup, then asks for a restart', async () => {

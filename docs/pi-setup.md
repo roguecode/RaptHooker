@@ -91,11 +91,13 @@ Something not working? See [Troubleshooting](#troubleshooting).
 Options go after `-s --`, for example
 `curl -fsSL https://raw.githubusercontent.com/roguecode/RaptHooker/main/deploy/install.sh | sudo bash -s -- --hostname rapthooker --tailscale`:
 
-- `--hostname NAME` renames the Pi (so it's `NAME.local`); without it the Pi keeps the name you gave it
+- `--hostname NAME` renames the Pi (so it's `NAME.local`); without it the Pi keeps the name you gave it. That's only
+  its name on the network: the name the app shows (in the top bar and browser tab, on screens and in Home Assistant) is
+  **Hub name** under Settings → Hub
 - `--tailscale` also installs [Tailscale](#5-https-and-access-away-from-home-tailscale)
 - `--version 0.3.0` installs that release instead of the latest
-- `--no-bluetooth` for a machine [without Bluetooth](#without-bluetooth), like a container; `--bluetooth` switches it
-  back on
+- `--no-bluetooth` for a machine [without Bluetooth](#without-bluetooth), like a container (a new install in a
+  container has it off already); `--bluetooth` switches it back on
 
 The installer checks the Pi is supported, downloads the latest [release](https://github.com/roguecode/RaptHooker/releases),
 checks it against its published checksums, puts it in `/opt/rapthooker` and runs [setup.sh](../deploy/pi/setup.sh),
@@ -274,6 +276,12 @@ and the hub stops trying, without the _Bluetooth isn't working_ warning. [Relays
   It sets `"bluetooth": { "enabled": false }` in `/etc/rapthooker/rapthooker.config.json`, and setup leaves Bluetooth
   alone (BlueZ's experimental features, its restart and reset helpers). Updates keep it that way. The app's switch is
   then locked off; to switch Bluetooth back on, run the installer again with `--bluetooth`.
+- **In a container** (`systemd-detect-virt --container` names one), a new install switches it off as `--no-bluetooth`
+  does, without being asked. Add `--bluetooth` if Bluetooth does work there. A hub that was already installed keeps
+  what it had.
+
+If Bluetooth is on but doesn't start, setup and updates carry on without it and say so; the hub shows _Bluetooth isn't
+working_ until it's switched off or fixed.
 
 ## Troubleshooting
 
@@ -289,6 +297,12 @@ and the hub stops trying, without the _Bluetooth isn't working_ warning. [Relays
   to the Pi. A fridge or a stainless steel fermenter makes it harder to hear. To see what the Pi hears, use the probe
   under [Finding out what's wrong](#finding-out-whats-wrong).
 - **Gaps in the chart** are times nothing was recorded: the Pi was off, restarting, or the pill was out of range.
+- **`Job for bluetooth.service failed` while installing or updating:** Bluetooth couldn't start, as in a container
+  (an LXC on Proxmox, say). Setup carries on without it and prints a warning. Up to 0.9.1 it stopped there instead, and
+  an update went back to the version before ("Setting up RaptHooker x.y.z didn't finish"). Either way, on a machine
+  without Bluetooth, run the installer once with `--no-bluetooth` (see [Without Bluetooth](#without-bluetooth)):
+  `curl -fsSL https://raw.githubusercontent.com/roguecode/RaptHooker/main/deploy/install.sh | sudo bash -s -- --no-bluetooth`.
+  Updates from the app keep it off from then on.
 - **Wi-Fi slow while the hub runs:** check Settings → Bluetooth says **Passive**. If it says active because BlueZ's
   experimental features are off, run setup again (`sudo bash /opt/rapthooker/deploy/pi/setup.sh --keep-hostname`), or
   use Ethernet.

@@ -139,9 +139,9 @@ the app, or through Tailscale. Tokens can't do it. Owner-only extras for webhook
 | `GET`, `POST /api/tokens`, `DELETE /api/tokens/:id` | List, create (`{ "name": "Grafana", "scope": "read" }`, the response has the token once) and delete tokens |
 
 A pill's charts can leave out ranges of its history (a knock while adding hops, say) and draw a curve through them
-instead. Only the charts change: the readings, brew stats, alerts, webhooks and exports stay as they were, and the
-history leaves them out only when asked to (`exclude=1`). The ranges are in each pill's `exclusions` (`id`, `from`,
-`to`, `createdAt`), oldest first.
+instead; so do the pictures for screens (`/api/image.png` and the like). Only the charts change: the readings, brew stats,
+alerts, webhooks and exports stay as they were, and the history leaves them out only when asked to (`exclude=1`). The
+ranges are in each pill's `exclusions` (`id`, `from`, `to`, `createdAt`), oldest first.
 
 | Endpoint                                        | What                                                                                     |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Brew } from '@rapthooker/shared';
+import { windowsIn, type Brew } from '@rapthooker/shared';
 import { ApiError, api, errorText } from '../../api';
 import { useLive, useLiveMessages } from '../../live';
 import { useUnits } from '../../units';
@@ -8,9 +8,8 @@ import { href, navigate } from '../../router';
 import { dateTime, days, fixed, num, useNow } from '../../format';
 import { Icon } from '../../components/Icon';
 import { Chart, type SeriesKey } from '../../components/Chart';
-import { clampWindow, isZoomed, SMOOTHING_STEPS_MS, type TimeWindow } from '../../components/chartMath';
+import { clampWindow, contextWindow, isZoomed, SMOOTHING_STEPS_MS, type TimeWindow } from '../../components/chartMath';
 import { brewAnnotations } from '../../components/annotations';
-import { contextWindow, windowsIn } from '../../components/exclusions';
 import { ExcludeRangeButton, ExclusionsToggle, useRemoveExclusion, useShowExclusions } from '../../components/ExclusionControls';
 import { SmoothingStepper, useChartSmoothing } from '../../components/ChartSmoothing';
 import { FermentBar } from '../../components/Ferment';

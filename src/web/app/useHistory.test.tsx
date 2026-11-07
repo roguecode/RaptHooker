@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 import { act, renderHook, screen, waitFor } from '@testing-library/react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_HUB_SETTINGS, type History, type Keg, type LiveMessage, type Pill } from '@rapthooker/shared';
 import { emptyHistory, makeBle, makeBrew, makePill, makeReading, renderWithHub, type FakeRequest } from './test/render';
-import { appendReading, useCardRange, useHistory } from './hooks';
+import { appendReading, useCardHistory, useCardRange, useHistory } from './hooks';
 
 const MIN = 60_000;
 const DAY = 24 * 60 * MIN;
@@ -139,6 +139,60 @@ describe('useCardRange', () => {
     });
     rerender({ pill: makePill({ brew: makeBrew({ startedAt: NOW + 5 * MIN }) }) });
     expect(result.current).toEqual({ from: NOW + 5 * MIN, to: NOW + 5 * MIN, live: true });
+  });
+});
+
+describe('useCardHistory', () => {
+  const H = 60 * MIN;
+  const now = Date.now();
+  const excluded = { id: 'x1', from: now - 4 * H, to: now - 3 * H, createdAt: now - H };
+  const pill = makePill({ id: 'pill-1', exclusions: [excluded] });
+  /** Readings every 15 minutes over the last 6 hours, with a knock in the excluded range (left out when asked). */
+  const knocked = (req: FakeRequest): History => {
+    const ts = Array.from({ length: 21 }, (_, i) => now - 6 * H + i * 15 * MIN);
+    const inside = (t: number) => t >= excluded.from && t <= excluded.to;
+    const leaveOut = req.query.get('exclude') === '1';
+    const col = (f: (t: number) => number) => ts.map((t) => (inside(t) && leaveOut ? null : f(t)));
+    return {
+      ...emptyHistory('pill-1', now - 6 * H, now),
+      ts,
+      gravity: col((t) => (inside(t) ? 1.2 : 1.05)),
+      temperature: col(() => 20),
+      velocity: ts.map(() => null),
+      battery: col(() => 90),
+      rssi: col(() => -60),
+      tilt: col(() => 30),
+      implausible: ts.map(() => false),
+    };
+  };
+
+  function CardProbe() {
+    const range = useMemo(() => ({ from: now - 6 * H, to: now, live: true }), []);
+    const { history } = useCardHistory(pill, range);
+    const g = history?.gravity ?? [];
+    return (
+      <p data-testid="card">
+        {history ? `top ${Math.max(...g.map((v) => v ?? 0)).toFixed(3)}, ${g.filter((v) => v === null).length} gaps` : 'loading'}
+      </p>
+    );
+  }
+
+  /** The same, with exclusions switched off in this browser. */
+  function Off() {
+    useState(() => localStorage.setItem('rapthooker.exclusions', 'off'));
+    return <CardProbe />;
+  }
+
+  it("fills in the pill's excluded ranges, as its charts do", async () => {
+    const view = await renderWithHub(<CardProbe />, { pills: [pill], routes: { [HISTORY]: knocked } });
+    await screen.findByText('top 1.050, 0 gaps');
+    expect(view.calls(HISTORY).every((r) => r.query.get('exclude') === '1')).toBe(true);
+  });
+
+  it('shows the readings when exclusions are switched off in this browser', async () => {
+    const view = await renderWithHub(<Off />, { pills: [pill], routes: { [HISTORY]: knocked } });
+    await screen.findByText('top 1.200, 0 gaps');
+    expect(view.calls(HISTORY).some((r) => r.query.get('exclude') === '1')).toBe(false);
   });
 });
 

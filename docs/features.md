@@ -65,7 +65,8 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
   when RaptHooker's are in use, smoothing for the eye (**Smoothing − / +**, which changes only the drawing) and PNG
   export. Knocked the pill while adding hops? Zoom in on the spike and **Exclude this range**: the charts draw a dashed
   curve through it from the readings either side (point at it to see the range, or put it back), while the readings
-  themselves are kept. **Exclusions** under the chart switches back to the readings.
+  themselves are kept. The dashboard's cards, TV mode and image links draw the same curve. **Exclusions** under the
+  chart switches back to the readings in that browser.
 - **CSV export** of a pill's readings or a brew.
 
 ## Webhooks, MQTT and alerts

@@ -1,5 +1,6 @@
 import {
   defaultScreenOptions,
+  fillHistory,
   measuresGravity,
   parseScreenQuery,
   type History,
@@ -112,15 +113,19 @@ export class ScreenService {
     };
   }
 
+  /** A device's history, with its excluded ranges filled in from curves as the app's charts draw them. */
   private history(pill: Pill, from: number, to: number, points: number): History {
     const { store, pills, config } = this.deps;
-    return store.history(pill.id, from, to, {
+    const exclusions = pill.exclusions ?? [];
+    const h = store.history(pill.id, from, to, {
       maxPoints: points,
       gapMs: pills.gapMs(pill.id),
       offsets: pill.offsets,
       model: pill.model,
       rawFrom: config.rawRetentionDays > 0 ? Date.now() - config.rawRetentionDays * DAY : undefined,
+      exclude: exclusions.length ? exclusions : undefined,
     });
+    return fillHistory(h, exclusions);
   }
 
   private device(pill: Pill, opts: ScreenOptions, now: number): ScreenDevice {

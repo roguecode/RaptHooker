@@ -176,9 +176,15 @@ function fakeHistory(id: string, from: number, to: number): History {
   };
 }
 
-function service(devices: Pill[] = DEVICES, units = { gravity: 'sg' as const, temperature: 'C' as const }) {
+function service(
+  devices: Pill[] = DEVICES,
+  units = { gravity: 'sg' as const, temperature: 'C' as const },
+  store: { history: (id: string, from: number, to: number, opts: { exclude?: { from: number; to: number }[] }) => History } = {
+    history: (id, from, to) => fakeHistory(id, from, to),
+  },
+) {
   const deps = {
-    store: { history: (id: string, from: number, to: number) => fakeHistory(id, from, to) },
+    store,
     pills: { list: () => devices, get: (id: string) => devices.find((p) => p.id === id) ?? null, gapMs: () => 3_600_000 },
     settings: { units: () => units, hub: () => ({ ...DEFAULT_HUB_SETTINGS, name: 'Garage brewery', units }) },
     config: { rawRetentionDays: 0 },
@@ -403,6 +409,31 @@ describe('screen image layout', () => {
     const svg = svgOf({ w: '800', h: '480', show: 'name,gravity' }, 'p1', [pill({ name: 'Ale <&> "Stout"' })]);
     expect(svg).toContain('Ale &lt;&amp;&gt; &quot;Stout&quot;');
     expect(svg).not.toContain('<&>');
+  });
+
+  it("draws a curve through the device's excluded ranges, as the app's charts do", () => {
+    const excluded = { id: 'x1', from: NOW - 2 * DAY, to: NOW - 1.5 * DAY, createdAt: NOW - DAY };
+    const asked: unknown[] = [];
+    // Like the hub: the readings in the ranges it's asked to leave out come back empty.
+    const store = {
+      history: (id: string, from: number, to: number, opts: { exclude?: { from: number; to: number }[] }) => {
+        asked.push(opts.exclude);
+        const h = fakeHistory(id, from, to);
+        const left = (i: number) => opts.exclude?.some((w) => h.ts[i]! >= w.from && h.ts[i]! <= w.to) ?? false;
+        return {
+          ...h,
+          gravity: h.gravity.map((v, i) => (left(i) ? null : v)),
+          temperature: h.temperature.map((v, i) => (left(i) ? null : v)),
+        };
+      },
+    };
+    const devices = [pill({ exclusions: [excluded] })];
+    const s = service(devices, undefined, store);
+    const svg = s.svg('p1', s.options({ w: '800', h: '480', show: 'chart', range: '3d' }), NOW).svg;
+    expect(asked).toEqual([[excluded]]);
+    const line = /<path d="([^"]+)" fill="none" stroke="#a78bfa"/.exec(svg)?.[1];
+    // One unbroken line.
+    expect(line?.match(/M/g)).toHaveLength(1);
   });
 });
 

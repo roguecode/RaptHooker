@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { History } from '@rapthooker/shared';
-import { bridgeAt, bridgeGap, excludeColumn, fillHistory, mergeWindows } from './exclusions';
+import type { History } from './types.js';
+import { bridgeAt, bridgeGap, excludeColumn, fillHistory, mergeWindows } from './exclusions.js';
 
 const MIN = 60_000;
 const H = 60 * MIN;
@@ -151,5 +151,33 @@ describe('excluded ranges', () => {
     // Outside the window, nothing changes (an implausible reading stays one).
     expect(filled.implausible[ts.indexOf(H)]).toBe(true);
     expect(filled.gravity.slice(0, i)).toEqual(h.gravity.slice(0, i));
+  });
+
+  it("fills in a gap in the readings that's inside an excluded range, and a Laser Level's distance", () => {
+    // Nothing recorded from 3 to 6 hours: the hub puts a row of nulls halfway, so the line breaks there.
+    const ts = [...times(0, 3), 4.5 * H, ...times(6, 9)];
+    const gap = ts.indexOf(4.5 * H);
+    const col = (f: (t: number) => number) => ts.map((t, i) => (i === gap ? null : f(t)));
+    const h: History = {
+      pillId: 'laser',
+      from: 0,
+      to: 9 * H,
+      bucketMs: 0,
+      ts,
+      gravity: ts.map(() => null),
+      temperature: col(() => 4),
+      velocity: ts.map(() => null),
+      battery: col(() => 90),
+      rssi: col(() => -60),
+      tilt: ts.map(() => null),
+      distance: col((t) => 100 + (10 * t) / H),
+      implausible: ts.map((_, i) => (i === gap ? null : false)),
+    };
+    const filled = fillHistory(h, [{ from: 2.5 * H, to: 6.5 * H }]);
+    expect(filled.distance![gap]).toBeCloseTo(145, 6);
+    expect(filled.temperature[gap]).toBeCloseTo(4, 9);
+    expect(filled.distance!.every((v) => v !== null)).toBe(true);
+    // A device that doesn't measure something still doesn't.
+    expect(filled.gravity.every((v) => v === null)).toBe(true);
   });
 });

@@ -1,5 +1,10 @@
-import type { History } from '@rapthooker/shared';
-import { clampWindow, isZoomed, type TimeWindow } from './chartMath';
+import type { History } from './types.js';
+
+/** A span of time, Unix ms. */
+export interface TimeWindow {
+  from: number;
+  to: number;
+}
 
 const H = 3_600_000;
 
@@ -265,21 +270,25 @@ export function windowsIn<T extends TimeWindow>(wins: readonly T[] | undefined, 
   return (wins ?? []).filter((w) => w.to >= bounds.from && w.from <= bounds.to);
 }
 
-/** A view of a range just excluded with some of the readings either side (as much again), or null for everything. */
-export function contextWindow(range: TimeWindow, bounds: TimeWindow): TimeWindow | null {
-  const span = range.to - range.from;
-  const next = clampWindow({ from: range.from - span, to: range.to + span }, bounds);
-  return isZoomed(next, bounds) ? next : null;
-}
-
-type NumberColumn = 'gravity' | 'temperature' | 'velocity' | 'battery' | 'rssi' | 'tilt' | 'pillGravity' | 'pillVelocity';
-const NUMBER_COLUMNS: NumberColumn[] = ['gravity', 'temperature', 'velocity', 'battery', 'rssi', 'tilt', 'pillGravity', 'pillVelocity'];
+type NumberColumn = 'gravity' | 'temperature' | 'velocity' | 'battery' | 'rssi' | 'tilt' | 'distance' | 'pillGravity' | 'pillVelocity';
+const NUMBER_COLUMNS: NumberColumn[] = [
+  'gravity',
+  'temperature',
+  'velocity',
+  'battery',
+  'rssi',
+  'tilt',
+  'distance',
+  'pillGravity',
+  'pillVelocity',
+];
 
 /**
  * The history with the excluded windows filled in from the curves (for small charts that don't mark them, like the
- * overview strip). Readings in the windows no longer count as implausible: their values are the curve's.
+ * overview strip, the dashboard's cards, TV mode and screen images). Readings in the windows no longer count as
+ * implausible: their values are the curve's.
  */
-export function fillHistory(h: History | null, windows: readonly TimeWindow[]): History | null {
+export function fillHistory<T extends History | null>(h: T, windows: readonly TimeWindow[]): T {
   if (!h || windows.length === 0) return h;
   const out: History = { ...h };
   let hidden: boolean[] | null = null;
@@ -300,5 +309,5 @@ export function fillHistory(h: History | null, windows: readonly TimeWindow[]): 
     const mask = hidden;
     out.implausible = h.implausible.map((v, i) => (mask[i] ? false : v));
   }
-  return out;
+  return out as T;
 }

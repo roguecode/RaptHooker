@@ -11,7 +11,17 @@ import {
 import uPlot, { type AlignedData, type Options, type Range, type Series } from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import './Chart.css';
-import { DEFAULT_VESSEL, vesselFill, type ChartExclusion, type History, type Vessel } from '@rapthooker/shared';
+import {
+  bridgeAt,
+  DEFAULT_VESSEL,
+  excludeColumn,
+  mergeWindows,
+  vesselFill,
+  type Bridge,
+  type ChartExclusion,
+  type History,
+  type Vessel,
+} from '@rapthooker/shared';
 import { scaleOf, useUnits, type VolumeScale } from '../units';
 import { useTheme } from '../theme';
 import { dateTime, fixed, timeOnly } from '../format';
@@ -34,7 +44,6 @@ import {
   type TimeWindow,
 } from './chartMath';
 import { exportChartPng, type PngLegendItem } from './pngExport';
-import { bridgeAt, excludeColumn, mergeWindows, type Bridge } from './exclusions';
 
 export type { ChartAnnotation } from './annotations';
 export type { TimeWindow } from './chartMath';

@@ -2,7 +2,7 @@ import { useMemo, type CSSProperties } from 'react';
 import type { Pill } from '@rapthooker/shared';
 import { useLive } from '../../live';
 import { useUnits, volumeNumber } from '../../units';
-import { historyGapMs, useCardRange, useHistory } from '../../hooks';
+import { useCardHistory, useCardRange } from '../../hooks';
 import { href } from '../../router';
 import { num, signalQuality, timeAgo, useNow } from '../../format';
 import { t } from '../../i18n';
@@ -22,7 +22,7 @@ export function LaserCard({ pill }: { pill: Pill }) {
   const { cachedAt } = useLive();
   const now = useNow(15_000);
   const range = useCardRange(pill);
-  const { history } = useHistory(pill.id, range, 160, historyGapMs(pill.live.intervalSec));
+  const { history } = useCardHistory(pill, range);
   const r = pill.live.latest;
   const vessel = vesselOf(pill);
   const scale = u.volumeScale(pill.servingUnit);

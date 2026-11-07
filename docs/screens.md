@@ -29,7 +29,8 @@ An HD TV, 1280 × 720: every pill with the hub's name and the time, the brew and
 3. Pick what's on it: a preset (**Readings**, **Big numbers**, **Brew**, **Brew and graph**, **Everything**) or tick
    what you want: the hub's name and the time, the pill's name, whether it's online and when it was last heard, the
    gravity, the temperature, the brew and its day, its fermentation progress, a graph, and battery, signal and more.
-   The graph covers the brew so far (the last day for a pill without one), or the last 1, 3 or 7 days.
+   The graph covers the brew so far (the last day for a pill without one), or the last 1, 3 or 7 days. Ranges left out
+   of the pill's charts (**Exclude this range**) are drawn as the same curve here.
 4. Pick the look: dark or light, the colours, and the units. They start as this browser's.
 5. Pick the file type the screen needs (see below), check the preview, and **Copy** the link.
 

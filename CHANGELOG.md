@@ -5,65 +5,31 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-08
+
+Brew profiles, alerts that follow your brew, and reminders for things like dry hopping.
+
 ### Added
 
-- Pick how many decimals readings are shown with, under **Settings → Hub**: SG to 3 or 4 decimals (1.012 or 1.0123),
-  °P and temperatures to 1 or 2. It's used everywhere readings are shown: the app, its charts (their gravity axis and
-  the values beside the pointer), notifications and screen pictures. A screen or image link can have its own (`gdec`
-  and `tdec` in its link). It starts as the app's readings were (SG 4, with the 4th dimmed, °P and temperatures 1), so
-  notifications and gravity axes, which had 3 in SG, now have 4, and °P beside a chart's pointer has 1 rather than 2,
-  until you pick others. It's saved with the hub's settings (`decimals` in `GET /api/settings/hub`). An older version
-  shows readings as before, and from 0.4.1 on keeps the setting for when you update again.
-- Point at a chart's lines (or tap them on a phone) to see the readings there in a box beside the pointer: the time and
-  each line's value, in its colour. On the pill and brew pages, and when comparing brews. On a phone they stay until you
-  tap somewhere else.
-- Alerts that follow a brew along (#32):
-  - Three new kinds of alert, each a step in a brew: **Fermentation starts** (the gravity has dropped some points from
-    where the pill started, 3 unless you change it), **Attenuation reaches** (a percentage, from the brew's OG) and
-    **Days into the brew** (a reminder). They only watch a running brew, go off once in each brew and don't clear.
-  - Any alert can say **what to do** ("Add the dry hops"), which goes first in its notification, and can **note it on
-    the brew's timeline** each time it goes off during a brew.
-  - **Alerts for this brew**, on a brew's page: alerts that watch that brew alone, from the moment it starts, with
-    values for that recipe. They stop when the brew ends and are deleted with it. The section also lists the hub's
-    alerts that watch the brew too.
-  - A running brew's events can be **planned** (a dry hop on day 3): their start can be in the future too now, not
-    only their end. **Remind me at its start and end** notifies you everywhere alerts go when its time comes.
-  - **Profiles**, like a RAPT Pill profile: alerts and planned events, timed from a brew's start. Make one from scratch
-    under **Profiles** on the **Brews** page (**New profile**, then **Add alert** and **Add event** on a day of the
-    brew), or save a brew's own alerts and events as one, and pick the profile when you start a brew (or **Use a
-    profile** on a running one) to have them added.
-  - A brew's chart marks the alerts that went off during it, as a pill's does.
-  - In the API: `startGravity` in a brew's stats (what the pill read at the start, even with a typed OG; null for
-    brews that ended before this version), `remind` and `alertId` on events, `profileId` when starting a brew,
-    `/api/brews/:id/alerts`, `/api/brews/:id/profile` and `/api/brew-profiles`; rules have `message` and
-    `addToTimeline` (from 0.4.1 on, an older version keeps them when it changes a rule). See
-    [Brewing](docs/brewing.md#api).
-  - Stored differently: new tables `brew_alerts` and `brew_profiles`, and `remind`, `reminded_at`, `reminded_end` and
-    `alert_id` on brew events (migration 10). An older version leaves them alone: a brew's own alerts and reminders don't go off
-    there, profiles aren't offered, and the new kinds of alert never fire (it shows them as "Temperature above"; don't
-    edit them there). A brew it deletes leaves its own alerts behind, doing nothing. Everything is still there when you
-    update again, and an event it moved reminds you at its new time.
-
-### Changed
-
-- A new install in a container (an LXC on Proxmox, say), where Bluetooth usually can't be used, switches Bluetooth off
-  as `--no-bluetooth` does; add `--bluetooth` to keep it on. Hubs that are already installed keep what they have. It's
-  the same `bluetooth.enabled` in the config file, which versions before 0.9.0 ignore.
-- **Fermentation slows** and **Fermentation speeds up** wait for the gravity to drop 2 points from what the pill read
-  at the start of the brew, rather than from a typed OG, which can be a few points off the pill's and so let them go
-  off straight away.
+- **Brew profiles.** Save a set of alerts and planned events, pick it when you start a
+  brew. Make one under **Brews → Profiles**, or save a brew's alerts and events as a profile.
+- **Alerts for one brew.** Add alerts on a brew's page that only watch that brew.
+- **New alerts:** **Fermentation starts**, **Attenuation reaches** and **Days into the brew**. Each one goes off once
+  per brew.
+- **Say what to do.** Give an alert a message ("Add the dry hops") and have it added to the brew's timeline when it
+  goes off.
+- **Planned events and reminders.** Plan an event for later in a brew (a dry hop on day 3) and get a reminder when it
+  starts and ends.
+- **Readings on charts.** Hovering on the graphs shows the values now.
+- **Decimal places.** Choose how many decimals SG, °P and temperatures show under **Settings → Hub**. Notifications and
+  chart axes now show SG to 4 decimals by default.
 
 ### Fixed
 
-- **Fermentation speeds up** alerts went off at the start of a brew, before the gravity had moved: a velocity from a
-  few hours of readings, or from ones before the brew, can look like fermentation (#32). While a brew is running it now
-  waits until the gravity has dropped 2 points from the brew's OG, as **Fermentation slows** does, and one that went
-  off before then clears (without a notification) while the gravity is within a point of the OG, so it tells you when
-  fermentation really gets going.
-- Updating a hub whose Bluetooth can't start (in a container installed without `--no-bluetooth`, say): the update
-  stopped at "Bluetooth" with `Job for bluetooth.service failed`, and went back to the version before. Setting up now
-  carries on without Bluetooth and warns, so these hubs update, from the app too. Running the installer once with
-  `--no-bluetooth` still switches it off for good.
+- **Fermentation speeds up** and **Fermentation slows** no longer go off as soon as a brew starts. They now wait for
+  the gravity to drop 2 points from what the pill read at the start of the brew.
+- Hubs where Bluetooth can't start, such as in a Proxmox LXC container, can update again instead of rolling back. New
+  installs in a container now turn Bluetooth off; add `--bluetooth` to keep it on.
 
 ## [0.9.1] - 2026-11-07
 
@@ -314,7 +280,8 @@ The first release.
 - **Translations**: Deutsch, Español, Français, Italiano, Nederlands, Polski and Português (Brasil).
 - **Docker** image for Linux hosts with Bluetooth.
 
-[Unreleased]: https://github.com/roguecode/RaptHooker/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/roguecode/RaptHooker/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/roguecode/RaptHooker/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/roguecode/RaptHooker/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/roguecode/RaptHooker/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/roguecode/RaptHooker/compare/v0.7.0...v0.8.0

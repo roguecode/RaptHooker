@@ -5,6 +5,11 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Point at a chart's lines (or tap them on a phone) to see the readings there in a box beside the pointer: the time and
+  each line's value, in its colour. On the pill and brew pages, and when comparing brews.
+
 ### Changed
 
 - A new install in a container (an LXC on Proxmox, say), where Bluetooth usually can't be used, switches Bluetooth off

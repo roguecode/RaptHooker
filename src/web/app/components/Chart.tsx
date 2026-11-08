@@ -27,6 +27,7 @@ import { useTheme } from '../theme';
 import { dateTime, fixed, timeOnly } from '../format';
 import { t, tk } from '../i18n';
 import { Icon } from './Icon';
+import { ChartTip, type ChartTipHandle, type ChartTipRow } from './ChartTip';
 import type { ChartAnnotation } from './annotations';
 import {
   clampWindow,
@@ -191,9 +192,9 @@ function MinusIcon() {
 }
 
 /**
- * A pill's history (uPlot). Drag across it (mouse or one finger) to zoom in, pinch or Ctrl+wheel to zoom, double-click
- * or double-tap to show it all. Readings where the pill didn't look like it was floating are faded dots, left out of
- * the line.
+ * A pill's history (uPlot). Pointing at it, or tapping, shows the values there beside the pointer. Drag across it (mouse
+ * or one finger) to zoom in, pinch or Ctrl+wheel to zoom, double-click or double-tap to show it all. Readings where the
+ * pill didn't look like it was floating are faded dots, left out of the line.
  */
 export function Chart({
   history,
@@ -219,6 +220,7 @@ export function Chart({
   const wrap = useRef<HTMLDivElement | null>(null);
   const box = useRef<HTMLDivElement | null>(null);
   const plot = useRef<uPlot | null>(null);
+  const tip = useRef<ChartTipHandle | null>(null);
   const legendItems = useRef<PngLegendItem[]>([]);
   const ignoreSelect = useRef(true);
   const commitRef = useRef<((win: TimeWindow) => void) | null>(null);
@@ -348,6 +350,7 @@ export function Chart({
 
   useEffect(() => {
     const el = box.current;
+    const tooltip = tip.current;
     if (!el) return;
     const muted = cssVar('--muted');
     const grid = cssVar('--grid');
@@ -370,18 +373,21 @@ export function Chart({
     const colsNow = latest.current.cols;
     const has = (k: ColKey) => colsNow.some((c) => c.key === k);
 
+    /** A line's value at a reading, for the legend and the tooltip: the reading itself, or ≈ the curve in an excluded range. */
+    const valueAt = (key: ColKey, i: number, v: number | null | undefined, idx: number | null): string => {
+      const col = latest.current.cols[i];
+      const real = col?.raw ?? col?.actual;
+      const shown = real && idx !== null ? (real[idx] ?? null) : v;
+      if (shown == null && idx !== null && col?.bridges) {
+        const at = (latest.current.data[0] as number[])[idx];
+        const b = at === undefined ? undefined : bridgeAt(col.bridges, at * 1000);
+        if (b && at !== undefined) return `≈ ${fmt[key](b.at(at * 1000))}`;
+      }
+      return shown == null ? '–' : fmt[key](shown);
+    };
+
     const seriesFor = (c: Col, i: number): { s: Series; png: PngLegendItem } => {
-      const value = (_p: uPlot, v: number | null, _s: number, idx: number | null) => {
-        const col = latest.current.cols[i];
-        const real = col?.raw ?? col?.actual;
-        const shown = real && idx !== null ? (real[idx] ?? null) : v;
-        if (shown == null && idx !== null && col?.bridges) {
-          const at = (latest.current.data[0] as number[])[idx];
-          const b = at === undefined ? undefined : bridgeAt(col.bridges, at * 1000);
-          if (b && at !== undefined) return `≈ ${fmt[c.key](b.at(at * 1000))}`;
-        }
-        return shown == null ? '–' : fmt[c.key](shown);
-      };
+      const value = (_p: uPlot, v: number | null, _s: number, idx: number | null) => valueAt(c.key, i, v, idx);
       const base: Series = { spanGaps: false, points: { show: false }, value };
       switch (c.key) {
         case 'gravity': {
@@ -798,6 +804,36 @@ export function Chart({
       if (last >= 0 && p.legend.idx !== last) p.setLegend({ idx: last });
     };
 
+    /** The values under the pointer, beside it: the lines that are shown and have one there. Not while dragging to zoom. */
+    const showTip = (p: uPlot) => {
+      const w = wrap.current;
+      const idx = p.cursor.idx;
+      const x = p.cursor.left ?? -1;
+      const ts = idx == null ? undefined : p.data[0][idx];
+      if (!w || idx == null || ts == null || x < 0 || p.select.width > 0) return tooltip?.hide();
+      const rows: ChartTipRow[] = [];
+      colsNow.forEach((c, i) => {
+        const s = p.series[i + 1];
+        const b = built[i];
+        if (!b || s?.show === false) return;
+        const value = valueAt(c.key, i, p.data[i + 1]?.[idx], idx);
+        if (value === '–') return;
+        const label = typeof b.s.label === 'string' ? b.s.label : b.png.label;
+        rows.push({ label, value, color: b.png.color, line: b.png.dots ? 'dots' : b.png.dash ? 'dashed' : 'solid' });
+      });
+      if (rows.length === 0) return tooltip?.hide();
+      const o = p.over.getBoundingClientRect();
+      const r = w.getBoundingClientRect();
+      const top = o.top - r.top;
+      tooltip?.show({
+        x: o.left - r.left + x,
+        y: top + (p.cursor.top ?? 0),
+        area: { left: 0, top, right: r.width, bottom: top + o.height },
+        title: dateTime(ts * 1000),
+        rows,
+      });
+    };
+
     const opts: Options = {
       width: Math.max(260, el.clientWidth),
       height: plotHeight(compact),
@@ -893,7 +929,7 @@ export function Chart({
         ],
         drawClear: [drawSpans, drawBands],
         draw: [drawExtras],
-        setCursor: [legendToLatest, trackHover],
+        setCursor: [legendToLatest, trackHover, showTip],
       },
     };
 
@@ -992,6 +1028,8 @@ export function Chart({
       return [a?.x ?? 0, b?.x ?? 0];
     };
     const clearSelect = () => chart.setSelect({ left: 0, top: 0, width: 0, height: 0 }, false);
+    // A tap leaves its values showing; dragging or pinching puts them away.
+    const hideCursor = () => chart.setCursor({ left: -10, top: -10 });
     const capture = (id: number) => {
       try {
         over.setPointerCapture(id);
@@ -1008,6 +1046,7 @@ export function Chart({
       } else if (touches.size === 2 && latest.current.zoomable) {
         if (mode === 'select') clearSelect();
         mode = 'pinch';
+        hideCursor();
         pinch = { win: latest.current.view, px: pair() };
         for (const id of touches.keys()) capture(id);
       }
@@ -1021,6 +1060,7 @@ export function Chart({
         if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(p.y - start.y)) {
           mode = 'select';
           capture(e.pointerId);
+          hideCursor();
         }
       }
       if (mode === 'select') {
@@ -1104,6 +1144,7 @@ export function Chart({
       over.removeEventListener('wheel', onWheel);
       el.style.minHeight = `${el.offsetHeight}px`;
       chart.destroy();
+      tooltip?.hide();
       plot.current = null;
       commitRef.current = null;
       cur.bandKey = '';
@@ -1220,6 +1261,7 @@ export function Chart({
       onKeyDown={zoomable ? onKeyDown : undefined}
     >
       <div ref={box} />
+      <ChartTip ref={tip} />
       {!hasData && <div className="chart-empty">{t('No readings in this range yet')}</div>}
       {zoomable && (
         <span id={hintId} className="chart-sr">

@@ -10,6 +10,7 @@ import {
   mergeHistory,
   panWindow,
   pinchWindow,
+  placeTip,
   pngFileName,
   pngLayout,
   presetRange,
@@ -326,6 +327,29 @@ describe('markLineX', () => {
     expect(markLineX(1079.8, 80, 1000)).toBe(1079.5);
     // On a high-DPI screen the line is wider.
     expect(markLineX(2160, 160, 2000, 2)).toBe(2158.5);
+  });
+});
+
+describe('placeTip', () => {
+  const area = { left: 0, top: 10, right: 600, bottom: 370 };
+
+  it('puts the tooltip to the right of the pointer, level with it', () => {
+    expect(placeTip(100, 200, 160, 80, area)).toEqual({ left: 116, top: 160 });
+  });
+
+  it('flips it to the left near the right edge', () => {
+    expect(placeTip(500, 200, 160, 80, area)).toEqual({ left: 324, top: 160 });
+  });
+
+  it('keeps it inside the plot near the top and the bottom', () => {
+    expect(placeTip(100, 15, 160, 80, area).top).toBe(10);
+    expect(placeTip(100, 365, 160, 80, area).top).toBe(290);
+  });
+
+  it('goes above the pointer when neither side has room, or below when that has none either', () => {
+    const narrow = { left: 0, top: 0, right: 300, bottom: 260 };
+    expect(placeTip(150, 200, 200, 80, narrow)).toEqual({ left: 50, top: 104 });
+    expect(placeTip(150, 40, 200, 80, narrow)).toEqual({ left: 50, top: 56 });
   });
 });
 

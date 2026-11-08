@@ -8,7 +8,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Point at a chart's lines (or tap them on a phone) to see the readings there in a box beside the pointer: the time and
-  each line's value, in its colour. On the pill and brew pages, and when comparing brews.
+  each line's value, in its colour. On the pill and brew pages, and when comparing brews. On a phone they stay until you
+  tap somewhere else.
 
 ### Changed
 

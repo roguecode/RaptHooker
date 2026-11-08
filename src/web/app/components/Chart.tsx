@@ -28,6 +28,7 @@ import { dateTime, fixed, timeOnly } from '../format';
 import { t, tk } from '../i18n';
 import { Icon } from './Icon';
 import { ChartTip, type ChartTipHandle, type ChartTipRow } from './ChartTip';
+import { keepTappedValues } from './tapCursor';
 import type { ChartAnnotation } from './annotations';
 import {
   clampWindow,
@@ -1122,6 +1123,7 @@ export function Chart({
     over.addEventListener('pointerup', onPointerEnd);
     over.addEventListener('pointercancel', onPointerEnd);
     over.addEventListener('wheel', onWheel, { passive: false });
+    const releaseTap = keepTappedValues(chart);
 
     const ro = new ResizeObserver(() => {
       const w = Math.max(260, el.clientWidth);
@@ -1135,6 +1137,7 @@ export function Chart({
       window.cancelAnimationFrame(raf);
       window.cancelAnimationFrame(hotRaf);
       ro.disconnect();
+      releaseTap();
       over.removeEventListener('mousedown', onMouseDown);
       over.removeEventListener('click', onClick);
       over.removeEventListener('pointerdown', onPointerDown);

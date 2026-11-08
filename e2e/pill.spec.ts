@@ -57,10 +57,15 @@ test('pointing at the chart shows the values there beside the pointer', async ({
   expect(box.y).toBeGreaterThanOrEqual(plot.y - 1);
   expect(box.y + box.height).toBeLessThanOrEqual(plot.y + plot.height + 1);
 
-  if (!phone) {
+  if (phone) {
+    // Some browsers say the mouse left straight after a tap: the values stay until a tap elsewhere.
+    await chart.locator('.u-over').dispatchEvent('mouseleave');
+    await expect(tip).toBeVisible();
+    await page.getByRole('heading', { level: 1, name: 'Water test' }).tap();
+  } else {
     await page.mouse.move(0, 0);
-    await expect(tip).toHaveCount(0);
   }
+  await expect(tip).toHaveCount(0);
 });
 
 test('a range is left out of the chart, shown again and put back', async ({ page, request }) => {

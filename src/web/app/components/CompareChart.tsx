@@ -6,6 +6,7 @@ import { useTheme } from '../theme';
 import { fixed, num } from '../format';
 import { t } from '../i18n';
 import { ChartTip, type ChartTipHandle, type ChartTipRow } from './ChartTip';
+import { keepTappedValues } from './tapCursor';
 import './CompareChart.css';
 
 export interface CompareLine {
@@ -165,6 +166,7 @@ export function CompareChart({ lines, showTemp }: { lines: CompareLine[]; showTe
       },
     };
     const chart = new uPlot(opts, data, el);
+    const releaseTap = keepTappedValues(chart);
     const ro = new ResizeObserver(() => {
       const w = Math.max(260, el.clientWidth);
       if (w !== chart.width) chart.setSize({ width: w, height: plotHeight() });
@@ -172,6 +174,7 @@ export function CompareChart({ lines, showTemp }: { lines: CompareLine[]; showTe
     ro.observe(el);
     return () => {
       ro.disconnect();
+      releaseTap();
       chart.destroy();
       tooltip?.hide();
     };

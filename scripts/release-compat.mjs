@@ -122,8 +122,26 @@ function freePort() {
   });
 }
 
-/** Starts a hub (a release, or this version) on a data folder, with simulated devices, and waits until it answers. */
+/** A hub stopped while starting because another process took its port first (see start). */
+class PortTaken extends Error {}
+
+/**
+ * Starts a hub (a release, or this version) on a data folder, with simulated devices, and waits until it answers.
+ * freePort() can only find a port that's free now: another hub starting alongside (or anything else) can take it before
+ * this one listens, which every version does only after opening (and upgrading) the database. So a hub that stops
+ * because its port was taken is started again on another, a few times; anything else fails as it is.
+ */
 async function start(app, home, step) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await startOnce(app, home, step, attempt);
+    } catch (err) {
+      if (!(err instanceof PortTaken) || attempt >= 3) throw err;
+    }
+  }
+}
+
+async function startOnce(app, home, step, attempt) {
   const port = await freePort();
   const config = join(home, `${step}.config.json`);
   writeFileSync(
@@ -140,7 +158,8 @@ async function start(app, home, step) {
     }),
   );
   const logFile = join(home, `${step}.log`);
-  const log = createWriteStream(logFile);
+  // A second try goes on in the same log, after the first.
+  const log = createWriteStream(logFile, { flags: attempt > 1 ? 'a' : 'w' });
   const child = spawn(process.execPath, [app.server], {
     cwd: home,
     env: { ...process.env, RAPTHOOKER_CONFIG: config, RAPTHOOKER_PORT: String(port), RAPTHOOKER_DATA_DIR: join(home, 'data') },
@@ -148,12 +167,20 @@ async function start(app, home, step) {
   });
   child.stdout.pipe(log);
   child.stderr.pipe(log);
+  let errors = '';
+  child.stderr.on('data', (chunk) => (errors = (errors + chunk).slice(-4000)));
   let exited = null;
   const gone = new Promise((ok) => child.on('exit', (code, signal) => ok((exited = signal ?? code))));
+  // After 'exit', once everything it wrote has been read.
+  const closed = new Promise((ok) => child.on('close', ok));
   const hub = { app, port, child, gone, logFile, step, exited: () => exited };
   const deadline = Date.now() + START_TIMEOUT_MS;
   for (;;) {
-    if (exited !== null) throw new Error(`${app.name} stopped while starting (${exited}): see ${logFile}`);
+    if (exited !== null) {
+      await closed;
+      if (errors.includes('EADDRINUSE')) throw new PortTaken(`${app.name} couldn't listen on port ${port}: see ${logFile}`);
+      throw new Error(`${app.name} stopped while starting (${exited}): see ${logFile}`);
+    }
     let status;
     try {
       status = await api(hub, 'GET', '/api/status');

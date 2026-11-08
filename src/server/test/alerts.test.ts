@@ -370,18 +370,58 @@ describe('velocity alerts', () => {
     expect(t.alerts.events(10).map((e) => e.kind)).toEqual(['fired']);
   });
 
-  it("doesn't call a brew slow before it has started fermenting", () => {
+  it("doesn't call a brew slow or fast before it has started fermenting", () => {
     const current: Partial<Reading> = { gravity: 1.0495, velocity: -0.3 };
     const t = setup(current, { brew: () => brew(1.05) });
     t.alerts.create(rule({ name: 'Slow', kind: 'velocity_slow', threshold: 2 }));
     t.alerts.create(rule({ name: 'Fast', kind: 'velocity_fast', threshold: 0.2 }));
-    expect(t.alerts.events(10).map((e) => e.ruleName)).toEqual(['Fast']);
+    expect(t.alerts.events(10)).toEqual([]);
     // Once the gravity has dropped two points from the OG, it counts.
     current.gravity = 1.0479;
     t.alerts.evaluatePill('p1');
     expect(t.alerts.events(10).map((e) => [e.ruleName, e.message])).toEqual([
-      ['Slow', "Kveik's gravity is dropping 0.3 points a day, slower than 2.0 points a day"],
       ['Fast', "Kveik's gravity is dropping 0.3 points a day, faster than 0.2 points a day"],
+      ['Slow', "Kveik's gravity is dropping 0.3 points a day, slower than 2.0 points a day"],
+    ]);
+  });
+
+  it("doesn't call a pill in water fermenting because its velocity drifts at the start of a brew", () => {
+    // A brew of water: the gravity hasn't moved from its OG, but a tenth of a point in an hour reads as 2.4 a day.
+    const t = setup({ gravity: 1.0, velocity: -2.4 }, { brew: () => brew(1.0) });
+    t.alerts.create(rule({ name: 'Fermentation started', kind: 'velocity_fast', threshold: 1.5, onlyDuringBrew: true }));
+    t.alerts.evaluateAll();
+    expect(t.alerts.events(10)).toEqual([]);
+    expect(t.sent).toEqual([]);
+  });
+
+  it('lets go of a fast alert from before the brew left its OG, so it tells you when fermentation really starts', () => {
+    const current: Partial<Reading> = { gravity: 1.05, velocity: -2.3 };
+    let running: Brew | null = null;
+    const t = setup(current, { brew: () => running });
+    t.alerts.create(rule({ name: 'Fast', kind: 'velocity_fast', threshold: 2 }));
+    expect(t.alerts.list()[0]!.active).toEqual(['p1']);
+    // The brew starts with the pill at its OG: it clears, without a notification.
+    running = brew(1.05);
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.list()[0]!.active).toEqual([]);
+    // Between one and two points down it neither fires nor clears.
+    current.gravity = 1.0485;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.list()[0]!.active).toEqual([]);
+    current.gravity = 1.0475;
+    current.velocity = -12;
+    t.alerts.evaluatePill('p1');
+    current.gravity = 1.0485;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.list()[0]!.active).toEqual(['p1']);
+    expect(t.alerts.events(10).map((e) => [e.kind, e.message])).toEqual([
+      ['fired', "Kveik's gravity is dropping 12.0 points a day, faster than 2.0 points a day"],
+      ['resolved', "Back to normal: Kveik is at 1.0500, near the brew's OG of 1.0500"],
+      ['fired', "Kveik's gravity is dropping 2.3 points a day, faster than 2.0 points a day"],
+    ]);
+    expect(t.sent).toEqual([
+      "Kveik's gravity is dropping 2.3 points a day, faster than 2.0 points a day",
+      "Kveik's gravity is dropping 12.0 points a day, faster than 2.0 points a day",
     ]);
   });
 

@@ -314,11 +314,20 @@ export class AlertService extends EventEmitter {
         const v = g === null ? null : r.velocity;
         if (g === null || v === null) return { firing: null, value: null, message: '' };
         const slow = rule.kind === 'velocity_slow';
-        // Before fermentation gets going the gravity isn't dropping either: with a brew running, a slow one waits until
-        // the gravity has dropped from the brew's OG.
-        const og = slow ? (this.deps.brews.activeFor(pillId)?.stats.og ?? null) : null;
-        if (og !== null && og - g < FERMENTATION_LIMITS.minDrop) return { firing: null, value: null, message: '' };
         const drop = -v;
+        // Before fermentation gets going the gravity isn't dropping, but a velocity over a few hours of readings (or ones
+        // from before the brew) can say it is: with a brew running, both wait until the gravity has dropped from the
+        // brew's OG. A fast one that went off before then lets go while the gravity is still within a point of the OG
+        // (a point short of where it can fire, so it doesn't flap there).
+        const og = this.deps.brews.activeFor(pillId)?.stats.og ?? null;
+        if (og !== null && og - g < FERMENTATION_LIMITS.minDrop) {
+          if (slow || og - g >= FERMENTATION_LIMITS.minDrop / 2) return { firing: null, value: null, message: '' };
+          return {
+            firing: false,
+            value: Math.round(drop * 10) / 10,
+            message: `${name} is at ${this.fmtG(g)}, near the brew's OG of ${this.fmtG(og)}`,
+          };
+        }
         // Past the threshold it fires; once it's back past where it clears (velocityClearsAt), it clears.
         const clearsAt = velocityClearsAt(rule.kind, th);
         const past = slow ? drop < th : drop > th;

@@ -136,7 +136,7 @@ describe('alert rule editor', () => {
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'velocity_fast' } });
     expect(example()).toContain("Alerts when the gravity drops by more than 0.010 in a day (that's 1.050 to 1.040).");
     expect(example()).toContain('It clears once the gravity drops by less than 0.009 a day.');
-    expect(example()).not.toContain('from the OG');
+    expect(example()).toContain('it waits until the gravity has dropped 0.002 from the OG');
   });
 
   it('wants a velocity threshold as the points it drops, not the velocity', async () => {

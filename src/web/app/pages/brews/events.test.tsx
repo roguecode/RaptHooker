@@ -15,6 +15,7 @@ const hop: BrewEvent = {
   kind: 'dry_hop',
   text: '100 g Citra',
   hidden: false,
+  remind: false,
 };
 const brew = makeBrew({
   startedAt: new Date('2026-01-02T10:30:45').getTime(),
@@ -125,5 +126,41 @@ describe('EventModal', () => {
     expect(screen.getByText('The end has to be after the start')).toBeTruthy();
     expect(view.calls(PUT)).toHaveLength(0);
     expect(onSaved).not.toHaveBeenCalled();
+  });
+
+  it("plans an event in a running brew and reminds of it; a finished brew's have no reminder", async () => {
+    const running = makeBrew({ startedAt: Date.now() - 48 * 3_600_000, endedAt: null, events: [] });
+    const onSaved = vi.fn();
+    const view = await renderWithHub(<EventModal brew={running} event={null} onClose={() => undefined} onSaved={onSaved} />, {
+      routes: { [POST]: echo },
+      afterLoad: true,
+    });
+    expect(field('When').max).toBe('');
+    const at = toLocalInput(Date.now() + 26 * 3_600_000);
+    type('When', at);
+    expect(screen.getByText('Planned: it goes on the chart when its time comes.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('checkbox', { name: /Remind me at its start and end/ }));
+    submit('Add');
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
+    expect(view.calls(POST)[0]!.body).toMatchObject({ at: fromLocalInput(at), kind: 'dry_hop', remind: true });
+    view.unmount();
+
+    await openModal(hop);
+    expect(screen.queryByRole('checkbox', { name: /Remind me/ })).toBeNull();
+  });
+});
+
+describe('a planned event on the timeline', () => {
+  it('is marked as planned, with its reminder', async () => {
+    const at = Date.now() + 26 * 3_600_000;
+    const planned = makeBrew({
+      startedAt: Date.now() - 48 * 3_600_000,
+      endedAt: null,
+      events: [{ ...hop, at, endAt: null, remind: true }],
+    });
+    await renderWithHub(<EventsSection brew={planned} />);
+    await settle();
+    // The bell sits between "·" and "Reminder".
+    expect(document.querySelector('.brew-timeline li.planned .ev-when')?.textContent).toMatch(/^Day 4 · .* · Planned · +Reminder$/);
   });
 });

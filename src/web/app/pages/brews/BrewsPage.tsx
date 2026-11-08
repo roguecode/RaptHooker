@@ -11,6 +11,7 @@ import { t, tp } from '../../i18n';
 import { StartBrewModal } from '../pill';
 import { ComparePanel, MAX_COMPARE } from './Compare';
 import { abvOf, StageChip } from './Prediction';
+import { ProfilesPanel } from './profiles';
 import './brews.css';
 
 function useBrews() {
@@ -251,6 +252,8 @@ export function BrewsPage() {
               </div>
             )}
           </section>
+
+          <ProfilesPanel />
         </>
       )}
       {startFor && pillOf(startFor) && <StartBrewModal pill={pillOf(startFor)!} onClose={() => setStartFor(null)} />}

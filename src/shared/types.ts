@@ -215,6 +215,12 @@ export interface BrewStats {
   /** Manual OG, or the gravity at the start of the brew. */
   og: number | null;
   ogAuto: boolean;
+  /**
+   * What the pill read at the start of the brew (the automatic OG), even when an OG was typed in: what "Fermentation
+   * starts" measures the drop from, as a typed OG can be a few points off the pill. Null until there's a reading (and
+   * for brews that ended before this was kept).
+   */
+  startGravity?: number | null;
   /** Latest gravity (or the final gravity once ended). */
   gravity: number | null;
   abv: number | null;
@@ -259,6 +265,11 @@ export interface BrewEventInput {
   text: string;
   /** Left off the charts (it stays on the timeline). Left out of a change, it stays as it was. */
   hidden?: boolean;
+  /**
+   * Notify when it starts and ends, for one planned in a running brew (the start can be in the future too). Left out of
+   * a change, it stays as it was.
+   */
+  remind?: boolean;
 }
 
 export interface BrewEvent extends BrewEventInput {
@@ -266,6 +277,9 @@ export interface BrewEvent extends BrewEventInput {
   brewId: string;
   endAt: number | null;
   hidden: boolean;
+  remind: boolean;
+  /** The alert that noted it on the timeline (a rule's or the brew's own), or null for one you added. */
+  alertId?: string | null;
 }
 
 export type AbvFormula = 'standard' | 'alternative';
@@ -464,16 +478,32 @@ export interface RenderedRequest {
 /**
  * `velocity_slow` and `velocity_fast` compare how fast the gravity is dropping (points per day, so the reading's
  * velocity with its sign turned round: 12 while the velocity is −12) with the threshold.
+ *
+ * `fermentation_started`, `attenuation_reached` and `brew_day` are steps in a brew: they only watch a running brew and
+ * go off once in it (see ONCE_PER_BREW).
  */
 export type AlertKind =
-  'temp_above' | 'temp_below' | 'gravity_below' | 'gravity_stable' | 'velocity_slow' | 'velocity_fast' | 'battery_below' | 'offline';
+  | 'temp_above'
+  | 'temp_below'
+  | 'gravity_below'
+  | 'gravity_stable'
+  | 'velocity_slow'
+  | 'velocity_fast'
+  | 'fermentation_started'
+  | 'attenuation_reached'
+  | 'brew_day'
+  | 'battery_below'
+  | 'offline';
 
 export interface AlertRuleInput {
   name: string;
   enabled: boolean;
   pillIds: string[] | 'all';
   kind: AlertKind;
-  /** °C, SG, %, gravity points (stable), points per day dropped (velocity) or minutes (offline), depending on the kind. */
+  /**
+   * °C, SG, %, gravity points (stable, and dropped from the start for fermentation_started), points per day dropped
+   * (velocity), days (brew_day) or minutes (offline), depending on the kind.
+   */
   threshold: number;
   /** Window for 'gravity_stable', hours. */
   hours: number;
@@ -482,6 +512,47 @@ export interface AlertRuleInput {
   cooldownMin: number;
   /** Where notifications go: channel ids, BROWSER_PUSH for browser notifications, or 'all'. */
   channelIds: string[] | 'all';
+  /** What to do, put before what happened in the notification ("Add the dry hops"). Empty (or left out) for nothing. */
+  message?: string;
+  /** Also note it on the running brew's timeline when it goes off. Left out: no. */
+  addToTimeline?: boolean;
+}
+
+/** An alert for one brew: it watches that brew's pill while the brew runs, and goes with the brew. */
+export type BrewAlertInput = Omit<AlertRuleInput, 'pillIds' | 'onlyDuringBrew'>;
+
+export interface BrewAlert extends BrewAlertInput {
+  id: string;
+  brewId: string;
+  createdAt: number;
+  /** Going off now. */
+  active: boolean;
+  /** When it last went off (and notified), or null. */
+  lastFiredAt: number | null;
+}
+
+/** A planned event in a brew profile, timed from the brew's start. */
+export interface ProfileEvent {
+  /** From the brew's start, ms. */
+  offset: number;
+  /** When it ends, from the brew's start (ms), or null for a moment. */
+  endOffset: number | null;
+  kind: BrewEventKind;
+  text: string;
+  remind: boolean;
+}
+
+/** Alerts and planned events to add to a brew when it starts (like a RAPT Pill profile). */
+export interface BrewProfileInput {
+  name: string;
+  notes: string;
+  alerts: BrewAlertInput[];
+  events: ProfileEvent[];
+}
+
+export interface BrewProfile extends BrewProfileInput {
+  id: string;
+  createdAt: number;
 }
 
 /** The channel id for browser (web push) notifications. */

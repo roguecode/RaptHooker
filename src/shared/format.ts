@@ -40,11 +40,17 @@ export function raptIdFromAddress(address: string): string {
 export interface AlertKindInfo {
   kind: AlertKind;
   label: string;
-  /** What the threshold measures ('velocity': points per day the gravity is dropping). */
-  measure: 'temperature' | 'gravity' | 'points' | 'velocity' | 'percent' | 'minutes';
+  /** What the threshold measures ('velocity': points per day the gravity is dropping; 'drop': points it has dropped). */
+  measure: 'temperature' | 'gravity' | 'points' | 'drop' | 'velocity' | 'percent' | 'days' | 'minutes';
   defaultThreshold: number;
   describe: string;
 }
+
+/**
+ * Steps in a brew: they only watch a running brew (whatever "only while a brew is running" says), go off once in it
+ * and don't clear, so there's no "back to normal".
+ */
+export const ONCE_PER_BREW: ReadonlySet<AlertKind> = new Set<AlertKind>(['fermentation_started', 'attenuation_reached', 'brew_day']);
 
 export const ALERT_KINDS: AlertKindInfo[] = [
   { kind: 'temp_above', label: 'Temperature above', measure: 'temperature', defaultThreshold: 24, describe: 'The beer gets too warm' },
@@ -71,6 +77,29 @@ export const ALERT_KINDS: AlertKindInfo[] = [
     measure: 'velocity',
     defaultThreshold: 10,
     describe: 'Gravity drops more points a day than this',
+  },
+  {
+    kind: 'fermentation_started',
+    label: 'Fermentation starts',
+    measure: 'drop',
+    // Clear of a pill's drift and of how it reads while it settles in.
+    defaultThreshold: 3,
+    describe: 'Once a brew, when its gravity has dropped this many points',
+  },
+  {
+    kind: 'attenuation_reached',
+    label: 'Attenuation reaches',
+    measure: 'percent',
+    // About when a dry hop goes in for biotransformation.
+    defaultThreshold: 50,
+    describe: 'Once a brew, when it has fermented this much of its sugar',
+  },
+  {
+    kind: 'brew_day',
+    label: 'Days into the brew',
+    measure: 'days',
+    defaultThreshold: 3,
+    describe: 'Once a brew, a reminder this many days after it started',
   },
   { kind: 'battery_below', label: 'Battery below', measure: 'percent', defaultThreshold: 20, describe: 'The pill needs charging' },
   {

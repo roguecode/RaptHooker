@@ -67,6 +67,8 @@ const OG_WINDOW_MS = 3 * HOUR;
 const OG_SAMPLES = 6;
 /** How often a running brew's curve is refitted (it's a Pi). */
 const ANALYSE_EVERY_MS = 10 * MINUTE;
+/** How far ahead a running brew's events can be planned. */
+const PLAN_AHEAD_MS = 365 * DAY;
 /** Readings per brew for the fit, and for comparing brews. */
 const FIT_POINTS = 1500;
 const COMPARE_POINTS = 400;
@@ -97,6 +99,8 @@ const toEvent = (row: BrewEventRow): BrewEvent => ({
   kind: row.kind as BrewEventKind,
   text: row.text,
   hidden: row.hidden !== 0,
+  remind: row.remind !== 0,
+  alertId: row.alert_id ?? null,
 });
 
 /**
@@ -138,6 +142,11 @@ export class BrewService extends EventEmitter {
   activeFor(pillId: string): Brew | null {
     for (const b of this.live.values()) if (b.pillId === pillId) return b;
     return null;
+  }
+
+  /** The brews running now. */
+  running(): Brew[] {
+    return [...this.live.values()];
   }
 
   start(pillId: string, input: Partial<BrewInput>, startedAt?: number): Brew {
@@ -240,11 +249,16 @@ export class BrewService extends EventEmitter {
     const n = s.readings + 1;
     const firstAt = s.firstReadingAt ?? reading.ts;
     let og = s.og;
-    // The automatic OG settles over the first few hours.
-    if (s.ogAuto && reading.ts <= firstAt + OG_WINDOW_MS) og = this.autoOg(pillId, firstAt, reading.ts) ?? og;
+    let startGravity = s.startGravity ?? null;
+    // The pill's starting gravity (and the automatic OG with it) settles over the first few hours.
+    if (reading.ts <= firstAt + OG_WINDOW_MS) {
+      startGravity = this.autoOg(pillId, firstAt, reading.ts) ?? startGravity;
+      if (s.ogAuto) og = startGravity ?? og;
+    }
     let stats: BrewStats = {
       ...s,
       og,
+      startGravity,
       gravity: reading.gravity,
       tempMin: s.tempMin === null ? reading.temperature : Math.min(s.tempMin, reading.temperature),
       tempMax: s.tempMax === null ? reading.temperature : Math.max(s.tempMax, reading.temperature),
@@ -291,10 +305,11 @@ export class BrewService extends EventEmitter {
     return this.store.listBrewEvents(brewId).map(toEvent);
   }
 
-  addEvent(brewId: string, input: BrewEventInput): BrewEvent {
+  /** Adds an event; `alertId` for a note an alert makes (see AlertService). */
+  addEvent(brewId: string, input: BrewEventInput, alertId?: string): BrewEvent {
     const row = this.store.getBrewRow(brewId);
     if (!row) throw new BrewError('Unknown brew', 404);
-    const event: BrewEventRow = { id: randomUUID(), brew_id: brewId, ...this.checkEvent(row, input) };
+    const event: BrewEventRow = { id: randomUUID(), brew_id: brewId, ...this.checkEvent(row, input), alert_id: alertId ?? null };
     this.store.saveBrewEvent(event);
     this.eventsChanged(brewId);
     return toEvent(event);
@@ -317,12 +332,13 @@ export class BrewService extends EventEmitter {
     this.eventsChanged(brewId);
   }
 
-  private checkEvent(row: BrewRow, input: BrewEventInput, existing?: BrewEventRow): Omit<BrewEventRow, 'id' | 'brew_id'> {
+  private checkEvent(row: BrewRow, input: BrewEventInput, existing?: BrewEventRow): Omit<BrewEventRow, 'id' | 'brew_id' | 'alert_id'> {
     const text = input.text.trim();
     if (input.kind === 'note' && !text) throw new BrewError('Write something for the note');
     // Left out (by a script from before they existed, say), they stay as they were.
     const endAt = input.endAt === undefined ? (existing?.end_at ?? null) : input.endAt;
     const hidden = input.hidden === undefined ? (existing?.hidden ?? 0) : input.hidden ? 1 : 0;
+    const remind = input.remind === undefined ? (existing?.remind ?? 0) : input.remind ? 1 : 0;
     // Times that haven't changed aren't checked again: the brew's own may have moved since, and showing or hiding an
     // event still has to work.
     if (!existing || input.at !== existing.at || endAt !== existing.end_at) {
@@ -333,12 +349,20 @@ export class BrewService extends EventEmitter {
         if (row.ended_at !== null && endAt > row.ended_at + DAY) throw new BrewError('Pick a time during the brew');
       }
     }
-    return { at: input.at, end_at: endAt, kind: input.kind, text, hidden };
+    // A time that has already come when it's set (or when the reminder is switched on) is being noted, not planned:
+    // nothing to remind of. Otherwise what was reminded of stays, so a reminder is due again for a time it's moved to.
+    const now = this.now();
+    const remindOn = remind === 1 && existing?.remind !== 1;
+    const reminded_at = (!existing || input.at !== existing.at || remindOn) && input.at <= now ? input.at : (existing?.reminded_at ?? null);
+    const reminded_end =
+      endAt !== null && (!existing || endAt !== existing.end_at || remindOn) && endAt <= now ? endAt : (existing?.reminded_end ?? null);
+    return { at: input.at, end_at: endAt, kind: input.kind, text, hidden, remind, reminded_at, reminded_end };
   }
 
   private checkEventTime(row: BrewRow, at: number): void {
-    if (at > this.now() + 5 * MINUTE) throw new BrewError("An event can't be in the future");
-    if (at < row.started_at - DAY || at > (row.ended_at ?? this.now()) + DAY) {
+    // A running brew's events can be planned (a dry hop on day 3); a finished brew's are history.
+    if (row.ended_at !== null && at > this.now() + 5 * MINUTE) throw new BrewError("An event can't be in the future");
+    if (at < row.started_at - DAY || at > (row.ended_at ?? this.now() + PLAN_AHEAD_MS) + DAY) {
       throw new BrewError('Pick a time during the brew');
     }
   }
@@ -405,7 +429,7 @@ export class BrewService extends EventEmitter {
   }
 
   private upgrade(saved: NonNullable<BrewJson['stats']>): BrewStats {
-    return { stable: false, finalAbv: null, prediction: null, ...saved };
+    return { stable: false, finalAbv: null, prediction: null, startGravity: null, ...saved };
   }
 
   /** The gravity a pill's model gives a stored reading, or null if it isn't a usable one. */
@@ -525,12 +549,14 @@ export class BrewService extends EventEmitter {
       agg.tempSum += pruned.reduce((sum, b) => sum + (b.temp === null ? 0 : b.temp * b.n), 0);
       agg.n += pruned.reduce((sum, b) => sum + (b.temp === null ? 0 : b.n), 0);
     }
-    const og = input.og ?? (agg.firstTs === null ? null : this.autoOg(row.pill_id, agg.firstTs, end, pruned));
+    const startGravity = agg.firstTs === null ? null : this.autoOg(row.pill_id, agg.firstTs, end, pruned);
+    const og = input.og ?? startGravity;
     const subject: Subject = { id: row.id, pillId: row.pill_id, startedAt: row.started_at, targetFg: input.targetFg };
     if (row.ended_at === null) this.analysedAt.set(row.id, this.now());
     const stats: BrewStats = {
       og,
       ogAuto: input.og === null,
+      startGravity,
       gravity: this.gravityAt(row.pill_id, row.started_at, end, pruned),
       abv: null,
       attenuation: null,

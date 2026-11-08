@@ -3,13 +3,15 @@ import {
   DEFAULT_PILL_MODEL,
   type AlertRuleInput,
   type Brew,
+  type BrewAlertInput,
   type Decimals,
   type GravityUnit,
   type Pill,
   type Reading,
   type TemperatureUnit,
 } from '@rapthooker/shared';
-import { AlertService } from '../alerts.js';
+import { AlertService, type AlertDeps } from '../alerts.js';
+import type { BrewEventRow } from '../db.js';
 import { silent, tempStore } from './helpers.js';
 
 let cleanup: (() => void) | undefined;
@@ -47,6 +49,7 @@ function setup(
   opts: {
     pill?: Pill;
     brew?: () => Brew | null;
+    brews?: Partial<AlertDeps['brews']>;
     units?: () => { temperature: TemperatureUnit; gravity: GravityUnit };
     decimals?: () => Decimals;
   } = {},
@@ -73,6 +76,7 @@ function setup(
     ...over,
   });
   const sent: string[] = [];
+  const pushes: { title: string; body: string; url?: string }[] = [];
   const make = () =>
     new AlertService(
       t.store,
@@ -84,13 +88,18 @@ function setup(
           lastHeardAt: () => heardAt,
           offsets: () => ({ gravity: 0, temperature: 0 }),
         },
-        brews: { activeFor: opts.brew ?? (() => null) },
+        brews: { activeFor: opts.brew ?? (() => null), ...opts.brews },
         units: opts.units ?? (() => ({ temperature: 'C', gravity: 'sg' })),
         decimals: opts.decimals,
         clockTrusted: () => trusted,
         now: () => now,
       },
-      { send: async (m) => void sent.push(m.body) },
+      {
+        send: async (m) => {
+          sent.push(m.body);
+          pushes.push(m);
+        },
+      },
       silent,
     );
   const alerts = make();
@@ -100,6 +109,7 @@ function setup(
     alerts,
     make,
     sent,
+    pushes,
     now: () => now,
     at: (minutes: number) => (now = Date.UTC(2026, 9, 1, 10) + minutes * 60_000),
     heard: () => (heardAt = now),
@@ -429,6 +439,282 @@ describe('velocity alerts', () => {
     const t = setup({ gravity: 1.05, velocity: -0.3 }, { brew: () => brew(null) });
     t.alerts.create(rule({ kind: 'velocity_slow', threshold: 2 }));
     expect(t.alerts.events(10)).toHaveLength(1);
+  });
+});
+
+describe('steps in a brew', () => {
+  const DAY = 86_400_000;
+  /** A running brew with just what the alerts look at. */
+  const brewOf = (o: { id?: string; startedAt?: number; og?: number | null; startGravity?: number | null } = {}): Brew =>
+    ({
+      id: o.id ?? 'b1',
+      name: 'Hazy',
+      pillId: 'p1',
+      startedAt: o.startedAt ?? 0,
+      endedAt: null,
+      stats: { og: o.og ?? null, startGravity: o.startGravity },
+    }) as unknown as Brew;
+
+  it('says fermentation has started once the gravity has dropped from where the pill started, once a brew', () => {
+    const current: Partial<Reading> = { gravity: 1.048 };
+    // A typed OG four points above what the pill reads: it's not a drop.
+    let running: Brew | null = brewOf({ og: 1.052, startGravity: 1.048 });
+    const t = setup(current, { brew: () => running });
+    t.alerts.create(rule({ name: 'Started', kind: 'fermentation_started', threshold: 3 }));
+    current.gravity = 1.0455;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10)).toEqual([]);
+    current.gravity = 1.0449;
+    t.alerts.evaluatePill('p1');
+    // A reading that bounces back doesn't clear it: it has started.
+    current.gravity = 1.047;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10).map((e) => [e.kind, e.message, e.value])).toEqual([
+      ['fired', 'Hazy has started fermenting: Kveik has dropped 3.1 points, from 1.0480 to 1.0449', 3.1],
+    ]);
+
+    // The next brew gets it afresh.
+    running = null;
+    t.alerts.evaluateAll();
+    expect(t.alerts.list()[0]!.active).toEqual([]);
+    t.at(60);
+    running = brewOf({ id: 'b2', startedAt: t.now(), startGravity: 1.06 });
+    current.gravity = 1.056;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10).map((e) => e.kind)).toEqual(['fired', 'fired']);
+    expect(t.sent).toHaveLength(2);
+  });
+
+  it('watches only a running brew, whatever the rule says, and falls back to the OG for a brew from before it was kept', () => {
+    const current: Partial<Reading> = { gravity: 1.04 };
+    let running: Brew | null = null;
+    const t = setup(current, { brew: () => running });
+    t.alerts.create(rule({ name: 'Started', kind: 'fermentation_started', threshold: 3, onlyDuringBrew: false }));
+    expect(t.alerts.events(10)).toEqual([]);
+    running = brewOf({ og: 1.05 });
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10).map((e) => e.message)).toEqual([
+      'Hazy has started fermenting: Kveik has dropped 10.0 points, from 1.0500 to 1.0400',
+    ]);
+  });
+
+  it('goes off afresh in a new brew started before the minute check let go of the last one', () => {
+    const current: Partial<Reading> = { gravity: 1.04 };
+    let running: Brew | null = brewOf({ startGravity: 1.05 });
+    const t = setup(current, { brew: () => running });
+    t.alerts.create(rule({ name: 'Started', kind: 'fermentation_started', threshold: 3 }));
+    t.at(10);
+    running = brewOf({ id: 'b2', startedAt: t.now(), startGravity: 1.045 });
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10).map((e) => e.message)).toEqual([
+      'Hazy has started fermenting: Kveik has dropped 5.0 points, from 1.0450 to 1.0400',
+      'Hazy has started fermenting: Kveik has dropped 10.0 points, from 1.0500 to 1.0400',
+    ]);
+  });
+
+  it('says when a brew has reached an attenuation, from its OG', () => {
+    const current: Partial<Reading> = { gravity: 1.03 };
+    const t = setup(current, { brew: () => brewOf({ og: 1.05, startGravity: 1.049 }) });
+    t.alerts.create(rule({ name: 'Dry hop now', kind: 'attenuation_reached', threshold: 50 }));
+    expect(t.alerts.events(10)).toEqual([]);
+    current.gravity = 1.025;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10).map((e) => [e.message, e.value])).toEqual([
+      ['Hazy is 50% attenuated: Kveik is at 1.0250, from an OG of 1.0500', 50],
+    ]);
+  });
+
+  it('reminds you a number of days into a brew, once, by the clock', () => {
+    const t = setup({}, { brew: () => brewOf({ startedAt: Date.UTC(2026, 9, 1, 10) - 2.5 * DAY }) });
+    t.setTrusted(false);
+    t.alerts.create(rule({ name: 'Day 3', kind: 'brew_day', threshold: 3 }));
+    t.at(13 * 60);
+    t.alerts.evaluateAll();
+    expect(t.alerts.events(10)).toEqual([]);
+    t.setTrusted(true);
+    t.alerts.evaluateAll();
+    t.at(14 * 60);
+    t.alerts.evaluateAll();
+    expect(t.alerts.events(10).map((e) => [e.kind, e.message])).toEqual([['fired', 'Hazy has been going for 3 days']]);
+  });
+
+  it("puts what to do first, and notes it on the brew's timeline (as its own, off the charts) when asked to", () => {
+    const notes: { brewId: string; text: string; kind: string; hidden?: boolean; alertId?: string }[] = [];
+    const current: Partial<Reading> = { gravity: 1.05 };
+    const t = setup(current, {
+      brew: () => brewOf({ og: 1.05 }),
+      brews: { addEvent: (brewId, e, alertId) => notes.push({ brewId, text: e.text, kind: e.kind, hidden: e.hidden, alertId }) },
+    });
+    const made = t.alerts.create(
+      rule({ name: 'Dry hop', kind: 'attenuation_reached', threshold: 40, message: 'Add 100 g Citra', addToTimeline: true }),
+    );
+    current.gravity = 1.03;
+    t.alerts.evaluatePill('p1');
+    const message = 'Add 100 g Citra — Hazy is 40% attenuated: Kveik is at 1.0300, from an OG of 1.0500';
+    expect(t.sent).toEqual([message]);
+    expect(notes).toEqual([{ brewId: 'b1', kind: 'note', text: `Dry hop: ${message}`, hidden: true, alertId: made.id }]);
+  });
+});
+
+describe("a brew's own alerts", () => {
+  const brewOf = (id: string): Brew =>
+    ({ id, name: 'Hazy', pillId: 'p1', startedAt: 0, endedAt: null, stats: { og: 1.05 } }) as unknown as Brew;
+  const own = (over: Partial<BrewAlertInput> = {}): BrewAlertInput => ({
+    name: 'Dry hop',
+    enabled: true,
+    kind: 'gravity_below',
+    threshold: 1.02,
+    hours: 48,
+    cooldownMin: 60,
+    channelIds: 'all',
+    message: 'Add the hops',
+    addToTimeline: false,
+    ...over,
+  });
+
+  it('watches its brew while it runs, and nothing else', () => {
+    const current: Partial<Reading> = { gravity: 1.03 };
+    let running: Brew | null = brewOf('b1');
+    const known = new Set(['b1', 'b2']);
+    const t = setup(current, { brew: () => running, brews: { get: (id) => (known.has(id) ? brewOf(id) : null) } });
+    const a = t.alerts.createBrewAlert('b1', own());
+    expect(a).toMatchObject({ brewId: 'b1', active: false, lastFiredAt: null, message: 'Add the hops' });
+    expect(() => t.alerts.createBrewAlert('nope', own())).toThrow(/Unknown brew/);
+    // Not a rule on the Alerts page.
+    expect(t.alerts.list()).toEqual([]);
+
+    current.gravity = 1.019;
+    t.alerts.evaluatePill('p1');
+    expect(t.pushes).toEqual([
+      expect.objectContaining({ title: 'Dry hop', body: 'Add the hops — Kveik has reached 1.0190 (target 1.0200)', url: '/#/brew/b1' }),
+    ]);
+    expect(t.alerts.listBrewAlerts('b1')).toEqual([expect.objectContaining({ id: a.id, active: true, lastFiredAt: t.now() })]);
+
+    // Another brew on the pill: it lets go, quietly, and doesn't watch that one.
+    running = brewOf('b2');
+    current.gravity = 1.05;
+    t.alerts.evaluateAll();
+    current.gravity = 1.01;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.listBrewAlerts('b1')[0]!.active).toBe(false);
+    expect(t.sent).toHaveLength(1);
+    expect(t.alerts.listBrewAlerts('b2')).toEqual([]);
+  });
+
+  it('is kept across restarts, changed and deleted, and goes with its brew', () => {
+    const t = setup({}, { brew: () => brewOf('b1') });
+    const a = t.alerts.createBrewAlert('b1', own());
+    const b = t.alerts.createBrewAlert('b1', own({ name: 'Day 3', kind: 'brew_day', threshold: 3, message: '' }));
+    // A field a newer version saved is kept when this one changes the alert.
+    const row = t.store.listBrewAlertRows().find((r) => r.id === a.id)!;
+    t.store.saveBrewAlert({ ...row, json: JSON.stringify({ ...JSON.parse(row.json), future: 1 }) });
+    const again = t.make();
+    again.load();
+    expect(again.listBrewAlerts('b1').map((x) => x.name)).toEqual(['Dry hop', 'Day 3']);
+    again.updateBrewAlert('b1', a.id, own({ threshold: 1.018 }));
+    expect(JSON.parse(t.store.listBrewAlertRows().find((r) => r.id === a.id)!.json)).toMatchObject({ threshold: 1.018, future: 1 });
+    expect(() => again.updateBrewAlert('b2', a.id, own())).toThrow(/Unknown alert/);
+    again.deleteBrewAlert('b1', b.id);
+    expect(again.listBrewAlerts('b1').map((x) => x.id)).toEqual([a.id]);
+    again.forgetBrew('b1');
+    expect(again.listBrewAlerts('b1')).toEqual([]);
+  });
+
+  it('drops a deleted notification channel', () => {
+    const t = setup({}, { brew: () => brewOf('b1') });
+    const a = t.alerts.createBrewAlert('b1', own({ channelIds: ['ch1', 'ch2'] }));
+    t.alerts.forgetChannel('ch1');
+    expect(t.alerts.listBrewAlerts('b1')[0]!.channelIds).toEqual(['ch2']);
+    expect(JSON.parse(t.store.listBrewAlertRows()[0]!.json).channelIds).toEqual(['ch2']);
+    expect(a.id).toBeTruthy();
+  });
+});
+
+describe('reminders of planned events', () => {
+  const HOUR = 3_600_000;
+  const event = (over: Partial<BrewEventRow>): BrewEventRow => ({
+    id: 'e1',
+    brew_id: 'b1',
+    at: 0,
+    end_at: null,
+    kind: 'dry_hop',
+    text: '100 g Citra',
+    hidden: 0,
+    remind: 1,
+    reminded_at: null,
+    reminded_end: null,
+    alert_id: null,
+    ...over,
+  });
+
+  it('reminds when a planned event starts and when it ends, once each, and again for a time it is moved to', () => {
+    const t = setup();
+    const start = t.now();
+    t.store.saveBrew({
+      id: 'b1',
+      pill_id: 'p1',
+      started_at: start - 24 * HOUR,
+      ended_at: null,
+      json: '{"name":"Hazy IPA"}',
+      created_at: start,
+    });
+    t.store.saveBrewEvent(event({ at: start + HOUR, end_at: start + 49 * HOUR }));
+    t.store.saveBrewEvent(event({ id: 'e2', at: start + HOUR, kind: 'note', text: 'Check the airlock', remind: 0 }));
+    t.alerts.checkReminders();
+    expect(t.sent).toEqual([]);
+    t.at(61);
+    t.alerts.checkReminders();
+    t.alerts.checkReminders();
+    expect(t.pushes).toEqual([
+      expect.objectContaining({ title: 'Hazy IPA: Dry hop', body: 'Time for the dry hop: 100 g Citra', url: '/#/brew/b1' }),
+    ]);
+    t.at(49 * 60 + 1);
+    t.alerts.checkReminders();
+    expect(t.sent.at(-1)).toBe('Time to finish the dry hop: 100 g Citra');
+    // Moved on: due again at its new time.
+    t.store.saveBrewEvent({ ...t.store.getBrewEvent('e1')!, end_at: t.now() + HOUR });
+    t.at(50 * 60 + 2);
+    t.alerts.checkReminders();
+    expect(t.sent).toHaveLength(3);
+    expect(t.alerts.events(10)[0]).toMatchObject({ ruleName: 'Hazy IPA: Dry hop', pillId: 'p1', kind: 'fired' });
+  });
+
+  it("lets go of one the hub was off for, says only the end of one that's over, and waits for the clock", () => {
+    const t = setup();
+    const start = t.now();
+    t.store.saveBrew({
+      id: 'b1',
+      pill_id: 'p1',
+      started_at: start - 24 * HOUR,
+      ended_at: null,
+      json: '{"name":"Hazy IPA"}',
+      created_at: start,
+    });
+    t.store.saveBrewEvent(event({ at: start - 7 * HOUR, kind: 'cold_crash', text: '' }));
+    t.store.saveBrewEvent(event({ id: 'e2', at: start - 3 * HOUR, end_at: start - HOUR }));
+    t.setTrusted(false);
+    t.alerts.checkReminders();
+    expect(t.sent).toEqual([]);
+    t.setTrusted(true);
+    t.alerts.checkReminders();
+    t.alerts.checkReminders();
+    expect(t.sent).toEqual(['Time to finish the dry hop: 100 g Citra']);
+  });
+
+  it("doesn't remind of a finished brew's events", () => {
+    const t = setup();
+    const start = t.now();
+    t.store.saveBrew({
+      id: 'b1',
+      pill_id: 'p1',
+      started_at: start - 24 * HOUR,
+      ended_at: start,
+      json: '{"name":"Hazy IPA"}',
+      created_at: start,
+    });
+    t.store.saveBrewEvent(event({ at: start - HOUR }));
+    t.alerts.checkReminders();
+    expect(t.sent).toEqual([]);
   });
 });
 

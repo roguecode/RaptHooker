@@ -100,6 +100,12 @@
     ],
     "plural": true
   },
+  "{count} alert|{count} alerts": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ],
+    "plural": true
+  },
   "{count} brew on the go|{count} brews on the go": {
     "files": [
       "pages/Dashboard.tsx"
@@ -122,6 +128,12 @@
     "files": [
       "../../server/screen/strings.ts",
       "format.ts"
+    ],
+    "plural": true
+  },
+  "{count} day into the brew|{count} days into the brew": {
+    "files": [
+      "pages/alerts/describe.ts"
     ],
     "plural": true
   },
@@ -205,6 +217,12 @@
   "{count} pint|{count} pints": {
     "files": [
       "units.tsx"
+    ],
+    "plural": true
+  },
+  "{count} planned event|{count} planned events": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ],
     "plural": true
   },
@@ -832,6 +850,11 @@
       "pages/screens/AddScreen.tsx"
     ]
   },
+  "A new profile": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
   "A newer beta of it is out: {version}.": {
     "files": [
       "pages/settings/UpdateSection.tsx"
@@ -845,6 +868,11 @@
   "A number from the last 3 bytes of the Bluetooth address (like an iSpindel ID)": {
     "files": [
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "A percentage from 1 to 100": {
+    "files": [
+      "validation.tsx"
     ]
   },
   "A picture of the latest readings for a small screen (a GeekMagic, an ESPHome display, an e-paper frame) to load from the hub. Each time it loads the link it gets a fresh picture.": {
@@ -865,6 +893,11 @@
   "A point is 0.001.": {
     "files": [
       "pages/alerts/RuleExample.tsx"
+    ]
+  },
+  "A profile keeps this brew's own alerts and its events, timed from its start, for a brew you start with it.": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "A removed pill": {
@@ -1009,6 +1042,7 @@
       "pages/alerts/ChannelEditor.tsx",
       "pages/alerts/ChannelsPanel.tsx",
       "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx",
       "pages/screens/FoundScreens.tsx"
     ]
   },
@@ -1044,6 +1078,12 @@
       "pages/dashboard/FirstRunGuide.tsx"
     ]
   },
+  "Add alert": {
+    "files": [
+      "pages/brews/BrewAlerts.tsx",
+      "pages/brews/profiles.tsx"
+    ]
+  },
   "Add an end time": {
     "files": [
       "pages/brews/events.tsx"
@@ -1066,7 +1106,8 @@
   },
   "Add event": {
     "files": [
-      "pages/brews/events.tsx"
+      "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx"
     ]
   },
   "Add header": {
@@ -1110,6 +1151,11 @@
       "pages/pill/CalibrationWizard.tsx"
     ]
   },
+  "Add the dry hops": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
   "Add thermometer": {
     "files": [
       "pages/dashboard/NearbyCard.tsx"
@@ -1120,10 +1166,20 @@
       "pages/dashboard/NearbyCard.tsx"
     ]
   },
+  "Add to the brew": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
   "Added": {
     "files": [
       "pages/pill/CalibrationWizard.tsx",
       "pages/screens/ScreenEditor.tsx"
+    ]
+  },
+  "Added \"{name}\" to {brew}": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "Added to every reading, including history and webhooks.": {
@@ -1165,6 +1221,16 @@
   "Address copied": {
     "files": [
       "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Adds to this brew, timed from its start ({profile})": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
+  "After": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
     ]
   },
   "After 12 hours of readings and a start to the drop, RaptHooker predicts the FG and finish.": {
@@ -1222,6 +1288,32 @@
   "Alerts are pushed to phones and computers where you switch this on, even when the app is closed.": {
     "files": [
       "pages/alerts/PushPanel.tsx"
+    ]
+  },
+  "Alerts for this brew": {
+    "files": [
+      "pages/brews/BrewAlerts.tsx"
+    ]
+  },
+  "Alerts once a brew when it's {percent}% attenuated (from an OG of {from}, that's at {to}).": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
+  "Alerts once a brew when the gravity has dropped {amount} from where the pill started (that's {from} to {to}).": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
+  "Alerts once a brew, {count} day after it started.|Alerts once a brew, {count} days after it started.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ],
+    "plural": true
+  },
+  "Alerts that watch this brew alone, from when it starts: when fermentation gets going, a gravity or attenuation to dry hop at, a day to take a sample. They go when the brew ends.": {
+    "files": [
+      "pages/brews/BrewAlerts.tsx"
     ]
   },
   "Alerts when the gravity drops by less than {amount} in a day (that's {from} to {to}).": {
@@ -1339,6 +1431,11 @@
       "pages/screens/ScreenEditor.tsx"
     ]
   },
+  "Also watching it, from Alerts: {names}.": {
+    "files": [
+      "pages/brews/BrewAlerts.tsx"
+    ]
+  },
   "Alternative (better for strong beers)": {
     "files": [
       "pages/brews/strings.ts",
@@ -1363,6 +1460,11 @@
   "An ESP32 with a 2.8\" touch screen and one micro USB socket, sold as ESP32-2432S028 or \"Cheap Yellow Display\". The display chip differs between batches: RaptHooker knows the ones it has seen, and can turn, mirror or recolour the picture.": {
     "files": [
       "pages/screens/SupportedScreens.tsx"
+    ]
+  },
+  "An event has to end after it starts": {
+    "files": [
+      "validation.tsx"
     ]
   },
   "Angle from vertical, degrees": {
@@ -1532,6 +1634,11 @@
       "pages/brews/BrewPage.tsx",
       "pages/brews/SummaryPage.tsx",
       "pages/pill/BrewPanel.tsx"
+    ]
+  },
+  "Attenuation reaches": {
+    "files": [
+      "pages/alerts/strings.ts"
     ]
   },
   "auto": {
@@ -1925,6 +2032,11 @@
       "pages/brews/BrewsPage.tsx"
     ]
   },
+  "Brews started with it keep their alerts and events.": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
   "Brightness: {percent}%": {
     "files": [
       "pages/screens/ScreenEditor.tsx"
@@ -2049,6 +2161,7 @@
       "pages/alerts/RuleModal.tsx",
       "pages/brews/EditBrewModal.tsx",
       "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx",
       "pages/pill/KegPanel.tsx",
       "pages/pill/StartBrewModal.tsx",
       "pages/screens/ScreenEditor.tsx",
@@ -2116,6 +2229,7 @@
   },
   "Check {fields}.": {
     "files": [
+      "pages/brews/profiles.tsx",
       "validation.tsx"
     ]
   },
@@ -2602,7 +2716,8 @@
   },
   "Couldn't load alerts": {
     "files": [
-      "pages/alerts/AlertsPage.tsx"
+      "pages/alerts/AlertsPage.tsx",
+      "pages/brews/BrewAlerts.tsx"
     ]
   },
   "Couldn't load API tokens": {
@@ -2707,6 +2822,7 @@
       "pages/alerts/RuleModal.tsx",
       "pages/brews/EditBrewModal.tsx",
       "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx",
       "pages/pill/DataSources.tsx",
       "pages/pill/PillSettings.tsx",
       "pages/pill/VesselSettings.tsx",
@@ -2821,6 +2937,11 @@
   "Couldn't update the screens": {
     "files": [
       "pages/screens/ScreensPage.tsx"
+    ]
+  },
+  "Couldn't use the profile": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "Count the readings since then.": {
@@ -2943,6 +3064,26 @@
       "pages/kiosk/Kiosk.tsx"
     ]
   },
+  "Day 1 is its first 24 hours.": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
+  "Day of the brew": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
+  "days": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Days into the brew": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
   "Days since the brew started": {
     "files": [
       "pages/brews/SummaryChart.tsx",
@@ -2978,8 +3119,10 @@
     "files": [
       "pages/alerts/AlertsPage.tsx",
       "pages/alerts/ChannelsPanel.tsx",
+      "pages/brews/BrewAlerts.tsx",
       "pages/brews/BrewPage.tsx",
       "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx",
       "pages/pill/CalibrationWizard.tsx",
       "pages/pill/KegPanel.tsx",
       "pages/settings/PillsSection.tsx",
@@ -2991,7 +3134,9 @@
     "files": [
       "pages/alerts/AlertsPage.tsx",
       "pages/alerts/ChannelsPanel.tsx",
+      "pages/brews/BrewAlerts.tsx",
       "pages/brews/BrewPage.tsx",
+      "pages/brews/profiles.tsx",
       "pages/pill/KegPanel.tsx",
       "pages/settings/TokensSection.tsx",
       "pages/webhooks/WebhooksPage.tsx"
@@ -3034,12 +3179,14 @@
   "Details": {
     "files": [
       "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx",
       "pages/pill/BrewPanel.tsx"
     ]
   },
   "Details (optional)": {
     "files": [
-      "pages/brews/events.tsx"
+      "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx"
     ]
   },
   "Development build": {
@@ -3087,6 +3234,11 @@
   "Devices that don't have this reading (a thermometer, say) are left out of this alert.": {
     "files": [
       "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Didn't go off": {
+    "files": [
+      "pages/brews/BrewAlerts.tsx"
     ]
   },
   "Discovery prefix": {
@@ -3236,6 +3388,11 @@
       "components/Chart.tsx"
     ]
   },
+  "Dropped by": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
   "Dry hop": {
     "files": [
       "components/annotations.ts",
@@ -3243,6 +3400,11 @@
     ]
   },
   "Dry hops, temperature changes, cold crashes, additions and notes show up here and on the chart.": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Dry hops, temperature changes, cold crashes, additions and notes show up here and on the chart. Plan one ahead to be reminded when its time comes.": {
     "files": [
       "pages/brews/events.tsx"
     ]
@@ -3303,6 +3465,11 @@
       "pages/pill/CalibrationWizard.tsx"
     ]
   },
+  "Each time it goes off during a brew, as a note you can keep or delete.": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
   "Earlier kegs": {
     "files": [
       "pages/pill/KegPanel.tsx"
@@ -3317,7 +3484,9 @@
     "files": [
       "pages/alerts/AlertsPage.tsx",
       "pages/alerts/ChannelsPanel.tsx",
+      "pages/brews/BrewAlerts.tsx",
       "pages/brews/BrewPage.tsx",
+      "pages/brews/profiles.tsx",
       "pages/pill/KegPanel.tsx",
       "pages/screens/ScreenCard.tsx",
       "pages/webhooks/WebhooksPage.tsx"
@@ -3331,6 +3500,7 @@
   "Edit {name}": {
     "files": [
       "pages/alerts/ChannelEditor.tsx",
+      "pages/brews/profiles.tsx",
       "pages/pill/KegPanel.tsx",
       "pages/screens/ScreenCard.tsx"
     ]
@@ -3348,6 +3518,16 @@
   "Edit event": {
     "files": [
       "pages/brews/events.tsx"
+    ]
+  },
+  "Edit planned event": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
+  "Edit profile": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "Edit webhook": {
@@ -3378,6 +3558,7 @@
   "Enabled": {
     "files": [
       "pages/alerts/AlertsPage.tsx",
+      "pages/brews/BrewAlerts.tsx",
       "pages/webhooks/WebhookEditor.tsx"
     ]
   },
@@ -3705,6 +3886,8 @@
     "files": [
       "pages/alerts/AlertsPage.tsx",
       "pages/alerts/ChannelsPanel.tsx",
+      "pages/brews/BrewAlerts.tsx",
+      "pages/brews/profiles.tsx",
       "pages/dashboard/NearbyCard.tsx",
       "pages/settings/BackupSection.tsx",
       "pages/settings/PillsSection.tsx"
@@ -3749,6 +3932,12 @@
   "Fermentation stable": {
     "files": [
       "pages/alerts/strings.ts"
+    ]
+  },
+  "Fermentation starts": {
+    "files": [
+      "pages/alerts/strings.ts",
+      "pages/brews/brewAlertInput.ts"
     ]
   },
   "Fermentation tracking via the iSpindel endpoint": {
@@ -3958,6 +4147,11 @@
       "pages/settings/TokensSection.tsx"
     ]
   },
+  "For something that sits a while, like a dry hop.": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
   "For when something seems stuck, or you'd like help with a problem.": {
     "files": [
       "pages/settings/SystemSection.tsx"
@@ -4033,6 +4227,11 @@
   "From @BotFather.": {
     "files": [
       "pages/alerts/strings.ts"
+    ]
+  },
+  "From an alert": {
+    "files": [
+      "pages/brews/events.tsx"
     ]
   },
   "from before a restore": {
@@ -4206,6 +4405,16 @@
       "components/UpdateBanner.tsx"
     ]
   },
+  "Goes first in the notification, before what happened.": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Going off": {
+    "files": [
+      "pages/brews/BrewAlerts.tsx"
+    ]
+  },
   "Got a screen RaptHooker supports ({names})? It can set it up to show this by itself.": {
     "files": [
       "components/ImageLink.tsx"
@@ -4286,15 +4495,21 @@
       "components/PictureDesigner.tsx"
     ]
   },
+  "Gravity down {count} point from the start|Gravity down {count} points from the start": {
+    "files": [
+      "pages/alerts/describe.ts"
+    ],
+    "plural": true
+  },
   "Gravity dropping less than {count} point a day|Gravity dropping less than {count} points a day": {
     "files": [
-      "pages/alerts/AlertsPage.tsx"
+      "pages/alerts/describe.ts"
     ],
     "plural": true
   },
   "Gravity dropping more than {count} point a day|Gravity dropping more than {count} points a day": {
     "files": [
-      "pages/alerts/AlertsPage.tsx"
+      "pages/alerts/describe.ts"
     ],
     "plural": true
   },
@@ -4446,7 +4661,8 @@
   },
   "Hide": {
     "files": [
-      "pages/alerts/ChannelEditor.tsx"
+      "pages/alerts/ChannelEditor.tsx",
+      "pages/brews/profiles.tsx"
     ]
   },
   "Hide {event} from the chart": {
@@ -4791,6 +5007,11 @@
       "pages/alerts/RuleExample.tsx"
     ]
   },
+  "In a brew started with it, each one notifies you when its time comes.": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
   "In a browser, open api.telegram.org/bot<your token>/getUpdates and copy the number after \"chat\":{\"id\":": {
     "files": [
       "pages/alerts/strings.ts"
@@ -4821,9 +5042,19 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "In it": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
   "In MeadTools open the Wireless Hydrometer Dashboard's Setup page and copy your hydrometer token. Only press Generate Token if there isn't one: a new token replaces the old one.": {
     "files": [
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "In place of \"{name}\"": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "In setup mode nearby": {
@@ -4971,6 +5202,11 @@
       "pages/settings/SystemSection.tsx"
     ]
   },
+  "It goes by the brew's OG: the one you typed in, or the pill's.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
   "It goes by the velocity on each pill's page (the pill's own, or RaptHooker's over the hours set there): a trend, so it follows changes a little late.": {
     "files": [
       "pages/alerts/RuleExample.tsx"
@@ -5002,6 +5238,11 @@
       "pages/pill/PillPage.tsx"
     ]
   },
+  "It measures from what the pill read in its first hours in the wort, not a typed OG: the two can be a few points apart.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
   "It moves to the earlier kegs. The Laser Level carries on recording either way.": {
     "files": [
       "pages/pill/KegPanel.tsx"
@@ -5026,6 +5267,11 @@
   "It only hears these through a relay while it's off (see Settings → Hub).": {
     "files": [
       "pages/devices/AddDevice.tsx"
+    ]
+  },
+  "It only watches a running brew, and goes off once in it: there's no \"back to normal\".": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
     ]
   },
   "It reads the iSpindel's settings and changes only these: the Wi-Fi it joins, Service Type (HTTP), where it sends to (this hub, {where}), the token, and how often it sends. Its name (unless you give it a new one), its gravity formula and everything else stay as they are.": {
@@ -5133,6 +5379,11 @@
   "It's switched off until you've changed what you need.": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
+    ]
+  },
+  "Its alerts and planned events, timed from the start, are added to the brew.": {
+    "files": [
+      "pages/pill/StartBrewModal.tsx"
     ]
   },
   "Its brew": {
@@ -5302,7 +5553,8 @@
   },
   "Kind of event": {
     "files": [
-      "pages/brews/events.tsx"
+      "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx"
     ]
   },
   "Known gravity ({unit})": {
@@ -5492,6 +5744,16 @@
       "pages/settings/TokensSection.tsx"
     ]
   },
+  "Lasts (days, optional)": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
+  "Lasts (days)": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
   "Late": {
     "files": [
       "pages/screens/strings.ts"
@@ -5580,7 +5842,7 @@
   },
   "Less than {count} point change in {hours} h|Less than {count} points change in {hours} h": {
     "files": [
-      "pages/alerts/AlertsPage.tsx"
+      "pages/alerts/describe.ts"
     ],
     "plural": true
   },
@@ -5603,6 +5865,11 @@
   "light (1-hour average)": {
     "files": [
       "pages/pill/calibration.ts"
+    ]
+  },
+  "Like a RAPT Pill profile: alerts and planned events (a dry hop on day 3) a brew starts with. Make one with New profile, or save a brew's from its page, under Alerts for this brew.": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "Like the hub ({example})": {
@@ -5890,7 +6157,18 @@
       "components/ChartSmoothing.tsx"
     ]
   },
+  "More than 0 days, and up to 365": {
+    "files": [
+      "pages/brews/profiles.tsx",
+      "validation.tsx"
+    ]
+  },
   "More than 0: the points it drops a day (12 for a velocity of −12)": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
+  "More than 0: the points it has dropped": {
     "files": [
       "validation.tsx"
     ]
@@ -5977,6 +6255,7 @@
       "pages/alerts/ChannelEditor.tsx",
       "pages/alerts/RuleModal.tsx",
       "pages/brews/EditBrewModal.tsx",
+      "pages/brews/profiles.tsx",
       "pages/pill/KegPanel.tsx",
       "pages/pill/PillSettings.tsx",
       "pages/pill/StartBrewModal.tsx",
@@ -6077,6 +6356,11 @@
       "pages/alerts/RuleModal.tsx"
     ]
   },
+  "New alert for {brew}": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
   "New offset": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
@@ -6100,6 +6384,11 @@
   "New PIN": {
     "files": [
       "pages/settings/OwnerSection.tsx"
+    ]
+  },
+  "New profile": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "New screen firmware: {version}": {
@@ -6143,6 +6432,11 @@
   "Next screen every": {
     "files": [
       "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "No alerts of its own.": {
+    "files": [
+      "pages/brews/BrewAlerts.tsx"
     ]
   },
   "No alerts yet.": {
@@ -6234,6 +6528,11 @@
       "pages/webhooks/ScheduleFields.tsx"
     ]
   },
+  "No profiles yet. Make one under Profiles on the Brews page, or save one from a brew whose alerts and events you want again.": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
   "No readings in this range yet": {
     "files": [
       "components/Chart.tsx"
@@ -6291,7 +6590,8 @@
   },
   "None": {
     "files": [
-      "pages/pill/KegPanel.tsx"
+      "pages/pill/KegPanel.tsx",
+      "pages/pill/StartBrewModal.tsx"
     ]
   },
   "None (only on your own network)": {
@@ -6426,7 +6726,13 @@
       "components/annotations.ts",
       "pages/brews/SummaryPage.tsx",
       "pages/brews/brewText.ts",
-      "pages/brews/events.tsx"
+      "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx"
+    ]
+  },
+  "Note it on the brew's timeline": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
     ]
   },
   "Notes": {
@@ -6434,6 +6740,7 @@
       "pages/brews/BrewPage.tsx",
       "pages/brews/EditBrewModal.tsx",
       "pages/brews/SummaryPage.tsx",
+      "pages/brews/profiles.tsx",
       "pages/pill/StartBrewModal.tsx"
     ]
   },
@@ -6449,12 +6756,17 @@
   },
   "Nothing heard for {minutes} min": {
     "files": [
-      "pages/alerts/AlertsPage.tsx"
+      "pages/alerts/describe.ts"
     ]
   },
   "Nothing heard from the pill for a while": {
     "files": [
       "pages/alerts/strings.ts"
+    ]
+  },
+  "Nothing in it yet.": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "Nothing is kegged up here. Keg up a beer to keep track of how much of it is left.": {
@@ -6706,6 +7018,27 @@
     ]
   },
   "On your Pushover dashboard (or a group key).": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "once a brew": {
+    "files": [
+      "pages/alerts/describe.ts",
+      "pages/brews/BrewAlerts.tsx"
+    ]
+  },
+  "Once a brew, a reminder this many days after it started": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Once a brew, when it has fermented this much of its sugar": {
+    "files": [
+      "pages/alerts/strings.ts"
+    ]
+  },
+  "Once a brew, when its gravity has dropped this many points": {
     "files": [
       "pages/alerts/strings.ts"
     ]
@@ -7053,6 +7386,11 @@
       "components/chartMath.ts"
     ]
   },
+  "Pick a time still to come to be reminded of it.": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
   "Pick a topic name that is hard to guess (anyone who knows it can read your alerts) and subscribe to it in the app.": {
     "files": [
       "pages/alerts/strings.ts"
@@ -7071,6 +7409,11 @@
   "Pick it below when it shows up (the hub keeps looking), choose its settings and start.": {
     "files": [
       "pages/devices/IspindelTab.tsx"
+    ]
+  },
+  "Pick it when you start a brew.": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "Pick one of the options": {
@@ -7251,6 +7594,26 @@
       "pages/pill/CalibrationWizard.tsx"
     ]
   },
+  "Plan an event": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
+  "planned": {
+    "files": [
+      "pages/brews/brewText.ts"
+    ]
+  },
+  "Planned": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Planned: it goes on the chart when its time comes.": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
   "Plug the board into one of the hub's USB ports, with a cable that carries data (some only charge). The hub puts RaptHooker on it and connects it to your Wi-Fi, without leaving its own network. It takes about a minute.": {
     "files": [
       "pages/screens/AddScreen.tsx"
@@ -7373,6 +7736,17 @@
     "files": [
       "pages/screens/ScreenEditor.tsx",
       "pages/settings/UpdateSection.tsx"
+    ]
+  },
+  "Profile": {
+    "files": [
+      "pages/brews/profiles.tsx",
+      "pages/pill/StartBrewModal.tsx"
+    ]
+  },
+  "Profiles": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "pts/day": {
@@ -7563,6 +7937,11 @@
       "pages/pill/calibration.ts"
     ]
   },
+  "Reaches": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
   "Read": {
     "files": [
       "pages/settings/TokensSection.tsx"
@@ -7747,6 +8126,32 @@
   "Reload to use the new version.": {
     "files": [
       "components/UpdateBanner.tsx"
+    ]
+  },
+  "Remind": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
+  "Remind me at its start and end": {
+    "files": [
+      "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx"
+    ]
+  },
+  "Remind me of its events": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
+  "Reminder": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
+  "Reminds you at its start and end": {
+    "files": [
+      "pages/brews/events.tsx"
     ]
   },
   "Remove {name}?": {
@@ -8019,6 +8424,7 @@
       "pages/alerts/ChannelEditor.tsx",
       "pages/brews/EditBrewModal.tsx",
       "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx",
       "pages/pill/DataSources.tsx",
       "pages/pill/KegPanel.tsx",
       "pages/pill/PillSettings.tsx",
@@ -8031,6 +8437,17 @@
   "Save alert": {
     "files": [
       "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "Save as": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
+  "Save as a profile": {
+    "files": [
+      "pages/brews/BrewAlerts.tsx",
+      "pages/brews/profiles.tsx"
     ]
   },
   "Save calibration": {
@@ -8048,6 +8465,11 @@
       "pages/pill/VesselSettings.tsx"
     ]
   },
+  "Save profile": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
   "Save unit": {
     "files": [
       "pages/pill/VesselSettings.tsx"
@@ -8063,6 +8485,11 @@
       "pages/alerts/ChannelEditor.tsx",
       "pages/pill/DataSources.tsx",
       "pages/pill/KegPanel.tsx"
+    ]
+  },
+  "Saved \"{name}\"": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "Saved on the hub": {
@@ -8247,6 +8674,11 @@
       "pages/alerts/ChannelsPanel.tsx"
     ]
   },
+  "Sent everywhere alerts go, at a time still to come.": {
+    "files": [
+      "pages/brews/events.tsx"
+    ]
+  },
   "Separate several addresses with commas.": {
     "files": [
       "pages/alerts/strings.ts"
@@ -8422,6 +8854,7 @@
     "files": [
       "components/RangePicker.tsx",
       "pages/alerts/ChannelEditor.tsx",
+      "pages/brews/profiles.tsx",
       "pages/settings/SystemSection.tsx"
     ]
   },
@@ -9022,7 +9455,8 @@
   },
   "Switched off": {
     "files": [
-      "pages/alerts/ChannelsPanel.tsx"
+      "pages/alerts/ChannelsPanel.tsx",
+      "pages/brews/BrewAlerts.tsx"
     ]
   },
   "Switched off in the hub's config file (bluetooth.enabled), for a machine without Bluetooth.": {
@@ -9044,6 +9478,11 @@
   "Tailscale (HTTPS)": {
     "files": [
       "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Take out {name}": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "Talk to @BotFather": {
@@ -10077,6 +10516,11 @@
       "pages/pill/BrewPanel.tsx"
     ]
   },
+  "this profile": {
+    "files": [
+      "pages/brews/profiles.tsx"
+    ]
+  },
   "This puts the firmware the screen came with back on it, and the hub forgets it. You need the firmware file from the screen's maker (for this screen, a file like SDPro_V1.0.6.bin).": {
     "files": [
       "pages/screens/ScreenEditor.tsx"
@@ -10568,9 +11012,20 @@
       "validation.tsx"
     ]
   },
+  "Use a profile": {
+    "files": [
+      "pages/brews/BrewAlerts.tsx",
+      "pages/brews/profiles.tsx"
+    ]
+  },
   "Use a whole number": {
     "files": [
       "validation.tsx"
+    ]
+  },
+  "Use a whole number from 1 to 365": {
+    "files": [
+      "pages/brews/profiles.tsx"
     ]
   },
   "Use at least {count} character|Use at least {count} characters": {
@@ -10775,6 +11230,11 @@
       "pages/settings/SystemSection.tsx"
     ]
   },
+  "Watching": {
+    "files": [
+      "pages/brews/BrewAlerts.tsx"
+    ]
+  },
   "Water check": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
@@ -10862,9 +11322,15 @@
       "pages/pill/KegPanel.tsx"
     ]
   },
+  "Went off {time}": {
+    "files": [
+      "pages/brews/BrewAlerts.tsx"
+    ]
+  },
   "What": {
     "files": [
-      "pages/brews/events.tsx"
+      "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx"
     ]
   },
   "What {name} shows": {
@@ -10889,7 +11355,8 @@
   },
   "What happened": {
     "files": [
-      "pages/brews/events.tsx"
+      "pages/brews/events.tsx",
+      "pages/brews/profiles.tsx"
     ]
   },
   "What the hub does": {
@@ -10910,6 +11377,16 @@
   "What the pill sends, using its own calibration from the RAPT app.": {
     "files": [
       "pages/pill/DataSources.tsx"
+    ]
+  },
+  "What to do": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
+    ]
+  },
+  "What to do (optional)": {
+    "files": [
+      "pages/alerts/RuleModal.tsx"
     ]
   },
   "What to show": {
@@ -11021,7 +11498,7 @@
   },
   "while brewing": {
     "files": [
-      "pages/alerts/AlertsPage.tsx"
+      "pages/alerts/describe.ts"
     ]
   },
   "While brewing": {
@@ -11149,6 +11626,11 @@
       "pages/webhooks/RequestFields.tsx"
     ]
   },
+  "Write something for the note": {
+    "files": [
+      "validation.tsx"
+    ]
+  },
   "Write something for the note.": {
     "files": [
       "pages/brews/events.tsx"
@@ -11161,6 +11643,7 @@
   },
   "Yeast, hops, dry hop schedule…": {
     "files": [
+      "pages/brews/profiles.tsx",
       "pages/pill/StartBrewModal.tsx"
     ]
   },
@@ -11176,7 +11659,8 @@
   },
   "You won't be notified for it any more.": {
     "files": [
-      "pages/alerts/AlertsPage.tsx"
+      "pages/alerts/AlertsPage.tsx",
+      "pages/brews/BrewAlerts.tsx"
     ]
   },
   "You're all set": {

@@ -21,7 +21,8 @@ Everything is in one SQLite database, `/var/lib/rapthooker/rapthooker.db` on a P
 | `pills`                                           | Every device you've added (pills, thermometers, iSpindels, Tilts, Laser Levels and any kind to come), with its settings as JSON. "Pill" in table and column names means any device. |
 | `readings`                                        | Every reading, one row per device and time. Raw readings older than `rawRetentionDays` are deleted.                                                                                 |
 | `rollups`                                         | 15-minute sums of the readings. Once raw readings are deleted they're the only history left, so they're as precious as the readings.                                                |
-| `brews`, `brew_events`                            | Brews and their timelines.                                                                                                                                                          |
+| `brews`, `brew_events`, `brew_alerts`             | Brews, their timelines and their own alerts.                                                                                                                                        |
+| `brew_profiles`                                   | Profiles: alerts and planned events a brew can start with, as JSON.                                                                                                                 |
 | `webhooks`, `webhook_state`, `webhook_deliveries` | Webhooks, how far each has got, and their recent deliveries.                                                                                                                        |
 | `alert_rules`, `alert_state`, `alert_events`      | Alerts.                                                                                                                                                                             |
 | `channels`, `push_subs`, `api_tokens`             | Notification channels, browsers with notifications on, API tokens.                                                                                                                  |
@@ -104,6 +105,18 @@ Outside the database: `rapthooker.config.json`, the push keys, and the backups (
   readings and kept in the JSON (`startDistance`, mm) once its 6 hours are up, so it survives the readings being
   rolled up. Like a reading, it's the distance that's kept, not litres, so it follows the keg's settings. A version
   from before kegs ignores the table. Deleting a device deletes its kegs, as it does its brews.
+- **A brew's own alerts and profiles** (migration 10). A brew's alerts are rows in `brew_alerts` (the brew's id and an
+  alert rule's settings as JSON, without pills), kept apart from `alert_rules` so a version from before them ignores
+  them rather than firing them for every brew; their state goes in `alert_state` like a rule's. Deleting a brew deletes
+  them; a version from before them leaves them behind when it deletes a brew, and they do nothing without it. Profiles
+  are JSON rows in `brew_profiles`, read through `ProfileService.parse`, which fills in what's missing. New alert kinds
+  (`fermentation_started`, `attenuation_reached`, `brew_day`) are kept in rules' JSON like any kind: a version that
+  doesn't know a kind never fires it (`AlertService.check` falls through) and shows it as the first kind.
+- **Reminders** (migration 10) are `brew_events.remind` (0 for every event before, and for one an older version adds),
+  and `reminded_at` and `reminded_end`, the start and end times a reminder went out for. Keeping the time rather than a
+  flag means an event an older version moves reminds again at its new time, and never twice for the same one.
+  `brew_events.alert_id` is the alert that noted an event on the timeline (NULL for every event before, and for ones
+  people add, whichever version adds them).
 
 ## Settings saved as JSON
 

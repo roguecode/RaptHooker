@@ -93,6 +93,38 @@
   opacity: 0.55;
 }
 
+/* Still to come: a dashed icon. */
+.brew-timeline li.planned .ev-icon {
+  border-style: dashed;
+}
+
+.brew-timeline .ev-remind {
+  white-space: nowrap;
+}
+
+.brew-timeline .ev-remind svg {
+  vertical-align: -0.12em;
+}
+
+/* A brew's own alerts (BrewAlerts.tsx). */
+.brew-alert-state {
+  font-size: 0.78rem;
+}
+
+.brew-alerts-also {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.profile-summary {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .ev-until {
   flex-wrap: nowrap;
 }

@@ -74,6 +74,42 @@ describe('StartBrewModal', () => {
     expect(toastTexts()).toContain('Stout started: Cheers! 🍻');
   });
 
+  it('starts a brew with a profile, saying what it adds', async () => {
+    const profile = {
+      id: 'prof-1',
+      name: 'NEIPA',
+      notes: '',
+      createdAt: 0,
+      alerts: [
+        {
+          name: 'Started',
+          enabled: true,
+          kind: 'fermentation_started',
+          threshold: 3,
+          hours: 48,
+          cooldownMin: 60,
+          channelIds: 'all',
+          message: '',
+          addToTimeline: true,
+        },
+      ],
+      events: [{ offset: 3.5 * 24 * 3_600_000, endOffset: null, kind: 'dry_hop', text: '100 g Citra', remind: true }],
+    };
+    const view = await renderWithHub(<StartBrewModal pill={pill} onClose={() => undefined} />, {
+      pills: [pill],
+      routes: { 'GET /api/brew-profiles': [profile], 'POST /api/brews': started },
+    });
+    type(/^Name/, 'Hazy #5');
+    const select = await waitFor(() => screen.getByLabelText(/^Profile/) as HTMLSelectElement);
+    expect(select.textContent).toContain('NEIPA (1 alert, 1 planned event)');
+    fireEvent.change(select, { target: { value: 'prof-1' } });
+    expect(screen.getByText(/Day 4:/).textContent).toContain('Day 4: Dry hop: 100 g Citra');
+    expect(screen.getByText(/Gravity down 3 points from the start/)).toBeTruthy();
+    start();
+    await waitFor(() => expect(view.calls('POST /api/brews')).toHaveLength(1));
+    expect(view.calls('POST /api/brews')[0]!.body).toMatchObject({ name: 'Hazy #5', profileId: 'prof-1' });
+  });
+
   it('takes gravities in °P and a start time in the past', async () => {
     const view = await renderWithHub(<StartBrewModal pill={pill} onClose={() => undefined} />, {
       pills: [pill],

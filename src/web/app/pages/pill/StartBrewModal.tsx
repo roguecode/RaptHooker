@@ -8,6 +8,7 @@ import { Icon } from '../../components/Icon';
 import { Modal } from '../../components/ui';
 import { FieldError, gravityError, useFormCheck } from '../../validation';
 import { t, tk } from '../../i18n';
+import { ProfileContents, profileCounts, useProfiles } from '../brews/profiles';
 
 const LABELS = {
   name: tk('Name'),
@@ -29,6 +30,9 @@ export function StartBrewModal({ pill, onClose }: { pill: Pill; onClose: () => v
   const [backdate, setBackdate] = useState(false);
   const [startedAt, setStartedAt] = useState(toLocalInput(Date.now() - 3_600_000));
   const [busy, setBusy] = useState(false);
+  const [profiles] = useProfiles();
+  const [profileId, setProfileId] = useState('');
+  const profile = profiles?.find((p) => p.id === profileId) ?? null;
   const step = u.gravity === 'plato' ? '0.1' : '0.001';
   const parseG = (s: string) => (s.trim() === '' ? null : u.gravityFromDisplay(Number(s)));
   const body = {
@@ -39,6 +43,7 @@ export function StartBrewModal({ pill, onClose }: { pill: Pill; onClose: () => v
     og: parseG(og),
     targetFg: parseG(fg),
     startedAt: backdate ? fromLocalInput(startedAt) : undefined,
+    profileId: profile?.id,
   };
   const check = useFormCheck(startBrewSchema, body, LABELS);
   const { errors } = check;
@@ -146,6 +151,26 @@ export function StartBrewModal({ pill, onClose }: { pill: Pill; onClose: () => v
           />
           <FieldError error={errors.notes} />
         </label>
+        {(profiles?.length ?? 0) > 0 && (
+          <div className="field">
+            <label className="label" htmlFor="start-brew-profile">
+              {t('Profile')}
+            </label>
+            <select id="start-brew-profile" className="select" value={profileId} onChange={(e) => setProfileId(e.target.value)}>
+              <option value="">{t('None')}</option>
+              {profiles!.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({profileCounts(p)})
+                </option>
+              ))}
+            </select>
+            {profile ? (
+              <ProfileContents profile={profile} />
+            ) : (
+              <span className="hint">{t('Its alerts and planned events, timed from the start, are added to the brew.')}</span>
+            )}
+          </div>
+        )}
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onClose}>
             {t('Cancel')}

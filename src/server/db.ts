@@ -182,6 +182,21 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE brew_events ADD COLUMN end_at INTEGER;
   ALTER TABLE brew_events ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;
   `,
+  // v10: alerts for one brew (an alert rule's settings as JSON, going with its brew), brew profiles (alerts and planned
+  // events a brew can start with, as JSON), and on brew events: reminders for planned ones (remind: 1 to notify when
+  // the event starts and when it ends; 0 for every event before), the start and end times a reminder went out for
+  // (NULL: none yet), and the alert that noted it (alert_id; NULL for every event before, and ones people add). Older
+  // versions don't know the tables and leave them alone. They name the columns they write, so an event they add doesn't
+  // remind and isn't an alert's, and one they change keeps its reminder (and reminds again at a time they've moved it to).
+  `
+  CREATE TABLE brew_alerts (id TEXT PRIMARY KEY, brew_id TEXT NOT NULL, json TEXT NOT NULL, created_at INTEGER NOT NULL);
+  CREATE INDEX brew_alerts_brew ON brew_alerts (brew_id);
+  CREATE TABLE brew_profiles (id TEXT PRIMARY KEY, json TEXT NOT NULL, created_at INTEGER NOT NULL);
+  ALTER TABLE brew_events ADD COLUMN remind INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE brew_events ADD COLUMN reminded_at INTEGER;
+  ALTER TABLE brew_events ADD COLUMN reminded_end INTEGER;
+  ALTER TABLE brew_events ADD COLUMN alert_id TEXT;
+  `,
 ];
 
 /**
@@ -245,6 +260,29 @@ export interface BrewEventRow {
   text: string;
   /** 1: left off the charts. */
   hidden: number;
+  /** 1: notify when it starts and ends. */
+  remind: number;
+  /** The start (`at`) a reminder went out for, or null: one is due again if the event is moved. */
+  reminded_at: number | null;
+  /** The end (`end_at`) a reminder went out for, or null. */
+  reminded_end: number | null;
+  /** The alert (a rule or a brew's own) that noted it on the timeline; null for one people added. */
+  alert_id: string | null;
+}
+
+/** An alert for one brew (see AlertService). */
+export interface BrewAlertRow {
+  id: string;
+  brew_id: string;
+  json: string;
+  created_at: number;
+}
+
+/** A planned event that a reminder is due for, with its brew. */
+export interface DueReminderRow extends BrewEventRow {
+  pill_id: string;
+  brew_json: string;
+  started_at: number;
 }
 
 export interface WebhookStateRow {
@@ -521,6 +559,7 @@ export class Store {
   deletePill(id: string): void {
     this.transaction(() => {
       this.db.prepare('DELETE FROM brew_events WHERE brew_id IN (SELECT id FROM brews WHERE pill_id = ?)').run(id);
+      this.db.prepare('DELETE FROM brew_alerts WHERE brew_id IN (SELECT id FROM brews WHERE pill_id = ?)').run(id);
       for (const table of ['readings', 'rollups', 'brews', 'kegs', 'webhook_state', 'alert_state']) {
         this.db.prepare(`DELETE FROM ${table} WHERE pill_id = ?`).run(id);
       }
@@ -929,37 +968,128 @@ export class Store {
     );
   }
 
-  /** Removes a brew and its events. */
+  /** Removes a brew with its events and its own alerts. */
   deleteBrew(id: string): boolean {
     return this.transaction(() => {
       this.db.prepare('DELETE FROM brew_events WHERE brew_id = ?').run(id);
+      this.db.prepare('DELETE FROM alert_state WHERE rule_id IN (SELECT id FROM brew_alerts WHERE brew_id = ?)').run(id);
+      this.db.prepare('DELETE FROM brew_alerts WHERE brew_id = ?').run(id);
       return Number(this.db.prepare('DELETE FROM brews WHERE id = ?').run(id).changes) > 0;
     });
   }
 
   listBrewEvents(brewId: string): BrewEventRow[] {
     return this.db
-      .prepare('SELECT id, brew_id, at, end_at, kind, text, hidden FROM brew_events WHERE brew_id = ? ORDER BY at, id')
+      .prepare(
+        `SELECT id, brew_id, at, end_at, kind, text, hidden, remind, reminded_at, reminded_end, alert_id FROM brew_events
+         WHERE brew_id = ? ORDER BY at, id`,
+      )
       .all(brewId) as unknown as BrewEventRow[];
   }
 
   getBrewEvent(id: string): BrewEventRow | null {
-    const row = this.db.prepare('SELECT id, brew_id, at, end_at, kind, text, hidden FROM brew_events WHERE id = ?').get(id);
+    const row = this.db
+      .prepare(
+        'SELECT id, brew_id, at, end_at, kind, text, hidden, remind, reminded_at, reminded_end, alert_id FROM brew_events WHERE id = ?',
+      )
+      .get(id);
     return (row as unknown as BrewEventRow | undefined) ?? null;
   }
 
   saveBrewEvent(row: BrewEventRow): void {
     this.db
       .prepare(
-        `INSERT INTO brew_events (id, brew_id, at, end_at, kind, text, hidden) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO brew_events (id, brew_id, at, end_at, kind, text, hidden, remind, reminded_at, reminded_end, alert_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (id) DO UPDATE SET
-           at = excluded.at, end_at = excluded.end_at, kind = excluded.kind, text = excluded.text, hidden = excluded.hidden`,
+           at = excluded.at, end_at = excluded.end_at, kind = excluded.kind, text = excluded.text, hidden = excluded.hidden,
+           remind = excluded.remind, reminded_at = excluded.reminded_at, reminded_end = excluded.reminded_end`,
       )
-      .run(row.id, row.brew_id, row.at, row.end_at, row.kind, row.text, row.hidden);
+      .run(
+        row.id,
+        row.brew_id,
+        row.at,
+        row.end_at,
+        row.kind,
+        row.text,
+        row.hidden,
+        row.remind,
+        row.reminded_at,
+        row.reminded_end,
+        row.alert_id,
+      );
   }
 
   deleteBrewEvent(id: string): boolean {
     return Number(this.db.prepare('DELETE FROM brew_events WHERE id = ?').run(id).changes) > 0;
+  }
+
+  /**
+   * Planned events of running brews whose start or end has come in the last `graceMs` without a reminder for that time
+   * (one the hub was off for longer than that is let go).
+   */
+  dueReminders(now: number, graceMs: number): DueReminderRow[] {
+    return this.db
+      .prepare(
+        `SELECT e.id, e.brew_id, e.at, e.end_at, e.kind, e.text, e.hidden, e.remind, e.reminded_at, e.reminded_end, e.alert_id,
+                b.pill_id, b.json AS brew_json, b.started_at
+         FROM brew_events e JOIN brews b ON b.id = e.brew_id
+         WHERE b.ended_at IS NULL AND e.remind = 1 AND (
+           (e.at <= ?1 AND e.at > ?1 - ?2 AND e.reminded_at IS NOT e.at) OR
+           (e.end_at IS NOT NULL AND e.end_at <= ?1 AND e.end_at > ?1 - ?2 AND e.reminded_end IS NOT e.end_at))
+         ORDER BY e.at, e.id`,
+      )
+      .all(now, graceMs) as unknown as DueReminderRow[];
+  }
+
+  /** Notes that a reminder went out for an event's start (`at`) or end, at that time. */
+  markReminded(id: string, which: 'start' | 'end', time: number): void {
+    this.db.prepare(`UPDATE brew_events SET ${which === 'start' ? 'reminded_at' : 'reminded_end'} = ? WHERE id = ?`).run(time, id);
+  }
+
+  // Brew alerts
+
+  listBrewAlertRows(): BrewAlertRow[] {
+    return this.db
+      .prepare('SELECT id, brew_id, json, created_at FROM brew_alerts ORDER BY created_at, rowid')
+      .all() as unknown as BrewAlertRow[];
+  }
+
+  saveBrewAlert(row: BrewAlertRow): void {
+    this.db
+      .prepare(
+        'INSERT INTO brew_alerts (id, brew_id, json, created_at) VALUES (?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET json = excluded.json',
+      )
+      .run(row.id, row.brew_id, row.json, row.created_at);
+  }
+
+  deleteBrewAlert(id: string): boolean {
+    return this.transaction(() => {
+      this.db.prepare('DELETE FROM alert_state WHERE rule_id = ?').run(id);
+      return Number(this.db.prepare('DELETE FROM brew_alerts WHERE id = ?').run(id).changes) > 0;
+    });
+  }
+
+  // Brew profiles
+
+  listProfileRows(): JsonRow[] {
+    return this.db.prepare('SELECT id, json, created_at FROM brew_profiles ORDER BY created_at, id').all() as unknown as JsonRow[];
+  }
+
+  getProfileRow(id: string): JsonRow | null {
+    return (
+      (this.db.prepare('SELECT id, json, created_at FROM brew_profiles WHERE id = ?').get(id) as unknown as JsonRow | undefined) ?? null
+    );
+  }
+
+  saveProfile(id: string, json: unknown, createdAt: number): void {
+    this.db
+      .prepare('INSERT INTO brew_profiles (id, json, created_at) VALUES (?, ?, ?) ON CONFLICT (id) DO UPDATE SET json = excluded.json')
+      .run(id, JSON.stringify(json), createdAt);
+  }
+
+  deleteProfile(id: string): boolean {
+    return Number(this.db.prepare('DELETE FROM brew_profiles WHERE id = ?').run(id).changes) > 0;
   }
 
   // Webhooks

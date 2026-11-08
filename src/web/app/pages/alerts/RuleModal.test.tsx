@@ -182,6 +182,57 @@ describe('alert rule editor', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onSave.mock.calls[0]![0]).toMatchObject({ kind: 'gravity_stable', hours: 30, cooldownMin: 60 });
   });
+
+  it('explains the steps in a brew, which go off once and need no cooldown or "only while brewing"', async () => {
+    const { onSave } = await open();
+    const example = () => document.querySelector('.rule-example')?.textContent ?? '';
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'fermentation_started' } });
+    expect((screen.getByLabelText(/^Name/) as HTMLInputElement).value).toBe('Fermentation starts');
+    expect(screen.getByLabelText(/^Dropped by \(points\)/)).toBeTruthy();
+    expect(example()).toContain(
+      "Alerts once a brew when the gravity has dropped 0.003 from where the pill started (that's 1.050 to 1.047).",
+    );
+    expect(example()).toContain('not a typed OG');
+    expect(example()).toContain('goes off once in it');
+    expect(screen.queryByLabelText(/^Don't repeat for/)).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: /Only while a brew is running/ })).toBeNull();
+    // A step is worth keeping on the brew's timeline.
+    expect((screen.getByRole('checkbox', { name: /Note it on the brew's timeline/ }) as HTMLInputElement).checked).toBe(true);
+
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'attenuation_reached' } });
+    expect(example()).toContain("Alerts once a brew when it's 50% attenuated (from an OG of 1.050, that's at 1.0250).");
+    fireEvent.change(screen.getByLabelText(/^Reaches/), { target: { value: '120' } });
+    expect(document.querySelector('.rule-example')).toBeNull();
+
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'brew_day' } });
+    expect(screen.getByLabelText(/^After \(days\)/)).toBeTruthy();
+    expect(example()).toContain('Alerts once a brew, 3 days after it started.');
+    fireEvent.change(screen.getByLabelText(/^What to do/), { target: { value: 'Take a sample' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save alert' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0]![0]).toMatchObject({ kind: 'brew_day', threshold: 3, message: 'Take a sample', addToTimeline: true });
+  });
+
+  it("is for one brew without pills to pick or 'only while brewing'", async () => {
+    const onSave = vi.fn(async (_rule: AlertRuleInput) => undefined);
+    await renderWithHub(
+      <RuleModal
+        isNew
+        brew={{ name: 'Hazy #5' }}
+        initial={{ ...emptyRule(), kind: 'gravity_below', name: 'Dry hop', threshold: 1.02 }}
+        channels={channels}
+        onClose={() => undefined}
+        onSave={onSave}
+      />,
+      { pills: [makePill({ id: 'pill-1', name: 'Hazy IPA' })], afterLoad: true },
+    );
+    expect(screen.getByRole('dialog', { name: 'New alert for Hazy #5' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'All pills' })).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: /Only while a brew is running/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Save alert' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0]![0]).toMatchObject({ kind: 'gravity_below', threshold: 1.02, addToTimeline: false });
+  });
 });
 
 describe('sendToText', () => {

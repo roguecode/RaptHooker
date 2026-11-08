@@ -138,7 +138,8 @@ export function summaryText(
     lines.push('', t('Timeline:'));
     for (const e of brew.events) {
       const label = e.kind === 'note' ? t('Note') : t(eventKind(e.kind).label);
-      lines.push(`- ${brewDay(brew.startedAt, e.at)}, ${eventTime(e)}: ${label}${e.text ? `: ${e.text}` : ''}`);
+      const planned = e.at > now ? ` (${t('planned')})` : '';
+      lines.push(`- ${brewDay(brew.startedAt, e.at)}, ${eventTime(e)}: ${label}${e.text ? `: ${e.text}` : ''}${planned}`);
     }
   }
   if (brew.notes.trim()) lines.push('', t('Notes:'), brew.notes.trim());

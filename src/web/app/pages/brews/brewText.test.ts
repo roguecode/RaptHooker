@@ -35,7 +35,9 @@ const brew = (over: Partial<Brew> = {}): Brew => ({
   startedAt: START,
   endedAt: null,
   stats: stats(),
-  events: [{ id: 'e1', brewId: 'b1', at: START + 2.5 * DAY, endAt: null, kind: 'dry_hop', text: '100 g Citra', hidden: false }],
+  events: [
+    { id: 'e1', brewId: 'b1', at: START + 2.5 * DAY, endAt: null, kind: 'dry_hop', text: '100 g Citra', hidden: false, remind: false },
+  ],
   ...over,
 });
 
@@ -90,6 +92,7 @@ describe('brew text', () => {
       kind: 'dry_hop',
       text: 'Citra',
       hidden: true,
+      remind: false,
     } as const;
     expect(summaryText(brew({ events: [hop] }), null, units, formula)).toMatch(/- Day 3, .* → .* \(2\.0 days\): Dry hop: Citra/);
 

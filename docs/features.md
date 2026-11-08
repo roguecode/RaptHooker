@@ -47,6 +47,10 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
   the expected final gravity and when it should get there. The final ABV is called once the gravity stops moving.
 - **Brew timeline.** Log dry hops, temperature changes, cold crashes, additions and notes; they show on the charts.
   Give one an end (now or planned) and the charts shade how long it lasts; hide any you don't want on the charts.
+  Plan events ahead in a running brew (a dry hop on day 3) and be reminded when they start and end.
+- **Alerts for one brew** and **profiles.** Give a brew alerts of its own (when fermentation starts, a gravity or
+  attenuation to dry hop at, a day to take a sample), and make profiles of alerts and planned events, like a RAPT Pill
+  profile, from scratch or from a brew, to start the next brew of its kind with.
 - **Compare brews** side by side: overlay up to eight brews' gravity and temperature by days since they started.
 - **Batch summary** for each brew: a one-page, printable (or save-as-PDF) summary, or copy it as plain text to share.
 
@@ -81,10 +85,11 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
 - **MQTT and Home Assistant.** Publish every reading to an MQTT broker. With Home Assistant discovery each pill shows up
   as a device with gravity, temperature, battery and brew sensors, no YAML needed. Without MQTT, the Home Assistant
   webhook preset feeds automations, or sensors you define in YAML. See [docs/home-assistant.md](./home-assistant.md).
-- **Alerts**: too warm/cold, target gravity reached, fermentation slowing down or speeding up (points a day),
-  fermentation finished (gravity stable), low battery, pill gone quiet, marked on the pill's chart where they went off
-  and cleared. Sent as browser notifications and through ntfy, Pushover, Telegram, Discord or email, chosen per alert.
-  See [docs/alerts.md](./alerts.md).
+- **Alerts**: too warm/cold, target gravity reached, fermentation starting, slowing down or speeding up (points a day),
+  an attenuation or a day of the brew reached, fermentation finished (gravity stable), low battery, pill gone quiet,
+  marked on the pill's and the brew's charts where they went off and cleared. Each can say what to do and note itself
+  on the brew's timeline. Sent as browser notifications and through ntfy, Pushover, Telegram, Discord or email, chosen
+  per alert. See [docs/alerts.md](./alerts.md).
 
 ## Screens
 

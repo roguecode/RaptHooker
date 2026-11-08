@@ -28,6 +28,10 @@ Otherwise RaptHooker takes it from the pill:
 During the first hour the OG shown is the median of the first few readings, so there's something to see straight
 away; it settles on its final value three hours in.
 
+The pill's own starting gravity is kept even when you type in an OG (`startGravity` in the API): "Fermentation starts"
+and the velocity alerts measure from it, as a hydrometer's OG can be a few points off the pill's (see
+[Alerts](./alerts.md#steps-in-a-brew)).
+
 ## ABV and attenuation
 
 The ABV formula is a hub setting (**Settings → Hub**), used everywhere: the pill and brew pages, the summary, and
@@ -96,9 +100,46 @@ Something that lasts a while, like a dry hop sitting in the fermenter for a few 
 time** in the event. It can be in the future, for one you've planned (dry hop until Monday), or added later, when you
 take the hops out. The charts shade the time in between, and the timeline says how long it lasts.
 
+### Planned events and reminders
+
+A running brew's events can be planned ahead: a dry hop on day 3, a cold crash next Monday. Pick a time still to come;
+the timeline marks the event **Planned** (with a dashed icon) and the charts show it once its time comes. Tick **Remind
+me at its start and end** and the hub notifies you when its time comes, and again at its end if it has one (see
+[Alerts](./alerts.md#reminders-of-planned-events)). A finished brew's events are history, so they can't be in the
+future.
+
 To keep a busy chart clean, the eye next to an event on the timeline takes it off the charts (the brew's, the pill's
 and the summary's) and puts it back. It stays on the timeline, marked _Not on the chart_. The hub remembers it, so
 every device shows the same.
+
+## Alerts for this brew
+
+A brew can have alerts of its own, watching it alone from the moment it starts: when fermentation gets going, a gravity
+or attenuation to dry hop at, a day to take a sample. Add them under **Alerts for this brew** on the brew's page; they
+stop when the brew ends and are deleted with it. Alerts that went off during the brew are marked on its chart (the
+**Alerts** chip under the chart hides them). See [Alerts](./alerts.md#alerts-for-one-brew).
+
+## Profiles
+
+Like a RAPT Pill profile, a **profile** is a set of alerts and planned events for a kind of brew, timed from its start
+(fermentation starts, dry hop at 50% attenuation, a reminder to dry hop on day 3 and take the hops out on day 6, cold
+crash on day 10), that a brew can start with:
+
+- **New profile**, under **Profiles** on the **Brews** page, makes one from scratch: give it a name, then **Add alert**
+  (any kind, edited as a brew's own alerts are) and **Add event** (what, on which **day of the brew**, lasting some days
+  if you like, and whether it reminds you). Day 1 is the brew's first 24 hours, so a dry hop on day 3 is planned 2 days
+  after the start.
+- **Save as a profile** on a brew's page, under **Alerts for this brew**, keeps that brew's own alerts and its events,
+  each at the same time after the start (not the notes alerts made, which say what happened in that brew). Tick
+  **Remind me of its events** to have every event remind you in brews started with it. Save a new profile, or one in
+  place of an existing profile.
+- **Start a brew** has a **Profile** choice when there are profiles: its alerts are added to the brew, and its events
+  are planned from the brew's start. A brew started earlier (back-dated) gets the events whose time has passed too,
+  without reminders for them.
+- **Use a profile** on a running brew's page adds a profile's alerts and planned events to it, timed from its start.
+- The **Brews** page lists the profiles: what's in each, and (for the owner) **Edit** to rename one, change its notes,
+  add, change or take out its alerts and events, switch reminders on or off, and delete. An event saved from a brew
+  keeps its time of day unless you change its day. Deleting a profile leaves the brews started with it as they are.
 
 ## Comparing brews
 
@@ -122,14 +163,21 @@ page.
 
 Everything above is in the hub's HTTP API too (reading is open to anyone who can see the app; changes need the owner):
 
-| Method and path                         | What it does                                                                                                                                                                                   |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/brews`, `GET /api/brews/:id`  | Brews with their stats (`og`, `abv`, `finalAbv`, `stable`, `prediction`…) and events                                                                                                           |
-| `GET /api/brews/:id/events`             | A brew's events, oldest first                                                                                                                                                                  |
-| `POST /api/brews/:id/events`            | Add one: `{ "at": <unix ms>, "kind": "dry_hop", "text": "100 g Citra" }`, with `"endAt": <unix ms>` if it lasts a while (it can be in the future), `"hidden": true` to leave it off the charts |
-| `PUT /api/brews/:id/events/:eventId`    | Change one (same body; leaving out `endAt` or `hidden` keeps what's saved)                                                                                                                     |
-| `DELETE /api/brews/:id/events/:eventId` | Delete one                                                                                                                                                                                     |
-| `GET /api/brews/compare?ids=a,b,c`      | Up to 8 brews' gravity and temperature by hours since each started (≤ 400 points each)                                                                                                         |
+| Method and path                                                  | What it does                                                                                                                                                                                                                                                                        |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/brews`, `GET /api/brews/:id`                           | Brews with their stats (`og`, `startGravity`, `abv`, `finalAbv`, `stable`, `prediction`…) and events                                                                                                                                                                                |
+| `POST /api/brews`                                                | Start one: `{ "pillId": "…", "name": "Hazy IPA" }`, with `og`, `targetFg`, `style`, `notes`, `startedAt` (unix ms, in the past) and `profileId` (a profile it starts with) if you like                                                                                              |
+| `GET /api/brews/:id/events`                                      | A brew's events, oldest first                                                                                                                                                                                                                                                       |
+| `POST /api/brews/:id/events`                                     | Add one: `{ "at": <unix ms>, "kind": "dry_hop", "text": "100 g Citra" }`, with `"endAt": <unix ms>` if it lasts a while, `"hidden": true` to leave it off the charts, `"remind": true` to be reminded when it starts and ends (a running brew's start and end can be in the future) |
+| `PUT /api/brews/:id/events/:eventId`                             | Change one (same body; leaving out `endAt`, `hidden` or `remind` keeps what's saved)                                                                                                                                                                                                |
+| `DELETE /api/brews/:id/events/:eventId`                          | Delete one                                                                                                                                                                                                                                                                          |
+| `GET /api/brews/:id/alerts`                                      | The brew's own alerts, each with `active` and `lastFiredAt`                                                                                                                                                                                                                         |
+| `POST /api/brews/:id/alerts`                                     | Add one: an alert rule's body without `pillIds` and `onlyDuringBrew` (`name`, `kind`, `threshold`, and `message`, `channelIds`… as on the Alerts page), e.g. `{ "name": "Dry hop", "kind": "attenuation_reached", "threshold": 50, "message": "Add 100 g Citra" }`                  |
+| `PUT`/`DELETE /api/brews/:id/alerts/:alertId`                    | Change or delete one                                                                                                                                                                                                                                                                |
+| `POST /api/brews/:id/profile`                                    | Add a profile's alerts and planned events to a running brew: `{ "profileId": "…" }`                                                                                                                                                                                                 |
+| `GET /api/brew-profiles`, `GET /api/brew-profiles/:id`           | Profiles: `{ "name", "notes", "alerts": [brew alerts' bodies], "events": [{ "offset": <ms from the start>, "endOffset": <ms or null>, "kind", "text", "remind" }] }`                                                                                                                |
+| `POST /api/brew-profiles`, `PUT`/`DELETE /api/brew-profiles/:id` | Save, change or delete one                                                                                                                                                                                                                                                          |
+| `GET /api/brews/compare?ids=a,b,c`                               | Up to 8 brews' gravity and temperature by hours since each started (≤ 400 points each)                                                                                                                                                                                              |
 
-Event kinds: `dry_hop`, `temp_change`, `cold_crash`, `addition`, `note`. Each event has `endAt` (null for a moment)
-and `hidden` (left off the charts).
+Event kinds: `dry_hop`, `temp_change`, `cold_crash`, `addition`, `note`. Each event has `endAt` (null for a moment),
+`hidden` (left off the charts) and `remind` (reminds you when it starts and ends).

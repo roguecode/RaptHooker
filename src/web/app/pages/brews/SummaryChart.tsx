@@ -8,13 +8,13 @@ const W = 720;
 const H = 280;
 const M = { top: 14, right: 46, bottom: 30, left: 54 };
 
-function niceTicks(min: number, max: number, count: number): number[] {
+function niceTicks(min: number, max: number, count: number, minStep = 0): number[] {
   const span = max - min;
   if (!(span > 0)) return [min];
   const raw = span / count;
   const mag = 10 ** Math.floor(Math.log10(raw));
   const norm = raw / mag;
-  const step = (norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10) * mag;
+  const step = Math.max((norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10) * mag, minStep);
   const out: number[] = [];
   for (let v = Math.ceil(min / step) * step; v <= max + step * 1e-6; v += step) out.push(Number(v.toFixed(10)));
   return out;
@@ -89,7 +89,8 @@ export function SummaryChart({
   const step = dayStep(days);
   const xTicks: number[] = [];
   for (let d = 0; d <= days + 1e-9; d += step) xTicks.push(d);
-  const gTicks = niceTicks(gMin, gMax, 5).filter((v) => v >= gMin && v <= gMax);
+  // No finer than the labels' decimals can show.
+  const gTicks = niceTicks(gMin, gMax, 5, 10 ** -u.gravityDecimals).filter((v) => v >= gMin && v <= gMax);
   const tTicks = tVals.length ? niceTicks(tMin, tMax, 5).filter((v) => v >= tMin && v <= tMax) : [];
   const gColor = color ?? '#7c3aed';
 
@@ -107,7 +108,7 @@ export function SummaryChart({
         <g className="sc-axis">
           {gTicks.map((v) => (
             <text key={`gl${v}`} x={M.left - 6} y={yG(v) + 4} textAnchor="end">
-              {u.gravity === 'plato' ? num(v, 1) : num(v, 3)}
+              {u.gravityNumber(v)}
             </text>
           ))}
           {tTicks.map((v) => (

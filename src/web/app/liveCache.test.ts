@@ -66,6 +66,8 @@ const snapshot: LiveSnapshot = {
         range: 'brew',
         gravity: 'sg',
         temperature: 'C',
+        gravityDecimals: null,
+        temperatureDecimals: null,
         lang: 'en',
         tz: null,
         brewing: false,
@@ -147,5 +149,14 @@ describe('live cache', () => {
     expect(back?.clockSynced).toBe(true);
     // Saved before screens.
     expect(back?.screens).toEqual([]);
+  });
+
+  it("keeps the hub's decimals, and fills them in for a cache from before them", () => {
+    const decimals = { sg: 3, plato: 2, temperature: 2 };
+    const saved = { ...snapshot, hub: { ...snapshot.hub, decimals } };
+    expect(parseLive(serializeLive(saved, NOW), NOW)?.hub.decimals).toEqual(decimals);
+    const { decimals: _, ...before } = snapshot.hub;
+    const old = parseLive(serializeLive({ ...snapshot, hub: before as typeof snapshot.hub }, NOW), NOW);
+    expect(old?.hub.decimals).toEqual(DEFAULT_HUB_SETTINGS.decimals);
   });
 });

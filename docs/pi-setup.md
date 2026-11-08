@@ -158,8 +158,9 @@ To open it on your phone, **Settings → Open on another device** shows the hub'
 Tailscale one only for the owner). On a phone, use your browser's **Add to Home Screen** to open it like an app.
 
 Under **Settings → Hub** you can name the hub (shown in the top bar and the browser tab), pick the default units (used
-in notifications and by every browser that hasn't picked its own) and the ABV formula, and switch its Bluetooth off on
-a machine [without it](#without-bluetooth).
+in notifications and by every browser that hasn't picked its own), how many decimals readings are shown with (in the
+app and its charts, notifications and screen pictures: SG to 3 or 4, °P and temperatures to 1 or 2) and the ABV
+formula, and switch its Bluetooth off on a machine [without it](#without-bluetooth).
 
 ### A screen for the brewery
 

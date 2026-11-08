@@ -1,9 +1,17 @@
 import { useEffect, useId, useState, type FormEvent } from 'react';
-import { ABV_FORMULAS, hubSettingsSchema, type GravityUnit, type HubSettings, type TemperatureUnit } from '@rapthooker/shared';
+import {
+  ABV_FORMULAS,
+  decimalsFrom,
+  hubSettingsSchema,
+  type Decimals,
+  type GravityUnit,
+  type HubSettings,
+  type TemperatureUnit,
+} from '@rapthooker/shared';
 import { api, errorText } from '../../api';
 import { useLive } from '../../live';
 import { LOCALES, t, tk, useI18n, type LocaleId } from '../../i18n';
-import { UnitSource, UnitToggles } from '../../units';
+import { decimalsExample, decimalsOptions, UnitSource, UnitToggles } from '../../units';
 import { FieldError, useFormCheck } from '../../validation';
 import { Icon } from '../../components/Icon';
 import { OwnerOnly, Switch } from '../../components/ui';
@@ -18,6 +26,11 @@ const TEMPERATURE: { id: TemperatureUnit; label: string; name: string }[] = [
   { id: 'C', label: '°C', name: tk('°C, Celsius') },
   { id: 'F', label: '°F', name: tk('°F, Fahrenheit') },
 ];
+const DECIMAL_ROWS: { id: keyof Decimals; label: string; unit: string }[] = [
+  { id: 'sg', label: tk('Gravity in SG'), unit: '' },
+  { id: 'plato', label: tk('Gravity in °P'), unit: ' °P' },
+  { id: 'temperature', label: tk('Temperature'), unit: '°' },
+];
 
 /** The hub's name, default units, ABV formula, update checks and Bluetooth (owner only), plus this browser's own display choices. */
 export function HubSection() {
@@ -31,6 +44,8 @@ export function HubSection() {
   const id = useId();
   // Switched off in the config file (a machine without Bluetooth): the hub settings can't switch it on.
   const bluetoothLocked = ble?.offBy === 'config';
+  // Missing from a hub from before decimals could be set (this app cached, the hub put back).
+  const decimals = decimalsFrom(draft.decimals);
 
   // Follow changes made elsewhere, unless they'd overwrite an edit in progress.
   useEffect(() => {
@@ -119,6 +134,39 @@ export function HubSection() {
           <p className="hint">
             {t(
               "Used in notifications, and by every browser that hasn't picked its own units. A browser's own choice (below, or in the top bar) stays with that browser.",
+            )}
+          </p>
+        </fieldset>
+
+        <fieldset className="fieldset">
+          <legend>{t('Decimals')}</legend>
+          <div className="row" style={{ gap: '1rem', alignItems: 'flex-start' }}>
+            {DECIMAL_ROWS.map((row) => (
+              <div key={row.id} className="field">
+                <span id={`${id}-dec-${row.id}`}>{t(row.label)}</span>
+                <div className="segmented" role="group" aria-labelledby={`${id}-dec-${row.id}`}>
+                  {decimalsOptions(row.id, decimals[row.id]).map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      disabled={locked}
+                      className={decimals[row.id] === d ? 'on' : ''}
+                      aria-pressed={decimals[row.id] === d}
+                      onClick={() => edit({ decimals: { ...decimals, [row.id]: d } })}
+                    >
+                      <span className="num">
+                        {decimalsExample(row.id, d)}
+                        {row.unit}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="hint">
+            {t(
+              "How many decimals readings are shown with: in the app and its charts, in notifications and on screens. In SG, a 4th decimal is shown dimmed, as it mostly follows the sensor's noise.",
             )}
           </p>
         </fieldset>

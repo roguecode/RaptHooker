@@ -7,6 +7,13 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Pick how many decimals readings are shown with, under **Settings → Hub**: SG to 3 or 4 decimals (1.012 or 1.0123),
+  °P and temperatures to 1 or 2. It's used everywhere readings are shown: the app, its charts (their gravity axis and
+  the values beside the pointer), notifications and screen pictures. A screen or image link can have its own (`gdec`
+  and `tdec` in its link). It starts as the app's readings were (SG 4, with the 4th dimmed, °P and temperatures 1), so
+  notifications and gravity axes, which had 3 in SG, now have 4, and °P beside a chart's pointer has 1 rather than 2,
+  until you pick others. It's saved with the hub's settings (`decimals` in `GET /api/settings/hub`). An older version
+  shows readings as before, and from 0.4.1 on keeps the setting for when you update again.
 - Point at a chart's lines (or tap them on a phone) to see the readings there in a box beside the pointer: the time and
   each line's value, in its colour. On the pill and brew pages, and when comparing brews. On a phone they stay until you
   tap somewhere else.

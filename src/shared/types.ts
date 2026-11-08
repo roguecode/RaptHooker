@@ -7,6 +7,15 @@ import type { ServingUnit, Vessel } from './devices.js';
 export type GravityUnit = 'sg' | 'plato';
 export type TemperatureUnit = 'C' | 'F';
 
+/** How many decimals readings are shown with: gravity in SG and in °P, and temperatures. */
+export interface Decimals {
+  sg: number;
+  plato: number;
+  temperature: number;
+}
+
+export const DEFAULT_DECIMALS: Decimals = { sg: 4, plato: 1, temperature: 1 };
+
 /**
  * A RAPT Pill (hydrometer and thermometer), a RAPT Bluetooth Thermometer (temperature only), an iSpindel (a Wi-Fi
  * hydrometer), a Tilt (a Bluetooth hydrometer, experimental) or a RAPT Laser Level (how full a keg is, experimental).
@@ -571,6 +580,8 @@ export interface HubSettings {
   updateCheck: boolean;
   /** Listen with the hub's own Bluetooth. Off on a machine without it (in a container, say); relays still work. */
   bluetooth: boolean;
+  /** Decimals readings are shown with, in the app, notifications and screen pictures. */
+  decimals: Decimals;
 }
 
 export const DEFAULT_HUB_SETTINGS: HubSettings = {
@@ -579,6 +590,7 @@ export const DEFAULT_HUB_SETTINGS: HubSettings = {
   abvFormula: 'standard',
   updateCheck: true,
   bluetooth: true,
+  decimals: { ...DEFAULT_DECIMALS },
 };
 
 export interface MqttSettings {

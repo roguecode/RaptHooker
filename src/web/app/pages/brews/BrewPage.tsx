@@ -192,13 +192,15 @@ export function BrewPage({ id }: { id: string }) {
         <div className="stat">
           <div className="k">{t('Temperature')}</div>
           <div className="v">
-            {s.tempAvg === null ? '–' : fixed(u.tempValue(s.tempAvg), 1)}
+            {s.tempAvg === null ? '–' : u.tempNumber(u.tempValue(s.tempAvg))}
             <small>{t('{unit} avg', { unit: u.tempLabel })}</small>
           </div>
         </div>
         <div className="stat">
           <div className="k">{t('Range')}</div>
-          <div className="v">{s.tempMin === null ? '–' : `${fixed(u.tempValue(s.tempMin), 1)}–${fixed(u.tempValue(s.tempMax!), 1)}`}</div>
+          <div className="v">
+            {s.tempMin === null ? '–' : `${u.tempNumber(u.tempValue(s.tempMin))}–${u.tempNumber(u.tempValue(s.tempMax!))}`}
+          </div>
         </div>
         <div className="stat">
           <div className="k">{t('Readings')}</div>

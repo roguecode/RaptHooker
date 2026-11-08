@@ -173,6 +173,8 @@ export function makeScreen(over: ScreenOverrides = {}): ScreenDevice {
       range: 'brew',
       gravity: 'sg',
       temperature: 'C',
+      gravityDecimals: null,
+      temperatureDecimals: null,
       lang: 'en',
       tz: null,
       brewing: false,

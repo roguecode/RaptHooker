@@ -2358,5 +2358,12 @@
   "If the beta doesn't start, the hub goes back to this build by itself.": "Jeśli beta się nie uruchomi, hub sam wróci do tej wersji.",
   "Need Help?": "Potrzebujesz pomocy?",
   "Come chat with us": "Wpadnij do nas pogadać",
-  "Report a problem, suggest an idea or read the guides": "Zgłoś problem, zaproponuj pomysł albo przeczytaj poradniki"
+  "Report a problem, suggest an idea or read the guides": "Zgłoś problem, zaproponuj pomysł albo przeczytaj poradniki",
+  "Decimals": "Miejsca po przecinku",
+  "Gravity decimals": "Miejsca po przecinku gęstości",
+  "Gravity in °P": "Gęstość w °P",
+  "Gravity in SG": "Gęstość w SG",
+  "How many decimals readings are shown with: in the app and its charts, in notifications and on screens. In SG, a 4th decimal is shown dimmed, as it mostly follows the sensor's noise.": "Z iloma miejscami po przecinku pokazywane są odczyty: w aplikacji i na jej wykresach, w powiadomieniach i na ekranach. W SG czwarte miejsce po przecinku jest przyciemnione, bo głównie odzwierciedla szum czujnika.",
+  "Like the hub ({example})": "Jak w hubie ({example})",
+  "Temperature decimals": "Miejsca po przecinku temperatury"
 }

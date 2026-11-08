@@ -319,6 +319,41 @@ describe('API', () => {
     expect(bad.statusCode).toBe(400);
   });
 
+  it('saves the decimals readings are shown with, and keeps them when a client from before them saves the hub settings', async () => {
+    const { app, store } = await setup();
+    // Saved before decimals could be set: shown as they always were.
+    store.setMeta(
+      'hub',
+      JSON.stringify({
+        name: 'Shed',
+        units: { gravity: 'sg', temperature: 'C' },
+        abvFormula: 'standard',
+        updateCheck: true,
+        bluetooth: true,
+      }),
+    );
+    expect((await app.inject({ url: '/api/settings/hub' })).json()).toMatchObject({
+      name: 'Shed',
+      decimals: { sg: 4, plato: 1, temperature: 1 },
+    });
+
+    const decimals = { sg: 3, plato: 2, temperature: 2 };
+    const put = (payload: object) => app.inject({ method: 'PUT', url: '/api/settings/hub', headers: owner, payload });
+    expect((await put({ ...DEFAULT_HUB_SETTINGS, name: 'Shed', decimals })).json()).toMatchObject({ decimals });
+    const { decimals: _, ...older } = { ...DEFAULT_HUB_SETTINGS, name: 'Cellar' };
+    expect((await put(older)).json()).toMatchObject({ name: 'Cellar', decimals });
+    expect(JSON.parse(store.getMeta('hub')!)).toMatchObject({ name: 'Cellar', decimals });
+
+    for (const wrong of [{ ...decimals, sg: 2.5 }, { ...decimals, plato: 7 }, { ...decimals, temperature: -1 }, { sg: 3 }])
+      expect((await put({ ...DEFAULT_HUB_SETTINGS, decimals: wrong })).statusCode, JSON.stringify(wrong)).toBe(400);
+
+    // As a newer version (since put back) might leave them: what isn't understood shows as usual, and is kept on saving.
+    store.setMeta('hub', JSON.stringify({ ...DEFAULT_HUB_SETTINGS, decimals: { sg: 'lots', plato: 2, temperature: 2, volume: 1 } }));
+    expect((await app.inject({ url: '/api/settings/hub' })).json()).toMatchObject({ decimals: { sg: 4, plato: 2, temperature: 2 } });
+    expect((await put({ ...DEFAULT_HUB_SETTINGS, decimals })).statusCode).toBe(200);
+    expect(JSON.parse(store.getMeta('hub')!).decimals).toEqual({ ...decimals, volume: 1 });
+  });
+
   it('lists screens to anyone and leaves setting them up to the owner', async () => {
     const { app } = await setup();
     expect((await app.inject({ url: '/api/screens' })).json()).toEqual([]);

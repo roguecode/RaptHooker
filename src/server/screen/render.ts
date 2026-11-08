@@ -1,8 +1,11 @@
 import {
   cToF,
+  DEFAULT_DECIMALS,
   DEFAULT_VESSEL,
+  gravityDecimals,
   measuresGravity,
   plausibleGravity,
+  SG_STEADY_DECIMALS,
   sgToPlato,
   vesselFill,
   type Brew,
@@ -109,19 +112,21 @@ function describe(d: ScreenDevice, opts: ScreenOptions, s: ScreenStrings, c: Scr
   const r = pill.live.latest;
   const plato = opts.gravity === 'plato';
   const fahrenheit = opts.temperature === 'F';
+  const gd = opts.gravityDecimals ?? gravityDecimals(DEFAULT_DECIMALS, opts.gravity);
+  const td = opts.temperatureDecimals ?? DEFAULT_DECIMALS.temperature;
   const temp = (v: number) => (fahrenheit ? cToF(v) : v);
   const tempUnit = `°${opts.temperature}`;
   const tempText = (v: number | null | undefined) =>
-    v === null || v === undefined || !Number.isFinite(v) ? '–' : `${num(temp(v), 1)} ${tempUnit}`;
+    v === null || v === undefined || !Number.isFinite(v) ? '–' : `${num(temp(v), td)} ${tempUnit}`;
   const gravityText = (sg: number | null | undefined) =>
-    sg === null || sg === undefined || !Number.isFinite(sg) ? '–' : plato ? `${num(sgToPlato(sg), 1)} °P` : num(sg, 4);
+    sg === null || sg === undefined || !Number.isFinite(sg) ? '–' : plato ? `${num(sgToPlato(sg), gd)} °P` : num(sg, gd);
   const thermometer = !measuresGravity(pill.kind);
   const laser = pill.kind === 'laser-level';
   const show = new Set(opts.show);
 
   let big: Big | null = null;
   let second: string | null = null;
-  const tempBig = (): Big => ({ main: r ? num(temp(r.temperature), 1) : '–', tail: '', unit: tempUnit, label: t('Temperature') });
+  const tempBig = (): Big => ({ main: r ? num(temp(r.temperature), td) : '–', tail: '', unit: tempUnit, label: t('Temperature') });
   if (laser && show.has('gravity')) {
     // A Laser Level's main value is how much beer is left.
     big = { main: r?.volume == null ? '–' : num(r.volume, 1), tail: '', unit: 'L', label: t('Volume') };
@@ -130,10 +135,11 @@ function describe(d: ScreenDevice, opts: ScreenOptions, s: ScreenStrings, c: Scr
     const sg = r?.gravity;
     if (sg === null || sg === undefined || !Number.isFinite(sg))
       big = { main: '–', tail: '', unit: plato ? '°P' : 'SG', label: t('Gravity') };
-    else if (plato) big = { main: num(sgToPlato(sg), 1), tail: '', unit: '°P', label: t('Gravity') };
+    else if (plato) big = { main: num(sgToPlato(sg), gd), tail: '', unit: '°P', label: t('Gravity') };
     else {
-      const full = num(sg, 4);
-      big = { main: full.slice(0, -1), tail: full.slice(-1), unit: 'SG', label: t('Gravity') };
+      const full = num(sg, gd);
+      const dim = Math.max(0, gd - SG_STEADY_DECIMALS);
+      big = { main: dim ? full.slice(0, -dim) : full, tail: dim ? full.slice(-dim) : '', unit: 'SG', label: t('Gravity') };
     }
     if (show.has('temperature')) second = tempText(r?.temperature);
   } else if (show.has('temperature') || (thermometer && show.has('gravity'))) big = tempBig();
@@ -184,7 +190,7 @@ function describe(d: ScreenDevice, opts: ScreenOptions, s: ScreenStrings, c: Scr
           {
             icon: 'activity',
             label: t('Last 24 h'),
-            value: d.day ? `${num(temp(d.day.min), 1)}–${num(temp(d.day.max), 1)}` : '–',
+            value: d.day ? `${num(temp(d.day.min), td)}–${num(temp(d.day.max), td)}` : '–',
             unit: d.day ? tempUnit : undefined,
           },
           { icon: 'signal', label: t('Signal'), value: signal },
@@ -239,7 +245,7 @@ function describe(d: ScreenDevice, opts: ScreenOptions, s: ScreenStrings, c: Scr
               skip: h.implausible,
               color: pill.color,
               minSpan: plato ? 1 : 0.004,
-              format: (v: number) => (plato ? num(v, 1) : num(v, 3)),
+              format: (v: number) => num(v, gd),
             },
             second: tempSeries(c.seriesTemp, 3),
           };

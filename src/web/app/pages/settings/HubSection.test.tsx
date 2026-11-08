@@ -53,6 +53,38 @@ describe('Settings: Hub', () => {
     expect(nameInput().value).toBe('Shed');
   });
 
+  it('sets the decimals readings are shown with', async () => {
+    const view = await renderWithHub(<HubSection />, { routes: { 'PUT /api/settings/hub': saved } });
+    const sg = within(screen.getByRole('group', { name: 'Gravity in SG' }));
+    expect(sg.getByRole('button', { name: '1.0123' }).getAttribute('aria-pressed')).toBe('true');
+    expect(
+      within(screen.getByRole('group', { name: 'Gravity in °P' }))
+        .getByRole('button', { name: '3.1 °P' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    fireEvent.click(sg.getByRole('button', { name: '1.012' }));
+    fireEvent.click(within(screen.getByRole('group', { name: 'Temperature' })).getByRole('button', { name: '19.63°' }));
+    fireEvent.click(save());
+    await waitFor(() => expect(toastTexts()).toContain('Hub settings saved'));
+    expect(view.calls('PUT /api/settings/hub')[0]!.body).toEqual({
+      ...DEFAULT_HUB_SETTINGS,
+      decimals: { sg: 3, plato: 1, temperature: 2 },
+    });
+  });
+
+  it('shows decimals set some other way among the choices', async () => {
+    await renderWithHub(<HubSection />, { hub: { decimals: { sg: 5, plato: 1, temperature: 1 } } });
+    const sg = within(screen.getByRole('group', { name: 'Gravity in SG' }));
+    expect(sg.getAllByRole('button').map((b) => b.textContent)).toEqual(['1.012', '1.0123', '1.01235']);
+    expect(sg.getByRole('button', { name: '1.01235' }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('shows the usual decimals for a hub from before they could be set', async () => {
+    await renderWithHub(<HubSection />, { hub: { decimals: undefined } });
+    const sg = within(screen.getByRole('group', { name: 'Gravity in SG' }));
+    expect(sg.getByRole('button', { name: '1.0123' }).getAttribute('aria-pressed')).toBe('true');
+  });
+
   it("switches the hub's Bluetooth off", async () => {
     const view = await renderWithHub(<HubSection />, { routes: { 'PUT /api/settings/hub': saved } });
     const bluetooth = screen.getByRole('switch', { name: 'Listen over Bluetooth' }) as HTMLButtonElement;

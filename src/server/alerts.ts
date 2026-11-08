@@ -2,17 +2,21 @@ import { EventEmitter } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import {
   BROWSER_PUSH,
+  cToF,
+  DEFAULT_DECIMALS,
   FERMENTATION_LIMITS,
-  gravityIn,
+  fixedText,
+  gravityDecimals,
   plausibleGravity,
+  sgToPlato,
   stableClearsAt,
-  temperatureIn,
   velocityClearsAt,
   type AlertEvent,
   type AlertKind,
   type AlertRule,
   type AlertRuleInput,
   type Brew,
+  type Decimals,
   type GravityUnit,
   type Pill,
   type Reading,
@@ -54,6 +58,8 @@ export interface AlertDeps {
   };
   brews: { activeFor(pillId: string): Brew | null };
   units: () => { temperature: TemperatureUnit; gravity: GravityUnit };
+  /** Decimals for the readings in messages (the hub's setting). */
+  decimals?: () => Decimals;
   /** False until the clock can be trusted after boot ("last heard" times can't be compared with now until then). */
   clockTrusted?: () => boolean;
   now?: () => number;
@@ -217,12 +223,17 @@ export class AlertService extends EventEmitter {
 
   private fmtT(c: number): string {
     const unit = this.deps.units().temperature;
-    return `${temperatureIn(c, unit).toFixed(1)} °${unit}`;
+    return `${fixedText(unit === 'F' ? cToF(c) : c, this.decimals().temperature)} °${unit}`;
   }
 
   private fmtG(sg: number): string {
     const unit = this.deps.units().gravity;
-    return unit === 'plato' ? `${gravityIn(sg, unit).toFixed(1)} °P` : gravityIn(sg, unit).toFixed(3);
+    const d = gravityDecimals(this.decimals(), unit);
+    return unit === 'plato' ? `${fixedText(sgToPlato(sg), d)} °P` : fixedText(sg, d);
+  }
+
+  private decimals(): Decimals {
+    return this.deps.decimals?.() ?? DEFAULT_DECIMALS;
   }
 
   private check(rule: AlertRule, pill: Pill, active: boolean): Check {

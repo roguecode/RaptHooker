@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_HUB_SETTINGS } from '@rapthooker/shared';
 import { makeBle, makeBrew, makeNearby, makePill, makeReading, renderWithHub, toastTexts } from '../../test/render';
 import { Dashboard } from '../Dashboard';
 
@@ -46,6 +47,16 @@ describe('Dashboard', () => {
 
     await view.push({ type: 'pill-removed', pillId: 'pill-2' });
     expect(screen.queryByRole('link', { name: 'Czech Pils' })).toBeNull();
+  });
+
+  it("shows readings with the hub's decimals, dimming only a 4th SG decimal", async () => {
+    const view = await renderWithHub(<Dashboard />, { pills: [lager()] });
+    const gravity = () => card('Czech Pils').querySelector('.gravity-value')!;
+    expect(gravity().querySelector('.tail')?.textContent).toBe('6');
+    await view.push({ type: 'hub', hub: { ...DEFAULT_HUB_SETTINGS, decimals: { sg: 3, plato: 1, temperature: 2 } } });
+    expect(gravity().textContent).toBe('1.046SG');
+    expect(gravity().querySelector('.tail')?.textContent ?? '').toBe('');
+    expect(within(card('Czech Pils')).getByText('11.04 °C')).toBeTruthy();
   });
 
   it('warns when the gravity looks wrong', async () => {

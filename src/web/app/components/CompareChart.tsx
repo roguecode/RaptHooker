@@ -6,6 +6,7 @@ import { useTheme } from '../theme';
 import { fixed, num } from '../format';
 import { t } from '../i18n';
 import { ChartTip, type ChartTipHandle, type ChartTipRow } from './ChartTip';
+import { axisIncrs } from './chartMath';
 import { keepTappedValues } from './tapCursor';
 import './CompareChart.css';
 
@@ -53,8 +54,8 @@ function readingAt(l: CompareLine, day: number, u: UnitsNow): Reading {
 }
 
 function readingText({ g, t: temp }: Reading, showTemp: boolean, u: UnitsNow): string {
-  const gravity = g === null ? '–' : u.gravity === 'plato' ? `${fixed(g, 1)} °P` : fixed(g, 4);
-  return showTemp ? `${gravity} · ${temp === null ? '–' : `${fixed(temp, 1)}${u.tempLabel}`}` : gravity;
+  const gravity = g === null ? '–' : u.gravity === 'plato' ? `${u.gravityNumber(g)} °P` : u.gravityNumber(g);
+  return showTemp ? `${gravity} · ${temp === null ? '–' : `${u.tempNumber(temp)}${u.tempLabel}`}` : gravity;
 }
 
 /** Several brews' gravity (and optionally temperature) overlaid by days since each started. */
@@ -83,7 +84,6 @@ export function CompareChart({ lines, showTemp }: { lines: CompareLine[]; showTe
     const muted = cssVar('--muted', '#888');
     const grid = cssVar('--grid', 'rgba(128,128,128,0.15)');
     const axisBase = { stroke: muted, grid: { stroke: grid, width: 1 }, ticks: { show: false }, font: '11px system-ui, sans-serif' };
-    const gFmt = (v: number) => (u.gravity === 'plato' ? fixed(v, 1) : fixed(v, 3));
     /** Each brew's reading under the pointer, beside it. */
     const showTip = (p: uPlot) => {
       const w = wrap.current;
@@ -141,7 +141,13 @@ export function CompareChart({ lines, showTemp }: { lines: CompareLine[]; showTe
       axes: [
         // i18n: "d" is days, on the chart's axis
         { ...axisBase, space: 50, values: (_p, vals) => vals.map((v) => t('{n} d', { n: num(v, 1, 0) })) },
-        { ...axisBase, scale: 'g', size: 52, values: (_p, vals) => vals.map(gFmt) },
+        {
+          ...axisBase,
+          scale: 'g',
+          size: 52,
+          incrs: axisIncrs(u.gravityDecimals),
+          values: (_p, vals) => vals.map((v) => u.gravityNumber(v)),
+        },
         ...(showTemp
           ? [
               {

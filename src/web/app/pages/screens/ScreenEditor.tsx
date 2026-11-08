@@ -31,6 +31,8 @@ const designOf = (look: ScreenLook): PictureDesign => ({
   palette: look.palette,
   gravity: look.gravity,
   temperature: look.temperature,
+  gravityDecimals: look.gravityDecimals ?? null,
+  temperatureDecimals: look.temperatureDecimals ?? null,
 });
 
 /**

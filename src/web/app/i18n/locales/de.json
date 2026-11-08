@@ -2272,5 +2272,12 @@
   "If the beta doesn't start, the hub goes back to this build by itself.": "Wenn die Beta nicht startet, kehrt der Hub von selbst zu diesem Build zurück.",
   "Need Help?": "Brauchst du Hilfe?",
   "Come chat with us": "Komm und chatte mit uns",
-  "Report a problem, suggest an idea or read the guides": "Melde ein Problem, schlag eine Idee vor oder lies die Anleitungen"
+  "Report a problem, suggest an idea or read the guides": "Melde ein Problem, schlag eine Idee vor oder lies die Anleitungen",
+  "Decimals": "Nachkommastellen",
+  "Gravity decimals": "Nachkommastellen der Dichte",
+  "Gravity in °P": "Dichte in °P",
+  "Gravity in SG": "Dichte in SG",
+  "How many decimals readings are shown with: in the app and its charts, in notifications and on screens. In SG, a 4th decimal is shown dimmed, as it mostly follows the sensor's noise.": "Mit wie vielen Nachkommastellen Messwerte angezeigt werden: in der App und ihren Diagrammen, in Benachrichtigungen und auf Bildschirmen. In SG wird eine 4. Nachkommastelle blasser angezeigt, da sie vor allem dem Rauschen des Sensors folgt.",
+  "Like the hub ({example})": "Wie der Hub ({example})",
+  "Temperature decimals": "Nachkommastellen der Temperatur"
 }

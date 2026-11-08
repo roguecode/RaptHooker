@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { decimalsSchema } from './schemas.js';
 import { SCREEN_ITEMS, SCREEN_PALETTES, SCREEN_RANGES, SCREEN_THEMES, type ScreenOptions } from './screen.js';
 
 /**
@@ -307,6 +308,8 @@ const lookFields = {
   range: z.enum(SCREEN_RANGES),
   gravity: z.enum(['sg', 'plato']),
   temperature: z.enum(['C', 'F']),
+  gravityDecimals: decimalsSchema.nullable(),
+  temperatureDecimals: decimalsSchema.nullable(),
   lang: z.string().max(35),
   tz: z.string().max(64).nullable(),
   brewing: z.boolean(),

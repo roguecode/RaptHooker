@@ -182,11 +182,12 @@ function service(
   store: { history: (id: string, from: number, to: number, opts: { exclude?: { from: number; to: number }[] }) => History } = {
     history: (id, from, to) => fakeHistory(id, from, to),
   },
+  decimals = DEFAULT_HUB_SETTINGS.decimals,
 ) {
   const deps = {
     store,
     pills: { list: () => devices, get: (id: string) => devices.find((p) => p.id === id) ?? null, gapMs: () => 3_600_000 },
-    settings: { units: () => units, hub: () => ({ ...DEFAULT_HUB_SETTINGS, name: 'Garage brewery', units }) },
+    settings: { units: () => units, hub: () => ({ ...DEFAULT_HUB_SETTINGS, name: 'Garage brewery', units, decimals }) },
     config: { rawRetentionDays: 0 },
   };
   return new ScreenService(deps as unknown as ConstructorParameters<typeof ScreenService>[0], () => assets);
@@ -354,9 +355,23 @@ describe('screen image layout', () => {
         'Excellent',
       ]),
     );
-    // The chart, with the gravity it starts and ends at.
-    expect(shown).toEqual(expect.arrayContaining(['1.053', '1.011']));
+    // The chart, with the gravity it starts and ends at, in the hub's decimals.
+    expect(shown).toEqual(expect.arrayContaining(['1.0527', '1.0110']));
     expect(svg).toContain('stroke="#a78bfa"');
+  });
+
+  it("shows readings with the hub's decimals, or the ones in the address", () => {
+    const everything = { w: '800', h: '480', show: PRESETS.everything!.join(',') };
+    const s = service(undefined, undefined, undefined, { sg: 3, plato: 2, temperature: 2 });
+    const hub = words(s.svg('p1', s.options(everything), NOW).svg);
+    // Three SG decimals leave nothing to dim.
+    expect(hub).toEqual(expect.arrayContaining(['1.011SG', '19.20 °C', 'OG 1.053', 'FG 1.012', '1.053', '1.011']));
+    const own = words(s.svg('p1', s.options({ ...everything, gdec: '4', tdec: '1' }), NOW).svg);
+    expect(own).toEqual(expect.arrayContaining(['1.0111SG', '19.2 °C', 'OG 1.0531', '1.0527', '1.0110']));
+    expect(words(s.svg('p1', s.options({ show: 'gravity,temperature', gravity: 'plato' }), NOW).svg)).toContain('2.84°P');
+    // Decimals left to the hub are filled in from it, so the picture (and what's kept of it) follows its setting.
+    expect(s.options({})).toMatchObject({ gravityDecimals: 3, temperatureDecimals: 2 });
+    expect(service().options({ gravity: 'plato' })).toMatchObject({ gravityDecimals: 1, temperatureDecimals: 1 });
   });
 
   it('leaves out what does not fit at a readable size, least important first', () => {

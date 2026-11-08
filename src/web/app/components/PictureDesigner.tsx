@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
+  gravityDecimals,
   SCREEN_ITEMS,
   SCREEN_RANGES,
   type GravityUnit,
@@ -12,6 +13,7 @@ import {
 } from '@rapthooker/shared';
 import { bytes } from '../format';
 import { t } from '../i18n';
+import { decimalsExample, decimalsOptions, useUnits } from '../units';
 import { Icon } from './Icon';
 import { PalettePicker } from './PalettePicker';
 import { CONTENT_PRESETS, contentPreset, FORMAT_LABELS, ITEM_LABELS, RANGE_LABELS } from './imageLinkOptions';
@@ -31,6 +33,9 @@ export interface PictureDesign {
   palette: ScreenPalette;
   gravity: GravityUnit;
   temperature: TemperatureUnit;
+  /** Decimals for the gravity (in `gravity`'s unit) and temperatures; null for the hub's. */
+  gravityDecimals: number | null;
+  temperatureDecimals: number | null;
 }
 
 const n2 = (v: number) => Math.round(v * 100) / 100;
@@ -49,6 +54,10 @@ export function PictureFields({
 }) {
   const preset = contentPreset(value.show);
   const rangeId = `${idPrefix}-range`;
+  // Decimals left to the hub follow its setting.
+  const hub = useUnits().decimals;
+  const gravityExample = (d: number) => (value.gravity === 'plato' ? `${decimalsExample('plato', d)} °P` : decimalsExample('sg', d));
+  const tempExample = (d: number) => `${decimalsExample('temperature', d)} °${value.temperature}`;
   const toggle = (item: ScreenItem) => {
     const on = value.show.includes(item);
     onChange({ show: SCREEN_ITEMS.filter((i) => (i === item ? !on : value.show.includes(i))) });
@@ -132,7 +141,10 @@ export function PictureFields({
                 type="button"
                 className={value.gravity === g ? 'on' : ''}
                 aria-pressed={value.gravity === g}
-                onClick={() => onChange({ gravity: g })}
+                onClick={() =>
+                  // Decimals picked for the other unit don't suit this one.
+                  onChange({ gravity: g, ...(g !== value.gravity && value.gravityDecimals !== null ? { gravityDecimals: null } : {}) })
+                }
               >
                 {g === 'sg' ? 'SG' : '°P'}
               </button>
@@ -151,6 +163,40 @@ export function PictureFields({
               </button>
             ))}
           </div>
+        </div>
+        <div className="row" style={{ alignItems: 'flex-start' }}>
+          <label className="field" htmlFor={`${idPrefix}-gdec`}>
+            <span>{t('Gravity decimals')}</span>
+            <select
+              id={`${idPrefix}-gdec`}
+              className="select"
+              value={value.gravityDecimals ?? ''}
+              onChange={(e) => onChange({ gravityDecimals: e.target.value === '' ? null : Number(e.target.value) })}
+            >
+              <option value="">{t('Like the hub ({example})', { example: gravityExample(gravityDecimals(hub, value.gravity)) })}</option>
+              {decimalsOptions(value.gravity, value.gravityDecimals).map((d) => (
+                <option key={d} value={d}>
+                  {gravityExample(d)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field" htmlFor={`${idPrefix}-tdec`}>
+            <span>{t('Temperature decimals')}</span>
+            <select
+              id={`${idPrefix}-tdec`}
+              className="select"
+              value={value.temperatureDecimals ?? ''}
+              onChange={(e) => onChange({ temperatureDecimals: e.target.value === '' ? null : Number(e.target.value) })}
+            >
+              <option value="">{t('Like the hub ({example})', { example: tempExample(hub.temperature) })}</option>
+              {decimalsOptions('temperature', value.temperatureDecimals).map((d) => (
+                <option key={d} value={d}>
+                  {tempExample(d)}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       </fieldset>
     </>

@@ -36,6 +36,8 @@ describe('screen image options', () => {
       range: '7d',
       gravity: 'plato',
       temp: 'F',
+      gdec: '2',
+      tdec: '2',
       lang: 'de-AT',
       tz: 'Europe/Berlin',
       brewing: '1',
@@ -49,10 +51,20 @@ describe('screen image options', () => {
       range: '7d',
       gravity: 'plato',
       temperature: 'F',
+      gravityDecimals: 2,
+      temperatureDecimals: 2,
       lang: 'de-AT',
       tz: 'Europe/Berlin',
       brewing: true,
     });
+  });
+
+  it('leaves the decimals to the hub unless the address has ones it understands', () => {
+    expect(defaults).toMatchObject({ gravityDecimals: null, temperatureDecimals: null });
+    expect(parse({ gdec: '3', tdec: '1' })).toMatchObject({ gravityDecimals: 3, temperatureDecimals: 1 });
+    expect(parse({ gdec: '0' })).toMatchObject({ gravityDecimals: 0 });
+    for (const bad of ['', 'four', '-1', '2.5', '7'])
+      expect(parse({ gdec: bad, tdec: bad }), bad).toMatchObject({ gravityDecimals: null, temperatureDecimals: null });
   });
 
   it('keeps sizes within limits and ignores what it does not understand, so a screen always gets a picture', () => {
@@ -107,6 +119,12 @@ describe('screen image options', () => {
     const single = screenQuery({ ...o, show: ['gravity'] }, { allDevices: false });
     expect(single).not.toContain('range=');
     expect(single).not.toContain('brewing');
+    // Decimals left to the hub stay out of the address, so the picture follows the hub's setting.
+    expect(query).not.toContain('dec=');
+    const decimals = screenQuery({ ...o, gravityDecimals: 3, temperatureDecimals: 2 }, { allDevices: true });
+    expect(decimals).toContain('&gravity=sg&temp=C&gdec=3&tdec=2&lang=nl');
+    const back = Object.fromEntries(decimals.split('&').map((p) => p.split('=').map(decodeURIComponent)));
+    expect(parse(back)).toMatchObject({ gravityDecimals: 3, temperatureDecimals: 2 });
   });
 
   it('has an address for every device and for each one', () => {

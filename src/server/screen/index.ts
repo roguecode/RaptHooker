@@ -1,6 +1,8 @@
 import {
+  decimalsFrom,
   defaultScreenOptions,
   fillHistory,
+  gravityDecimals,
   measuresGravity,
   parseScreenQuery,
   type History,
@@ -53,9 +55,16 @@ export class ScreenService {
     private readonly loadAssets: () => ScreenAssets = loadScreenAssets,
   ) {}
 
-  /** The options an address asks for, with the hub's units as the defaults. */
+  /** The options an address asks for, with the hub's units as the defaults and its decimals for any left to it. */
   options(query: Record<string, unknown>): ScreenOptions {
-    return parseScreenQuery(query, defaultScreenOptions(this.deps.settings.units()));
+    const hub = this.deps.settings.hub();
+    const decimals = decimalsFrom(hub.decimals);
+    const o = parseScreenQuery(query, defaultScreenOptions(this.deps.settings.units()));
+    return {
+      ...o,
+      gravityDecimals: o.gravityDecimals ?? gravityDecimals(decimals, o.gravity),
+      temperatureDecimals: o.temperatureDecimals ?? decimals.temperature,
+    };
   }
 
   /** The picture of one device (`pillId`) or of all of them. */

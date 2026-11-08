@@ -1,4 +1,5 @@
 import type { GravityUnit, TemperatureUnit } from './types.js';
+import { decimalsOrNull } from './units.js';
 
 /**
  * Screen images: a picture of every pill (or of one) at a given size, for small screens that show an image from a web
@@ -40,6 +41,9 @@ export interface ScreenOptions {
   range: ScreenRange;
   gravity: GravityUnit;
   temperature: TemperatureUnit;
+  /** Decimals for the gravity (in `gravity`'s unit) and the temperatures; null for the hub's. */
+  gravityDecimals: number | null;
+  temperatureDecimals: number | null;
   /** Language (and region) for the words, numbers and times, e.g. en-GB. */
   lang: string;
   /** Time zone for the clock, e.g. Europe/Berlin; null for the hub's own. */
@@ -60,6 +64,8 @@ export function defaultScreenOptions(units: { gravity: GravityUnit; temperature:
     range: 'brew',
     gravity: units.gravity,
     temperature: units.temperature,
+    gravityDecimals: null,
+    temperatureDecimals: null,
     lang: 'en',
     tz: null,
     brewing: false,
@@ -125,6 +131,8 @@ export function parseScreenQuery(query: Record<string, unknown>, defaults: Scree
     range: pick(SCREEN_RANGES, query.range, defaults.range),
     gravity: pick<GravityUnit>(['sg', 'plato'], query.gravity, defaults.gravity),
     temperature: pick<TemperatureUnit>(['C', 'F'], query.temp, defaults.temperature),
+    gravityDecimals: query.gdec === undefined ? defaults.gravityDecimals : decimalsOrNull(first(query.gdec)),
+    temperatureDecimals: query.tdec === undefined ? defaults.temperatureDecimals : decimalsOrNull(first(query.tdec)),
     lang: query.lang === undefined ? defaults.lang : screenLang(query.lang),
     tz: query.tz === undefined ? defaults.tz : screenTimeZone(query.tz),
     brewing: flag === undefined ? defaults.brewing : flag === '1' || flag === 'true' || flag === 'yes',
@@ -134,7 +142,10 @@ export function parseScreenQuery(query: Record<string, unknown>, defaults: Scree
 // Commas and slashes are fine in a query and easier to read (and type into a screen's settings) than %2C and %2F.
 const enc = (v: string) => encodeURIComponent(v).replace(/%2C/gi, ',').replace(/%2F/gi, '/');
 
-/** The query for an image address, every option spelled out so the address doesn't change meaning between versions. */
+/**
+ * The query for an image address, every option spelled out so the address doesn't change meaning between versions.
+ * Decimals left to the hub are left out, so the picture follows the hub's setting.
+ */
 export function screenQuery(o: ScreenOptions, opts: { allDevices: boolean }): string {
   const parts: [string, string][] = [
     ['w', String(o.width)],
@@ -144,7 +155,11 @@ export function screenQuery(o: ScreenOptions, opts: { allDevices: boolean }): st
     ['show', SCREEN_ITEMS.filter((i) => o.show.includes(i)).join(',')],
   ];
   if (o.show.includes('chart')) parts.push(['range', o.range]);
-  parts.push(['gravity', o.gravity], ['temp', o.temperature], ['lang', o.lang]);
+  parts.push(['gravity', o.gravity], ['temp', o.temperature]);
+  // Missing from looks saved before decimals could be chosen.
+  if (o.gravityDecimals != null) parts.push(['gdec', String(o.gravityDecimals)]);
+  if (o.temperatureDecimals != null) parts.push(['tdec', String(o.temperatureDecimals)]);
+  parts.push(['lang', o.lang]);
   if (o.tz) parts.push(['tz', o.tz]);
   if (opts.allDevices && o.brewing) parts.push(['brewing', '1']);
   return parts.map(([k, v]) => `${k}=${enc(v)}`).join('&');

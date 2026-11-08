@@ -114,7 +114,8 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
   off as you create the PIN and add your first pill. Each card's small chart covers its brew (or the beer on tap) from
   the start, or else the last 24 hours, and TV mode's do the same.
 - **Open it on your phone** by scanning a QR code of the hub's address (Settings → Open on another device).
-- **Name your hub** and pick its default units and ABV formula (the standard one or one for strong beers). Problems
+- **Name your hub** and pick its default units, how many decimals readings are shown with (SG to 3 or 4 decimals, °P
+  and temperatures to 1 or 2) and the ABV formula (the standard one or one for strong beers). Problems
   the hub notices (a full SD card, Bluetooth trouble) show as a banner at the top.
 - **In your language:** English, Deutsch, Español, Français, Italiano, Nederlands, Polski and Português (Brasil),
   following the browser or picked per browser. See [docs/translations.md](./translations.md) to improve one.

@@ -5,6 +5,8 @@ import { useUnits } from '../units';
 import { useTheme } from '../theme';
 import { fixed, num } from '../format';
 import { t } from '../i18n';
+import { ChartTip, type ChartTipHandle, type ChartTipRow } from './ChartTip';
+import { keepTappedValues } from './tapCursor';
 import './CompareChart.css';
 
 export interface CompareLine {
@@ -26,9 +28,40 @@ export const COMPARE_COLORS = ['#8b5cf6', '#f97316', '#10b981', '#3b82f6', '#ec4
 const cssVar = (name: string, fallback: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 const plotHeight = () => (window.innerWidth < 640 ? 260 : 360);
 
+type UnitsNow = ReturnType<typeof useUnits>;
+interface Reading {
+  g: number | null;
+  t: number | null;
+}
+
+/** A brew's reading nearest `day` days in (brews are sampled at different times, so rarely exactly on it), in the units shown. */
+function readingAt(l: CompareLine, day: number, u: UnitsNow): Reading {
+  if (l.hours.length === 0) return { g: null, t: null };
+  const h = day * 24;
+  let lo = 0;
+  let hi = l.hours.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (l.hours[mid]! < h) lo = mid + 1;
+    else hi = mid;
+  }
+  const i = lo > 0 && Math.abs(l.hours[lo - 1]! - h) < Math.abs(l.hours[lo]! - h) ? lo - 1 : lo;
+  if (Math.abs(l.hours[i]! - h) > 2) return { g: null, t: null };
+  const g = l.gravity[i] ?? null;
+  const t = l.temperature[i] ?? null;
+  return { g: g === null ? null : u.gravityValue(g), t: t === null ? null : u.tempValue(t) };
+}
+
+function readingText({ g, t: temp }: Reading, showTemp: boolean, u: UnitsNow): string {
+  const gravity = g === null ? '–' : u.gravity === 'plato' ? `${fixed(g, 1)} °P` : fixed(g, 4);
+  return showTemp ? `${gravity} · ${temp === null ? '–' : `${fixed(temp, 1)}${u.tempLabel}`}` : gravity;
+}
+
 /** Several brews' gravity (and optionally temperature) overlaid by days since each started. */
 export function CompareChart({ lines, showTemp }: { lines: CompareLine[]; showTemp: boolean }) {
+  const wrap = useRef<HTMLDivElement | null>(null);
   const box = useRef<HTMLDivElement | null>(null);
+  const tip = useRef<ChartTipHandle | null>(null);
   const u = useUnits();
   const { look } = useTheme();
   const [cursor, setCursor] = useState<number | null>(null);
@@ -45,11 +78,35 @@ export function CompareChart({ lines, showTemp }: { lines: CompareLine[]; showTe
 
   useEffect(() => {
     const el = box.current;
+    const tooltip = tip.current;
     if (!el || lines.length === 0) return;
     const muted = cssVar('--muted', '#888');
     const grid = cssVar('--grid', 'rgba(128,128,128,0.15)');
     const axisBase = { stroke: muted, grid: { stroke: grid, width: 1 }, ticks: { show: false }, font: '11px system-ui, sans-serif' };
     const gFmt = (v: number) => (u.gravity === 'plato' ? fixed(v, 1) : fixed(v, 3));
+    /** Each brew's reading under the pointer, beside it. */
+    const showTip = (p: uPlot) => {
+      const w = wrap.current;
+      const idx = p.cursor.idx;
+      const x = p.cursor.left ?? -1;
+      const day = idx == null ? undefined : p.data[0][idx];
+      if (!w || day == null || x < 0) return tooltip?.hide();
+      const rows: ChartTipRow[] = lines.flatMap((l) => {
+        const r = readingAt(l, day, u);
+        return r.g !== null || (showTemp && r.t !== null) ? [{ label: l.label, value: readingText(r, showTemp, u), color: l.color }] : [];
+      });
+      if (rows.length === 0) return tooltip?.hide();
+      const o = p.over.getBoundingClientRect();
+      const r = w.getBoundingClientRect();
+      const top = o.top - r.top;
+      tooltip?.show({
+        x: o.left - r.left + x,
+        y: top + (p.cursor.top ?? 0),
+        area: { left: 0, top, right: r.width, bottom: top + o.height },
+        title: t('{n} days in', { n: fixed(day, 1) }),
+        rows,
+      });
+    };
     const series: Options['series'] = [{}];
     for (const l of lines) {
       series.push({ label: l.label, scale: 'g', stroke: l.color, width: 2.2, spanGaps: false, points: { show: false } });
@@ -99,9 +156,17 @@ export function CompareChart({ lines, showTemp }: { lines: CompareLine[]; showTe
           : []),
       ],
       series,
-      hooks: { setCursor: [(p) => setCursor(p.cursor.idx ?? null)] },
+      hooks: {
+        setCursor: [
+          (p) => {
+            setCursor(p.cursor.idx ?? null);
+            showTip(p);
+          },
+        ],
+      },
     };
     const chart = new uPlot(opts, data, el);
+    const releaseTap = keepTappedValues(chart);
     const ro = new ResizeObserver(() => {
       const w = Math.max(260, el.clientWidth);
       if (w !== chart.width) chart.setSize({ width: w, height: plotHeight() });
@@ -109,53 +174,33 @@ export function CompareChart({ lines, showTemp }: { lines: CompareLine[]; showTe
     ro.observe(el);
     return () => {
       ro.disconnect();
+      releaseTap();
       chart.destroy();
+      tooltip?.hide();
     };
   }, [data, lines, showTemp, u, look]);
 
   const day = cursor === null ? null : ((data[0] as number[])[cursor] ?? null);
-  /** Each brew's reading nearest the cursor (brews are sampled at different times, so rarely exactly on it). */
-  const at = (l: CompareLine): { g: number | null; t: number | null } => {
-    if (day === null || l.hours.length === 0) return { g: null, t: null };
-    const h = day * 24;
-    let lo = 0;
-    let hi = l.hours.length - 1;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (l.hours[mid]! < h) lo = mid + 1;
-      else hi = mid;
-    }
-    const i = lo > 0 && Math.abs(l.hours[lo - 1]! - h) < Math.abs(l.hours[lo]! - h) ? lo - 1 : lo;
-    if (Math.abs(l.hours[i]! - h) > 2) return { g: null, t: null };
-    const g = l.gravity[i] ?? null;
-    const t = l.temperature[i] ?? null;
-    return { g: g === null ? null : u.gravityValue(g), t: t === null ? null : u.tempValue(t) };
-  };
 
   return (
     <div className="compare-chart">
-      <div ref={box} />
+      <div ref={wrap} className="compare-plot">
+        <div ref={box} />
+        <ChartTip ref={tip} />
+      </div>
       <div className="compare-legend">
         {/* i18n: {n} always has one decimal */}
         {day !== null && <div className="compare-day num">{t('{n} days in', { n: fixed(day, 1) })}</div>}
-        {lines.map((l) => {
-          const { g, t: temp } = at(l);
-          return (
-            <div key={l.id} className="compare-key">
-              <span className="swatch" style={{ background: l.color }} />
-              <div className="grow">
-                <strong>{l.label}</strong>
-                {l.detail && <small>{l.detail}</small>}
-              </div>
-              {day !== null && (
-                <span className="num small">
-                  {g === null ? '–' : u.gravity === 'plato' ? `${fixed(g, 1)} °P` : fixed(g, 4)}
-                  {showTemp && ` · ${temp === null ? '–' : `${fixed(temp, 1)}${u.tempLabel}`}`}
-                </span>
-              )}
+        {lines.map((l) => (
+          <div key={l.id} className="compare-key">
+            <span className="swatch" style={{ background: l.color }} />
+            <div className="grow">
+              <strong>{l.label}</strong>
+              {l.detail && <small>{l.detail}</small>}
             </div>
-          );
-        })}
+            {day !== null && <span className="num small">{readingText(readingAt(l, day, u), showTemp, u)}</span>}
+          </div>
+        ))}
       </div>
     </div>
   );

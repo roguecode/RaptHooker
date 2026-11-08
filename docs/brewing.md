@@ -105,7 +105,8 @@ every device shows the same.
 On the **Brews** page, tap **Compare** and pick two to eight brews, running or finished. Their gravity curves are drawn
 on one chart by **days since each brew started**, each in its own colour, with each brew's OG, FG and ABV in the
 legend. Tap **Temperature** to add their temperatures (dashed). Hover or tap the chart to read every brew's value on the
-same day. The address (`#/brews?compare=…`) keeps your pick, so you can bookmark a comparison.
+same day, in a box beside the pointer and in the legend. The address (`#/brews?compare=…`) keeps your pick, so you can
+bookmark a comparison.
 
 ## Batch summary
 

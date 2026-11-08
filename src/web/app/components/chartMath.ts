@@ -366,6 +366,27 @@ export function markLineX(x: number, left: number, width: number, lineWidth = 1)
   return Math.min(Math.max(Math.round(x), first), last) + 0.5;
 }
 
+export interface TipArea {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+/**
+ * Where a w × h tooltip goes for the pointer at (x, y): beside it, to the right or to the left when there's no room,
+ * level with it and inside `area`. When neither side has room (a narrow phone), it goes above the pointer, or below.
+ */
+export function placeTip(x: number, y: number, w: number, h: number, area: TipArea, gap = 16): { left: number; top: number } {
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi));
+  const level = clamp(y - h / 2, area.top, area.bottom - h);
+  if (x + gap + w <= area.right) return { left: x + gap, top: level };
+  if (x - gap - w >= area.left) return { left: x - gap - w, top: level };
+  const left = clamp(x - w / 2, area.left, area.right - w);
+  const above = y - gap - h;
+  return { left, top: above >= area.top ? above : clamp(y + gap, area.top, area.bottom - h) };
+}
+
 /** Lays items out left to right, wrapping onto new rows. */
 export function flowLayout(widths: number[], maxWidth: number, gap: number): { x: number; row: number }[] {
   let x = 0;

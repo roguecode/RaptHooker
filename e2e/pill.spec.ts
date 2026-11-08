@@ -34,6 +34,40 @@ test('the pill page draws its history and changes the range', async ({ page, req
   await expect(chart.locator('canvas').first()).toBeVisible();
 });
 
+test('pointing at the chart shows the values there beside the pointer', async ({ page, request }) => {
+  const pill = await ensurePill(request, SIMULATED.water, 'Water test');
+  await page.goto(`/#/pill/${pill.id}`);
+  const chart = page.getByRole('group', { name: 'History of Water test' });
+  await expect(chart.locator('canvas').first()).toBeVisible();
+  await expect(chart.getByText('No readings in this range yet')).toHaveCount(0);
+
+  await chart.scrollIntoViewIfNeeded();
+  const plot = (await chart.locator('.u-over').boundingBox())!;
+  const at = { x: plot.x + plot.width * 0.6, y: plot.y + plot.height / 2 };
+  const phone = test.info().project.name === 'phone';
+  if (phone) await page.touchscreen.tap(at.x, at.y);
+  else await page.mouse.move(at.x, at.y);
+  const tip = chart.locator('.chart-tip');
+  await expect(tip).toBeVisible();
+  await expect(tip).toContainText('Gravity');
+  await expect(tip).toContainText('Temperature');
+  // The reading the legend shows.
+  await expect(tip.locator('.chart-tip-title')).toHaveText((await chart.locator('.u-legend .u-value').first().textContent())!);
+  const box = (await tip.boundingBox())!;
+  expect(box.y).toBeGreaterThanOrEqual(plot.y - 1);
+  expect(box.y + box.height).toBeLessThanOrEqual(plot.y + plot.height + 1);
+
+  if (phone) {
+    // Some browsers say the mouse left straight after a tap: the values stay until a tap elsewhere.
+    await chart.locator('.u-over').dispatchEvent('mouseleave');
+    await expect(tip).toBeVisible();
+    await page.getByRole('heading', { level: 1, name: 'Water test' }).tap();
+  } else {
+    await page.mouse.move(0, 0);
+  }
+  await expect(tip).toHaveCount(0);
+});
+
 test('a range is left out of the chart, shown again and put back', async ({ page, request }) => {
   const pill = await ensurePill(request, SIMULATED.water, 'Water test');
   // A retry starts from a chart with nothing left out.

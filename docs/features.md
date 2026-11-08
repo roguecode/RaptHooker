@@ -60,13 +60,14 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
   velocity (a straight line through the last 6–72 hours) and light or strong smoothing, and compare both side by side
   before you switch. Readings where the pill doesn't look like it's floating are flagged, greyed out on the charts and
   left out of brew stats and gravity alerts. See [docs/calibration.md](./calibration.md).
-- **Charts you can explore:** drag across them or pinch to zoom, pan with the overview strip, double-tap to see it
-  all; ranges from 6 hours to everything (or pick dates), brew events marked, the pill's own values as a dotted line
-  when RaptHooker's are in use, smoothing for the eye (**Smoothing − / +**, which changes only the drawing) and PNG
-  export. Knocked the pill while adding hops? Zoom in on the spike and **Exclude this range**: the charts draw a dashed
-  curve through it from the readings either side (point at it to see the range, or put it back), while the readings
-  themselves are kept. The dashboard's cards, TV mode and image links draw the same curve. **Exclusions** under the
-  chart switches back to the readings in that browser.
+- **Charts you can explore:** point at a line (or tap it) to see the readings there in a box beside the pointer, drag
+  across them or pinch to zoom, pan with the overview strip, double-tap to see it all; ranges from 6 hours to
+  everything (or pick dates), brew events marked, the pill's own values as a dotted line when RaptHooker's are in use,
+  smoothing for the eye (**Smoothing − / +**, which changes only the drawing) and PNG export. Knocked the pill while
+  adding hops? Zoom in on the spike and **Exclude this range**: the charts draw a dashed curve through it from the
+  readings either side (point at it to see the range, or put it back), while the readings themselves are kept. The
+  dashboard's cards, TV mode and image links draw the same curve. **Exclusions** under the chart switches back to the
+  readings in that browser.
 - **CSV export** of a pill's readings or a brew.
 
 ## Webhooks, MQTT and alerts

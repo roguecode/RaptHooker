@@ -5,6 +5,10 @@
   min-height: 16rem;
 }
 
+.compare-plot {
+  position: relative;
+}
+
 .compare-legend {
   display: grid;
   gap: 0.35rem 1rem;

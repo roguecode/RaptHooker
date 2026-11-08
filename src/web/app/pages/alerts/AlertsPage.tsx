@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
-import { alertKindInfo, type AlertEvent, type AlertRule, type AlertRuleInput, type Channel } from '@rapthooker/shared';
+import type { AlertEvent, AlertRule, AlertRuleInput, Channel } from '@rapthooker/shared';
 import { api, errorText } from '../../api';
 import { useLive, useLiveMessages } from '../../live';
 import { useUnits } from '../../units';
 import { timeAgo, useNow } from '../../format';
 import { Icon } from '../../components/Icon';
 import { Confirm, Switch } from '../../components/ui';
-import { t, tp } from '../../i18n';
+import { t } from '../../i18n';
 import { PushPanel } from './PushPanel';
 import { ChannelsPanel } from './ChannelsPanel';
 import { RuleModal, emptyRule, sendToText } from './RuleModal';
 import { channelApi } from './channelApi';
+import { describeAlert, whenText } from './describe';
 import './alerts.css';
 
 export function AlertsPage() {
@@ -60,26 +61,9 @@ export function AlertsPage() {
     window.setTimeout(() => void loadChannels(), 12_000);
   });
 
-  const describe = (r: AlertRule) => {
-    const info = alertKindInfo(r.kind);
-    switch (info.measure) {
-      case 'temperature':
-        return `${t(info.label)} ${u.tempText(r.threshold)}`;
-      case 'gravity':
-        return `${t(info.label)} ${u.gravityText(r.threshold)}`;
-      case 'points':
-        return tp(r.threshold, 'Less than {count} point change in {hours} h', 'Less than {count} points change in {hours} h', {
-          hours: r.hours,
-        });
-      case 'velocity':
-        return r.kind === 'velocity_slow'
-          ? tp(r.threshold, 'Gravity dropping less than {count} point a day', 'Gravity dropping less than {count} points a day')
-          : tp(r.threshold, 'Gravity dropping more than {count} point a day', 'Gravity dropping more than {count} points a day');
-      case 'percent':
-        return `${t(info.label)} ${r.threshold}%`;
-      default:
-        return t('Nothing heard for {minutes} min', { minutes: r.threshold });
-    }
+  const when = (r: AlertRule) => {
+    const w = whenText(r);
+    return w ? ` · ${w}` : '';
   };
 
   return (
@@ -131,9 +115,10 @@ export function AlertsPage() {
                     )}
                   </h4>
                   <p>
-                    {describe(r)} · {r.pillIds === 'all' ? t('all pills') : r.pillIds.map(pillName).join(', ')}
-                    {r.onlyDuringBrew ? ` · ${t('while brewing')}` : ''}
+                    {describeAlert(r, u)} · {r.pillIds === 'all' ? t('all pills') : r.pillIds.map(pillName).join(', ')}
+                    {when(r)}
                   </p>
+                  {r.message && <p className="rule-todo">“{r.message}”</p>}
                   <p className="rule-send-to">
                     <Icon name="send" size={12} /> {sendToText(r.channelIds, channels ?? [])}
                   </p>

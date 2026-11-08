@@ -29,6 +29,12 @@
   gap: 0.35rem;
 }
 
+/* What to do, from an alert's message. */
+.rule-todo {
+  color: var(--text);
+  font-style: italic;
+}
+
 /* The worked example under an alert's threshold (RuleExample). */
 .rule-example {
   padding: 0.7rem 0.85rem;

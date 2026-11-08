@@ -172,6 +172,32 @@ function schema5Database(file: string): void {
   db.close();
 }
 
+/**
+ * A database as RaptHooker 0.9.0 and 0.9.1 (schema 9) left it: schema 5's, upgraded, plus a keg and a planned dry hop
+ * (an event with an end, left off the charts). Keep it as it is when adding a migration.
+ */
+function schema9Database(file: string): void {
+  schema5Database(file);
+  const db = new DatabaseSync(file);
+  for (const sql of MIGRATIONS.slice(5, 9)) db.exec(sql);
+  db.exec('PRAGMA user_version = 9');
+  // What 0.9.1 runs to add an event.
+  db.prepare(
+    `INSERT INTO brew_events (id, brew_id, at, end_at, kind, text, hidden) VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT (id) DO UPDATE SET
+       at = excluded.at, end_at = excluded.end_at, kind = excluded.kind, text = excluded.text, hidden = excluded.hidden`,
+  ).run('ev9', 'brew1', T0 + 60_000, T0 + 3 * DAY, 'dry_hop', 'Mosaic', 1);
+  db.prepare('INSERT INTO kegs (id, pill_id, json, kegged_at, ended_at, created_at) VALUES (?, ?, ?, ?, ?, ?)').run(
+    'keg1',
+    THERMO,
+    '{"name":"Pale ale","abv":5.2}',
+    T0,
+    null,
+    T0,
+  );
+  db.close();
+}
+
 /** Every row of every table, as these columns (all of them, unless given). */
 function dump(db: DatabaseSync, columns?: Record<string, string[]>): { rows: Rows; columns: Record<string, string[]> } {
   const tables = (
@@ -542,7 +568,19 @@ describe('upgrading a database from 0.7.0 and 0.8.0 (schema 5)', () => {
     const file = join(tempDir(), 'rapthooker.db');
     schema5Database(file);
     const store = new Store(file);
-    store.saveBrewEvent({ id: 'ev2', brew_id: 'brew1', at: T0 + 60_000, end_at: T0 + DAY, kind: 'dry_hop', text: 'Mosaic', hidden: 1 });
+    store.saveBrewEvent({
+      id: 'ev2',
+      brew_id: 'brew1',
+      at: T0 + 60_000,
+      end_at: T0 + DAY,
+      kind: 'dry_hop',
+      text: 'Mosaic',
+      hidden: 1,
+      remind: 0,
+      reminded_at: null,
+      reminded_end: null,
+      alert_id: null,
+    });
     store.close();
     // What 0.8.0 runs to add or change an event, and to list them: it doesn't know the new columns.
     const db = new DatabaseSync(file);
@@ -559,10 +597,11 @@ describe('upgrading a database from 0.7.0 and 0.8.0 (schema 5)', () => {
 
     const again = new Store(file);
     try {
+      const none = { remind: 0, reminded_at: null, reminded_end: null, alert_id: null };
       expect(again.listBrewEvents('brew1')).toEqual([
-        { id: 'ev1', brew_id: 'brew1', at: T0, end_at: null, kind: 'dryhop', text: 'Citra', hidden: 0 },
-        { id: 'ev2', brew_id: 'brew1', at: T0 + 120_000, end_at: T0 + DAY, kind: 'dry_hop', text: 'Mosaic, 50 g', hidden: 1 },
-        { id: 'ev3', brew_id: 'brew1', at: T0 + 180_000, end_at: null, kind: 'note', text: 'Krausen dropped', hidden: 0 },
+        { id: 'ev1', brew_id: 'brew1', at: T0, end_at: null, kind: 'dryhop', text: 'Citra', hidden: 0, ...none },
+        { id: 'ev2', brew_id: 'brew1', at: T0 + 120_000, end_at: T0 + DAY, kind: 'dry_hop', text: 'Mosaic, 50 g', hidden: 1, ...none },
+        { id: 'ev3', brew_id: 'brew1', at: T0 + 180_000, end_at: null, kind: 'note', text: 'Krausen dropped', hidden: 0, ...none },
       ]);
     } finally {
       again.close();
@@ -628,6 +667,114 @@ describe('upgrading a database from 0.7.0 and 0.8.0 (schema 5)', () => {
       expect(h.gravity.filter((v) => v !== null)).toEqual([]);
     } finally {
       store.close();
+    }
+  });
+});
+
+describe('upgrading a database from 0.9.0 and 0.9.1 (schema 9)', () => {
+  it('keeps every row and value, and adds empty brew alerts and profiles and events that remind of nothing', () => {
+    const file = join(tempDir(), 'rapthooker.db');
+    schema9Database(file);
+    const raw = new DatabaseSync(file);
+    const before = dump(raw);
+    raw.close();
+    expect(Object.values(before.rows).every((rows) => rows.length > 0)).toBe(true);
+
+    const store = new Store(file);
+    try {
+      expect(store.schemaVersion).toBe(MIGRATIONS.length);
+      const after = dump(store.db, before.columns);
+      for (const table of Object.keys(before.rows)) {
+        const rows = table === 'meta' ? after.rows[table]!.filter((r) => !addedBookkeeping(r, before.rows.meta!)) : after.rows[table];
+        expect(rows, table).toEqual(before.rows[table]);
+      }
+      // v10: brew alerts and profiles, empty; no event reminds of anything.
+      expect(store.db.prepare('SELECT COUNT(*) AS n FROM brew_alerts').get()).toEqual({ n: 0 });
+      expect(store.db.prepare('SELECT COUNT(*) AS n FROM brew_profiles').get()).toEqual({ n: 0 });
+      expect(store.db.prepare('SELECT id, remind, reminded_at, reminded_end, alert_id FROM brew_events ORDER BY id').all()).toEqual([
+        { id: 'ev1', remind: 0, reminded_at: null, reminded_end: null, alert_id: null },
+        { id: 'ev9', remind: 0, reminded_at: null, reminded_end: null, alert_id: null },
+      ]);
+      expect(store.dueReminders(T0 + 3 * DAY, DAY)).toEqual([]);
+    } finally {
+      store.close();
+    }
+  });
+
+  it("keeps an event's reminder when 0.9.1 is put back and changes events, and reminds again of a time it moved", () => {
+    const file = join(tempDir(), 'rapthooker.db');
+    schema9Database(file);
+    const store = new Store(file);
+    const planned = {
+      brew_id: 'brew1',
+      end_at: null,
+      kind: 'dry_hop',
+      text: 'Citra',
+      hidden: 0,
+      remind: 1,
+      reminded_end: null,
+      alert_id: null,
+    };
+    store.saveBrewEvent({ ...planned, id: 'ev10', at: T0 + 2 * DAY, reminded_at: null });
+    store.saveBrewEvent({ ...planned, id: 'ev11', at: T0 + DAY, reminded_at: T0 + DAY });
+    store.close();
+    // What 0.9.1 runs to add or change an event, and to list them: it doesn't know the new columns.
+    const db = new DatabaseSync(file);
+    const save = db.prepare(
+      `INSERT INTO brew_events (id, brew_id, at, end_at, kind, text, hidden) VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (id) DO UPDATE SET
+         at = excluded.at, end_at = excluded.end_at, kind = excluded.kind, text = excluded.text, hidden = excluded.hidden`,
+    );
+    save.run('ev10', 'brew1', T0 + 2 * DAY, null, 'dry_hop', 'Citra, 100 g', 0);
+    save.run('ev11', 'brew1', T0 + 4 * DAY, null, 'dry_hop', 'Citra', 0);
+    save.run('ev12', 'brew1', T0 + 4 * DAY, null, 'note', 'Gravity sample', 0);
+    expect(
+      db.prepare('SELECT id, brew_id, at, end_at, kind, text, hidden FROM brew_events WHERE brew_id = ? ORDER BY at, id').all('brew1'),
+    ).toHaveLength(5);
+    db.close();
+
+    const again = new Store(file);
+    try {
+      expect(again.getBrewEvent('ev10')).toMatchObject({ text: 'Citra, 100 g', remind: 1, reminded_at: null });
+      // It went out for the old time: the new one is due again.
+      expect(again.getBrewEvent('ev11')).toMatchObject({ at: T0 + 4 * DAY, remind: 1, reminded_at: T0 + DAY });
+      // One 0.9.1 added doesn't remind.
+      expect(again.getBrewEvent('ev12')).toMatchObject({ remind: 0, reminded_at: null, reminded_end: null });
+      expect(again.dueReminders(T0 + 4 * DAY, DAY).map((r) => r.id)).toEqual(['ev11']);
+    } finally {
+      again.close();
+    }
+  });
+
+  it("leaves a brew's alerts behind when 0.9.1 is put back and deletes the brew, and deletes them with the brew itself", () => {
+    const file = join(tempDir(), 'rapthooker.db');
+    schema9Database(file);
+    const store = new Store(file);
+    store.saveBrewAlert({ id: 'ba1', brew_id: 'brew1', json: '{"kind":"fermentation_started","threshold":3}', created_at: T0 });
+    store.saveAlertState('ba1', PILL, true, T0);
+    store.saveProfile('prof1', { name: 'NEIPA', alerts: [], events: [] }, T0);
+    store.close();
+    // What 0.9.1 runs to delete a brew: it doesn't know brew_alerts, so they stay (and do nothing without their brew).
+    const db = new DatabaseSync(file);
+    db.prepare('DELETE FROM brew_events WHERE brew_id = ?').run('brew1');
+    db.prepare('DELETE FROM brews WHERE id = ?').run('brew1');
+    expect(db.prepare('SELECT COUNT(*) AS n FROM brew_alerts').get()).toEqual({ n: 1 });
+    db.close();
+
+    const again = new Store(file);
+    try {
+      expect(again.listBrewAlertRows()).toHaveLength(1);
+      expect(again.listProfileRows()).toEqual([{ id: 'prof1', json: '{"name":"NEIPA","alerts":[],"events":[]}', created_at: T0 }]);
+      again.db
+        .prepare('INSERT INTO brews (id, pill_id, started_at, ended_at, json, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+        .run('brew2', PILL, T0, null, '{"name":"Two"}', T0);
+      again.saveBrewAlert({ id: 'ba2', brew_id: 'brew2', json: '{"kind":"brew_day","threshold":3}', created_at: T0 });
+      again.saveAlertState('ba2', PILL, true, T0);
+      again.deleteBrew('brew2');
+      expect(again.listBrewAlertRows().map((r) => r.id)).toEqual(['ba1']);
+      expect(again.alertStates().map((s) => s.rule_id)).not.toContain('ba2');
+    } finally {
+      again.close();
     }
   });
 });

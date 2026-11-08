@@ -387,8 +387,17 @@ describe('brewAnnotations', () => {
       startedAt: 1000,
       endedAt: null,
       events: [
-        { id: 'b', brewId: 'x', at: 3000, endAt: null, kind: 'cold_crash', text: '', hidden: false },
-        { id: 'a', brewId: 'x', at: 2000, endAt: null, kind: 'dry_hop', text: 'Citra and Mosaic, 50 g each, day three', hidden: false },
+        { id: 'b', brewId: 'x', at: 3000, endAt: null, kind: 'cold_crash', text: '', hidden: false, remind: false },
+        {
+          id: 'a',
+          brewId: 'x',
+          at: 2000,
+          endAt: null,
+          kind: 'dry_hop',
+          text: 'Citra and Mosaic, 50 g each, day three',
+          hidden: false,
+          remind: false,
+        },
       ],
     });
     expect(a.map((x) => x.label)).toEqual(['Brew started', 'Dry hop: Citra and Mosaic,…', 'Cold crash']);
@@ -401,9 +410,9 @@ describe('brewAnnotations', () => {
       startedAt: 1000,
       endedAt: 9000,
       events: [
-        { id: 'a', brewId: 'x', at: 2000, endAt: 5000, kind: 'dry_hop', text: 'Citra', hidden: false },
-        { id: 'b', brewId: 'x', at: 3000, endAt: null, kind: 'note', text: 'Krausen dropped', hidden: true },
-        { id: 'c', brewId: 'x', at: 6000, endAt: 6000, kind: 'cold_crash', text: '', hidden: false },
+        { id: 'a', brewId: 'x', at: 2000, endAt: 5000, kind: 'dry_hop', text: 'Citra', hidden: false, remind: false },
+        { id: 'b', brewId: 'x', at: 3000, endAt: null, kind: 'note', text: 'Krausen dropped', hidden: true, remind: false },
+        { id: 'c', brewId: 'x', at: 6000, endAt: 6000, kind: 'cold_crash', text: '', hidden: false, remind: false },
       ],
     });
     expect(a.map((x) => [x.label, x.ts, x.endTs])).toEqual([

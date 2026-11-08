@@ -98,7 +98,8 @@ export const api = {
 
   brews: (pillId?: string) => get<Brew[]>(`/api/brews${pillId ? `?pill=${encodeURIComponent(pillId)}` : ''}`),
   brew: (id: string) => get<Brew>(`/api/brews/${encodeURIComponent(id)}`),
-  startBrew: (pillId: string, input: Partial<BrewInput> & { startedAt?: number }) => post<Brew>('/api/brews', { pillId, ...input }),
+  startBrew: (pillId: string, input: Partial<BrewInput> & { startedAt?: number; profileId?: string }) =>
+    post<Brew>('/api/brews', { pillId, ...input }),
   updateBrew: (id: string, patch: Partial<BrewInput> & { startedAt?: number; endedAt?: number | null }) =>
     request<Brew>('PATCH', `/api/brews/${encodeURIComponent(id)}`, patch),
   endBrew: (id: string) => post<Brew>(`/api/brews/${encodeURIComponent(id)}/end`),

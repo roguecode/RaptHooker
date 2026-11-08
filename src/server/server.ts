@@ -26,6 +26,7 @@ import type { TokenService } from './tokens.js';
 import { ScreenError, type ScreenManager } from './screens/index.js';
 import { IspindelError, type IspindelService } from './ispindel/service.js';
 import { KegError, KegService } from './kegs.js';
+import { ProfileError, ProfileService } from './profiles.js';
 import type { Logger } from './log.js';
 import type { LogBuffer } from './logbuffer.js';
 import type { RouteContext } from './routes/context.js';
@@ -46,6 +47,7 @@ import { tokenRoutes } from './routes/tokens.js';
 import { relayRoutes } from './routes/relay.js';
 import { ispindelRoutes } from './routes/ispindel.js';
 import { kegRoutes } from './routes/kegs.js';
+import { profileRoutes } from './routes/profiles.js';
 import { updateRoutes } from './routes/updates.js';
 import { screenRoutes } from './routes/screen.js';
 import { screensRoutes } from './routes/screens.js';
@@ -73,6 +75,8 @@ export interface Services {
   ispindel: IspindelService;
   /** Kegs under Laser Levels: made by buildServer when not given (tests). */
   kegs?: KegService;
+  /** Brew profiles: made by buildServer when not given (tests). */
+  profiles?: ProfileService;
   logs: LogBuffer;
   version: string;
   startedAt: number;
@@ -125,6 +129,7 @@ export async function buildServer(s: Services, opts: { logger?: FastifyBaseLogge
       err instanceof ScreenError ||
       err instanceof IspindelError ||
       err instanceof KegError ||
+      err instanceof ProfileError ||
       err instanceof PinError;
     const status = known ? err.statusCode! : (err.statusCode ?? 500);
     if (status >= 500) app.log.error(err);
@@ -133,6 +138,7 @@ export async function buildServer(s: Services, opts: { logger?: FastifyBaseLogge
 
   const sockets: LiveSockets = new Map();
   s.kegs ??= new KegService(store, s.pills, app.log as unknown as Logger);
+  s.profiles ??= new ProfileService(store, s.brews, s.alerts, app.log as unknown as Logger, (id) => s.channels.get(id) !== null);
   const ctx: RouteContext = { app, s, auth, sessionOf, isOwner, owner, broadcast: broadcaster(sockets) };
 
   sessionRoutes(ctx);
@@ -150,6 +156,7 @@ export async function buildServer(s: Services, opts: { logger?: FastifyBaseLogge
   relayRoutes(ctx);
   ispindelRoutes(ctx);
   kegRoutes(ctx);
+  profileRoutes(ctx);
   updateRoutes(ctx);
   screenRoutes(ctx);
   screensRoutes(ctx);

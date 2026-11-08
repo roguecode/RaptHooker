@@ -4,7 +4,9 @@ import {
   alertInputSchema,
   alertKindInfo,
   BROWSER_PUSH,
+  brewAlertInputSchema,
   measuresGravity,
+  ONCE_PER_BREW,
   type AlertRuleInput,
   type Channel,
 } from '@rapthooker/shared';
@@ -28,6 +30,8 @@ export const emptyRule = (): AlertRuleInput => ({
   onlyDuringBrew: true,
   cooldownMin: 60,
   channelIds: 'all',
+  message: '',
+  addToTimeline: false,
 });
 
 /** Where a rule's alerts go, in words. */
@@ -98,12 +102,15 @@ export function RuleModal({
   isNew,
   initial,
   channels,
+  brew,
   onClose,
   onSave,
 }: {
   isNew: boolean;
   initial: AlertRuleInput;
   channels: Channel[];
+  /** An alert for this brew alone: no pills to pick, and it only watches while the brew runs. */
+  brew?: { name: string };
   onClose: () => void;
   onSave: (r: AlertRuleInput) => Promise<void>;
 }) {
@@ -111,6 +118,7 @@ export function RuleModal({
   const { pills, toast } = useLive();
   const [rule, setRule] = useState(initial);
   const info = alertKindInfo(rule.kind);
+  const once = ONCE_PER_BREW.has(rule.kind);
   const toDisplay = (v: number) =>
     info.measure === 'temperature'
       ? Math.round(u.tempValue(v) * 10) / 10
@@ -125,20 +133,28 @@ export function RuleModal({
     temperature: u.tempLabel,
     gravity: u.gravityLabel,
     points: t('points'),
+    drop: t('points'),
     velocity: t('points/day'),
     percent: '%',
+    days: t('days'),
     minutes: t('minutes'),
   }[info.measure];
   const thresholdLabel =
     info.measure === 'points'
       ? tk('Changed less than')
-      : info.measure === 'minutes'
-        ? tk('Quiet for')
-        : info.measure === 'velocity'
-          ? rule.kind === 'velocity_slow'
-            ? tk('Slower than')
-            : tk('Faster than')
-          : tk('Threshold');
+      : info.measure === 'drop'
+        ? tk('Dropped by')
+        : info.measure === 'days'
+          ? tk('After')
+          : info.measure === 'minutes'
+            ? tk('Quiet for')
+            : info.measure === 'velocity'
+              ? rule.kind === 'velocity_slow'
+                ? tk('Slower than')
+                : tk('Faster than')
+              : rule.kind === 'attenuation_reached'
+                ? tk('Reaches')
+                : tk('Threshold');
   const n = Number(threshold);
   const input = {
     ...rule,
@@ -152,7 +168,7 @@ export function RuleModal({
             ? u.gravityFromDisplay(n)
             : n,
   };
-  const check = useFormCheck(alertInputSchema, input, {
+  const check = useFormCheck(brew ? brewAlertInputSchema : alertInputSchema, input, {
     name: tk('Name'),
     kind: tk('When'),
     threshold: thresholdLabel,
@@ -160,13 +176,21 @@ export function RuleModal({
     cooldownMin: tk("Don't repeat for"),
     pillIds: tk('Pills'),
     channelIds: tk('Send to'),
+    message: tk('What to do'),
   });
   const { errors } = check;
 
   const changeKind = (kind: AlertRuleInput['kind']) => {
     const k = alertKindInfo(kind);
     const def = k.defaultThreshold;
-    setRule((r) => ({ ...r, kind, name: t(k.label), threshold: def }));
+    // A step in a brew is worth keeping on its timeline.
+    setRule((r) => ({
+      ...r,
+      kind,
+      name: t(k.label),
+      threshold: def,
+      addToTimeline: ONCE_PER_BREW.has(kind) || (r.addToTimeline ?? false),
+    }));
     setThreshold(
       String(
         k.measure === 'temperature'
@@ -179,7 +203,10 @@ export function RuleModal({
   };
 
   return (
-    <Modal title={isNew ? t('New alert') : t('Edit alert')} onClose={onClose}>
+    <Modal
+      title={brew ? (isNew ? t('New alert for {brew}', { brew: brew.name }) : t('Edit alert')) : isNew ? t('New alert') : t('Edit alert')}
+      onClose={onClose}
+    >
       <form
         className="stack"
         onSubmit={async (e) => {
@@ -235,18 +262,20 @@ export function RuleModal({
               <FieldError error={errors.hours} />
             </label>
           )}
-          <label className="field">
-            <span>{t("Don't repeat for (min)")}</span>
-            <NumberInput
-              className="input num"
-              min={0}
-              max={10080}
-              fallback={0}
-              value={rule.cooldownMin}
-              onValue={(cooldownMin) => setRule((r) => ({ ...r, cooldownMin }))}
-            />
-            <FieldError error={errors.cooldownMin} />
-          </label>
+          {!once && (
+            <label className="field">
+              <span>{t("Don't repeat for (min)")}</span>
+              <NumberInput
+                className="input num"
+                min={0}
+                max={10080}
+                fallback={0}
+                value={rule.cooldownMin}
+                onValue={(cooldownMin) => setRule((r) => ({ ...r, cooldownMin }))}
+              />
+              <FieldError error={errors.cooldownMin} />
+            </label>
+          )}
         </div>
         <RuleExample rule={input} threshold={threshold.trim() === '' ? NaN : n} plato={u.gravity === 'plato'} />
         <label className="field">
@@ -254,49 +283,78 @@ export function RuleModal({
           <input className="input" required maxLength={80} value={rule.name} onChange={(e) => setRule({ ...rule, name: e.target.value })} />
           <FieldError error={errors.name} />
         </label>
-        <div className="field">
-          <span>{t('Pills')}</span>
-          <div className="chips">
-            <button
-              type="button"
-              className={`chip${rule.pillIds === 'all' ? ' on' : ''}`}
-              onClick={() => setRule({ ...rule, pillIds: 'all' })}
-            >
-              {t('All pills')}
-            </button>
-            {pills
-              .filter((p) => !p.archived)
-              .map((p) => {
-                const ids = rule.pillIds === 'all' ? [] : rule.pillIds;
-                const on = ids.includes(p.id);
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className={`chip${on ? ' on' : ''}`}
-                    onClick={() => {
-                      const next = on ? ids.filter((x) => x !== p.id) : [...ids, p.id];
-                      setRule({ ...rule, pillIds: next.length ? next : 'all' });
-                    }}
-                  >
-                    <span className="swatch" style={{ background: p.color }} /> {p.name}
-                  </button>
-                );
-              })}
+        <label className="field">
+          <span>{t('What to do (optional)')}</span>
+          <input
+            className="input"
+            maxLength={200}
+            value={rule.message ?? ''}
+            placeholder={t('Add the dry hops')}
+            onChange={(e) => setRule({ ...rule, message: e.target.value })}
+          />
+          <FieldError error={errors.message} />
+          <span className="hint">{t('Goes first in the notification, before what happened.')}</span>
+        </label>
+        {!brew && (
+          <div className="field">
+            <span>{t('Pills')}</span>
+            <div className="chips">
+              <button
+                type="button"
+                className={`chip${rule.pillIds === 'all' ? ' on' : ''}`}
+                onClick={() => setRule({ ...rule, pillIds: 'all' })}
+              >
+                {t('All pills')}
+              </button>
+              {pills
+                .filter((p) => !p.archived)
+                .map((p) => {
+                  const ids = rule.pillIds === 'all' ? [] : rule.pillIds;
+                  const on = ids.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={`chip${on ? ' on' : ''}`}
+                      onClick={() => {
+                        const next = on ? ids.filter((x) => x !== p.id) : [...ids, p.id];
+                        setRule({ ...rule, pillIds: next.length ? next : 'all' });
+                      }}
+                    >
+                      <span className="swatch" style={{ background: p.color }} /> {p.name}
+                    </button>
+                  );
+                })}
+            </div>
+            {['gravity_below', 'gravity_stable', 'velocity_slow', 'velocity_fast', 'battery_below'].includes(rule.kind) &&
+              pills.some(
+                (p) =>
+                  !p.archived && (rule.kind === 'battery_below' ? p.kind === 'thermometer' || p.kind === 'tilt' : !measuresGravity(p.kind)),
+              ) && (
+                <span className="hint">{t("Devices that don't have this reading (a thermometer, say) are left out of this alert.")}</span>
+              )}
           </div>
-          {['gravity_below', 'gravity_stable', 'velocity_slow', 'velocity_fast', 'battery_below'].includes(rule.kind) &&
-            pills.some(
-              (p) =>
-                !p.archived && (rule.kind === 'battery_below' ? p.kind === 'thermometer' || p.kind === 'tilt' : !measuresGravity(p.kind)),
-            ) && <span className="hint">{t("Devices that don't have this reading (a thermometer, say) are left out of this alert.")}</span>}
-        </div>
+        )}
         <SendTo value={rule.channelIds} channels={channels} onChange={(channelIds) => setRule({ ...rule, channelIds })} />
         <FieldError error={errors.channelIds} />
+        {!brew && !once && (
+          <label className="check">
+            <input type="checkbox" checked={rule.onlyDuringBrew} onChange={(e) => setRule({ ...rule, onlyDuringBrew: e.target.checked })} />
+            <span>
+              {t('Only while a brew is running')}
+              <small>{t('Ignore pills sitting idle.')}</small>
+            </span>
+          </label>
+        )}
         <label className="check">
-          <input type="checkbox" checked={rule.onlyDuringBrew} onChange={(e) => setRule({ ...rule, onlyDuringBrew: e.target.checked })} />
+          <input
+            type="checkbox"
+            checked={rule.addToTimeline ?? false}
+            onChange={(e) => setRule({ ...rule, addToTimeline: e.target.checked })}
+          />
           <span>
-            {t('Only while a brew is running')}
-            <small>{t('Ignore pills sitting idle.')}</small>
+            {t("Note it on the brew's timeline")}
+            <small>{t('Each time it goes off during a brew, as a note you can keep or delete.')}</small>
           </span>
         </label>
         <div className="modal-actions">

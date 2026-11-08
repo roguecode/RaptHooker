@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import type { AbvFormula, Brew, BrewCurve, BrewEvent } from '@rapthooker/shared';
+import type { AbvFormula, Brew, BrewAlert, BrewCurve, BrewEvent, BrewProfile } from '@rapthooker/shared';
 import { parseConfig } from '../config.js';
 import { ClockGuard } from '../clock.js';
 import { PillService } from '../pills.js';
@@ -240,7 +240,9 @@ describe('brew events', () => {
     t.send(1.05);
     expect(t.brews.activeFor(t.id)!.events).toHaveLength(1);
 
-    expect(() => t.brews.addEvent(brew.id, { at: t.now() + HOUR, kind: 'note', text: 'Soon' })).toThrow(/future/);
+    // A running brew's events can be planned (a finished brew's can't: see below).
+    expect(t.brews.addEvent(brew.id, { at: t.now() + HOUR, kind: 'note', text: 'Soon' }).at).toBe(t.now() + HOUR);
+    expect(() => t.brews.addEvent(brew.id, { at: t.now() + 400 * 24 * HOUR, kind: 'note', text: 'Next year' })).toThrow(/during/);
     expect(() => t.brews.addEvent(brew.id, { at: t.now() - 5 * 24 * HOUR, kind: 'cold_crash', text: '' })).toThrow(/during/);
     expect(() => t.brews.addEvent(brew.id, { at: t.now(), kind: 'note', text: ' ' })).toThrow(/note/);
     expect(() => t.brews.deleteEvent('nope', hop.id)).toThrow(/Unknown/);
@@ -265,12 +267,13 @@ describe('brew events', () => {
 
     const at = t.now() - HOUR;
     expect(() => t.brews.addEvent(brew.id, { at, endAt: at, kind: 'dry_hop', text: '' })).toThrow(/end after/);
-    // An end can be planned.
+    // An end can be planned, and so can a start.
     const planned = t.brews.addEvent(brew.id, { at, endAt: t.now() + 72 * HOUR, kind: 'dry_hop', text: 'Until Monday' });
     expect(planned.endAt).toBe(t.now() + 72 * HOUR);
-    expect(() => t.brews.addEvent(brew.id, { at: t.now() + HOUR, endAt: t.now() + 2 * HOUR, kind: 'dry_hop', text: '' })).toThrow(/future/);
+    expect(t.brews.addEvent(brew.id, { at: t.now() + HOUR, endAt: t.now() + 2 * HOUR, kind: 'dry_hop', text: '' }).at).toBe(t.now() + HOUR);
     // Not after a finished brew, though.
     t.brews.end(brew.id);
+    expect(() => t.brews.addEvent(brew.id, { at: t.now() + HOUR, kind: 'dry_hop', text: '' })).toThrow(/future/);
     expect(() => t.brews.addEvent(brew.id, { at, endAt: t.now() + 2 * 24 * HOUR, kind: 'dry_hop', text: '' })).toThrow(/during/);
     expect(t.brews.addEvent(brew.id, { at, endAt: t.now() + 12 * HOUR, kind: 'dry_hop', text: '' }).endAt).toBe(t.now() + 12 * HOUR);
   });
@@ -306,6 +309,46 @@ describe('brew events', () => {
     const ev = t.brews.addEvent(two.id, { at: t.now(), kind: 'temp_change', text: 'Up to 20 °C' });
     t.pills.remove(t.id);
     expect(t.store.getBrewEvent(ev.id)).toBeNull();
+  });
+
+  it('remind of a planned time, but not of one that has already come when it is set', () => {
+    const t = setup();
+    const brew = t.brews.start(t.id, { name: 'IPA' });
+    t.advance(2 * 24 * HOUR);
+    const hop = t.brews.addEvent(brew.id, { at: t.now() + 24 * HOUR, endAt: t.now() + 72 * HOUR, kind: 'dry_hop', text: '', remind: true });
+    expect(hop.remind).toBe(true);
+    expect(t.store.getBrewEvent(hop.id)).toMatchObject({ remind: 1, reminded_at: null, reminded_end: null });
+    // Logged afterwards, with the reminder on: nothing to remind of.
+    const done = t.brews.addEvent(brew.id, { at: t.now() - HOUR, kind: 'cold_crash', text: '', remind: true });
+    expect(t.store.getBrewEvent(done.id)).toMatchObject({ remind: 1, reminded_at: t.now() - HOUR });
+    // Switched on for one that has already started: only the end is still to come.
+    const note = t.brews.addEvent(brew.id, { at: t.now() - HOUR, endAt: t.now() + HOUR, kind: 'note', text: 'Rest' });
+    t.brews.updateEvent(brew.id, note.id, { ...note, remind: true });
+    expect(t.store.getBrewEvent(note.id)).toMatchObject({ remind: 1, reminded_at: t.now() - HOUR, reminded_end: null });
+    // A change that leaves it out keeps it.
+    expect(t.brews.updateEvent(brew.id, hop.id, { at: hop.at, kind: 'dry_hop', text: 'Citra' }).remind).toBe(true);
+    expect(t.brews.updateEvent(brew.id, hop.id, { at: hop.at, kind: 'dry_hop', text: 'Citra', remind: false }).remind).toBe(false);
+  });
+
+  it("keep the alert that noted them, through changes, and people's own have none", () => {
+    const t = setup();
+    const brew = t.brews.start(t.id, { name: 'IPA' });
+    const note = t.brews.addEvent(brew.id, { at: t.now(), kind: 'note', text: 'Started: down 3 points', hidden: true }, 'rule-1');
+    expect(note).toMatchObject({ alertId: 'rule-1', hidden: true });
+    expect(t.brews.updateEvent(brew.id, note.id, { ...note, hidden: false }).alertId).toBe('rule-1');
+    expect(t.brews.addEvent(brew.id, { at: t.now(), kind: 'note', text: 'Mine' }).alertId).toBeNull();
+  });
+});
+
+describe("the pill's starting gravity", () => {
+  it('is kept beside a typed OG, from the first hours in the wort', () => {
+    const t = setup();
+    const brew = t.brews.start(t.id, { name: 'IPA', og: 1.055 });
+    for (let i = 0; i < 20; i++) t.send(1.051);
+    const live = t.brews.activeFor(t.id)!;
+    expect(live.stats).toMatchObject({ og: 1.055, ogAuto: false, startGravity: 1.051 });
+    t.brews.end(brew.id);
+    expect(t.brews.get(brew.id)!.stats).toMatchObject({ og: 1.055, startGravity: 1.051 });
   });
 });
 
@@ -416,6 +459,98 @@ describe('brew API', () => {
     expect(backwards.statusCode).toBe(400);
     expect(backwards.json().error).toMatch(/end after it starts/);
     expect((await app.inject({ method: 'POST', url, headers: owner, payload: { ...old, hidden: 'yes' } })).statusCode).toBe(400);
+  });
+
+  it("manages a brew's own alerts, owner only, and deletes them with the brew", async () => {
+    const { app, pills, store } = await api();
+    const pill = pills.adopt(ADDR, {});
+    const brew = (
+      await app.inject({ method: 'POST', url: '/api/brews', headers: owner, payload: { pillId: pill.id, name: 'NEIPA' } })
+    ).json<Brew>();
+    const url = `/api/brews/${brew.id}/alerts`;
+    const payload = { name: 'Dry hop', kind: 'attenuation_reached', threshold: 50, message: 'Add 100 g Citra', addToTimeline: true };
+    expect((await app.inject({ method: 'POST', url, payload })).statusCode).toBe(403);
+    const made = await app.inject({ method: 'POST', url, headers: owner, payload: { ...payload, channelIds: ['push', 'gone'] } });
+    expect(made.statusCode).toBe(200);
+    const alert = made.json<BrewAlert>();
+    expect(alert).toMatchObject({ brewId: brew.id, kind: 'attenuation_reached', channelIds: ['push'], cooldownMin: 60, active: false });
+    expect((await app.inject({ method: 'POST', url, headers: owner, payload: { ...payload, threshold: 120 } })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'POST', url: '/api/brews/nope/alerts', headers: owner, payload })).statusCode).toBe(404);
+    const put = await app.inject({ method: 'PUT', url: `${url}/${alert.id}`, headers: owner, payload: { ...payload, threshold: 60 } });
+    expect(put.json<BrewAlert>()).toMatchObject({ threshold: 60 });
+    expect((await app.inject({ url })).json<BrewAlert[]>().map((a) => a.threshold)).toEqual([60]);
+    // Not one of the hub's rules.
+    expect((await app.inject({ url: '/api/alerts/rules' })).json()).toEqual([]);
+
+    const second = (await app.inject({ method: 'POST', url, headers: owner, payload })).json<BrewAlert>();
+    expect((await app.inject({ method: 'DELETE', url: `${url}/${second.id}`, headers: owner })).statusCode).toBe(204);
+    expect((await app.inject({ method: 'DELETE', url: `${url}/${second.id}`, headers: owner })).statusCode).toBe(404);
+    expect((await app.inject({ method: 'DELETE', url: `/api/brews/${brew.id}`, headers: owner })).statusCode).toBe(204);
+    expect(store.listBrewAlertRows()).toEqual([]);
+    expect((await app.inject({ url })).statusCode).toBe(404);
+  });
+
+  it('saves brew profiles and starts a brew with one, its events planned from the start', async () => {
+    const { app, pills } = await api();
+    const pill = pills.adopt(ADDR, {});
+    const profile = {
+      name: 'NEIPA',
+      notes: 'Verdant',
+      alerts: [{ name: 'Started', kind: 'fermentation_started', threshold: 3 }],
+      events: [
+        { offset: 3 * 24 * HOUR, endOffset: 6 * 24 * HOUR, kind: 'dry_hop', text: '100 g Citra' },
+        { offset: 0, kind: 'note', text: 'Pitched', remind: false },
+      ],
+    };
+    expect((await app.inject({ method: 'POST', url: '/api/brew-profiles', payload: profile })).statusCode).toBe(403);
+    const bad = await app.inject({
+      method: 'POST',
+      url: '/api/brew-profiles',
+      headers: owner,
+      payload: { ...profile, events: [{ offset: 0, kind: 'note' }] },
+    });
+    expect(bad.statusCode).toBe(400);
+    const made = (await app.inject({ method: 'POST', url: '/api/brew-profiles', headers: owner, payload: profile })).json<BrewProfile>();
+    expect(made).toMatchObject({ name: 'NEIPA', alerts: [expect.objectContaining({ enabled: true, channelIds: 'all' })] });
+    expect(made.events[0]).toMatchObject({ endOffset: 6 * 24 * HOUR, remind: true });
+    const renamed = await app.inject({
+      method: 'PUT',
+      url: `/api/brew-profiles/${made.id}`,
+      headers: owner,
+      payload: { ...profile, name: 'Hazy' },
+    });
+    expect(renamed.json<BrewProfile>().name).toBe('Hazy');
+    expect((await app.inject({ url: '/api/brew-profiles' })).json<BrewProfile[]>().map((p) => p.name)).toEqual(['Hazy']);
+
+    // An unknown profile starts nothing.
+    const start = { pillId: pill.id, name: 'Hazy #5' };
+    const unknown = await app.inject({ method: 'POST', url: '/api/brews', headers: owner, payload: { ...start, profileId: 'nope' } });
+    expect(unknown.statusCode).toBe(404);
+    expect((await app.inject({ url: '/api/brews' })).json()).toEqual([]);
+
+    const brew = (
+      await app.inject({ method: 'POST', url: '/api/brews', headers: owner, payload: { ...start, profileId: made.id } })
+    ).json<Brew>();
+    expect(brew.events.map((e) => [e.kind, e.at - brew.startedAt, e.endAt === null ? null : e.endAt - brew.startedAt, e.remind])).toEqual([
+      ['note', 0, null, false],
+      ['dry_hop', 3 * 24 * HOUR, 6 * 24 * HOUR, true],
+    ]);
+    expect((await app.inject({ url: `/api/brews/${brew.id}/alerts` })).json<BrewAlert[]>().map((a) => a.kind)).toEqual([
+      'fermentation_started',
+    ]);
+
+    // And used again on a running brew.
+    const again = await app.inject({
+      method: 'POST',
+      url: `/api/brews/${brew.id}/profile`,
+      headers: owner,
+      payload: { profileId: made.id },
+    });
+    expect(again.json<Brew>().events).toHaveLength(4);
+    expect((await app.inject({ url: `/api/brews/${brew.id}/alerts` })).json()).toHaveLength(2);
+
+    expect((await app.inject({ method: 'DELETE', url: `/api/brew-profiles/${made.id}`, headers: owner })).statusCode).toBe(204);
+    expect((await app.inject({ url: `/api/brew-profiles/${made.id}` })).statusCode).toBe(404);
   });
 
   it('compares brews by time since they started', async () => {

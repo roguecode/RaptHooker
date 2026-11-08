@@ -41,14 +41,16 @@ export function EventList({
   compact?: boolean;
 }) {
   if (events.length === 0) return null;
+  const now = Date.now();
   return (
     <ol className={`brew-timeline${compact ? ' compact' : ''}`}>
       {events.map((e) => {
         const k = eventKind(e.kind);
         const name = t(k.label).toLocaleLowerCase(currentLocale());
         const toggle = e.hidden ? t('Show {event} on the chart', { event: name }) : t('Hide {event} from the chart', { event: name });
+        const planned = e.at > now;
         return (
-          <li key={e.id} className={e.hidden ? 'off-chart' : undefined}>
+          <li key={e.id} className={[e.hidden ? 'off-chart' : '', planned ? 'planned' : ''].filter(Boolean).join(' ') || undefined}>
             <EventIcon kind={e.kind} />
             <div className="grow">
               <div className="ev-title">
@@ -57,6 +59,14 @@ export function EventList({
               </div>
               <div className="ev-when">
                 {brewDay(brew.startedAt, e.at)} · {eventTime(e)}
+                {planned && <> · {t('Planned')}</>}
+                {e.alertId && <> · {t('From an alert')}</>}
+                {e.remind && (
+                  <span className="ev-remind" title={t('Reminds you at its start and end')}>
+                    {' '}
+                    · <Icon name="bell" size={12} /> {t('Reminder')}
+                  </span>
+                )}
                 {e.hidden && <> · {t('Not on the chart')}</>}
               </div>
             </div>
@@ -129,7 +139,11 @@ export function EventsSection({
       </div>
       {brew.events.length === 0 ? (
         <p className="muted small" style={{ margin: 0 }}>
-          {t('Dry hops, temperature changes, cold crashes, additions and notes show up here and on the chart.')}
+          {brew.endedAt === null
+            ? t(
+                'Dry hops, temperature changes, cold crashes, additions and notes show up here and on the chart. Plan one ahead to be reminded when its time comes.',
+              )
+            : t('Dry hops, temperature changes, cold crashes, additions and notes show up here and on the chart.')}
         </p>
       ) : (
         <>
@@ -173,22 +187,27 @@ export function EventModal({
 }) {
   const { toast } = useLive();
   const untilId = useId();
+  const running = brew.endedAt === null;
   const [kind, setKind] = useState<BrewEventKind>(event?.kind ?? 'dry_hop');
   const [opened] = useState(() => toLocalInput(event?.at ?? Math.min(Date.now(), brew.endedAt ?? Date.now())));
   const [when, setWhen] = useState(opened);
   const [openedUntil] = useState(() => (event?.endAt != null ? toLocalInput(event.endAt) : null));
   const [until, setUntil] = useState(openedUntil);
   const [text, setText] = useState(event?.text ?? '');
+  const [remind, setRemind] = useState(event?.remind ?? false);
   const [busy, setBusy] = useState(false);
   const [tried, setTried] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   // The boxes show times to the minute: keep an event's own times unless they're changed.
   const at = event && when === opened ? event.at : fromLocalInput(when);
   const endAt = until === null ? null : event?.endAt != null && until === openedUntil ? event.endAt : fromLocalInput(until);
-  const body = { at, endAt, kind, text: text.trim() };
+  // Only a running brew's events can remind: left out, it stays as it was.
+  const body = { at, endAt, kind, text: text.trim(), ...(running ? { remind } : {}) };
   const check = useFormCheck(brewEventInputSchema, body, LABELS);
   const endFirst = endAt !== null && endAt <= at;
   const k = eventKind(kind);
+  const now = Date.now();
+  const ahead = running && ((Number.isFinite(at) && at > now) || (endAt !== null && Number.isFinite(endAt) && endAt > now));
 
   // Something over is usually logged once it's done (it ended now); one that has only just begun gets a planned end, a day on.
   const startUntil = () => {
@@ -257,10 +276,13 @@ export function EventModal({
             className="input"
             type="datetime-local"
             value={when}
-            max={toLocalInput(Date.now())}
+            max={running ? undefined : toLocalInput(Date.now())}
             onChange={(e) => setWhen(e.target.value)}
           />
           <FieldError error={check.errors.at && tk('Pick a date and time')} />
+          {running && Number.isFinite(at) && at > now && (
+            <span className="hint">{t('Planned: it goes on the chart when its time comes.')}</span>
+          )}
         </label>
         {until === null ? (
           <div>
@@ -310,6 +332,19 @@ export function EventModal({
           />
           <FieldError error={check.errors.text} />
         </label>
+        {running && (
+          <label className="check">
+            <input type="checkbox" checked={remind} onChange={(e) => setRemind(e.target.checked)} />
+            <span>
+              {t('Remind me at its start and end')}
+              <small>
+                {ahead || remind
+                  ? t('Sent everywhere alerts go, at a time still to come.')
+                  : t('Pick a time still to come to be reminded of it.')}
+              </small>
+            </span>
+          </label>
+        )}
         <div className="modal-actions">
           {event &&
             (confirmDelete ? (

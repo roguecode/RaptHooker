@@ -17,12 +17,41 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 - Point at a chart's lines (or tap them on a phone) to see the readings there in a box beside the pointer: the time and
   each line's value, in its colour. On the pill and brew pages, and when comparing brews. On a phone they stay until you
   tap somewhere else.
+- Alerts that follow a brew along (#32):
+  - Three new kinds of alert, each a step in a brew: **Fermentation starts** (the gravity has dropped some points from
+    where the pill started, 3 unless you change it), **Attenuation reaches** (a percentage, from the brew's OG) and
+    **Days into the brew** (a reminder). They only watch a running brew, go off once in each brew and don't clear.
+  - Any alert can say **what to do** ("Add the dry hops"), which goes first in its notification, and can **note it on
+    the brew's timeline** each time it goes off during a brew.
+  - **Alerts for this brew**, on a brew's page: alerts that watch that brew alone, from the moment it starts, with
+    values for that recipe. They stop when the brew ends and are deleted with it. The section also lists the hub's
+    alerts that watch the brew too.
+  - A running brew's events can be **planned** (a dry hop on day 3): their start can be in the future too now, not
+    only their end. **Remind me at its start and end** notifies you everywhere alerts go when its time comes.
+  - **Profiles**, like a RAPT Pill profile: alerts and planned events, timed from a brew's start. Make one from scratch
+    under **Profiles** on the **Brews** page (**New profile**, then **Add alert** and **Add event** on a day of the
+    brew), or save a brew's own alerts and events as one, and pick the profile when you start a brew (or **Use a
+    profile** on a running one) to have them added.
+  - A brew's chart marks the alerts that went off during it, as a pill's does.
+  - In the API: `startGravity` in a brew's stats (what the pill read at the start, even with a typed OG; null for
+    brews that ended before this version), `remind` and `alertId` on events, `profileId` when starting a brew,
+    `/api/brews/:id/alerts`, `/api/brews/:id/profile` and `/api/brew-profiles`; rules have `message` and
+    `addToTimeline` (from 0.4.1 on, an older version keeps them when it changes a rule). See
+    [Brewing](docs/brewing.md#api).
+  - Stored differently: new tables `brew_alerts` and `brew_profiles`, and `remind`, `reminded_at`, `reminded_end` and
+    `alert_id` on brew events (migration 10). An older version leaves them alone: a brew's own alerts and reminders don't go off
+    there, profiles aren't offered, and the new kinds of alert never fire (it shows them as "Temperature above"; don't
+    edit them there). A brew it deletes leaves its own alerts behind, doing nothing. Everything is still there when you
+    update again, and an event it moved reminds you at its new time.
 
 ### Changed
 
 - A new install in a container (an LXC on Proxmox, say), where Bluetooth usually can't be used, switches Bluetooth off
   as `--no-bluetooth` does; add `--bluetooth` to keep it on. Hubs that are already installed keep what they have. It's
   the same `bluetooth.enabled` in the config file, which versions before 0.9.0 ignore.
+- **Fermentation slows** and **Fermentation speeds up** wait for the gravity to drop 2 points from what the pill read
+  at the start of the brew, rather than from a typed OG, which can be a few points off the pill's and so let them go
+  off straight away.
 
 ### Fixed
 

@@ -1,8 +1,9 @@
 # Alerts
 
 Alerts tell you when something needs your attention: the beer gets too warm or too cold, it reaches its target
-gravity, fermentation slows down or looks finished, a pill's battery is low or a pill goes quiet. Add them under
-**Alerts → New alert**, and choose under **Where alerts go** how they reach you.
+gravity, fermentation starts, slows down or looks finished, a pill's battery is low or a pill goes quiet. Add them under
+**Alerts → New alert**, and choose under **Where alerts go** how they reach you. A brew can also have
+[alerts of its own](#alerts-for-one-brew), and [planned events](#reminders-of-planned-events) that remind you.
 
 ## Kinds of alert
 
@@ -14,6 +15,9 @@ gravity, fermentation slows down or looks finished, a pill's battery is low or a
 | **Fermentation stable**    | The gravity has moved less than _N_ points over the window (48 hours unless you change it).                                            |
 | **Fermentation slows**     | The gravity drops fewer than _N_ points a day. It clears once it's dropping a point a day faster (or half _N_ faster, if that's less). |
 | **Fermentation speeds up** | The gravity drops more than _N_ points a day. It clears once it's dropping a point a day slower (or half _N_ slower, if that's less).  |
+| **Fermentation starts**    | Once a brew: the gravity has dropped _N_ points from where the pill started (3 unless you change it).                                  |
+| **Attenuation reaches**    | Once a brew: it's _N_ % attenuated, from the brew's OG (50 % is about when a dry hop goes in for biotransformation).                   |
+| **Days into the brew**     | Once a brew: _N_ days after it started (a reminder: take a sample on day 10, say).                                                     |
 | **Battery below**          | The battery drops under the percentage (it clears 5% above it).                                                                        |
 | **Pill goes quiet**        | Nothing has been heard from the pill for _N_ minutes.                                                                                  |
 
@@ -25,9 +29,30 @@ gravity is dropping, so a velocity of −12 /day is 12 points (0.012) a day, and
 isn't dropping at all, or is rising, counts as slower than any threshold. Right after pitching the gravity isn't
 dropping yet either, but a velocity can still say it is: a tenth of a point in an hour is 2.4 points a day, and the
 velocity can include readings from before the brew. So while a brew is running, both wait until the gravity has dropped
-2 points from the brew's OG, and a "Fermentation speeds up" that went off before then clears while the gravity is
-within a point of the OG. Either velocity is a trend over hours, so these alerts follow a change a little late, and a
-small threshold (a few points a day) can be set off by the pill's normal drift.
+2 points from where the brew started, and a "Fermentation speeds up" that went off before then clears while the gravity
+is within a point of the start. Either velocity is a trend over hours, so these alerts follow a change a little late,
+and a small threshold (a few points a day) can be set off by the pill's normal drift. To be told when fermentation gets
+going, use **Fermentation starts** rather than a small "Fermentation speeds up".
+
+### Steps in a brew
+
+**Fermentation starts**, **Attenuation reaches** and **Days into the brew** are steps in a brew. They only watch a
+running brew (whatever **only while a brew is running** says), go off once in each brew and don't clear, so there's no
+"back to normal" and no **Don't repeat for**. The next brew on the pill gets them afresh.
+
+"Fermentation starts" measures the drop from what the pill read in its first hours in the wort (the automatic OG, see
+[Brewing](./brewing.md#original-gravity-og)), even when you've typed in an OG: a hydrometer's OG can be a few points
+off the pill's, which would look like a drop straight away. "Attenuation reaches" goes by the brew's OG, the one you
+typed in or the pill's, as the brew page's attenuation does.
+
+### What to do, and the brew's timeline
+
+Any alert can say **what to do** ("Add the dry hops"): it goes first in the notification, before what happened
+("Add the dry hops — Hazy IPA is 50% attenuated: Kveik is at 1.0250, from an OG of 1.0500"). And any alert can be set
+to **note it on the brew's timeline**: each time it goes off during a brew, it's added to the brew's timeline as a
+note, marked _From an alert_, which stays with the brew (the list of recent alerts only keeps the latest 500). It's
+left off the charts, where the alert itself is marked (the eye on the timeline puts it on), and out of profiles saved
+from the brew, as it says what happened in that brew. The steps in a brew start with it on.
 
 As you type a threshold for these alerts and "Fermentation stable", the alert editor says what it means in SG
 ("Alerts when the gravity drops by less than 0.0005 in a day (that's 1.0500 to 1.0495)", for 0.5), where it clears,
@@ -37,20 +62,38 @@ Each alert can watch all pills or just some, and can be limited to **only while 
 for** stops an alert that clears and fires again from notifying you more often than that.
 
 Gravity alerts ignore readings that look wrong: a pill lying on its side out of the beer still sends a gravity worked
-out from its tilt, which can be nonsense like 0.2. "Gravity reaches", "Fermentation stable", "Fermentation slows" and
-"Fermentation speeds up" wait for a real reading instead. Temperature, battery and "goes quiet" alerts still use those
-readings.
+out from its tilt, which can be nonsense like 0.2. "Gravity reaches", "Fermentation stable", "Fermentation slows",
+"Fermentation speeds up", "Fermentation starts" and "Attenuation reaches" wait for a real reading instead. Temperature,
+battery and "goes quiet" alerts still use those readings.
+
+## Alerts for one brew
+
+A brew's page has **Alerts for this brew**: alerts that watch that brew alone, from the moment it starts, with
+values for that recipe (dry hop at 1.020 for this IPA, a lager that mustn't go over 12 °C). They're any of the kinds
+above, with **what to do** and **Send to** like any alert, but no pills to pick: they watch the brew's pill while the
+brew runs, and stop when it ends. They're kept with the brew (in its [profile](./brewing.md#profiles) too, if you save
+one) and deleted with it. The section also lists the alerts from the Alerts page that watch the brew too.
+
+## Reminders of planned events
+
+An event on a running brew's timeline can be planned ahead (a dry hop on day 3, a cold crash next Monday): its time can
+be in the future. Tick **Remind me at its start and end** and the hub notifies you everywhere alerts go when its
+time comes ("Hazy IPA: Dry hop. Time for the dry hop: 100 g Citra"), and again at its end if it has one ("Time to
+finish the dry hop"). Each time is reminded of once; move the event and it reminds you at its new time. A reminder
+that couldn't go out within 6 hours of its time (the hub was off) is let go, and one whose start and end have both
+passed only tells you the end. Reminders also show in the app with the other alerts.
 
 ## What you get
 
 - **In the app**, always: a pop-up while the app is open, and the **Recent** list on the Alerts page.
-- **On the pill's chart**: a mark where each alert went off (**Alert: Too warm**) and where it cleared
-  (**OK: Too warm**). **Alerts**, under the chart, hides them in this browser. The hub keeps the latest 500 alerts
-  of all the pills, so ones from long ago may no longer be marked.
+- **On the pill's chart**, and on a brew's chart for what went off during it: a mark where each alert went off
+  (**Alert: Too warm**) and where it cleared (**OK: Too warm**). **Alerts**, under the chart, hides them in this
+  browser. The hub keeps the latest 500 alerts of all the pills, so ones from long ago may no longer be marked.
 - **A notification** when an alert fires, sent to the places the alert's **Send to** picks. "Pill goes quiet" also
   tells you when the pill is heard again.
 - The notification's title is the alert's name ("Too warm") and the text says what happened ("Kveik is at 24.6 °C,
-  above 24.0 °C"), in the hub's units (Settings).
+  above 24.0 °C"), in the hub's units (Settings), after what to do if the alert says. A brew's own alerts and reminders
+  open the brew's page.
 
 ## Where alerts go
 

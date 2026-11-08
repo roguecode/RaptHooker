@@ -17,6 +17,11 @@ export const SCHEMA_MESSAGES = [
   tk('No spaces, # or +'),
   tk('A URL like https://s3.eu-west-1.amazonaws.com'),
   tk('More than 0: the points it drops a day (12 for a velocity of −12)'),
+  tk('More than 0: the points it has dropped'),
+  tk('A percentage from 1 to 100'),
+  tk('More than 0 days, and up to 365'),
+  tk('An event has to end after it starts'),
+  tk('Write something for the note'),
 ];
 
 const NONE: FieldErrors = {};

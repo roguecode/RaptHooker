@@ -9,7 +9,8 @@ import { dateTime, days, fixed, num, useNow } from '../../format';
 import { Icon } from '../../components/Icon';
 import { Chart, type SeriesKey } from '../../components/Chart';
 import { clampWindow, contextWindow, isZoomed, SMOOTHING_STEPS_MS, type TimeWindow } from '../../components/chartMath';
-import { brewAnnotations } from '../../components/annotations';
+import { brewAnnotations, alertAnnotations } from '../../components/annotations';
+import { AlertsToggle, useAlertEvents, useShowAlerts } from '../../components/ChartAlerts';
 import { ExcludeRangeButton, ExclusionsToggle, useRemoveExclusion, useShowExclusions } from '../../components/ExclusionControls';
 import { SmoothingStepper, useChartSmoothing } from '../../components/ChartSmoothing';
 import { FermentBar } from '../../components/Ferment';
@@ -17,6 +18,7 @@ import { Confirm } from '../../components/ui';
 import { t } from '../../i18n';
 import { EditBrewModal } from './EditBrewModal';
 import { EventsSection } from './events';
+import { BrewAlertsSection } from './BrewAlerts';
 import { abvOf, PredictionStats, StageChip, useAbvFormula } from './Prediction';
 import './brews.css';
 
@@ -76,7 +78,18 @@ export function BrewPage({ id }: { id: string }) {
     [bounds],
   );
   const resetZoom = useCallback(() => setZoom(null), []);
-  const annotations = useMemo(() => brewAnnotations(brew), [brew]);
+  const [showAlerts, setShowAlerts] = useShowAlerts();
+  const pillAlerts = useAlertEvents(brew?.pillId ?? null);
+  // Only what went off during the brew (the pill's other alerts are on its own page).
+  const alertEvents = useMemo(
+    () => (brew ? pillAlerts.filter((e) => e.at >= brew.startedAt && e.at <= (brew.endedAt ?? Infinity)) : []),
+    [pillAlerts, brew?.startedAt, brew?.endedAt], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const alertsHere = alertEvents.some((e) => e.at >= bounds.from && e.at <= bounds.to);
+  const annotations = useMemo(
+    () => (showAlerts && alertEvents.length ? [...brewAnnotations(brew), ...alertAnnotations(alertEvents)] : brewAnnotations(brew)),
+    [brew, showAlerts, alertEvents],
+  );
   const removeExclusion = useRemoveExclusion(pill);
   const exclusionsHere = brew ? windowsIn(pill?.exclusions, bounds) : [];
   const [smoothing, setSmoothing] = useChartSmoothing();
@@ -259,6 +272,7 @@ export function BrewPage({ id }: { id: string }) {
           </div>
           <span className="chip-option">
             <span className="chips-divider" aria-hidden="true" />
+            {alertsHere && <AlertsToggle on={showAlerts} onChange={setShowAlerts} />}
             {exclusionsHere.length > 0 && <ExclusionsToggle on={showExclusions} onChange={setShowExclusions} />}
             <SmoothingStepper step={smoothing} onChange={setSmoothing} />
           </span>
@@ -267,6 +281,10 @@ export function BrewPage({ id }: { id: string }) {
 
       <section className="panel">
         <EventsSection brew={brew} onChanged={reload} />
+      </section>
+
+      <section className="panel">
+        <BrewAlertsSection brew={brew} onChanged={reload} />
       </section>
 
       <section className="panel">

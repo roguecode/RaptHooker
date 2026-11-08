@@ -128,6 +128,8 @@ export const startBrewSchema = z.object({
   og: brewFields.og.default(null),
   targetFg: brewFields.targetFg.default(null),
   startedAt: z.number().int().positive().optional(),
+  /** A brew profile whose alerts and planned events the brew starts with. */
+  profileId: z.string().min(1).max(64).optional(),
 });
 
 export const brewPatchSchema = z.object({
@@ -142,12 +144,15 @@ export const brewPatchSchema = z.object({
 
 export const endBrewSchema = z.object({ endedAt: z.number().int().positive().optional() });
 
+export const brewEventKindSchema = z.enum(['dry_hop', 'temp_change', 'cold_crash', 'addition', 'note']);
+
 export const brewEventInputSchema = z.object({
   at: z.number().int().positive(),
   endAt: z.number().int().positive().nullable().optional(),
-  kind: z.enum(['dry_hop', 'temp_change', 'cold_crash', 'addition', 'note']),
+  kind: brewEventKindSchema,
   text: z.string().trim().max(500).default(''),
   hidden: z.boolean().optional(),
+  remind: z.boolean().optional(),
 });
 
 export const brewCompareQuerySchema = z.object({
@@ -218,42 +223,94 @@ export const webhookTestSchema = z.object({
 
 // Alerts
 
-export const alertInputSchema = z
-  .object({
-    name: z.string().trim().min(1).max(80),
-    enabled: z.boolean().default(true),
-    pillIds: pillIdsSchema.default('all'),
-    kind: z.enum([
-      'temp_above',
-      'temp_below',
-      'gravity_below',
-      'gravity_stable',
-      'velocity_slow',
-      'velocity_fast',
-      'battery_below',
-      'offline',
-    ]),
-    threshold: z.number().finite(),
-    hours: z
-      .number()
-      .min(1)
-      .max(24 * 14)
-      .default(48),
-    onlyDuringBrew: z.boolean().default(false),
-    cooldownMin: z.number().int().min(0).max(10_080).default(60),
-    channelIds: z.union([z.literal('all'), z.array(z.string().min(1).max(64)).max(50)]).default('all'),
-  })
+const ALERT_KIND_VALUES = [
+  'temp_above',
+  'temp_below',
+  'gravity_below',
+  'gravity_stable',
+  'velocity_slow',
+  'velocity_fast',
+  'fermentation_started',
+  'attenuation_reached',
+  'brew_day',
+  'battery_below',
+  'offline',
+] as const;
+
+/** What a rule and a brew's own alert have in common. */
+const alertFields = {
+  name: z.string().trim().min(1).max(80),
+  enabled: z.boolean().default(true),
+  kind: z.enum(ALERT_KIND_VALUES),
+  threshold: z.number().finite(),
+  hours: z
+    .number()
+    .min(1)
+    .max(24 * 14)
+    .default(48),
+  cooldownMin: z.number().int().min(0).max(10_080).default(60),
+  channelIds: z.union([z.literal('all'), z.array(z.string().min(1).max(64)).max(50)]).default('all'),
+  message: z.string().trim().max(200).default(''),
+  addToTimeline: z.boolean().default(false),
+};
+
+/** Thresholds that only make sense one way round, by kind. */
+function checkThreshold(r: { kind: (typeof ALERT_KIND_VALUES)[number]; threshold: number }, ctx: z.RefinementCtx): void {
+  const issue = (message: string) => ctx.addIssue({ code: 'custom', path: ['threshold'], message });
   // The velocity is negative while fermenting, but these count the points it drops: 12 for a velocity of −12.
-  .refine((r) => (r.kind !== 'velocity_slow' && r.kind !== 'velocity_fast') || r.threshold > 0, {
-    path: ['threshold'],
-    message: 'More than 0: the points it drops a day (12 for a velocity of −12)',
-  });
+  if ((r.kind === 'velocity_slow' || r.kind === 'velocity_fast') && !(r.threshold > 0))
+    issue('More than 0: the points it drops a day (12 for a velocity of −12)');
+  if (r.kind === 'fermentation_started' && !(r.threshold > 0 && r.threshold <= 200)) issue('More than 0: the points it has dropped');
+  if (r.kind === 'attenuation_reached' && !(r.threshold > 0 && r.threshold <= 100)) issue('A percentage from 1 to 100');
+  if (r.kind === 'brew_day' && !(r.threshold > 0 && r.threshold <= 365)) issue('More than 0 days, and up to 365');
+}
+
+export const alertInputSchema = z
+  .object({ ...alertFields, pillIds: pillIdsSchema.default('all'), onlyDuringBrew: z.boolean().default(false) })
+  .superRefine(checkThreshold);
+
+/** An alert for one brew: the brew says which pill, and while it runs. */
+export const brewAlertInputSchema = z.object(alertFields).superRefine(checkThreshold);
 
 export const alertEventsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(500).default(50),
   /** Only one pill's. */
   pillId: z.string().min(1).max(64).optional(),
 });
+
+// Brew profiles
+
+const DAY_MS = 86_400_000;
+
+export const profileEventSchema = z
+  .object({
+    offset: z
+      .number()
+      .int()
+      .min(0)
+      .max(365 * DAY_MS),
+    endOffset: z
+      .number()
+      .int()
+      .min(0)
+      .max(365 * DAY_MS)
+      .nullable()
+      .default(null),
+    kind: brewEventKindSchema,
+    text: z.string().trim().max(500).default(''),
+    remind: z.boolean().default(true),
+  })
+  .refine((e) => e.endOffset === null || e.endOffset > e.offset, { path: ['endOffset'], message: 'An event has to end after it starts' })
+  .refine((e) => e.kind !== 'note' || e.text !== '', { path: ['text'], message: 'Write something for the note' });
+
+export const brewProfileInputSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  notes: z.string().max(2000).default(''),
+  alerts: z.array(brewAlertInputSchema).max(50).default([]),
+  events: z.array(profileEventSchema).max(100).default([]),
+});
+
+export const applyProfileSchema = z.object({ profileId: z.string().min(1).max(64) });
 
 // Notification channels
 

@@ -23,8 +23,11 @@ RaptHooker's if you've picked that: see [calibration](./calibration.md)). The th
 gravity is dropping, so a velocity of −12 /day is 12 points (0.012) a day, and it has to be more than 0. For example,
 "Fermentation slows" at 10 tells you fermentation is nearing its end, so you can plan the next step. A gravity that
 isn't dropping at all, or is rising, counts as slower than any threshold. Right after pitching the gravity isn't
-dropping yet either, so while a brew is running "Fermentation slows" waits until the gravity has dropped 2 points from
-the brew's OG. Either velocity is a trend over hours, so these alerts follow a change a little late.
+dropping yet either, but a velocity can still say it is: a tenth of a point in an hour is 2.4 points a day, and the
+velocity can include readings from before the brew. So while a brew is running, both wait until the gravity has dropped
+2 points from the brew's OG, and a "Fermentation speeds up" that went off before then clears while the gravity is
+within a point of the OG. Either velocity is a trend over hours, so these alerts follow a change a little late, and a
+small threshold (a few points a day) can be set off by the pill's normal drift.
 
 As you type a threshold for these alerts and "Fermentation stable", the alert editor says what it means in SG
 ("Alerts when the gravity drops by less than 0.0005 in a day (that's 1.0500 to 1.0495)", for 0.5), where it clears,

@@ -49,15 +49,15 @@ export function RuleExample({ rule, threshold, plato }: { rule: AlertRuleInput; 
       );
 
   const also: string[] = [];
-  if (kind === 'velocity_slow')
+  if (velocity)
     also.push(
-      t('It clears once the gravity drops by more than {amount} a day.', { amount: sg(velocityClearsAt(kind, threshold)) }),
+      kind === 'velocity_slow'
+        ? t('It clears once the gravity drops by more than {amount} a day.', { amount: sg(velocityClearsAt('velocity_slow', threshold)) })
+        : t('It clears once the gravity drops by less than {amount} a day.', { amount: sg(velocityClearsAt('velocity_fast', threshold)) }),
       t(
         "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.",
       ),
     );
-  else if (kind === 'velocity_fast')
-    also.push(t('It clears once the gravity drops by less than {amount} a day.', { amount: sg(velocityClearsAt(kind, threshold)) }));
   else
     also.push(
       t('It clears once the gravity moves by more than {amount} over the window.', { amount: sg(stableClearsAt(threshold)) }),

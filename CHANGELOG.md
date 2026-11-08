@@ -26,6 +26,11 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Fermentation speeds up** alerts went off at the start of a brew, before the gravity had moved: a velocity from a
+  few hours of readings, or from ones before the brew, can look like fermentation (#32). While a brew is running it now
+  waits until the gravity has dropped 2 points from the brew's OG, as **Fermentation slows** does, and one that went
+  off before then clears (without a notification) while the gravity is within a point of the OG, so it tells you when
+  fermentation really gets going.
 - Updating a hub whose Bluetooth can't start (in a container installed without `--no-bluetooth`, say): the update
   stopped at "Bluetooth" with `Job for bluetooth.service failed`, and went back to the version before. Setting up now
   carries on without Bluetooth and warns, so these hubs update, from the app too. Running the installer once with

@@ -109,4 +109,26 @@ describe('image link', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Only pills with a brew running' }));
     expect(query().brewing).toBe('1');
   });
+
+  it('leaves the decimals to the hub unless others are picked for the picture', async () => {
+    const pill = makePill();
+    await renderWithHub(<ImageLinkButton pill={pill} />, {
+      pills: [pill],
+      hub: { decimals: { sg: 3, plato: 1, temperature: 1 } },
+      routes: { 'GET /api/system/addresses': [], 'GET /api/pills/*/image.*': picture },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Image link' }));
+    await waitFor(() => expect(link().pathname).toBe(`/api/pills/${pill.id}/image.jpg`));
+    expect(query().gdec).toBeUndefined();
+    expect(query().tdec).toBeUndefined();
+    const gravity = screen.getByRole('combobox', { name: 'Gravity decimals' }) as HTMLSelectElement;
+    expect([...gravity.options].map((o) => o.text)).toEqual(['Like the hub (1.012)', '1.012', '1.0123']);
+    fireEvent.change(gravity, { target: { value: '4' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Temperature decimals' }), { target: { value: '2' } });
+    expect(query()).toMatchObject({ gravity: 'sg', gdec: '4', tdec: '2' });
+    // Decimals for SG don't suit °P: back to the hub's.
+    fireEvent.click(screen.getByRole('button', { name: '°P' }));
+    expect(query().gdec).toBeUndefined();
+    expect([...gravity.options].map((o) => o.text)).toEqual(['Like the hub (3.1 °P)', '3.1 °P', '3.08 °P']);
+  });
 });

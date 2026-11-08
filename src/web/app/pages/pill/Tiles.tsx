@@ -203,7 +203,7 @@ export function Tiles({ pill, now }: { pill: Pill; now: number }) {
     <Tile
       icon="thermometer"
       k={t('Temperature')}
-      v={u.tempText(r?.temperature, thermometer ? 1 : 2)}
+      v={u.tempText(r?.temperature, thermometer ? undefined : Math.max(2, u.tempDecimals))}
       s={pill.offsets.temperature ? t('Calibrated') : undefined}
     />
   );
@@ -273,7 +273,7 @@ export function Tiles({ pill, now }: { pill: Pill; now: number }) {
             full: fixed(vessel.fullMm, 0),
           })}
         />
-        <Tile icon="thermometer" k={t('Temperature')} v={u.tempText(r?.temperature, 1)} s={t("The sensor's own, in the lid")} />
+        <Tile icon="thermometer" k={t('Temperature')} v={u.tempText(r?.temperature)} s={t("The sensor's own, in the lid")} />
         <Tile icon="battery" k={t('Battery')} v={r?.battery != null ? fixed(r.battery, 0) : '–'} unit="%">
           <BatteryBar percent={r?.battery} />
         </Tile>

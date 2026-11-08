@@ -1,11 +1,14 @@
 import { z } from 'zod';
 import { servingUnitSchema, vesselSchema } from './devices.js';
+import { MAX_DECIMALS } from './units.js';
 
 /** Request bodies and queries the API accepts. The web app checks its forms against the same schemas before sending. */
 
 export const SG_LIMITS = { min: 0.95, max: 1.2 } as const;
 
 export const sgSchema = z.number().min(SG_LIMITS.min).max(SG_LIMITS.max);
+/** A number of decimals to show. */
+export const decimalsSchema = z.number().int().min(0).max(MAX_DECIMALS);
 export const pillColorSchema = z.string().regex(/^#[0-9a-f]{6}$/i, 'A colour like #a78bfa');
 export const pillIdsSchema = z.union([z.literal('all'), z.array(z.string().min(1).max(64)).max(200)]);
 
@@ -282,6 +285,8 @@ export const hubSettingsSchema = z.object({
   updateCheck: z.boolean(),
   /** Optional, so a client from before it existed keeps what's saved rather than switching Bluetooth back on. */
   bluetooth: z.boolean().optional(),
+  /** Optional, so a client from before it existed keeps what's saved. */
+  decimals: z.object({ sg: decimalsSchema, plato: decimalsSchema, temperature: decimalsSchema }).optional(),
 });
 
 export const mqttSettingsSchema = z.object({

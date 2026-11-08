@@ -1,4 +1,5 @@
 import {
+  decimalsFrom,
   DEFAULT_HUB_SETTINGS,
   type BleStatus,
   type DeviceKind,
@@ -70,6 +71,7 @@ function hubFrom(v: unknown): HubSettings {
     abvFormula: v.abvFormula === 'alternative' ? 'alternative' : 'standard',
     updateCheck: v.updateCheck !== false,
     bluetooth: v.bluetooth !== false,
+    decimals: decimalsFrom(v.decimals),
   };
 }
 

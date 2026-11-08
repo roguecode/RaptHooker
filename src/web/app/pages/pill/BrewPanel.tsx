@@ -70,7 +70,7 @@ export function BrewPanel({ pill }: { pill: Pill }) {
                 v={
                   brew.stats.tempMin === null
                     ? '–'
-                    : `${fixed(u.tempValue(brew.stats.tempMin), 1)}–${fixed(u.tempValue(brew.stats.tempMax!), 1)}`
+                    : `${u.tempNumber(u.tempValue(brew.stats.tempMin))}–${u.tempNumber(u.tempValue(brew.stats.tempMax!))}`
                 }
                 s={u.tempLabel}
               />

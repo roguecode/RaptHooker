@@ -3,7 +3,9 @@ import {
   DEFAULT_BACKUP_SETTINGS,
   DEFAULT_HUB_SETTINGS,
   DEFAULT_MQTT_SETTINGS,
+  decimalsFrom,
   type BackupSettings,
+  type Decimals,
   type GravityUnit,
   type HubSettings,
   type MqttSettings,
@@ -40,6 +42,7 @@ export class Settings extends EventEmitter {
     // Before hub settings existed, the notification units were kept on their own.
     const legacy = this.store.getMeta('units');
     if (!this.store.getMeta('hub') && legacy) hub.units = JSON.parse(legacy) as NotificationUnits;
+    hub.decimals = decimalsFrom(hub.decimals);
     return hub;
   }
 
@@ -52,6 +55,11 @@ export class Settings extends EventEmitter {
   /** Units for notifications, and for browsers that haven't picked their own. */
   units(): NotificationUnits {
     return this.hub().units;
+  }
+
+  /** Decimals readings are shown with, everywhere. */
+  decimals(): Decimals {
+    return this.hub().decimals;
   }
 
   setUnits(units: NotificationUnits): void {

@@ -31,6 +31,7 @@ import { ChartTip, type ChartTipHandle, type ChartTipRow } from './ChartTip';
 import { keepTappedValues } from './tapCursor';
 import type { ChartAnnotation } from './annotations';
 import {
+  axisIncrs,
   clampWindow,
   isZoomed,
   markLineX,
@@ -347,7 +348,7 @@ export function Chart({
 
   // Colours come from CSS variables, so a theme or palette change rebuilds the chart too.
   const { look } = useTheme();
-  const key = `${cols.map((c) => c.key).join(',')}|${fadedAuto}|${u.gravity}|${u.temperature}|${gravityColor ?? ''}|${compact}|${zoomable}|${look}|${vessel.capacity}|${perLitre}|${vScale.symbol}|${vScale.decimals}`;
+  const key = `${cols.map((c) => c.key).join(',')}|${fadedAuto}|${u.gravity}|${u.temperature}|${u.gravityDecimals}|${u.tempDecimals}|${gravityColor ?? ''}|${compact}|${zoomable}|${look}|${vessel.capacity}|${perLitre}|${vScale.symbol}|${vScale.decimals}`;
 
   useEffect(() => {
     const el = box.current;
@@ -357,12 +358,12 @@ export function Chart({
     const grid = cssVar('--grid');
     const gColor = gravityColor ?? cssVar('--series-gravity');
     const plato = u.gravity === 'plato';
-    const gText = (v: number) => (plato ? `${fixed(v, 2)} °P` : fixed(v, 4));
+    const gText = (v: number) => (plato ? `${u.gravityNumber(v)} °P` : u.gravityNumber(v));
     const fmt: Record<ColKey, (v: number) => string> = {
       gravity: gText,
       pillGravity: gText,
       implausible: gText,
-      temperature: (v) => `${fixed(v, 1)} ${u.tempLabel}`,
+      temperature: (v) => `${u.tempNumber(v)} ${u.tempLabel}`,
       velocity: (v) => t('{n} pts/day', { n: fixed(v, 1) }),
       pillVelocity: (v) => t('{n} pts/day', { n: fixed(v, 1) }),
       battery: (v) => `${fixed(v, 0)}%`,
@@ -732,14 +733,7 @@ export function Chart({
       };
       // i18n: label on the chart's dashed line for the target final gravity
       hline(lines.target, alpha(gColor, 0.7), [6, 6], t('target FG'), false);
-      if (lines.og !== null)
-        hline(
-          lines.og,
-          alpha(gColor, 0.6),
-          [2, 3],
-          t('OG {gravity}', { gravity: plato ? `${fixed(lines.og, 1)} °P` : fixed(lines.og, 3) }),
-          true,
-        );
+      if (lines.og !== null) hline(lines.og, alpha(gColor, 0.6), [2, 3], t('OG {gravity}', { gravity: gText(lines.og) }), true);
 
       if (anns.length) {
         const xMin = p.scales.x?.min ?? -Infinity;
@@ -898,8 +892,8 @@ export function Chart({
                 ...axisBase,
                 scale: 'g',
                 size: 52,
-                values: (_p: uPlot, vals: number[], _a: number, _s: number, incr: number) =>
-                  vals.map((v) => (plato ? fixed(v, incr < 0.1 ? 2 : 1) : fixed(v, incr < 0.001 ? 4 : 3))),
+                incrs: axisIncrs(u.gravityDecimals),
+                values: (_p: uPlot, vals: number[]) => vals.map((v) => u.gravityNumber(v)),
               },
             ]
           : []),

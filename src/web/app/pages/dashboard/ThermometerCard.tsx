@@ -4,7 +4,7 @@ import { useLive } from '../../live';
 import { useUnits } from '../../units';
 import { useCardHistory, useCardRange } from '../../hooks';
 import { href } from '../../router';
-import { fixed, signalQuality, timeAgo, timeUntil, useNow } from '../../format';
+import { signalQuality, timeAgo, timeUntil, useNow } from '../../format';
 import { t } from '../../i18n';
 import { Icon, type IconName } from '../../components/Icon';
 import { Sparkline } from '../../components/Sparkline';
@@ -83,7 +83,7 @@ export function ThermometerCard({ pill }: { pill: Pill }) {
         <div>
           <div className="reading-label">{t('Temperature')}</div>
           <div className="gravity-value">
-            {r ? fixed(u.tempValue(r.temperature), 1) : '–'}
+            {r ? u.tempNumber(u.tempValue(r.temperature)) : '–'}
             <span className="unit">{u.tempLabel}</span>
           </div>
         </div>
@@ -112,7 +112,9 @@ export function ThermometerCard({ pill }: { pill: Pill }) {
           <span className="k">
             <Icon name="activity" size={12} /> {t('Last 24 h')}
           </span>
-          <span className="num">{day ? `${fixed(u.tempValue(day.min), 1)}–${fixed(u.tempValue(day.max), 1)} ${u.tempLabel}` : '–'}</span>
+          <span className="num">
+            {day ? `${u.tempNumber(u.tempValue(day.min))}–${u.tempNumber(u.tempValue(day.max))} ${u.tempLabel}` : '–'}
+          </span>
         </div>
         <div className="mini-stat">
           <span className="k">

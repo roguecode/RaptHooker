@@ -340,6 +340,21 @@ export function smoothColumn(
 // Labels and the exported image
 
 /**
+ * Steps between an axis's ticks when its labels have `decimals` decimals: 1, 2, 2.5 and 5 times powers of ten, none
+ * finer than the labels can show (which would label two ticks the same).
+ */
+export function axisIncrs(decimals: number): number[] {
+  const out: number[] = [];
+  for (let e = -decimals; e <= 6; e++) {
+    for (const m of [1, 2, 2.5, 5]) {
+      const step = Number((m * 10 ** e).toFixed(Math.max(0, decimals + 2)));
+      if (Number(step.toFixed(Math.max(0, decimals))) === step) out.push(step);
+    }
+  }
+  return out;
+}
+
+/**
  * Rows for labels along the x axis so they don't overlap: each label goes in the first row where it fits, or -1 when
  * there's no room. Boxes must be sorted by x.
  */

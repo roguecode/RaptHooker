@@ -1,7 +1,7 @@
 import { measuresGravity, type Pill } from '@rapthooker/shared';
 import { useLive } from '../../live';
 import { useUnits, volumeNumber } from '../../units';
-import { fixed, num, timeAgo, timeUntil, useNow } from '../../format';
+import { num, timeAgo, timeUntil, useNow } from '../../format';
 import { Icon } from '../../components/Icon';
 import { ImageLinkButton } from '../../components/ImageLink';
 import { PillFigure } from '../../components/PillFigure';
@@ -106,7 +106,7 @@ function PillView({ pill }: { pill: Pill }) {
               <div>
                 <div className="reading-label">{t('Temperature')}</div>
                 <div className="gravity-value">
-                  {r ? fixed(u.tempValue(r.temperature), 1) : '–'}
+                  {r ? u.tempNumber(u.tempValue(r.temperature)) : '–'}
                   <span className="unit">{u.tempLabel}</span>
                 </div>
               </div>

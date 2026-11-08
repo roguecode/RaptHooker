@@ -450,8 +450,18 @@ describe('looking after screens', () => {
       model: 'sdpro-240',
       interval: 60,
       brightness: 80,
-      look: { gravity: 'plato', temperature: 'F' },
+      // Saved before decimals could be picked: the hub's.
+      look: { gravity: 'plato', temperature: 'F', gravityDecimals: null, temperatureDecimals: null },
     });
+  });
+
+  it("draws a screen's picture with its own decimals, or the hub's", async () => {
+    const { fake, screens } = await setUp();
+    expect(screens.pictureOf(fake.id)!.options).toMatchObject({ gravityDecimals: null, temperatureDecimals: null });
+    await screens.patch(fake.id, { look: { gravityDecimals: 3, temperatureDecimals: 2 } });
+    expect(screens.pictureOf(fake.id)!.options).toMatchObject({ gravityDecimals: 3, temperatureDecimals: 2, palette: 'hops' });
+    await screens.patch(fake.id, { look: { gravityDecimals: null } });
+    expect(screens.pictureOf(fake.id)!.options).toMatchObject({ gravityDecimals: null, temperatureDecimals: 2 });
   });
 });
 

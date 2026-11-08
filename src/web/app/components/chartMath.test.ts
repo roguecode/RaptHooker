@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { History } from '@rapthooker/shared';
 import {
+  axisIncrs,
   checkCustomRange,
   clampWindow,
   detailRange,
@@ -411,5 +412,15 @@ describe('brewAnnotations', () => {
       ['Cold crash', 6000, undefined],
       ['Brew ended', 9000, undefined],
     ]);
+  });
+});
+
+describe('axis ticks', () => {
+  it('are never finer than the labels can tell apart', () => {
+    expect(axisIncrs(3).slice(0, 6)).toEqual([0.001, 0.002, 0.005, 0.01, 0.02, 0.025]);
+    expect(axisIncrs(4).slice(0, 4)).toEqual([0.0001, 0.0002, 0.0005, 0.001]);
+    expect(axisIncrs(1).slice(0, 5)).toEqual([0.1, 0.2, 0.5, 1, 2]);
+    expect(axisIncrs(0).slice(0, 4)).toEqual([1, 2, 5, 10]);
+    for (const d of [0, 1, 2, 3, 4, 6]) for (const step of axisIncrs(d)) expect(Number(step.toFixed(d)), `${d}: ${step}`).toBe(step);
   });
 });

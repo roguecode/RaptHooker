@@ -331,7 +331,7 @@ function KioskTile({ pill, now, stale }: { pill: Pill; now: number; stale: boole
           </>
         ) : thermometer ? (
           <div className="kt-gravity num">
-            {r ? fixed(u.tempValue(r.temperature), 1) : '–'}
+            {r ? u.tempNumber(u.tempValue(r.temperature)) : '–'}
             <span className="unit">{u.tempLabel}</span>
           </div>
         ) : (
@@ -418,7 +418,7 @@ function KioskTile({ pill, now, stale }: { pill: Pill; now: number; stale: boole
           <>
             <div>
               <dt>{t('Last 24 h')}</dt>
-              <dd className="num">{day ? `${fixed(u.tempValue(day.min), 1)}–${fixed(u.tempValue(day.max), 1)}` : '–'}</dd>
+              <dd className="num">{day ? `${u.tempNumber(u.tempValue(day.min))}–${u.tempNumber(u.tempValue(day.max))}` : '–'}</dd>
             </div>
             <div>
               <dt>{t('Signal')}</dt>

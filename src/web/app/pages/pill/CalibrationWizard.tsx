@@ -9,6 +9,7 @@ import { useTheme } from '../../theme';
 import { dateTime, duration, fixed, num, timeAgo, useNow } from '../../format';
 import { Modal } from '../../components/ui';
 import { Icon } from '../../components/Icon';
+import { axisIncrs } from '../../components/chartMath';
 import { t, tk, tp } from '../../i18n';
 import {
   baseGravity,
@@ -544,7 +545,6 @@ function TiltFitChart({ pts, coeffs }: { pts: TiltPoint[]; coeffs: number[] | nu
     const grid = cssVar('--grid', 'rgba(167, 139, 250, 0.08)');
     const color = cssVar('--series-gravity', '#a78bfa');
     const pointColor = cssVar('--series-tilt', '#60a5fa');
-    const plato = u.gravity === 'plato';
     const axis = { stroke: muted, grid: { stroke: grid, width: 1 }, ticks: { show: false }, font: '11px system-ui, sans-serif' };
     const chart = new uPlot(
       {
@@ -556,7 +556,7 @@ function TiltFitChart({ pts, coeffs }: { pts: TiltPoint[]; coeffs: number[] | nu
         scales: { x: { time: false } },
         axes: [
           { ...axis, values: (_p, vals) => vals.map((v) => `${num(v, 2, 0)}°`) },
-          { ...axis, size: 52, values: (_p, vals) => vals.map((v) => (plato ? num(v, 1) : num(v, 3))) },
+          { ...axis, size: 52, incrs: axisIncrs(u.gravityDecimals), values: (_p, vals) => vals.map((v) => u.gravityNumber(v)) },
         ],
         series: [
           {},

@@ -2949,6 +2949,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "Decimals": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
   "Default gravity unit": {
     "files": [
       "pages/settings/HubSection.tsx"
@@ -4276,6 +4281,11 @@
       "pages/webhooks/strings.ts"
     ]
   },
+  "Gravity decimals": {
+    "files": [
+      "components/PictureDesigner.tsx"
+    ]
+  },
   "Gravity dropping less than {count} point a day|Gravity dropping less than {count} points a day": {
     "files": [
       "pages/alerts/AlertsPage.tsx"
@@ -4306,6 +4316,16 @@
   "Gravity has changed less than this many points over the window": {
     "files": [
       "pages/alerts/strings.ts"
+    ]
+  },
+  "Gravity in °P": {
+    "files": [
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Gravity in SG": {
+    "files": [
+      "pages/settings/HubSection.tsx"
     ]
   },
   "Gravity in the webhook's unit (SG or °P)": {
@@ -4522,6 +4542,11 @@
   "How full the keg is, % (RAPT Laser Levels)": {
     "files": [
       "pages/webhooks/strings.ts"
+    ]
+  },
+  "How many decimals readings are shown with: in the app and its charts, in notifications and on screens. In SG, a 4th decimal is shown dimmed, as it mostly follows the sensor's noise.": {
+    "files": [
+      "pages/settings/HubSection.tsx"
     ]
   },
   "How many pills are in this request": {
@@ -5578,6 +5603,11 @@
   "light (1-hour average)": {
     "files": [
       "pages/pill/calibration.ts"
+    ]
+  },
+  "Like the hub ({example})": {
+    "files": [
+      "components/PictureDesigner.tsx"
     ]
   },
   "Lines averaged over {time}. Only the chart changes: the readings stay as they are.": {
@@ -9113,7 +9143,8 @@
       "pages/brews/SummaryPage.tsx",
       "pages/dashboard/ThermometerCard.tsx",
       "pages/pill/PillPage.tsx",
-      "pages/pill/Tiles.tsx"
+      "pages/pill/Tiles.tsx",
+      "pages/settings/HubSection.tsx"
     ]
   },
   "Temperature · Bluetooth": {
@@ -9140,6 +9171,11 @@
     "files": [
       "pages/brews/brewText.ts",
       "pages/webhooks/WebhookEditor.tsx"
+    ]
+  },
+  "Temperature decimals": {
+    "files": [
+      "components/PictureDesigner.tsx"
     ]
   },
   "Temperature in the webhook's unit": {

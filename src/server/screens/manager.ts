@@ -92,6 +92,9 @@ export function defaultLook(units: Pick<ScreenLook, 'gravity' | 'temperature'>):
     range: 'brew',
     gravity: units.gravity,
     temperature: units.temperature,
+    // The hub's.
+    gravityDecimals: null,
+    temperatureDecimals: null,
     lang: 'en',
     tz: null,
     brewing: false,

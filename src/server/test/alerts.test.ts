@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_PILL_MODEL, type AlertRuleInput, type Brew, type Pill, type Reading } from '@rapthooker/shared';
+import {
+  DEFAULT_PILL_MODEL,
+  type AlertRuleInput,
+  type Brew,
+  type Decimals,
+  type GravityUnit,
+  type Pill,
+  type Reading,
+  type TemperatureUnit,
+} from '@rapthooker/shared';
 import { AlertService } from '../alerts.js';
 import { silent, tempStore } from './helpers.js';
 
@@ -33,7 +42,15 @@ const pill: Pill = {
   brew: null,
 };
 
-function setup(over: Partial<Reading> = {}, opts: { pill?: Pill; brew?: () => Brew | null } = {}) {
+function setup(
+  over: Partial<Reading> = {},
+  opts: {
+    pill?: Pill;
+    brew?: () => Brew | null;
+    units?: () => { temperature: TemperatureUnit; gravity: GravityUnit };
+    decimals?: () => Decimals;
+  } = {},
+) {
   const t = tempStore();
   cleanup = t.cleanup;
   let now = Date.UTC(2026, 9, 1, 10);
@@ -68,7 +85,8 @@ function setup(over: Partial<Reading> = {}, opts: { pill?: Pill; brew?: () => Br
           offsets: () => ({ gravity: 0, temperature: 0 }),
         },
         brews: { activeFor: opts.brew ?? (() => null) },
-        units: () => ({ temperature: 'C', gravity: 'sg' }),
+        units: opts.units ?? (() => ({ temperature: 'C', gravity: 'sg' })),
+        decimals: opts.decimals,
         clockTrusted: () => trusted,
         now: () => now,
       },
@@ -177,6 +195,27 @@ describe('alert rules', () => {
       'Back to normal: Kveik is at 21.0 °C',
       'Kveik is at 26.0 °C, above 25.0 °C',
     ]);
+  });
+
+  it("writes readings with the hub's decimals, in its units", () => {
+    let decimals: Decimals = { sg: 4, plato: 1, temperature: 1 };
+    let units: { temperature: TemperatureUnit; gravity: GravityUnit } = { temperature: 'C', gravity: 'sg' };
+    const t = setup({ gravity: 1.01234, temperature: 26.04 }, { decimals: () => decimals, units: () => units });
+    const message = (r: AlertRuleInput) => {
+      const created = t.alerts.create(r);
+      const text = t.alerts.events(1)[0]!.message;
+      t.alerts.delete(created.id);
+      return text;
+    };
+    const gravity = rule({ name: 'Done', kind: 'gravity_below', threshold: 1.015 });
+    expect(message(rule())).toBe('Kveik is at 26.0 °C, above 25.0 °C');
+    expect(message(gravity)).toBe('Kveik has reached 1.0123 (target 1.0150)');
+    decimals = { sg: 3, plato: 2, temperature: 2 };
+    expect(message(rule())).toBe('Kveik is at 26.04 °C, above 25.00 °C');
+    expect(message(gravity)).toBe('Kveik has reached 1.012 (target 1.015)');
+    units = { temperature: 'F', gravity: 'plato' };
+    expect(message(gravity)).toBe('Kveik has reached 3.15 °P (target 3.83 °P)');
+    expect(message(rule({ threshold: 25 }))).toBe('Kveik is at 78.87 °F, above 77.00 °F');
   });
 
   it('lets go of an alert when its rule is switched off, so it fires afresh when switched on again', async () => {

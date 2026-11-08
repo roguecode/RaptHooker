@@ -96,7 +96,7 @@ async function main(): Promise<void> {
   channels.load();
   const alerts = new AlertService(
     store,
-    { pills, brews, units: () => settings.units(), clockTrusted: () => clock.trusted },
+    { pills, brews, units: () => settings.units(), decimals: () => settings.decimals(), clockTrusted: () => clock.trusted },
     push,
     log.child({ svc: 'alerts' }),
     channels,

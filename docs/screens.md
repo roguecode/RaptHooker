@@ -31,7 +31,8 @@ An HD TV, 1280 × 720: every pill with the hub's name and the time, the brew and
    gravity, the temperature, the brew and its day, its fermentation progress, a graph, and battery, signal and more.
    The graph covers the brew so far (the last day for a pill without one), or the last 1, 3 or 7 days. Ranges left out
    of the pill's charts (**Exclude this range**) are drawn as the same curve here.
-4. Pick the look: dark or light, the colours, and the units. They start as this browser's.
+4. Pick the look: dark or light, the colours, and the units. They start as this browser's. The decimals follow the
+   hub's (**Settings → Hub**) unless you pick others for this picture.
 5. Pick the file type the screen needs (see below), check the preview, and **Copy** the link.
 
 The preview is the hub's own picture for that link, so it's what the screen will show. What doesn't fit at a readable
@@ -76,6 +77,8 @@ http://192.168.1.20:8080/api/image.jpg?w=240&h=240&theme=dark&palette=violet&sho
 | `range`   | What the chart covers: `brew` (the brew so far, or the last day without one), `1d`, `3d`, `7d`                         | `brew`                                       |
 | `gravity` | `sg`, `plato`                                                                                                          | The hub's default units                      |
 | `temp`    | `C`, `F`                                                                                                               | The hub's default units                      |
+| `gdec`    | Decimals for the gravity, in its unit: usually `3` or `4` for SG, `1` or `2` for °P (up to `6`)                        | The hub's decimals                           |
+| `tdec`    | Decimals for temperatures: usually `1` or `2` (up to `6`)                                                              | The hub's decimals                           |
 | `lang`    | The language and region for the words, numbers and time, e.g. `en-GB`, `de`, `pt-BR`                                   | `en`                                         |
 | `tz`      | The time zone for the clock, e.g. `Europe/London`                                                                      | The hub's                                    |
 | `brewing` | `1`: every pill's picture shows only those with a brew running                                                         | All of them                                  |

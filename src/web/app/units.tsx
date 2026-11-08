@@ -1,12 +1,17 @@
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
 import {
   cToF,
+  DECIMAL_CHOICES,
+  decimalsFrom,
+  gravityDecimals,
   gravityFrom,
+  SG_STEADY_DECIMALS,
   sgToPlato,
   temperatureDeltaIn,
   temperatureFrom,
   VOLUME_UNITS,
   volumeScale,
+  type Decimals,
   type GravityUnit,
   type ServingUnit,
   type TemperatureUnit,
@@ -30,13 +35,24 @@ interface UnitsContext extends Units {
   /** Goes back to the hub's default units. */
   followHub: () => void;
   hubUnits: Units;
-  /** Gravity for display, split so the last digit can be dimmed. */
+  /** Decimals readings are shown with: the hub's setting. */
+  decimals: Decimals;
+  /** Decimals for a gravity in the unit in use. */
+  gravityDecimals: number;
+  /** Decimals for a temperature. */
+  tempDecimals: number;
+  /** Gravity for display, split so the decimals past the third (SG) can be dimmed. */
   gravityParts: (sg: number | null | undefined) => { main: string; tail: string; unit: string };
   gravityText: (sg: number | null | undefined) => string;
+  /** A gravity already in the unit in use (a chart's value), as text without its unit. */
+  gravityNumber: (v: number) => string;
   gravityValue: (sg: number) => number;
   gravityFromDisplay: (v: number) => number;
   gravityLabel: string;
+  /** A temperature in °C as text with its unit, with `decimals` decimals (the hub's setting if left out). */
   tempText: (c: number | null | undefined, decimals?: number) => string;
+  /** A temperature already in the unit in use (a chart's value), as text without its unit. */
+  tempNumber: (v: number) => string;
   tempValue: (c: number) => number;
   tempFromDisplay: (v: number) => number;
   tempDelta: (c: number) => number;
@@ -54,6 +70,15 @@ export const VOLUME_KEY = 'rapthooker.volume';
 const Ctx = createContext<UnitsContext | null>(null);
 
 export const parseVolumeUnit = (raw: string | null): VolumeUnit => (VOLUME_UNITS.includes(raw as VolumeUnit) ? (raw as VolumeUnit) : 'l');
+
+const DECIMALS_EXAMPLE: Decimals = { sg: 1.012345, plato: 3.08123, temperature: 19.63472 };
+
+/** An example reading with `decimals` decimals, to pick decimals by ("1.012", "3.08", "19.6"), without its unit. */
+export const decimalsExample = (which: keyof Decimals, decimals: number): string => fixed(DECIMALS_EXAMPLE[which], decimals);
+
+/** The decimals to offer for one of them: the usual choices, and what's set if it's another. */
+export const decimalsOptions = (which: keyof Decimals, current: number | null): number[] =>
+  [...new Set([...DECIMAL_CHOICES[which], ...(current === null ? [] : [current])])].sort((a, b) => a - b);
 
 /** How to show litres in a unit, in the page's language. */
 export interface VolumeScale {
@@ -121,6 +146,12 @@ export function UnitsProvider({ children }: { children: ReactNode }) {
   const hubUnits = useMemo<Units>(() => ({ temperature: hubTemperature, gravity: hubGravity }), [hubTemperature, hubGravity]);
   const units = useMemo(() => effectiveUnits(choice, hubUnits), [choice, hubUnits]);
   const custom = choice.gravity !== undefined || choice.temperature !== undefined;
+  // The same object until the hub's decimals actually change, like the units.
+  const { sg: sgDecimals, plato: platoDecimals, temperature: tempDecimals } = decimalsFrom(hub.decimals);
+  const decimals = useMemo<Decimals>(
+    () => ({ sg: sgDecimals, plato: platoDecimals, temperature: tempDecimals }),
+    [sgDecimals, platoDecimals, tempDecimals],
+  );
 
   const setUnits = useCallback((u: Partial<Units>) => setRaw(JSON.stringify({ ...choice, ...u })), [choice, setRaw]);
   const followHub = useCallback(() => setRaw('{}'), [setRaw]);
@@ -129,11 +160,14 @@ export function UnitsProvider({ children }: { children: ReactNode }) {
   const value = useMemo<UnitsContext>(() => {
     const plato = units.gravity === 'plato';
     const f = units.temperature === 'F';
+    const gd = gravityDecimals(decimals, units.gravity);
+    const td = decimals.temperature;
     const gravityParts = (sg: number | null | undefined) => {
       if (sg === null || sg === undefined || !Number.isFinite(sg)) return { main: '–', tail: '', unit: plato ? '°P' : 'SG' };
-      if (plato) return { main: fixed(sgToPlato(sg), 1), tail: '', unit: '°P' };
-      const s = fixed(sg, 4);
-      return { main: s.slice(0, -1), tail: s.slice(-1), unit: 'SG' };
+      if (plato) return { main: fixed(sgToPlato(sg), gd), tail: '', unit: '°P' };
+      const s = fixed(sg, gd);
+      const dim = Math.max(0, gd - SG_STEADY_DECIMALS);
+      return { main: dim ? s.slice(0, -dim) : s, tail: dim ? s.slice(-dim) : '', unit: 'SG' };
     };
     return {
       ...units,
@@ -141,16 +175,21 @@ export function UnitsProvider({ children }: { children: ReactNode }) {
       custom,
       followHub,
       hubUnits,
+      decimals,
+      gravityDecimals: gd,
+      tempDecimals: td,
       gravityParts,
       gravityText: (sg) => {
         if (sg === null || sg === undefined || !Number.isFinite(sg)) return '–';
-        return plato ? `${fixed(sgToPlato(sg), 1)} °P` : fixed(sg, 4);
+        return plato ? `${fixed(sgToPlato(sg), gd)} °P` : fixed(sg, gd);
       },
+      gravityNumber: (v) => fixed(v, gd),
       gravityValue: (sg) => (plato ? sgToPlato(sg) : sg),
       gravityFromDisplay: (v) => gravityFrom(v, units.gravity),
       gravityLabel: plato ? '°P' : 'SG',
-      tempText: (c, decimals = 1) =>
-        c === null || c === undefined || !Number.isFinite(c) ? '–' : `${fixed(f ? cToF(c) : c, decimals)} °${units.temperature}`,
+      tempText: (c, d = td) =>
+        c === null || c === undefined || !Number.isFinite(c) ? '–' : `${fixed(f ? cToF(c) : c, d)} °${units.temperature}`,
+      tempNumber: (v) => fixed(v, td),
       tempValue: (c) => (f ? cToF(c) : c),
       tempFromDisplay: (v) => temperatureFrom(v, units.temperature),
       tempDelta: (c) => temperatureDeltaIn(c, units.temperature),
@@ -160,7 +199,7 @@ export function UnitsProvider({ children }: { children: ReactNode }) {
       volumeScale: (own) => scaleOf(volume, own),
       volumeText: (litres, own, trim) => volumeIn(scaleOf(volume, own), litres, trim),
     };
-  }, [units, setUnits, custom, followHub, hubUnits, volume, setVolume]);
+  }, [units, setUnits, custom, followHub, hubUnits, decimals, volume, setVolume]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

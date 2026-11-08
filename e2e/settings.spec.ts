@@ -1,5 +1,5 @@
-import type { HubSettings } from '@rapthooker/shared';
-import { expect, test } from './helpers';
+import { DEFAULT_HUB_SETTINGS, type HubSettings } from '@rapthooker/shared';
+import { ensurePill, expect, SIMULATED, test } from './helpers';
 
 test('the hub gets a name, and this browser a theme, colours and a language', async ({ page }) => {
   // A new name each time: a retry or repeat finds the hub with the name the last run gave it, and Save needs a change.
@@ -58,5 +58,26 @@ test("the hub's Bluetooth is switched off and back on", async ({ page, request }
     // The other tests on this hub need the simulated pills, whatever happened here.
     const hub = (await (await request.get('/api/settings/hub')).json()) as HubSettings;
     expect((await request.put('/api/settings/hub', { data: { ...hub, bluetooth: true } })).ok()).toBe(true);
+  }
+});
+
+test('readings are shown with the decimals picked for the hub', async ({ page, request }) => {
+  const pill = await ensurePill(request, SIMULATED.water, 'Water test');
+  try {
+    await page.goto('/#/settings');
+    const hub = page.locator('section.panel').filter({ has: page.getByRole('heading', { level: 2, name: 'Hub' }) });
+    await hub.getByRole('group', { name: 'Gravity in SG', exact: true }).getByRole('button', { name: '1.012', exact: true }).click();
+    await hub.getByRole('group', { name: 'Temperature', exact: true }).getByRole('button', { name: '19.63°', exact: true }).click();
+    await hub.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Hub settings saved')).toBeVisible();
+
+    await page.goto(`/#/pill/${pill.id}`);
+    await expect(page.locator('.gravity-value')).toHaveText(/^\d\.\d{3}SG$/);
+    await expect(page.locator('.gravity-value .tail')).toHaveText('');
+    await expect(page.locator('.temp-value')).toHaveText(/^-?\d+\.\d{2} °C$/);
+  } finally {
+    // The other tests on this hub expect the usual decimals.
+    const hub = (await (await request.get('/api/settings/hub')).json()) as HubSettings;
+    expect((await request.put('/api/settings/hub', { data: { ...hub, decimals: DEFAULT_HUB_SETTINGS.decimals } })).ok()).toBe(true);
   }
 });

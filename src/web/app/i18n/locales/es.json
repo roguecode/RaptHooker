@@ -2273,5 +2273,12 @@
   "If the beta doesn't start, the hub goes back to this build by itself.": "Si la beta no arranca, el hub vuelve solo a esta compilación.",
   "Need Help?": "¿Necesitas ayuda?",
   "Come chat with us": "Ven a charlar con nosotros",
-  "Report a problem, suggest an idea or read the guides": "Informa de un problema, sugiere una idea o lee las guías"
+  "Report a problem, suggest an idea or read the guides": "Informa de un problema, sugiere una idea o lee las guías",
+  "Decimals": "Decimales",
+  "Gravity decimals": "Decimales de la densidad",
+  "Gravity in °P": "Densidad en °P",
+  "Gravity in SG": "Densidad en SG",
+  "How many decimals readings are shown with: in the app and its charts, in notifications and on screens. In SG, a 4th decimal is shown dimmed, as it mostly follows the sensor's noise.": "Con cuántos decimales se muestran las lecturas: en la app y sus gráficos, en las notificaciones y en las pantallas. En SG, un 4.º decimal se muestra atenuado, porque sobre todo sigue el ruido del sensor.",
+  "Like the hub ({example})": "Como el hub ({example})",
+  "Temperature decimals": "Decimales de la temperatura"
 }

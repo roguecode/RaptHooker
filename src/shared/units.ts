@@ -1,4 +1,41 @@
-import type { AbvFormula, GravityUnit, TemperatureUnit } from './types.js';
+import { DEFAULT_DECIMALS, type AbvFormula, type Decimals, type GravityUnit, type TemperatureUnit } from './types.js';
+
+/** The decimals the app offers for each. Any whole number up to MAX_DECIMALS is understood. */
+export const DECIMAL_CHOICES: { readonly [K in keyof Decimals]: readonly number[] } = {
+  sg: [3, 4],
+  plato: [1, 2],
+  temperature: [1, 2],
+};
+
+export const MAX_DECIMALS = 6;
+
+/** A number of decimals, or null if it isn't one (a whole number from 0 to MAX_DECIMALS). */
+export function decimalsOrNull(v: unknown): number | null {
+  const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : v;
+  return typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= MAX_DECIMALS ? n : null;
+}
+
+/** Decimals as saved, with anything missing or not understood at its default. */
+export function decimalsFrom(v: unknown): Decimals {
+  const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
+  return {
+    sg: decimalsOrNull(o.sg) ?? DEFAULT_DECIMALS.sg,
+    plato: decimalsOrNull(o.plato) ?? DEFAULT_DECIMALS.plato,
+    temperature: decimalsOrNull(o.temperature) ?? DEFAULT_DECIMALS.temperature,
+  };
+}
+
+/** The decimals for a gravity in `unit`. */
+export const gravityDecimals = (d: Decimals, unit: GravityUnit): number => (unit === 'plato' ? d.plato : d.sg);
+
+/** SG decimals past this many are shown dimmed: they're mostly noise. */
+export const SG_STEADY_DECIMALS = 3;
+
+/** A number with `decimals` decimals and a "." (for messages), without a "-0" for tiny negative numbers. */
+export function fixedText(value: number, decimals: number): string {
+  const s = value.toFixed(decimals);
+  return Number(s) === 0 ? (0).toFixed(decimals) : s;
+}
 
 /** Degrees Plato from specific gravity (the usual cubic fit). */
 export function sgToPlato(sg: number): number {

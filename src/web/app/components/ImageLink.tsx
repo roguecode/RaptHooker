@@ -89,12 +89,16 @@ function ImageLinkDialog({ pill, onClose }: { pill: Pill | null; onClose: () => 
   const theme = useTheme();
   const units = useUnits();
   const [saved, save] = useStored(IMAGE_LINK_KEY, parseImageLinkSettings, serializeImageLinkSettings);
-  // The look and units start as this browser's, each time.
-  const [look, setLook] = useState<Pick<PictureDesign, 'theme' | 'palette' | 'gravity' | 'temperature'>>({
+  // The look and units start as this browser's, each time, and the decimals as the hub's.
+  const [look, setLook] = useState<
+    Pick<PictureDesign, 'theme' | 'palette' | 'gravity' | 'temperature' | 'gravityDecimals' | 'temperatureDecimals'>
+  >({
     theme: theme.theme,
     palette: theme.palette,
     gravity: units.gravity,
     temperature: units.temperature,
+    gravityDecimals: null,
+    temperatureDecimals: null,
   });
   const { hosts, best } = useHosts();
   const ids = { size: useId(), w: useId(), h: useId(), link: useId(), host: useId(), fields: useId() };

@@ -2383,5 +2383,22 @@
   "No profiles yet. Make one under Profiles on the Brews page, or save one from a brew whose alerts and events you want again.": "Aún no hay perfiles. Crea uno en Perfiles, en la página Lotes, o guarda uno desde un lote cuyas alertas y eventos quieras repetir.",
   "Plan an event": "Planificar un evento",
   "this profile": "este perfil",
-  "Use a whole number from 1 to 365": "Usa un número entero del 1 al 365"
+  "Use a whole number from 1 to 365": "Usa un número entero del 1 al 365",
+  "Alert sign": "Señal de alerta",
+  "in the corner while an alert waits to be acknowledged": "en la esquina mientras una alerta espera confirmación",
+  "Couldn't acknowledge the alert": "No se pudo confirmar la alerta",
+  "{count} alert to acknowledge|{count} alerts to acknowledge": {
+    "one": "{count} alerta por confirmar",
+    "other": "{count} alertas por confirmar"
+  },
+  "No alerts to acknowledge": "No hay alertas por confirmar",
+  "Alerts to acknowledge": "Alertas por confirmar",
+  "Acknowledge all": "Confirmar todas",
+  "Nothing needs looking at.": "Nada requiere tu atención.",
+  "Open the brew": "Abrir el lote",
+  "Open the device": "Abrir el dispositivo",
+  "Acknowledge \"{name}\"": "Confirmar \"{name}\"",
+  "Acknowledge": "Confirmar",
+  "All alerts": "Todas las alertas",
+  "Rules, where alerts go, and what went off lately": "Reglas, adónde van las alertas y lo que saltó últimamente"
 }

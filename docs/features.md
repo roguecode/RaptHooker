@@ -89,7 +89,8 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
   an attenuation or a day of the brew reached, fermentation finished (gravity stable), low battery, pill gone quiet,
   marked on the pill's and the brew's charts where they went off and cleared. Each can say what to do and note itself
   on the brew's timeline. Sent as browser notifications and through ntfy, Pushover, Telegram, Discord or email, chosen
-  per alert. See [docs/alerts.md](./alerts.md).
+  per alert. The bell in the top bar glows until they're acknowledged (which happens by itself when their brew ends), and
+  screens show a warning sign. See [docs/alerts.md](./alerts.md).
 
 ## Screens
 

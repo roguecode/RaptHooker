@@ -2382,5 +2382,22 @@
   "No profiles yet. Make one under Profiles on the Brews page, or save one from a brew whose alerts and events you want again.": "Nog geen profielen. Maak er een onder Profielen op de pagina Brouwsels, of sla er een op vanaf een brouwsel waarvan je de meldingen en gebeurtenissen opnieuw wilt.",
   "Plan an event": "Gebeurtenis plannen",
   "this profile": "dit profiel",
-  "Use a whole number from 1 to 365": "Gebruik een heel getal van 1 tot 365"
+  "Use a whole number from 1 to 365": "Gebruik een heel getal van 1 tot 365",
+  "Alert sign": "Meldingsteken",
+  "in the corner while an alert waits to be acknowledged": "in de hoek zolang een melding wacht op bevestiging",
+  "Couldn't acknowledge the alert": "Kon de melding niet bevestigen",
+  "{count} alert to acknowledge|{count} alerts to acknowledge": {
+    "one": "{count} melding te bevestigen",
+    "other": "{count} meldingen te bevestigen"
+  },
+  "No alerts to acknowledge": "Geen meldingen te bevestigen",
+  "Alerts to acknowledge": "Te bevestigen meldingen",
+  "Acknowledge all": "Alles bevestigen",
+  "Nothing needs looking at.": "Niets vraagt om aandacht.",
+  "Open the brew": "Brouwsel openen",
+  "Open the device": "Apparaat openen",
+  "Acknowledge \"{name}\"": "\"{name}\" bevestigen",
+  "Acknowledge": "Bevestigen",
+  "All alerts": "Alle meldingen",
+  "Rules, where alerts go, and what went off lately": "Regels, waar meldingen heen gaan en wat er onlangs afging"
 }

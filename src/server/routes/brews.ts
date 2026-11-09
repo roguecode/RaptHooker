@@ -8,6 +8,7 @@ import {
   brewPatchSchema,
   endBrewSchema,
   startBrewSchema,
+  type Brew,
   type BrewAlertInput,
 } from '@rapthooker/shared';
 import { PillError } from '../pills.js';
@@ -73,6 +74,10 @@ export function brewRoutes({ app, s, owner }: RouteContext): void {
   });
   // Its own alerts went with it (Store.deleteBrew).
   brews.on('removed', (brew: { id: string }) => alerts.forgetBrew(brew.id));
+  // What went off in a brew that has ended needs no more looking at.
+  brews.on('brew', (brew: Brew) => {
+    if (brew.endedAt !== null) alerts.settle();
+  });
 
   // Events: dry hops, temperature changes, cold crashes, additions and notes along a brew. Changes go out live with the brew.
 

@@ -110,6 +110,27 @@ describe('image link', () => {
     expect(query().brewing).toBe('1');
   });
 
+  it('puts the sign of an alert waiting to be acknowledged on the picture unless switched off, and remembers that', async () => {
+    const pill = makePill();
+    await renderWithHub(<ImageLinkButton pill={pill} />, {
+      pills: [pill],
+      routes: { 'GET /api/system/addresses': [], 'GET /api/pills/*/image.*': picture },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Image link' }));
+    await waitFor(() => expect(link().pathname).toBe(`/api/pills/${pill.id}/image.jpg`));
+    expect(query().alerts).toBe('1');
+    const sign = screen.getByRole('checkbox', { name: /Alert sign/ }) as HTMLInputElement;
+    expect(sign.checked).toBe(true);
+    fireEvent.click(sign);
+    expect(query().alerts).toBeUndefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Image link' }));
+    await waitFor(() => expect(link().pathname).toBe(`/api/pills/${pill.id}/image.jpg`));
+    expect(query().alerts).toBeUndefined();
+    expect((screen.getByRole('checkbox', { name: /Alert sign/ }) as HTMLInputElement).checked).toBe(false);
+  });
+
   it('leaves the decimals to the hub unless others are picked for the picture', async () => {
     const pill = makePill();
     await renderWithHub(<ImageLinkButton pill={pill} />, {

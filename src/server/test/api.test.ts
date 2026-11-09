@@ -119,6 +119,42 @@ describe('API', () => {
     expect(made.json()).toMatchObject({ kind: 'velocity_slow', threshold: 2, hours: 48, channelIds: 'all' });
   });
 
+  it('lists the alerts waiting to be acknowledged, lets the owner acknowledge them, and does when their brew ends', async () => {
+    const { app, pills, store } = await setup();
+    pills.handleAdvert({
+      address: '08:B6:1F:00:00:66',
+      rssi: -40,
+      manufacturer: new Map([[RAPT_COMPANY_ID, Buffer.from(CAPTURED.metricsFalling, 'hex')]]),
+      at: Date.now(),
+      mono: 0,
+      cached: false,
+    });
+    const id = (await app.inject({ method: 'POST', url: '/api/pills', headers: owner, payload: { address: '08:B6:1F:00:00:66' } })).json()
+      .id as string;
+    const brewId = (await app.inject({ method: 'POST', url: '/api/brews', headers: owner, payload: { pillId: id, name: 'Stout' } })).json()
+      .id as string;
+    const add = (ruleName: string, brew: string | null, at = Date.now()) =>
+      store.addAlertEvent({ ruleId: 'r1', ruleName, pillId: id, at, kind: 'fired', message: '', value: null, brewId: brew });
+    const a = add('Too warm', brewId);
+    // From before the brew.
+    const b = add('Battery low', null, Date.now() - 3_600_000);
+    const c = add('Dry hop', brewId);
+    const waiting = async () => (await app.inject({ url: '/api/alerts/events?unacked=1' })).json<{ id: number }[]>().map((e) => e.id);
+    const ack = (ids: unknown, headers: Record<string, string> = owner) =>
+      app.inject({ method: 'POST', url: '/api/alerts/events/ack', payload: { ids }, headers });
+
+    expect(await waiting()).toEqual([c, b, a]);
+    expect((await app.inject({ url: '/api/alerts/events' })).json()[0]).toMatchObject({ id: c, ackedAt: null, brewId });
+    expect((await ack([a], {})).statusCode).toBe(403);
+    expect((await ack([a])).json()).toEqual({ acked: [a] });
+    expect((await ack([])).statusCode).toBe(400);
+    // Ending the brew acknowledges what went off in it.
+    expect((await app.inject({ method: 'POST', url: `/api/brews/${brewId}/end`, headers: owner, payload: {} })).statusCode).toBe(200);
+    expect(await waiting()).toEqual([b]);
+    expect((await ack('all')).json()).toEqual({ acked: [b] });
+    expect(await waiting()).toEqual([]);
+  });
+
   it('lets anyone look but only the owner change things', async () => {
     const { app } = await setup();
     expect((await app.inject({ url: '/api/session' })).json()).toMatchObject({ role: 'viewer', pinSet: false });

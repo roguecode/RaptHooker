@@ -71,6 +71,7 @@ const snapshot: LiveSnapshot = {
         lang: 'en',
         tz: null,
         brewing: false,
+        alerts: true,
       },
       interval: 60,
       brightness: 80,

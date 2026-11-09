@@ -2430,5 +2430,23 @@
   "No profiles yet. Make one under Profiles on the Brews page, or save one from a brew whose alerts and events you want again.": "Pas encore de profils. Créez-en un sous Profils, sur la page Brassins, ou enregistrez-en un à partir d'un brassin dont vous voulez retrouver les alertes et les événements.",
   "Plan an event": "Prévoir un événement",
   "this profile": "ce profil",
-  "Use a whole number from 1 to 365": "Utilisez un nombre entier de 1 à 365"
+  "Use a whole number from 1 to 365": "Utilisez un nombre entier de 1 à 365",
+  "Alert sign": "Signal d'alerte",
+  "in the corner while an alert waits to be acknowledged": "dans le coin tant qu'une alerte attend d'être acquittée",
+  "Couldn't acknowledge the alert": "Impossible d'acquitter l'alerte",
+  "{count} alert to acknowledge|{count} alerts to acknowledge": {
+    "one": "{count} alerte à acquitter",
+    "many": "{count} alertes à acquitter",
+    "other": "{count} alertes à acquitter"
+  },
+  "No alerts to acknowledge": "Aucune alerte à acquitter",
+  "Alerts to acknowledge": "Alertes à acquitter",
+  "Acknowledge all": "Tout acquitter",
+  "Nothing needs looking at.": "Rien ne demande votre attention.",
+  "Open the brew": "Ouvrir le brassin",
+  "Open the device": "Ouvrir l'appareil",
+  "Acknowledge \"{name}\"": "Acquitter « {name} »",
+  "Acknowledge": "Acquitter",
+  "All alerts": "Toutes les alertes",
+  "Rules, where alerts go, and what went off lately": "Règles, où vont les alertes et ce qui s'est déclenché récemment"
 }

@@ -110,6 +110,8 @@ export interface ImageLinkSettings {
   show: ScreenItem[];
   range: ScreenRange;
   brewing: boolean;
+  /** A warning sign on a device with an alert to acknowledge. */
+  alerts: boolean;
   /** The hub address to put in the link (an origin), or null for the best guess. */
   host: string | null;
 }
@@ -124,6 +126,7 @@ export const DEFAULT_IMAGE_LINK: ImageLinkSettings = {
   show: CONTENT_PRESETS.find((p) => p.id === 'graph')!.items,
   range: 'brew',
   brewing: false,
+  alerts: true,
   host: null,
 };
 
@@ -144,6 +147,7 @@ export function parseImageLinkSettings(raw: string | null): ImageLinkSettings {
       show,
       range: SCREEN_RANGES.find((r) => r === v?.range) ?? d.range,
       brewing: v?.brewing === true,
+      alerts: typeof v?.alerts === 'boolean' ? v.alerts : d.alerts,
       host: typeof v?.host === 'string' && /^https?:\/\/[^/?#\s]+$/.test(v.host) ? v.host : null,
     };
   } catch {

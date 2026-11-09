@@ -178,6 +178,8 @@ export class AlertService extends EventEmitter {
     }
     for (const s of this.store.alertStates())
       this.state.set(`${s.rule_id}|${s.pill_id}`, { active: s.active >= 1, quiet: s.active === 2, lastFiredAt: s.last_fired_at });
+    // Brews may have ended (or devices been removed) under an older version, which doesn't acknowledge their alerts.
+    this.settle();
   }
 
   start(): void {
@@ -276,13 +278,14 @@ export class AlertService extends EventEmitter {
     for (const key of [...this.state.keys()]) if (key.startsWith(`${id}|`)) this.state.delete(key);
   }
 
-  /** A deleted brew's alerts went with it (Store.deleteBrew). */
+  /** A deleted brew's alerts went with it (Store.deleteBrew), and what went off in it needs no more looking at. */
   forgetBrew(brewId: string): void {
     for (const a of [...this.brewAlerts.values()]) {
       if (a.brewId !== brewId) continue;
       this.brewAlerts.delete(a.id);
       for (const key of [...this.state.keys()]) if (key.startsWith(`${a.id}|`)) this.state.delete(key);
     }
+    this.settle();
   }
 
   private brewOrThrow(brewId: string): void {
@@ -318,18 +321,50 @@ export class AlertService extends EventEmitter {
     return a ? this.brewWatch(a, pillId) : undefined;
   }
 
-  /** The latest events, newest first (just one pill's with `pillId`). */
-  events(limit: number, pillId?: string): AlertEvent[] {
-    return this.store.listAlertEvents(limit, pillId).map((r) => ({
-      id: Number(r.id),
-      ruleId: String(r.rule_id),
-      ruleName: String(r.rule_name),
-      pillId: String(r.pill_id),
-      at: Number(r.at),
-      kind: r.kind === 'resolved' ? 'resolved' : 'fired',
-      message: String(r.message),
-      value: (r.value as number | null) ?? null,
-    }));
+  /** The latest events, newest first (just one pill's with `pillId`; with `unacked`, only alerts waiting to be acknowledged). */
+  events(limit: number, pillId?: string, unacked = false): AlertEvent[] {
+    return this.store.listAlertEvents(limit, pillId, unacked).map((r) => {
+      const kind = r.kind === 'resolved' ? 'resolved' : 'fired';
+      return {
+        id: Number(r.id),
+        ruleId: String(r.rule_id),
+        ruleName: String(r.rule_name),
+        pillId: String(r.pill_id),
+        at: Number(r.at),
+        kind,
+        message: String(r.message),
+        value: (r.value as number | null) ?? null,
+        ackedAt: kind === 'fired' && r.acked_at != null ? Number(r.acked_at) : null,
+        brewId: r.brew_id != null ? String(r.brew_id) : null,
+      };
+    });
+  }
+
+  /** Acknowledges alerts that went off (these, or all); the ids of those that weren't yet, which go out as 'acked'. */
+  ack(ids: number[] | 'all'): number[] {
+    const at = this.now();
+    const acked = this.store.ackAlertEvents(ids, at);
+    if (acked.length) this.emit('acked', acked, at);
+    return acked;
+  }
+
+  /**
+   * Acknowledges what needs no more looking at: alerts that went off in a brew that has ended or been deleted, and those
+   * of removed devices (whichever version ended or removed them). After a brew ends, and when the hub starts.
+   */
+  settle(): number[] {
+    const at = this.now();
+    const acked = this.store.ackSettledAlertEvents(at);
+    if (acked.length) {
+      this.log.info({ count: acked.length }, 'acknowledged the alerts of finished brews and removed devices');
+      this.emit('acked', acked, at);
+    }
+    return acked;
+  }
+
+  /** The devices with an alert that went off and waits to be acknowledged (for screens). */
+  pillsWithUnacked(): Set<string> {
+    return this.store.pillsWithUnackedAlerts();
   }
 
   private withActive(rule: AlertRule): AlertRule {
@@ -614,7 +649,15 @@ export class AlertService extends EventEmitter {
     const message =
       kind === 'resolved' && rule.kind !== 'offline' ? `Back to normal: ${c.message}` : todo ? `${todo} — ${c.message}` : c.message;
     this.announce(
-      { ruleId: rule.id, ruleName: rule.name, pillId, kind, message, value: c.value },
+      {
+        ruleId: rule.id,
+        ruleName: rule.name,
+        pillId,
+        kind,
+        message,
+        value: c.value,
+        brewId: rule.brewId ?? this.deps.brews.activeFor(pillId)?.id ?? null,
+      },
       {
         notify,
         channelIds: rule.channelIds,
@@ -627,12 +670,12 @@ export class AlertService extends EventEmitter {
 
   /** Records an alert event (the app shows it straight away) and, with `notify`, sends it where it goes. */
   private announce(
-    e: Omit<AlertEvent, 'id' | 'at'>,
+    e: Omit<AlertEvent, 'id' | 'at' | 'ackedAt'>,
     opts: { notify: boolean; channelIds: string[] | 'all'; tag: string; url: string },
   ): void {
     const at = this.now();
     const id = this.store.addAlertEvent({ ...e, at });
-    const event: AlertEvent = { ...e, id, at };
+    const event: AlertEvent = { ...e, id, at, ackedAt: null };
     this.log.info({ rule: e.ruleName, pill: e.pillId, kind: e.kind }, 'alert');
     this.emit('event', event);
     if (!opts.notify) return;
@@ -695,7 +738,7 @@ export class AlertService extends EventEmitter {
       which === 'end' ? `Time to finish the ${word}${what}` : row.kind === 'note' ? `Reminder${what}` : `Time for the ${word}${what}`;
     const title = `${brewName}: ${word.charAt(0).toUpperCase()}${word.slice(1)}`;
     this.announce(
-      { ruleId: `reminder:${row.id}`, ruleName: title, pillId: row.pill_id, kind: 'fired', message, value: null },
+      { ruleId: `reminder:${row.id}`, ruleName: title, pillId: row.pill_id, kind: 'fired', message, value: null, brewId: row.brew_id },
       { notify: true, channelIds: 'all', tag: `reminder-${row.id}`, url: `/#/brew/${row.brew_id}` },
     );
   }

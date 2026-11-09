@@ -18,6 +18,7 @@ import { DevBuildBadge, UpdateBanner } from './components/UpdateBanner';
 import { WhatsNew } from './components/WhatsNew';
 import { DisplayMenu } from './components/DisplayMenu';
 import { HelpMenu } from './components/HelpMenu';
+import { AlertsMenu } from './components/AlertsMenu';
 import { HubWarnings } from './components/HubWarnings';
 import { I18nProvider, t, tk } from './i18n';
 import { Trans } from './i18n/Trans';
@@ -183,6 +184,7 @@ function Shell() {
           <div className="topbar-units">
             <UnitToggles />
           </div>
+          <AlertsMenu />
           <HelpMenu />
           <DisplayMenu />
           <span

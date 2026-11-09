@@ -499,6 +499,148 @@ main:focus,
   color: #5865f2;
 }
 
+/* The top bar's bell: it glows while alerts wait to be acknowledged, with their count on its corner. */
+.alerts-btn {
+  position: relative;
+}
+
+.btn.ghost.alerts-btn.alerting,
+.btn.ghost.alerts-btn.alerting:hover:not(:disabled) {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  animation: alerts-glow 2.4s ease-in-out infinite;
+}
+
+.btn.ghost.alerts-btn.alerting[aria-expanded='true'] {
+  background: color-mix(in srgb, var(--warning) 22%, transparent);
+}
+
+@keyframes alerts-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--warning) 40%, transparent),
+      0 0 6px color-mix(in srgb, var(--warning) 30%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--warning) 70%, transparent),
+      0 0 18px color-mix(in srgb, var(--warning) 65%, transparent);
+  }
+}
+
+/* Without the pulse, it still glows. */
+@media (prefers-reduced-motion: reduce) {
+  .btn.ghost.alerts-btn.alerting {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--warning) 60%, transparent),
+      0 0 12px color-mix(in srgb, var(--warning) 50%, transparent);
+  }
+}
+
+.alerts-count {
+  position: absolute;
+  top: -0.3rem;
+  right: -0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--warning);
+  color: var(--bg);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--surface-solid);
+}
+
+.alerts-pop {
+  gap: 0.6rem;
+  width: 24rem;
+  max-width: calc(100vw - 1.5rem);
+}
+
+.alerts-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-height: 2rem;
+}
+
+.alerts-pop-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--muted);
+}
+
+.alerts-pop-empty svg {
+  color: var(--success);
+}
+
+.alerts-pop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  max-height: min(24rem, 60vh);
+  margin: 0 -0.5rem;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.alerts-pop-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: var(--radius);
+}
+
+.alerts-pop-item:hover {
+  background: var(--surface-2);
+}
+
+.alerts-pop-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius);
+  color: var(--text);
+}
+
+.alerts-pop-link > svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--warning);
+}
+
+.alerts-pop-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.alerts-pop-text strong {
+  font-weight: 650;
+}
+
+.alerts-pop-text .small {
+  overflow-wrap: anywhere;
+}
+
+.alerts-pop .menu-item {
+  margin-bottom: 0;
+}
+
 /* Problems the hub reports, under the top bar */
 .hub-warnings {
   display: flex;
@@ -706,8 +848,8 @@ main > .notice {
   }
 
   /*
-   * Help sits further from the edge than "⋮", so its panel is lined up with the screen's edge instead of the button's;
-   * with top at auto, it still opens just under the button.
+   * Help and the bell sit further from the edge than "⋮", so their panels are lined up with the screen's edge instead of
+   * the button's; with top at auto, they still open just under the button.
    */
   .help-pop {
     position: fixed;
@@ -715,6 +857,14 @@ main > .notice {
     right: 0.75rem;
     margin-top: 0.5rem;
     width: min(19rem, calc(100% - 1.5rem));
+  }
+
+  .alerts-pop {
+    position: fixed;
+    top: auto;
+    right: 0.75rem;
+    margin-top: 0.5rem;
+    width: min(24rem, calc(100% - 1.5rem));
   }
 
   .hub-warning {

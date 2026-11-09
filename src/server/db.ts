@@ -197,6 +197,15 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE brew_events ADD COLUMN reminded_end INTEGER;
   ALTER TABLE brew_events ADD COLUMN alert_id TEXT;
   `,
+  // v11: on alert events, when an alert that went off was acknowledged (acked_at; NULL: not yet) and the brew it went
+  // off in (brew_id; NULL for one without a brew running). Everything from before counts as seen. Older versions name
+  // the columns they write, so an alert they record waits to be acknowledged, without a brew: it's taken as the brew's
+  // that was running on its pill then.
+  `
+  ALTER TABLE alert_events ADD COLUMN acked_at INTEGER;
+  ALTER TABLE alert_events ADD COLUMN brew_id TEXT;
+  UPDATE alert_events SET acked_at = at WHERE kind = 'fired';
+  `,
 ];
 
 /**
@@ -222,6 +231,8 @@ export const FLAG_IMPLAUSIBLE = 1;
 
 export const ROLLUP_MS = 15 * 60_000;
 const DELIVERIES_KEPT = 200;
+/** Alert events that went off and wait to be acknowledged (one that cleared needs nothing). */
+const UNACKED = "kind = 'fired' AND acked_at IS NULL";
 
 type Row = Record<string, SQLInputValue>;
 
@@ -555,7 +566,7 @@ export class Store {
       .run(id, address, JSON.stringify(json), createdAt);
   }
 
-  /** Removes a pill with all its readings, brews and webhook/alert state. */
+  /** Removes a pill with all its readings, brews and webhook/alert state. Its alerts need no more looking at. */
   deletePill(id: string): void {
     this.transaction(() => {
       this.db.prepare('DELETE FROM brew_events WHERE brew_id IN (SELECT id FROM brews WHERE pill_id = ?)').run(id);
@@ -564,6 +575,7 @@ export class Store {
         this.db.prepare(`DELETE FROM ${table} WHERE pill_id = ?`).run(id);
       }
       this.db.prepare('DELETE FROM pills WHERE id = ?').run(id);
+      this.db.prepare(`UPDATE alert_events SET acked_at = ? WHERE pill_id = ? AND ${UNACKED}`).run(Date.now(), id);
     });
   }
 
@@ -1239,6 +1251,7 @@ export class Store {
       .run(ruleId, pillId, active ? (quiet ? 2 : 1) : 0, lastFiredAt);
   }
 
+  /** `brewId`: the brew it went off in, if any. Every alert that goes off waits to be acknowledged. */
   addAlertEvent(e: {
     ruleId: string;
     ruleName: string;
@@ -1247,18 +1260,62 @@ export class Store {
     kind: string;
     message: string;
     value: number | null;
+    brewId?: string | null;
   }): number {
     const res = this.db
-      .prepare('INSERT INTO alert_events (rule_id, rule_name, pill_id, at, kind, message, value) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(e.ruleId, e.ruleName, e.pillId, e.at, e.kind, e.message, e.value);
+      .prepare('INSERT INTO alert_events (rule_id, rule_name, pill_id, at, kind, message, value, brew_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(e.ruleId, e.ruleName, e.pillId, e.at, e.kind, e.message, e.value, e.brewId ?? null);
     this.db.prepare('DELETE FROM alert_events WHERE id <= (SELECT id FROM alert_events ORDER BY id DESC LIMIT 1 OFFSET 500)').run();
     return Number(res.lastInsertRowid);
   }
 
-  listAlertEvents(limit: number, pillId?: string): Row[] {
-    if (pillId !== undefined)
-      return this.db.prepare('SELECT * FROM alert_events WHERE pill_id = ? ORDER BY id DESC LIMIT ?').all(pillId, limit) as Row[];
-    return this.db.prepare('SELECT * FROM alert_events ORDER BY id DESC LIMIT ?').all(limit) as Row[];
+  /** The latest events, newest first: one pill's with `pillId`, and only alerts that went off and wait to be acknowledged with `unacked`. */
+  listAlertEvents(limit: number, pillId?: string, unacked = false): Row[] {
+    const where: string[] = [];
+    const args: SQLInputValue[] = [];
+    if (pillId !== undefined) {
+      where.push('pill_id = ?');
+      args.push(pillId);
+    }
+    if (unacked) where.push(UNACKED);
+    const sql = `SELECT * FROM alert_events ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY id DESC LIMIT ?`;
+    return this.db.prepare(sql).all(...args, limit) as Row[];
+  }
+
+  /** Acknowledges alerts that went off (these, or all of them) at `at`; the ids of those that weren't yet. */
+  ackAlertEvents(ids: number[] | 'all', at: number): number[] {
+    if (ids !== 'all' && ids.length === 0) return [];
+    const which = ids === 'all' ? '' : ` AND id IN (${ids.map(() => '?').join(', ')})`;
+    const rows = this.db
+      .prepare(`UPDATE alert_events SET acked_at = ? WHERE ${UNACKED}${which} RETURNING id`)
+      .all(at, ...(ids === 'all' ? [] : ids)) as { id: number }[];
+    return rows.map((r) => Number(r.id)).sort((a, b) => a - b);
+  }
+
+  /**
+   * Acknowledges, at `at`, alerts that need no more looking at: ones that went off in a brew that has ended or been
+   * deleted, and ones of devices that have been removed (by any version). An alert recorded by a version that didn't
+   * note its brew counts as the brew's that was running on its pill at the time. The ids it acknowledged.
+   */
+  ackSettledAlertEvents(at: number): number[] {
+    const rows = this.db
+      .prepare(
+        `UPDATE alert_events SET acked_at = ? WHERE ${UNACKED} AND (
+           (brew_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM brews b WHERE b.id = alert_events.brew_id AND b.ended_at IS NULL))
+           OR (brew_id IS NULL AND EXISTS (
+             SELECT 1 FROM brews b WHERE b.pill_id = alert_events.pill_id AND b.ended_at IS NOT NULL
+               AND alert_events.at >= b.started_at AND alert_events.at <= b.ended_at))
+           OR NOT EXISTS (SELECT 1 FROM pills p WHERE p.id = alert_events.pill_id)
+         ) RETURNING id`,
+      )
+      .all(at) as { id: number }[];
+    return rows.map((r) => Number(r.id)).sort((a, b) => a - b);
+  }
+
+  /** The devices with an alert that went off and waits to be acknowledged. */
+  pillsWithUnackedAlerts(): Set<string> {
+    const rows = this.db.prepare(`SELECT DISTINCT pill_id FROM alert_events WHERE ${UNACKED}`).all() as { pill_id: string }[];
+    return new Set(rows.map((r) => r.pill_id));
   }
 
   // Push

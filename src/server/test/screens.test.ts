@@ -450,9 +450,19 @@ describe('looking after screens', () => {
       model: 'sdpro-240',
       interval: 60,
       brightness: 80,
-      // Saved before decimals could be picked: the hub's.
-      look: { gravity: 'plato', temperature: 'F', gravityDecimals: null, temperatureDecimals: null },
+      // Saved before decimals could be picked: the hub's. Before the alert sign: it shows.
+      look: { gravity: 'plato', temperature: 'F', gravityDecimals: null, temperatureDecimals: null, alerts: true },
     });
+    // One that was switched off stays off, and what a newer version keeps in the look stays too.
+    const off = upgradeScreen({ name: 'Off', look: { alerts: false, future: 1 } }, { gravity: 'sg', temperature: 'C' });
+    expect(off.look).toMatchObject({ alerts: false, future: 1 });
+  });
+
+  it("draws a screen's picture with or without the alert sign, as it's set", async () => {
+    const { fake, screens } = await setUp();
+    expect(screens.pictureOf(fake.id)!.options).toMatchObject({ alerts: true });
+    await screens.patch(fake.id, { look: { alerts: false } });
+    expect(screens.pictureOf(fake.id)!.options).toMatchObject({ alerts: false, palette: 'hops' });
   });
 
   it("draws a screen's picture with its own decimals, or the hub's", async () => {

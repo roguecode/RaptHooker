@@ -198,6 +198,62 @@ function schema9Database(file: string): void {
   db.close();
 }
 
+/** What 0.10.0 runs to record an alert going off or clearing (and to keep the latest 500). */
+function addAlertEvent010(
+  db: DatabaseSync,
+  ruleId: string,
+  ruleName: string,
+  at: number,
+  kind: string,
+  message: string,
+  value: number | null,
+) {
+  db.prepare('INSERT INTO alert_events (rule_id, rule_name, pill_id, at, kind, message, value) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+    ruleId,
+    ruleName,
+    PILL,
+    at,
+    kind,
+    message,
+    value,
+  );
+  db.prepare('DELETE FROM alert_events WHERE id <= (SELECT id FROM alert_events ORDER BY id DESC LIMIT 1 OFFSET 500)').run();
+}
+
+/**
+ * A database as RaptHooker 0.10.0 (schema 10) left it: schema 9's, upgraded, plus a brew's own alert that went off, a
+ * profile, a planned dry hop that reminded, and alerts that went off and cleared. Keep it as it is when adding a migration.
+ */
+function schema10Database(file: string): void {
+  schema9Database(file);
+  const db = new DatabaseSync(file);
+  for (const sql of MIGRATIONS.slice(9, 10)) db.exec(sql);
+  db.exec('PRAGMA user_version = 10');
+  db.prepare(
+    'INSERT INTO brew_alerts (id, brew_id, json, created_at) VALUES (?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET json = excluded.json',
+  ).run('ba1', 'brew1', '{"name":"Dry hop","kind":"attenuation_reached","threshold":50,"message":"Add the dry hops"}', T0);
+  db.prepare('INSERT INTO brew_profiles (id, json, created_at) VALUES (?, ?, ?) ON CONFLICT (id) DO UPDATE SET json = excluded.json').run(
+    'prof1',
+    '{"name":"NEIPA","notes":"","alerts":[],"events":[]}',
+    T0,
+  );
+  db.prepare(
+    `INSERT INTO brew_events (id, brew_id, at, end_at, kind, text, hidden, remind, reminded_at, reminded_end, alert_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT (id) DO UPDATE SET
+       at = excluded.at, end_at = excluded.end_at, kind = excluded.kind, text = excluded.text, hidden = excluded.hidden,
+       remind = excluded.remind, reminded_at = excluded.reminded_at, reminded_end = excluded.reminded_end`,
+  ).run('ev10', 'brew1', T0 + 2 * DAY, null, 'dry_hop', 'Citra', 0, 1, T0 + 2 * DAY, null, null);
+  db.prepare(
+    `INSERT INTO alert_state (rule_id, pill_id, active, last_fired_at) VALUES (?, ?, ?, ?)
+     ON CONFLICT (rule_id, pill_id) DO UPDATE SET active = excluded.active, last_fired_at = excluded.last_fired_at`,
+  ).run('ba1', PILL, 1, T0 + DAY);
+  addAlertEvent010(db, 'ba1', 'Dry hop', T0 + DAY, 'fired', 'Add the dry hops — Hazy IPA #4 is 50% attenuated', 50);
+  addAlertEvent010(db, 'rule1', 'Battery low', T0 + DAY, 'resolved', 'Back to normal: Battery at 20%', 20);
+  addAlertEvent010(db, 'reminder:ev10', 'Hazy IPA #4: Dry hop', T0 + 2 * DAY, 'fired', 'Time for the dry hop: Citra', null);
+  db.close();
+}
+
 /** Every row of every table, as these columns (all of them, unless given). */
 function dump(db: DatabaseSync, columns?: Record<string, string[]>): { rows: Rows; columns: Record<string, string[]> } {
   const tables = (
@@ -775,6 +831,115 @@ describe('upgrading a database from 0.9.0 and 0.9.1 (schema 9)', () => {
       expect(again.alertStates().map((s) => s.rule_id)).not.toContain('ba2');
     } finally {
       again.close();
+    }
+  });
+});
+
+describe('upgrading a database from 0.10.0 (schema 10)', () => {
+  it('keeps every row and value, and counts every alert from before as acknowledged when it went off', () => {
+    const file = join(tempDir(), 'rapthooker.db');
+    schema10Database(file);
+    const raw = new DatabaseSync(file);
+    const before = dump(raw);
+    raw.close();
+    expect(Object.values(before.rows).every((rows) => rows.length > 0)).toBe(true);
+
+    const store = new Store(file);
+    try {
+      expect(store.schemaVersion).toBe(MIGRATIONS.length);
+      const after = dump(store.db, before.columns);
+      for (const table of Object.keys(before.rows)) {
+        const rows = table === 'meta' ? after.rows[table]!.filter((r) => !addedBookkeeping(r, before.rows.meta!)) : after.rows[table];
+        expect(rows, table).toEqual(before.rows[table]);
+      }
+      // v11: alerts that went off count as seen when they did; one that cleared needs nothing. None knows its brew.
+      expect(store.db.prepare('SELECT rule_id, kind, at, acked_at, brew_id FROM alert_events ORDER BY id').all()).toEqual([
+        { rule_id: 'rule1', kind: 'fired', at: T0, acked_at: T0, brew_id: null },
+        { rule_id: 'ba1', kind: 'fired', at: T0 + DAY, acked_at: T0 + DAY, brew_id: null },
+        { rule_id: 'rule1', kind: 'resolved', at: T0 + DAY, acked_at: null, brew_id: null },
+        { rule_id: 'reminder:ev10', kind: 'fired', at: T0 + 2 * DAY, acked_at: T0 + 2 * DAY, brew_id: null },
+      ]);
+      expect(store.listAlertEvents(50, undefined, true)).toEqual([]);
+      expect(store.pillsWithUnackedAlerts().size).toBe(0);
+      expect(store.ackSettledAlertEvents(T0 + 3 * DAY)).toEqual([]);
+    } finally {
+      store.close();
+    }
+  });
+
+  it('has alerts 0.10.0 records when put back wait to be acknowledged, until the brew they went off in ends', () => {
+    const file = join(tempDir(), 'rapthooker.db');
+    schema10Database(file);
+    new Store(file).close();
+    // 0.10.0 put back: it records alerts with its own SQL, and reads them back.
+    const db = new DatabaseSync(file);
+    addAlertEvent010(db, 'ba1', 'Too warm', T0 + 3 * DAY, 'fired', 'Hazy IPA #4 is at 23.0 °C', 23);
+    expect(db.prepare('SELECT * FROM alert_events ORDER BY id DESC LIMIT ?').all(1)).toMatchObject([
+      { rule_name: 'Too warm', acked_at: null, brew_id: null },
+    ]);
+    db.close();
+
+    const store = new Store(file);
+    let during: number;
+    try {
+      const waiting = store.listAlertEvents(50, undefined, true);
+      expect(waiting).toMatchObject([{ rule_name: 'Too warm', at: T0 + 3 * DAY }]);
+      during = Number(waiting[0]!.id);
+      expect([...store.pillsWithUnackedAlerts()]).toEqual([PILL]);
+      // Its brew is still running.
+      expect(store.ackSettledAlertEvents(T0 + 3 * DAY)).toEqual([]);
+    } finally {
+      store.close();
+    }
+
+    // 0.10.0 ends the brew, then records another alert after it.
+    const old = new DatabaseSync(file);
+    old
+      .prepare(
+        `INSERT INTO brews (id, pill_id, started_at, ended_at, json, created_at) VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT (id) DO UPDATE SET started_at = excluded.started_at, ended_at = excluded.ended_at, json = excluded.json`,
+      )
+      .run('brew1', PILL, T0 - DAY, T0 + 4 * DAY, '{"name":"Hazy IPA #4"}', T0 - DAY);
+    addAlertEvent010(old, 'rule1', 'Battery low', T0 + 5 * DAY, 'fired', 'Battery at 9%', 9);
+    old.close();
+
+    const again = new Store(file);
+    try {
+      // What went off in the brew is done with; what came after still waits.
+      expect(again.ackSettledAlertEvents(T0 + 5 * DAY)).toEqual([during]);
+      expect(again.listAlertEvents(50, undefined, true)).toMatchObject([{ rule_name: 'Battery low', at: T0 + 5 * DAY, acked_at: null }]);
+    } finally {
+      again.close();
+    }
+  });
+
+  it("acknowledges alerts one by one or all at once, those of a brew that's over, and a removed device's", () => {
+    const file = join(tempDir(), 'rapthooker.db');
+    schema10Database(file);
+    const store = new Store(file);
+    try {
+      const add = (ruleId: string, at: number, brewId: string | null, pillId = PILL, kind = 'fired') =>
+        store.addAlertEvent({ ruleId, ruleName: ruleId, pillId, at, kind, message: '', value: null, brewId });
+      const a = add('too-warm', T0 + 3 * DAY, 'brew1');
+      const b = add('battery', T0 + 3 * DAY, null);
+      const c = add('quiet', T0 + 3 * DAY, null, THERMO);
+      const cleared = add('too-warm', T0 + 3 * DAY, 'brew1', PILL, 'resolved');
+      expect(store.listAlertEvents(50, undefined, true).map((r) => Number(r.id))).toEqual([c, b, a]);
+      expect(store.ackAlertEvents([b, cleared], T0 + 4 * DAY)).toEqual([b]);
+      expect(store.ackAlertEvents([b], T0 + 5 * DAY)).toEqual([]);
+      expect(store.db.prepare('SELECT acked_at FROM alert_events WHERE id = ?').get(b)).toEqual({ acked_at: T0 + 4 * DAY });
+
+      // A brew that's deleted (by this version or another) takes its alerts' need for attention with it.
+      store.deleteBrew('brew1');
+      expect(store.ackSettledAlertEvents(T0 + 4 * DAY)).toEqual([a]);
+      store.deletePill(THERMO);
+      expect(store.listAlertEvents(50, undefined, true)).toEqual([]);
+
+      const d = add('battery', T0 + 6 * DAY, null);
+      const e = add('battery', T0 + 6 * DAY, null);
+      expect(store.ackAlertEvents('all', T0 + 7 * DAY)).toEqual([d, e]);
+    } finally {
+      store.close();
     }
   });
 });

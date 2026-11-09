@@ -50,6 +50,8 @@ export interface ScreenOptions {
   tz: string | null;
   /** All devices only: just those with a brew running. */
   brewing: boolean;
+  /** A warning sign on a device with an alert that went off and hasn't been acknowledged. */
+  alerts: boolean;
 }
 
 export const DEFAULT_SCREEN_ITEMS: readonly ScreenItem[] = ['name', 'status', 'gravity', 'temperature', 'brew', 'chart'];
@@ -69,6 +71,8 @@ export function defaultScreenOptions(units: { gravity: GravityUnit; temperature:
     lang: 'en',
     tz: null,
     brewing: false,
+    // An address from before the sign could be asked for draws the picture it always did.
+    alerts: false,
   };
 }
 
@@ -121,7 +125,10 @@ export function parseScreenQuery(query: Record<string, unknown>, defaults: Scree
     .flatMap((v) => v.split(','))
     .map((v) => v.trim().toLowerCase());
   const show = showRaw === undefined ? defaults.show : SCREEN_ITEMS.filter((item) => listed.includes(item));
-  const flag = first(query.brewing)?.toLowerCase();
+  const flag = (v: unknown, fallback: boolean) => {
+    const s = first(v)?.toLowerCase();
+    return s === undefined ? fallback : s === '1' || s === 'true' || s === 'yes';
+  };
   return {
     width: size(query.w, defaults.width),
     height: size(query.h, defaults.height),
@@ -135,7 +142,8 @@ export function parseScreenQuery(query: Record<string, unknown>, defaults: Scree
     temperatureDecimals: query.tdec === undefined ? defaults.temperatureDecimals : decimalsOrNull(first(query.tdec)),
     lang: query.lang === undefined ? defaults.lang : screenLang(query.lang),
     tz: query.tz === undefined ? defaults.tz : screenTimeZone(query.tz),
-    brewing: flag === undefined ? defaults.brewing : flag === '1' || flag === 'true' || flag === 'yes',
+    brewing: flag(query.brewing, defaults.brewing),
+    alerts: flag(query.alerts, defaults.alerts),
   };
 }
 
@@ -162,6 +170,7 @@ export function screenQuery(o: ScreenOptions, opts: { allDevices: boolean }): st
   parts.push(['lang', o.lang]);
   if (o.tz) parts.push(['tz', o.tz]);
   if (opts.allDevices && o.brewing) parts.push(['brewing', '1']);
+  if (o.alerts) parts.push(['alerts', '1']);
   return parts.map(([k, v]) => `${k}=${enc(v)}`).join('&');
 }
 

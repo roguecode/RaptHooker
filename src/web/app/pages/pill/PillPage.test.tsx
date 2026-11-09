@@ -80,6 +80,8 @@ describe('pill page', () => {
       kind,
       message: '',
       value: 25,
+      ackedAt: null,
+      brewId: null,
     });
     const view = await renderWithHub(<PillPage id={pill.id} />, {
       pills: [pill],

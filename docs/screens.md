@@ -30,7 +30,9 @@ An HD TV, 1280 × 720: every pill with the hub's name and the time, the brew and
    what you want: the hub's name and the time, the pill's name, whether it's online and when it was last heard, the
    gravity, the temperature, the brew and its day, its fermentation progress, a graph, and battery, signal and more.
    The graph covers the brew so far (the last day for a pill without one), or the last 1, 3 or 7 days. Ranges left out
-   of the pill's charts (**Exclude this range**) are drawn as the same curve here.
+   of the pill's charts (**Exclude this range**) are drawn as the same curve here. **Alert sign** puts a warning sign
+   at the right of a pill's name (on its card's corner without one) while it has an
+   [alert waiting to be acknowledged](./alerts.md#alerts-to-acknowledge).
 4. Pick the look: dark or light, the colours, and the units. They start as this browser's. The decimals follow the
    hub's (**Settings → Hub**) unless you pick others for this picture.
 5. Pick the file type the screen needs (see below), check the preview, and **Copy** the link.
@@ -82,6 +84,7 @@ http://192.168.1.20:8080/api/image.jpg?w=240&h=240&theme=dark&palette=violet&sho
 | `lang`    | The language and region for the words, numbers and time, e.g. `en-GB`, `de`, `pt-BR`                                   | `en`                                         |
 | `tz`      | The time zone for the clock, e.g. `Europe/London`                                                                      | The hub's                                    |
 | `brewing` | `1`: every pill's picture shows only those with a brew running                                                         | All of them                                  |
+| `alerts`  | `1`: a warning sign on a device with an [alert waiting to be acknowledged](./alerts.md#alerts-to-acknowledge)          | No sign                                      |
 
 Anything left out or not understood takes its default, so a screen always gets a picture. A pill that doesn't exist (any
 more) gets a picture saying so, with HTTP status 404.

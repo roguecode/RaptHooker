@@ -35,6 +35,8 @@ export interface ScreenDevice {
   to: number;
   /** A thermometer's lowest and highest temperature over the last day (for its stats). */
   day: { min: number; max: number } | null;
+  /** An alert went off for it and waits to be acknowledged (and the picture shows that). */
+  alert?: boolean;
 }
 
 export interface ScreenScene {
@@ -95,6 +97,8 @@ interface Content {
   brew: BrewInfo | null;
   stats: Stat[];
   chart: ChartInput | null;
+  /** The warning sign: an alert waits to be acknowledged. */
+  alert: boolean;
 }
 
 /** Where a brew is between its original and target final gravity (as the app's fermentation bar). */
@@ -264,6 +268,7 @@ function describe(d: ScreenDevice, opts: ScreenOptions, s: ScreenStrings, c: Scr
     brew: brewInfo,
     stats,
     chart: chartInput,
+    alert: opts.alerts && d.alert === true,
   };
 }
 
@@ -436,6 +441,22 @@ function statusDot(d: Draw, cx: number, cy: number, r: number, on: boolean): str
   );
 }
 
+/** The warning sign of an alert waiting to be acknowledged: a glowing amber disc with the app's alert icon, centred on cx, cy. */
+function alertBadge(d: Draw, cx: number, cy: number, size: number): string {
+  const r = size / 2;
+  const glow = d.defs.add(
+    'wg',
+    (id) =>
+      `<radialGradient id="${id}"><stop offset="0.45" ${paint('stop-color', d.c.warning, 0.5)}/><stop offset="1" ${paint('stop-color', d.c.warning, 0)}/></radialGradient>`,
+  );
+  const inner = size * 0.6;
+  return (
+    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(r * 1.6)}" fill="url(#${glow})"/>` +
+    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(r)}" ${paint('fill', d.c.warning)}/>` +
+    icon('alert', cx - inner / 2, cy - inner / 2 - size * 0.03, inner, d.c.bg, 2.6)
+  );
+}
+
 /** A panel like the app's: a soft shadow, the glassy surface, a hairline border and the device's colour glowing in a corner. */
 function panel(d: Draw, x: number, y: number, w: number, h: number, radius: number, f: number, color: string | null): string {
   let out = '';
@@ -536,10 +557,17 @@ function card(d: Draw, ct: Content, x: number, y: number, w: number, h: number, 
   else top += spare / 2;
 
   let out = panel(d, x, y, w, h, radius, f, ct.pill.color);
+  // The warning sign goes on the name's line, at the right; without a name, on the card's top right corner.
+  let badge = '';
+  const hasHead = blocks.some((b) => b.kind === 'head');
+  const badgeSize = ct.alert && hasHead ? U.nameLine * f : 0;
+  if (ct.alert && !hasHead) badge = alertBadge(d, x + w - pad * 0.62, y + pad * 0.62, pad * 1.1);
   for (const b of blocks) {
     switch (b.kind) {
       case 'head':
-        out += head(d, ct, x0, top, iw, b.h, f, has('figure'), has('status'));
+        out += head(d, ct, x0, top, iw, b.h, f, has('figure'), has('status'), badgeSize ? badgeSize + 0.5 * f : 0);
+        if (badgeSize)
+          badge = alertBadge(d, x0 + iw - badgeSize / 2, nameTop(top, b.h, f, has('status')) + (U.nameLine * f) / 2, badgeSize);
         break;
       case 'readings':
         out += readings(d, ct, x0, top, iw, f, g, has('labels'), second, plan.stacked);
@@ -565,7 +593,8 @@ function card(d: Draw, ct: Content, x: number, y: number, w: number, h: number, 
     }
     top += b.h + U.gap * f + extraGap;
   }
-  return ct.online ? out : `<g filter="url(#${saturate(d)})">${out}</g>`;
+  // Outside the greying of an offline device, so the sign stands out all the same.
+  return (ct.online ? out : `<g filter="url(#${saturate(d)})">${out}</g>`) + badge;
 }
 
 function statusLine(d: Draw, ct: Content, x: number, top: number, w: number, h: number, f: number): string {
@@ -578,7 +607,19 @@ function statusLine(d: Draw, ct: Content, x: number, top: number, w: number, h: 
   );
 }
 
-function head(d: Draw, ct: Content, x: number, top: number, w: number, h: number, f: number, figure: boolean, status: boolean): string {
+function head(
+  d: Draw,
+  ct: Content,
+  x: number,
+  top: number,
+  w: number,
+  h: number,
+  f: number,
+  figure: boolean,
+  status: boolean,
+  /** Room kept free at the right of the name (for the warning sign). */
+  reserve = 0,
+): string {
   let out = '';
   let tx = x;
   if (figure) {
@@ -590,14 +631,16 @@ function head(d: Draw, ct: Content, x: number, top: number, w: number, h: number
     tx += size + 0.7 * f;
   }
   const tw = x + w - tx;
-  const block = (U.nameLine + (status ? U.subLine : 0)) * f;
-  const ty = top + (h - block) / 2;
+  const ty = nameTop(top, h, f, status);
   const nameSize = U.name * f;
-  const name = d.m.fit(ct.pill.name, tw, { size: nameSize, weight: 700, spacing: -0.02 });
+  const name = d.m.fit(ct.pill.name, tw - reserve, { size: nameSize, weight: 700, spacing: -0.02 });
   out += text(tx, ty + (U.nameLine * f) / 2 + nameSize * 0.36, name, { size: nameSize, weight: 700, spacing: -0.02, fill: d.c.text });
   if (status) out += statusLine(d, ct, tx, ty + U.nameLine * f, tw, U.subLine * f, f);
   return out;
 }
+
+/** The top of the name's line in a card's head, which is centred in it with the status line under it. */
+const nameTop = (top: number, h: number, f: number, status: boolean) => top + (h - (U.nameLine + (status ? U.subLine : 0)) * f) / 2;
 
 function readings(
   d: Draw,
@@ -843,10 +886,14 @@ function row(d: Draw, ct: Content, x: number, y: number, w: number, h: number, p
   const subStyle = SUB_STYLE(f);
   const blockH = (R.nameLine + (plan.sub ? R.subLine : 0)) * f;
   const ty = cy - blockH / 2;
-  out += text(nx, ty + (R.nameLine * f) / 2 + nameStyle.size * 0.36, d.m.fit(ct.pill.name, plan.textW, nameStyle), {
-    ...nameStyle,
-    fill: d.c.text,
-  });
+  // The warning sign follows the name.
+  const badgeSize = ct.alert ? R.name * f * 1.3 : 0;
+  const badgeRoom = badgeSize ? badgeSize + 0.45 * f : 0;
+  const name = d.m.fit(ct.pill.name, plan.textW - badgeRoom, nameStyle);
+  out += text(nx, ty + (R.nameLine * f) / 2 + nameStyle.size * 0.36, name, { ...nameStyle, fill: d.c.text });
+  const badge = badgeSize
+    ? alertBadge(d, nx + d.m.width(name, nameStyle) + 0.45 * f + badgeSize / 2, ty + (R.nameLine * f) / 2, badgeSize)
+    : '';
   if (plan.sub) {
     const scy = ty + R.nameLine * f + (R.subLine * f) / 2;
     const r = subStyle.size * 0.3;
@@ -858,7 +905,7 @@ function row(d: Draw, ct: Content, x: number, y: number, w: number, h: number, p
     const line = rowSub(ct, show, d.s) || ct.status;
     out += text(sx, scy + subStyle.size * 0.36, d.m.fit(line, nx + plan.textW - sx, subStyle), { ...subStyle, fill: d.c.muted });
   }
-  return ct.online ? out : `<g filter="url(#${saturate(d)})">${out}</g>`;
+  return (ct.online ? out : `<g filter="url(#${saturate(d)})">${out}</g>`) + badge;
 }
 
 // ---------- The whole picture ----------

@@ -100,6 +100,12 @@
     ],
     "plural": true
   },
+  "{count} alert to acknowledge|{count} alerts to acknowledge": {
+    "files": [
+      "components/AlertsMenu.tsx"
+    ],
+    "plural": true
+  },
   "{count} alert|{count} alerts": {
     "files": [
       "pages/brews/profiles.tsx"
@@ -1022,6 +1028,21 @@
       "pages/settings/SettingsPage.tsx"
     ]
   },
+  "Acknowledge": {
+    "files": [
+      "components/AlertsMenu.tsx"
+    ]
+  },
+  "Acknowledge \"{name}\"": {
+    "files": [
+      "components/AlertsMenu.tsx"
+    ]
+  },
+  "Acknowledge all": {
+    "files": [
+      "components/AlertsMenu.tsx"
+    ]
+  },
   "active": {
     "files": [
       "pages/settings/StatusSection.tsx"
@@ -1268,6 +1289,11 @@
       "pages/alerts/AlertsPage.tsx"
     ]
   },
+  "Alert sign": {
+    "files": [
+      "components/PictureDesigner.tsx"
+    ]
+  },
   "Alert: {alert}": {
     "files": [
       "components/annotations.ts"
@@ -1316,6 +1342,11 @@
       "pages/brews/BrewAlerts.tsx"
     ]
   },
+  "Alerts to acknowledge": {
+    "files": [
+      "components/AlertsMenu.tsx"
+    ]
+  },
   "Alerts when the gravity drops by less than {amount} in a day (that's {from} to {to}).": {
     "files": [
       "pages/alerts/RuleExample.tsx"
@@ -1341,6 +1372,11 @@
     "files": [
       "components/chartMath.ts",
       "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "All alerts": {
+    "files": [
+      "components/AlertsMenu.tsx"
     ]
   },
   "All brews": {
@@ -2544,6 +2580,11 @@
   "Copying backups to a USB stick": {
     "files": [
       "pages/settings/BackupSection.tsx"
+    ]
+  },
+  "Couldn't acknowledge the alert": {
+    "files": [
+      "components/AlertsMenu.tsx"
     ]
   },
   "Couldn't add the iSpindel": {
@@ -5067,6 +5108,11 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "in the corner while an alert waits to be acknowledged": {
+    "files": [
+      "components/PictureDesigner.tsx"
+    ]
+  },
   "In the Grainfather app, add equipment: Fermentation Tracking Equipment → iSpindel DIY electronic Hydrometer.": {
     "files": [
       "pages/webhooks/strings.ts"
@@ -6439,6 +6485,11 @@
       "pages/brews/BrewAlerts.tsx"
     ]
   },
+  "No alerts to acknowledge": {
+    "files": [
+      "components/AlertsMenu.tsx"
+    ]
+  },
   "No alerts yet.": {
     "files": [
       "pages/alerts/AlertsPage.tsx"
@@ -6787,6 +6838,11 @@
   "Nothing logged at this level yet.": {
     "files": [
       "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Nothing needs looking at.": {
+    "files": [
+      "components/AlertsMenu.tsx"
     ]
   },
   "Nothing sent yet.": {
@@ -7175,6 +7231,16 @@
   "Open on another device": {
     "files": [
       "pages/settings/SystemSection.tsx"
+    ]
+  },
+  "Open the brew": {
+    "files": [
+      "components/AlertsMenu.tsx"
+    ]
+  },
+  "Open the device": {
+    "files": [
+      "components/AlertsMenu.tsx"
     ]
   },
   "Optional": {
@@ -8401,6 +8467,11 @@
   "Rules": {
     "files": [
       "pages/alerts/AlertsPage.tsx"
+    ]
+  },
+  "Rules, where alerts go, and what went off lately": {
+    "files": [
+      "components/AlertsMenu.tsx"
     ]
   },
   "Running for": {

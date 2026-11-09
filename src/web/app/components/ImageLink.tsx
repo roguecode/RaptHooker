@@ -106,13 +106,14 @@ function ImageLinkDialog({ pill, onClose }: { pill: Pill | null; onClose: () => 
   const update = (patch: Partial<ImageLinkSettings>) => save({ ...saved, ...patch });
   const host = saved.host && hosts.some((h) => h.origin === saved.host) ? saved.host : best;
   const all = pill === null;
-  const design: PictureDesign = { show: saved.show, range: saved.range, brewing: saved.brewing, ...look };
+  const design: PictureDesign = { show: saved.show, range: saved.range, brewing: saved.brewing, alerts: saved.alerts, ...look };
   const changeDesign = (patch: Partial<PictureDesign>) => {
-    const { show, range, brewing, ...rest } = patch;
+    const { show, range, brewing, alerts, ...rest } = patch;
     const stored: Partial<ImageLinkSettings> = {};
     if (show) stored.show = show;
     if (range) stored.range = range;
     if (brewing !== undefined) stored.brewing = brewing;
+    if (alerts !== undefined) stored.alerts = alerts;
     if (Object.keys(stored).length) update(stored);
     if (Object.keys(rest).length) setLook((cur) => ({ ...cur, ...rest }));
   };

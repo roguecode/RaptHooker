@@ -76,6 +76,7 @@ export function liveRoutes({ app, s, isOwner, broadcast }: RouteContext, sockets
     broadcast({ type: 'webhook', webhookId, status }, { type: 'webhook', webhookId, status: maskStatus(status) }),
   );
   alerts.on('event', (event) => broadcast({ type: 'alert', event }));
+  alerts.on('acked', (ids: number[], at: number) => broadcast({ type: 'alert-acks', ids, at }));
   s.scanner.on('status', (ble) => broadcast({ type: 'ble', ble, clockSynced: s.clock.trusted }));
   s.clock.on('trusted', () => broadcast({ type: 'ble', ble: s.scanner.status, clockSynced: true }));
   s.settings.on('hub', (hub) => broadcast({ type: 'hub', hub }));

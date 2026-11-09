@@ -2382,5 +2382,22 @@
   "No profiles yet. Make one under Profiles on the Brews page, or save one from a brew whose alerts and events you want again.": "Noch keine Profile. Erstelle eines unter Profile auf der Seite Sude, oder speichere eines von einem Sud, dessen Alarme und Ereignisse du wieder haben willst.",
   "Plan an event": "Ereignis planen",
   "this profile": "dieses Profil",
-  "Use a whole number from 1 to 365": "Gib eine ganze Zahl von 1 bis 365 ein"
+  "Use a whole number from 1 to 365": "Gib eine ganze Zahl von 1 bis 365 ein",
+  "Alert sign": "Alarmzeichen",
+  "in the corner while an alert waits to be acknowledged": "in der Ecke, solange ein Alarm auf Bestätigung wartet",
+  "Couldn't acknowledge the alert": "Der Alarm konnte nicht bestätigt werden",
+  "{count} alert to acknowledge|{count} alerts to acknowledge": {
+    "one": "{count} Alarm zu bestätigen",
+    "other": "{count} Alarme zu bestätigen"
+  },
+  "No alerts to acknowledge": "Keine Alarme zu bestätigen",
+  "Alerts to acknowledge": "Zu bestätigende Alarme",
+  "Acknowledge all": "Alle bestätigen",
+  "Nothing needs looking at.": "Nichts braucht deine Aufmerksamkeit.",
+  "Open the brew": "Sud öffnen",
+  "Open the device": "Gerät öffnen",
+  "Acknowledge \"{name}\"": "„{name}“ bestätigen",
+  "Acknowledge": "Bestätigen",
+  "All alerts": "Alle Alarme",
+  "Rules, where alerts go, and what went off lately": "Regeln, wohin Alarme gehen, und was zuletzt ausgelöst hat"
 }

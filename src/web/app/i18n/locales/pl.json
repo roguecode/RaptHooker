@@ -2478,5 +2478,24 @@
   "No profiles yet. Make one under Profiles on the Brews page, or save one from a brew whose alerts and events you want again.": "Nie ma jeszcze profili. Utwórz profil w sekcji Profile na stronie Warki albo zapisz profil z warki, której alerty i zdarzenia chcesz powtórzyć.",
   "Plan an event": "Zaplanuj zdarzenie",
   "this profile": "tego profilu",
-  "Use a whole number from 1 to 365": "Podaj liczbę całkowitą od 1 do 365"
+  "Use a whole number from 1 to 365": "Podaj liczbę całkowitą od 1 do 365",
+  "Alert sign": "Znak alertu",
+  "in the corner while an alert waits to be acknowledged": "w rogu, dopóki alert czeka na potwierdzenie",
+  "Couldn't acknowledge the alert": "Nie udało się potwierdzić alertu",
+  "{count} alert to acknowledge|{count} alerts to acknowledge": {
+    "one": "{count} alert do potwierdzenia",
+    "few": "{count} alerty do potwierdzenia",
+    "many": "{count} alertów do potwierdzenia",
+    "other": "{count} alertu do potwierdzenia"
+  },
+  "No alerts to acknowledge": "Brak alertów do potwierdzenia",
+  "Alerts to acknowledge": "Alerty do potwierdzenia",
+  "Acknowledge all": "Potwierdź wszystkie",
+  "Nothing needs looking at.": "Nic nie wymaga uwagi.",
+  "Open the brew": "Otwórz warkę",
+  "Open the device": "Otwórz urządzenie",
+  "Acknowledge \"{name}\"": "Potwierdź „{name}”",
+  "Acknowledge": "Potwierdź",
+  "All alerts": "Wszystkie alerty",
+  "Rules, where alerts go, and what went off lately": "Reguły, gdzie trafiają alerty, i co ostatnio się włączyło"
 }

@@ -134,9 +134,12 @@ Press **Edit** on a screen (or its picture) to choose:
 
 - which pill it shows, or all of them (optionally only those with a brew running),
 - what's on the picture and how it looks: the same choices as an [image link](./screens.md), with a preview,
+- whether it shows the **Alert sign**, a warning sign on a pill with an
+  [alert waiting to be acknowledged](./alerts.md#alerts-to-acknowledge) (on unless you switch it off, for screens set
+  up before it too),
 - how often it fetches a new picture, and how bright it is.
 
-Changes show on the screen straight away. A screen is tied to its pill everywhere in the app: the pill's page shows a
+Changes show on the screen straight away. The alert sign comes and goes with the next picture the screen fetches. A screen is tied to its pill everywhere in the app: the pill's page shows a
 chip for each screen showing it (press it to change the screen), and the pill's card on the dashboard has a little
 screen mark. Screens showing every pill have chips next to **Image link** on the dashboard.
 

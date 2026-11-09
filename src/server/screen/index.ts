@@ -40,6 +40,8 @@ interface Deps {
   pills: PillService;
   settings: Settings;
   config: Config;
+  /** The devices with an alert waiting to be acknowledged, for the warning sign. */
+  alerts?: { pillsWithUnacked(): Set<string> };
 }
 
 /** Screen images: gathers what a picture shows, draws it and turns it into PNG, JPEG or BMP. */
@@ -113,12 +115,13 @@ export class ScreenService {
     } else {
       list = pills.list().filter((p) => !p.archived && (!opts.brewing || p.brew));
     }
+    const alerting = opts.alerts ? (this.deps.alerts?.pillsWithUnacked() ?? new Set<string>()) : new Set<string>();
     return {
       hubName: settings.hub().name,
       now,
       single: pillId !== null,
       brewingOnly: pillId === null && opts.brewing,
-      devices: list.map((pill) => this.device(pill, opts, now)),
+      devices: list.map((pill) => ({ ...this.device(pill, opts, now), alert: alerting.has(pill.id) })),
     };
   }
 

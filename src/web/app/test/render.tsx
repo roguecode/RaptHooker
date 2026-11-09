@@ -178,6 +178,7 @@ export function makeScreen(over: ScreenOverrides = {}): ScreenDevice {
       lang: 'en',
       tz: null,
       brewing: false,
+      alerts: true,
     },
     interval: 60,
     brightness: 80,

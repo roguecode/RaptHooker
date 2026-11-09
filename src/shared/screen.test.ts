@@ -41,6 +41,7 @@ describe('screen image options', () => {
       lang: 'de-AT',
       tz: 'Europe/Berlin',
       brewing: '1',
+      alerts: '1',
     });
     expect(o).toEqual({
       width: 240,
@@ -56,7 +57,18 @@ describe('screen image options', () => {
       lang: 'de-AT',
       tz: 'Europe/Berlin',
       brewing: true,
+      alerts: true,
     });
+  });
+
+  it('draws an address from before the alert sign as it always did, without it', () => {
+    expect(defaults.alerts).toBe(false);
+    expect(parse({ alerts: 'yes' }).alerts).toBe(true);
+    expect(parse({ alerts: '0' }).alerts).toBe(false);
+    expect(parseScreenQuery({}, { ...defaults, alerts: true }).alerts).toBe(true);
+    // Only asked for when it's wanted, so an address without it means the same to every version.
+    expect(screenQuery({ ...defaults, alerts: false }, { allDevices: true })).not.toContain('alerts');
+    expect(screenQuery({ ...defaults, alerts: true }, { allDevices: false })).toMatch(/&alerts=1$/);
   });
 
   it('leaves the decimals to the hub unless the address has ones it understands', () => {

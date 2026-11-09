@@ -126,8 +126,12 @@ export const api = {
   createAlert: (input: AlertRuleInput) => post<AlertRule>('/api/alerts/rules', input),
   updateAlert: (id: string, input: AlertRuleInput) => request<AlertRule>('PUT', `/api/alerts/rules/${encodeURIComponent(id)}`, input),
   deleteAlert: (id: string) => request<void>('DELETE', `/api/alerts/rules/${encodeURIComponent(id)}`),
-  alertEvents: (limit = 30, pillId?: string) =>
-    get<AlertEvent[]>(`/api/alerts/events?limit=${limit}${pillId ? `&pillId=${encodeURIComponent(pillId)}` : ''}`),
+  alertEvents: (limit = 30, pillId?: string, opts: { unacked?: boolean } = {}) =>
+    get<AlertEvent[]>(
+      `/api/alerts/events?limit=${limit}${pillId ? `&pillId=${encodeURIComponent(pillId)}` : ''}${opts.unacked ? '&unacked=1' : ''}`,
+    ),
+  /** Acknowledges alerts that went off (these, or all); answers with those that weren't yet. */
+  ackAlerts: (ids: number[] | 'all') => post<{ acked: number[] }>('/api/alerts/events/ack', { ids }),
 
   pushKey: () => get<{ publicKey: string }>('/api/push/key'),
   pushSubscribe: (sub: PushSubscriptionJSON) => post<void>('/api/push/subscribe', sub),

@@ -594,6 +594,13 @@ export interface AlertEvent {
   kind: 'fired' | 'resolved';
   message: string;
   value: number | null;
+  /**
+   * When an alert that went off was acknowledged, or null while it waits to be (it's acknowledged by itself when its
+   * brew ends or its device is removed). Always null for one that cleared, which needs nothing.
+   */
+  ackedAt: number | null;
+  /** The brew it went off in, or null (none was running, or an older version recorded it). */
+  brewId: string | null;
 }
 
 export interface Session {
@@ -909,6 +916,8 @@ export type LiveMessage =
   | { type: 'keg-removed'; kegId: string; pillId: string }
   | { type: 'webhook'; webhookId: string; status: WebhookStatus }
   | { type: 'alert'; event: AlertEvent }
+  /** Alerts that were acknowledged (by someone, or by themselves when their brew ended). */
+  | { type: 'alert-acks'; ids: number[]; at: number }
   | { type: 'hub'; hub: HubSettings }
   | { type: 'update'; update: UpdateInfo }
   | { type: 'screen'; screen: ScreenDevice }

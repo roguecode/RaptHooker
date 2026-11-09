@@ -98,6 +98,8 @@ export function defaultLook(units: Pick<ScreenLook, 'gravity' | 'temperature'>):
     lang: 'en',
     tz: null,
     brewing: false,
+    // The hub's own screens show it, those set up before it could be too.
+    alerts: true,
   };
 }
 

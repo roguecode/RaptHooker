@@ -1,4 +1,4 @@
-import { alertEventsQuerySchema, alertInputSchema, BROWSER_PUSH, type AlertRuleInput } from '@rapthooker/shared';
+import { alertAckSchema, alertEventsQuerySchema, alertInputSchema, BROWSER_PUSH, type AlertRuleInput } from '@rapthooker/shared';
 import type { RouteContext } from './context.js';
 
 export function alertRoutes({ app, s, owner }: RouteContext): void {
@@ -27,7 +27,13 @@ export function alertRoutes({ app, s, owner }: RouteContext): void {
   });
 
   app.get('/api/alerts/events', async (req) => {
-    const { limit, pillId } = alertEventsQuerySchema.parse(req.query);
-    return alerts.events(limit, pillId);
+    const { limit, pillId, unacked } = alertEventsQuerySchema.parse(req.query);
+    return alerts.events(limit, pillId, unacked);
+  });
+
+  // Acknowledging alerts that went off: { ids: [1, 2] } or { ids: 'all' }. Answers with the ids that weren't yet.
+  app.post('/api/alerts/events/ack', owner, async (req) => {
+    const { ids } = alertAckSchema.parse(req.body);
+    return { acked: alerts.ack(ids) };
   });
 }

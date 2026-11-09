@@ -27,6 +27,7 @@ const designOf = (look: ScreenLook): PictureDesign => ({
   show: look.show,
   range: look.range,
   brewing: look.brewing,
+  alerts: look.alerts ?? false,
   theme: look.theme,
   palette: look.palette,
   gravity: look.gravity,

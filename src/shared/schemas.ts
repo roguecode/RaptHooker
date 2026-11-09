@@ -276,6 +276,16 @@ export const alertEventsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(500).default(50),
   /** Only one pill's. */
   pillId: z.string().min(1).max(64).optional(),
+  /** 1: only alerts that went off and wait to be acknowledged. */
+  unacked: z
+    .enum(['0', '1', 'true', 'false'])
+    .optional()
+    .transform((v) => v === '1' || v === 'true'),
+});
+
+/** Acknowledging alerts that went off: these, or all of them. */
+export const alertAckSchema = z.object({
+  ids: z.union([z.literal('all'), z.array(z.number().int().positive()).min(1).max(500)]),
 });
 
 // Brew profiles

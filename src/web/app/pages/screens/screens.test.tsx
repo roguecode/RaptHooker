@@ -259,6 +259,10 @@ describe('screens page', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Big numbers' }));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Light' }));
     fireEvent.change(within(dialog).getByRole('combobox', { name: 'New picture every' }), { target: { value: '300' } });
+    // It shows the alert sign (as the hub's screens do unless switched off), and can leave it off.
+    const sign = within(dialog).getByRole('checkbox', { name: /Alert sign/ }) as HTMLInputElement;
+    expect(sign.checked).toBe(true);
+    fireEvent.click(sign);
     // The preview is the picture as it will be, at the screen's size.
     await waitFor(() => expect(view.calls('GET /api/pills/*/image.jpg').length).toBeGreaterThan(0), { timeout: 3000 });
     expect(Object.fromEntries(view.calls('GET /api/pills/*/image.jpg').at(-1)!.query)).toMatchObject({
@@ -266,12 +270,13 @@ describe('screens page', () => {
       h: '240',
       theme: 'light',
     });
+    expect(view.calls('GET /api/pills/*/image.jpg').at(-1)!.query.get('alerts')).toBeNull();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
     await settle();
     expect(view.calls('PATCH /api/screens/*')[0]!.body).toMatchObject({
       pillId: pill.id,
       interval: 300,
-      look: { show: ['gravity', 'temperature'], theme: 'light' },
+      look: { show: ['gravity', 'temperature'], theme: 'light', alerts: false },
     });
     expect(toastTexts()).toContain('Kitchen saved');
   });

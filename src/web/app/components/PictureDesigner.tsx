@@ -29,6 +29,8 @@ export interface PictureDesign {
   range: ScreenRange;
   /** With every pill: only the ones with a brew running. */
   brewing: boolean;
+  /** A warning sign on a device with an alert waiting to be acknowledged. */
+  alerts: boolean;
   theme: ScreenTheme;
   palette: ScreenPalette;
   gravity: GravityUnit;
@@ -112,6 +114,13 @@ export function PictureFields({
             <span>{t('Only pills with a brew running')}</span>
           </label>
         )}
+        <label className="check">
+          <input type="checkbox" checked={value.alerts} onChange={(e) => onChange({ alerts: e.target.checked })} />
+          <span>
+            <Icon name="alert" size={14} /> {t('Alert sign')}
+            <span className="small muted"> · {t('in the corner while an alert waits to be acknowledged')}</span>
+          </span>
+        </label>
         <p className="hint">{t("What doesn't fit at a readable size is left out, so check the preview.")}</p>
       </fieldset>
 

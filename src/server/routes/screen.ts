@@ -9,7 +9,7 @@ import type { RouteContext } from './context.js';
  * A RaptHooker screen fetches /api/screens/:id/image.jpg, drawn with the options saved for it.
  */
 export function screenRoutes({ app, s }: RouteContext): void {
-  const screens = new ScreenService({ store: s.store, pills: s.pills, settings: s.settings, config: s.config });
+  const screens = new ScreenService({ store: s.store, pills: s.pills, settings: s.settings, config: s.config, alerts: s.alerts });
 
   const format = (raw: string): ScreenFormat => {
     const f = raw.toLowerCase() === 'jpeg' ? 'jpg' : raw.toLowerCase();

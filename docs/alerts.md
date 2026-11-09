@@ -85,7 +85,8 @@ passed only tells you the end. Reminders also show in the app with the other ale
 
 ## What you get
 
-- **In the app**, always: a pop-up while the app is open, and the **Recent** list on the Alerts page.
+- **In the app**, always: a pop-up while the app is open, the **bell** in the top bar until you
+  [acknowledge it](#alerts-to-acknowledge), and the **Recent** list on the Alerts page.
 - **On the pill's chart**, and on a brew's chart for what went off during it: a mark where each alert went off
   (**Alert: Too warm**) and where it cleared (**OK: Too warm**). **Alerts**, under the chart, hides them in this
   browser. The hub keeps the latest 500 alerts of all the pills, so ones from long ago may no longer be marked.
@@ -94,6 +95,22 @@ passed only tells you the end. Reminders also show in the app with the other ale
 - The notification's title is the alert's name ("Too warm") and the text says what happened ("Kveik is at 24.6 °C,
   above 24.0 °C"), in the hub's units (Settings), after what to do if the alert says. A brew's own alerts and reminders
   open the brew's page.
+- **On a [small screen](./screens.md)**, a warning sign on the device's card until you acknowledge it.
+
+## Alerts to acknowledge
+
+Every alert that goes off, and every reminder, waits for you to look at it: the **bell** in the top bar glows, with how
+many are waiting. Open it for the list, newest first. Each one opens what it's about: the brew it went off in (a brew's
+own alerts and reminders, and any alert that went off while a brew was running on the device), else the device's page.
+The owner acknowledges them with **✓**, or all at once with **Acknowledge all**; anyone can look. An alert stays in the
+list after it clears, until it's acknowledged: it may have been too warm for an hour while you were out.
+
+They're acknowledged by themselves when the brew they went off in ends or is deleted, and when their device is removed.
+Alerts that went off before the hub had the bell count as seen. The hub keeps the latest 500 alerts, so the oldest of
+many go from the list too.
+
+[Screens](./screens.md) the hub looks after show a warning sign on a device's card while it has one waiting, unless
+switched off under **Alert sign** in the screen's settings; so can [image links](./screens.md#whats-in-the-link).
 
 ## Where alerts go
 

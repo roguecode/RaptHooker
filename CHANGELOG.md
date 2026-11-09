@@ -5,6 +5,20 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Alerts to acknowledge.** A bell in the top bar glows while alerts are waiting, with how many. Open it to go
+  straight to the brew or device an alert is about, or acknowledge them one by one or all at once. Alerts are
+  acknowledged by themselves when the brew they went off in ends ([#36](https://github.com/roguecode/RaptHooker/issues/36)).
+  - Stored on each alert event (when it was acknowledged, and the brew it went off in: schema 11). Alerts from before
+    count as seen. Older versions leave the new columns alone; alerts they record while you've gone back to one wait
+    to be acknowledged.
+  - The API's alert events have `ackedAt` and `brewId`, `?unacked=1` lists the ones waiting, and
+    `POST /api/alerts/events/ack` acknowledges them.
+- **An alert sign on screens.** Screens show a warning sign on a pill's card while it has an alert to acknowledge,
+  switched on for every screen (**Alert sign** in its settings turns it off). Image links can have it too (`alerts=1`).
+  Saved screens gain `alerts` in their look, which older versions keep.
+
 ## [0.10.0] - 2026-11-08
 
 Brew profiles, alerts that follow your brew, and reminders for things like dry hopping.

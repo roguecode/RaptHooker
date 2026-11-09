@@ -746,3 +746,116 @@ describe('alerts on a thermometer', () => {
     expect(t.sent).toEqual([expect.stringContaining('above 25')]);
   });
 });
+
+describe('acknowledging alerts', () => {
+  const HOUR = 3_600_000;
+  const brewOf = (id: string): Brew =>
+    ({ id, name: 'Hazy', pillId: 'p1', startedAt: 0, endedAt: null, stats: { og: 1.05 } }) as unknown as Brew;
+  /** The pill, and a brew running on it, as the hub keeps them. */
+  const keep = (t: ReturnType<typeof setup>, brewId?: string) => {
+    t.store.savePill('p1', pill.address, { name: pill.name }, 0);
+    if (brewId) t.store.saveBrew({ id: brewId, pill_id: 'p1', started_at: 0, ended_at: null, json: '{"name":"Hazy"}', created_at: 0 });
+  };
+  const acksOf = (t: ReturnType<typeof setup>) => {
+    const acks: number[][] = [];
+    t.alerts.on('acked', (ids: number[]) => acks.push(ids));
+    return acks;
+  };
+
+  it('keeps an alert that went off waiting until it is acknowledged, and says when it is', () => {
+    const t = setup({ temperature: 26 });
+    keep(t);
+    const acks = acksOf(t);
+    t.alerts.create(rule());
+    const [fired] = t.alerts.events(10, undefined, true);
+    expect(fired).toMatchObject({ ruleName: 'Too warm', kind: 'fired', ackedAt: null, brewId: null });
+    expect([...t.alerts.pillsWithUnacked()]).toEqual(['p1']);
+
+    t.at(5);
+    expect(t.alerts.ack([fired!.id])).toEqual([fired!.id]);
+    expect(acks).toEqual([[fired!.id]]);
+    expect(t.alerts.events(10, undefined, true)).toEqual([]);
+    expect(t.alerts.events(10)[0]).toMatchObject({ id: fired!.id, ackedAt: t.now() });
+    expect(t.alerts.pillsWithUnacked().size).toBe(0);
+    // Nothing left to acknowledge: nothing to say.
+    expect(t.alerts.ack('all')).toEqual([]);
+    expect(acks).toHaveLength(1);
+  });
+
+  it('waits even after the alert clears, which itself needs nothing', () => {
+    const current: Partial<Reading> = { temperature: 26 };
+    const t = setup(current);
+    keep(t);
+    t.alerts.create(rule());
+    current.temperature = 20;
+    t.at(1);
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10).map((e) => [e.kind, e.ackedAt])).toEqual([
+      ['resolved', null],
+      ['fired', null],
+    ]);
+    expect(t.alerts.events(10, undefined, true).map((e) => e.kind)).toEqual(['fired']);
+    expect(t.alerts.ack('all')).toHaveLength(1);
+  });
+
+  it('notes the brew an alert went off in, and acknowledges it once the brew ends, even if it ended while the hub was off', () => {
+    const t = setup({ temperature: 26 }, { brew: () => brewOf('b1') });
+    keep(t, 'b1');
+    const acks = acksOf(t);
+    t.alerts.create(rule());
+    const [fired] = t.alerts.events(10, undefined, true);
+    expect(fired!.brewId).toBe('b1');
+    // Still running: it waits.
+    expect(t.alerts.settle()).toEqual([]);
+
+    t.store.saveBrew({ id: 'b1', pill_id: 'p1', started_at: 0, ended_at: t.now(), json: '{"name":"Hazy"}', created_at: 0 });
+    const again = t.make();
+    again.load();
+    expect(again.events(10, undefined, true)).toEqual([]);
+    expect(again.events(10)[0]).toMatchObject({ id: fired!.id, ackedAt: t.now() });
+    // The one that was already running heard nothing of it; the restarted one acknowledged it.
+    expect(acks).toEqual([]);
+  });
+
+  it("acknowledges a brew's reminders and own alerts when the brew is deleted", () => {
+    const t = setup({ gravity: 1.019 }, { brew: () => brewOf('b1'), brews: { get: (id) => (id === 'b1' ? brewOf('b1') : null) } });
+    keep(t, 'b1');
+    const acks = acksOf(t);
+    t.store.saveBrewEvent({
+      id: 'e1',
+      brew_id: 'b1',
+      at: t.now() + HOUR,
+      end_at: null,
+      kind: 'dry_hop',
+      text: 'Citra',
+      hidden: 0,
+      remind: 1,
+      reminded_at: null,
+      reminded_end: null,
+      alert_id: null,
+    });
+    t.alerts.createBrewAlert('b1', {
+      name: 'Dry hop',
+      enabled: true,
+      kind: 'gravity_below',
+      threshold: 1.02,
+      hours: 48,
+      cooldownMin: 60,
+      channelIds: 'all',
+      message: '',
+      addToTimeline: false,
+    });
+    t.at(61);
+    t.alerts.checkReminders();
+    const waiting = t.alerts.events(10, undefined, true);
+    expect(waiting.map((e) => [e.ruleName, e.brewId])).toEqual([
+      ['Hazy: Dry hop', 'b1'],
+      ['Dry hop', 'b1'],
+    ]);
+
+    t.store.deleteBrew('b1');
+    t.alerts.forgetBrew('b1');
+    expect(t.alerts.events(10, undefined, true)).toEqual([]);
+    expect(acks).toEqual([waiting.map((e) => e.id).sort((a, b) => a - b)]);
+  });
+});

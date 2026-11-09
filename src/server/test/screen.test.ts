@@ -183,12 +183,14 @@ function service(
     history: (id, from, to) => fakeHistory(id, from, to),
   },
   decimals = DEFAULT_HUB_SETTINGS.decimals,
+  alerting?: Set<string>,
 ) {
   const deps = {
     store,
     pills: { list: () => devices, get: (id: string) => devices.find((p) => p.id === id) ?? null, gapMs: () => 3_600_000 },
     settings: { units: () => units, hub: () => ({ ...DEFAULT_HUB_SETTINGS, name: 'Garage brewery', units, decimals }) },
     config: { rawRetentionDays: 0 },
+    alerts: alerting ? { pillsWithUnacked: () => alerting } : undefined,
   };
   return new ScreenService(deps as unknown as ConstructorParameters<typeof ScreenService>[0], () => assets);
 }
@@ -397,6 +399,82 @@ describe('screen image layout', () => {
     expect(words(svgOf({}, null, []))).toContain('No pills yet');
     expect(words(svgOf({ brewing: '1' }, null, [pill({ id: 'x' })]))).toContain('No brews on the go');
     expect(words(svgOf({}, 'gone'))).toContain('Pill not found');
+  });
+
+  describe('the sign of an alert waiting to be acknowledged', () => {
+    const warning = SCREEN_COLORS.violet.dark.warning;
+    const waiting = new Set(['p1', 'p5']);
+    /** Each sign's disc. */
+    const signs = (svg: string) =>
+      [...svg.matchAll(new RegExp(`<circle cx="([-\\d.]+)" cy="([-\\d.]+)" r="([\\d.]+)" fill="${warning}"/>`, 'g'))].map((m) => ({
+        cx: Number(m[1]),
+        cy: Number(m[2]),
+        r: Number(m[3]),
+      }));
+    const draw = (query: Record<string, string>, pillId: string | null, alerting: Set<string> | undefined = waiting) => {
+      const s = service(undefined, undefined, undefined, undefined, alerting);
+      return s.svg(pillId, s.options(query), NOW).svg;
+    };
+
+    it('is only drawn when asked for, on a device that has one', () => {
+      const graph = { w: '240', h: '240', show: PRESETS.graph!.join(',') };
+      expect(signs(draw({ ...graph, alerts: '1' }, 'p1'))).toHaveLength(1);
+      // An address from before the sign, or one that doesn't want it.
+      expect(signs(draw(graph, 'p1'))).toHaveLength(0);
+      expect(signs(draw({ ...graph, alerts: '0' }, 'p1'))).toHaveLength(0);
+      expect(signs(draw({ ...graph, alerts: '1' }, 'p2'))).toHaveLength(0);
+      expect(signs(draw({ ...graph, alerts: '1' }, 'p1', new Set()))).toHaveLength(0);
+      // Every device's picture: the two with one, offline or not.
+      expect(signs(draw({ w: '800', h: '480', alerts: '1' }, null))).toHaveLength(2);
+      expect(signs(draw({ w: '296', h: '128', show: 'name,gravity,temperature', alerts: '1' }, null))).toHaveLength(2);
+    });
+
+    it("sits at the right of the name, or on the card's corner without one, inside the picture and clear of every word", () => {
+      const SIZES: [number, number][] = [
+        [240, 240],
+        [320, 240],
+        [296, 128],
+        [800, 480],
+        [480, 800],
+        [1920, 1080],
+        [64, 64],
+        [2048, 200],
+      ];
+      for (const [w, h] of SIZES)
+        for (const [preset, items] of Object.entries(PRESETS))
+          for (const pillId of [null, 'p1', 'p5']) {
+            const svg = draw({ w: String(w), h: String(h), show: items.join(','), alerts: '1' }, pillId);
+            const found = signs(svg);
+            const where = `${w}×${h} ${preset} ${pillId ?? 'all'}`;
+            expect(found.length, where).toBe(pillId ? 1 : 2);
+            for (const s of found) {
+              expect(s.r, where).toBeGreaterThan(1);
+              expect(s.cx - s.r, where).toBeGreaterThanOrEqual(-0.5);
+              expect(s.cx + s.r, where).toBeLessThanOrEqual(w + 0.5);
+              expect(s.cy - s.r, where).toBeGreaterThanOrEqual(-0.5);
+              expect(s.cy + s.r, where).toBeLessThanOrEqual(h + 0.5);
+              for (const t of texts(svg)) {
+                const clear =
+                  t.right <= s.cx - s.r + 0.5 || t.left >= s.cx + s.r - 0.5 || t.bottom <= s.cy - s.r + 0.5 || t.top >= s.cy + s.r - 0.5;
+                expect(clear, `${where}: "${t.text}"`).toBe(true);
+              }
+            }
+          }
+    });
+
+    it('follows the name on its line', () => {
+      const svg = draw({ w: '800', h: '480', show: PRESETS.readings!.join(','), alerts: '1' }, 'p1');
+      const [sign] = signs(svg);
+      const name = texts(svg).find((t) => t.text === 'Hazy IPA')!;
+      expect(sign!.cy).toBeGreaterThan(name.top);
+      expect(sign!.cy).toBeLessThan(name.bottom + 40);
+      expect(sign!.cx).toBeGreaterThan(name.right);
+      // A long name makes room for it.
+      const long = draw({ w: '240', h: '240', show: PRESETS.readings!.join(','), alerts: '1' }, 'p2', new Set(['p2']));
+      const cut = texts(long).find((t) => t.text.startsWith('A pill'))!;
+      expect(cut.text.endsWith('…')).toBe(true);
+      expect(cut.right).toBeLessThanOrEqual(signs(long)[0]!.cx - signs(long)[0]!.r);
+    });
   });
 
   it('leaves out archived pills and, when asked, those without a brew', () => {

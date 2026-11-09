@@ -313,6 +313,7 @@ const lookFields = {
   lang: z.string().max(35),
   tz: z.string().max(64).nullable(),
   brewing: z.boolean(),
+  alerts: z.boolean(),
 };
 
 export const screenLookSchema = z.object(lookFields).partial();

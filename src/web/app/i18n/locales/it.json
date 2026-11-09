@@ -2382,5 +2382,22 @@
   "No profiles yet. Make one under Profiles on the Brews page, or save one from a brew whose alerts and events you want again.": "Ancora nessun profilo. Creane uno in Profili, nella pagina Cotte, o salvane uno da una cotta di cui vuoi riavere avvisi ed eventi.",
   "Plan an event": "Pianifica un evento",
   "this profile": "questo profilo",
-  "Use a whole number from 1 to 365": "Usa un numero intero da 1 a 365"
+  "Use a whole number from 1 to 365": "Usa un numero intero da 1 a 365",
+  "Alert sign": "Segnale di avviso",
+  "in the corner while an alert waits to be acknowledged": "nell'angolo finché un avviso attende conferma",
+  "Couldn't acknowledge the alert": "Impossibile confermare l'avviso",
+  "{count} alert to acknowledge|{count} alerts to acknowledge": {
+    "one": "{count} avviso da confermare",
+    "other": "{count} avvisi da confermare"
+  },
+  "No alerts to acknowledge": "Nessun avviso da confermare",
+  "Alerts to acknowledge": "Avvisi da confermare",
+  "Acknowledge all": "Conferma tutti",
+  "Nothing needs looking at.": "Niente richiede attenzione.",
+  "Open the brew": "Apri la cotta",
+  "Open the device": "Apri il dispositivo",
+  "Acknowledge \"{name}\"": "Conferma \"{name}\"",
+  "Acknowledge": "Conferma",
+  "All alerts": "Tutti gli avvisi",
+  "Rules, where alerts go, and what went off lately": "Regole, dove vanno gli avvisi e cosa è scattato di recente"
 }

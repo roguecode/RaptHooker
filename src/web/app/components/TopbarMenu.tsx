@@ -9,11 +9,17 @@ export function TopbarMenu({
   label,
   icon,
   className,
+  buttonClassName,
+  badge,
   children,
 }: {
   label: string;
   icon: IconName;
   className?: string;
+  /** More classes for the button (a glow, say). */
+  buttonClassName?: string;
+  /** Shown on the button's corner (a count). */
+  badge?: ReactNode;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -54,7 +60,7 @@ export function TopbarMenu({
       <button
         ref={button}
         type="button"
-        className="btn icon ghost menu-btn"
+        className={buttonClassName ? `btn icon ghost menu-btn ${buttonClassName}` : 'btn icon ghost menu-btn'}
         aria-label={label}
         title={label}
         aria-expanded={open}
@@ -62,6 +68,7 @@ export function TopbarMenu({
         onClick={() => setOpen((o) => !o)}
       >
         <Icon name={icon} size={20} />
+        {badge}
       </button>
       {open && (
         <div id={id} className={className ? `menu-pop ${className}` : 'menu-pop'} role="group" aria-label={label}>

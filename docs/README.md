@@ -35,8 +35,8 @@ The [README](../README.md) says what RaptHooker is and has the short version of 
 ## Screens
 
 - [Small screens](screens.md): a picture of your pills at a web address, for any screen that can load one
-- [RaptHooker screens](rapthooker-screens.md) (experimental): the hub puts its own firmware on a Geekmagic clock or an
-  ESP32 board and looks after it
+- [RaptHooker screens](rapthooker-screens.md) (experimental): the hub puts its own firmware on a weather clock (Smart
+  weather clock or GeekMagic Ultra) or an ESP32 board and looks after it
 
 ## Working on RaptHooker
 

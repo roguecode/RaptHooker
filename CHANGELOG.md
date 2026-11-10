@@ -5,6 +5,15 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Support for genuine GeekMagic Ultra screens (untested). Set one up from its GIFTV hotspot, or by its IP address if
+  it's already on your Wi-Fi
+
+### Changed
+
+- The confirmed Wi-Fi screen is now listed as "Smart weather clock" rather than "Geekmagic Ultra/Smart weather clock"
+
 ## [0.11.0] - 2026-11-09
 
 ### Added

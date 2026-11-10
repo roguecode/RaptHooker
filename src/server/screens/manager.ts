@@ -2,11 +2,14 @@ import { randomBytes } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import {
   DEFAULT_SCREEN_ITEMS,
+  GEEKMAGIC_ULTRA,
   screenModel,
+  screenStock,
   type FoundScreen,
   type HubAddress,
   type ScreenDevice,
   type ScreenFirmware,
+  type ScreenInstallResult,
   type ScreenLook,
   type ScreenManualStart,
   type ScreenOptions,
@@ -26,6 +29,7 @@ import type { Settings } from '../settings.js';
 import { ScreenClient, ScreenRequestError, type ScreenInfo } from './client.js';
 import { compareVersions, imageMarker, imageProblems, md5, type FirmwareImage } from './firmware.js';
 import { ScreenSetup } from './setup.js';
+import { flashGeekmagic, identifyGeekmagic } from './stock.js';
 import { UsbSetup } from './usb/setup.js';
 import type { UsbFlasher } from './usb/types.js';
 import type { WifiController } from './wifi/types.js';
@@ -158,6 +162,8 @@ export class ScreenManager extends EventEmitter {
   private readonly dirty = new Set<string>();
   private readonly pending = new Map<string, Pending>();
   private job: ScreenSetup | UsbSetup | null = null;
+  /** A GeekMagic on the network is having RaptHooker put on it (install). */
+  private installing = false;
   private lastSetup: ScreenSetupProgress | null = null;
   private foundList: FoundScreen[] = [];
   private timers: NodeJS.Timeout[] = [];
@@ -653,7 +659,7 @@ export class ScreenManager extends EventEmitter {
 
   /** Starts setting a screen up; follow it with setupProgress or the 'setup' events. */
   startSetup(input: ScreenSetupInput): ScreenSetupProgress {
-    if (this.job) throw new ScreenError('A screen is already being set up', 409);
+    if (this.job || this.installing) throw new ScreenError('A screen is already being set up', 409);
     if (this.deps.wifiBusy?.()) throw new ScreenError("The hub's Wi-Fi is busy setting up an iSpindel: try again when it's done", 409);
     // The picture address is the hub's own on its network, so it's worked out before the hub leaves it.
     let addresses: HubAddress[] = [];
@@ -817,5 +823,33 @@ export class ScreenManager extends EventEmitter {
     const mac = hex.match(/../g)!.join(':');
     this.add({ id: input.id, model: input.model, mac, hostname: `rh-screen-${input.id.slice(-6)}`, version: '' }, p.token, input.ip, p);
     return this.device(input.id)!;
+  }
+
+  /**
+   * Puts RaptHooker on a GeekMagic Ultra on the hub's network, through its own firmware's update page, for a browser
+   * to finish setting it up on RaptHooker's hotspot (a hub that can switch Wi-Fi does it all with startSetup). What's
+   * at the address has to say it's an Ultra first.
+   */
+  async install(address: string): Promise<ScreenInstallResult> {
+    if (this.job || this.installing) throw new ScreenError('A screen is already being set up', 409);
+    this.installing = true;
+    try {
+      const found = await identifyGeekmagic(address);
+      if (!found) throw new ScreenError(`No GeekMagic Ultra on its own firmware answered at ${address}`, 404);
+      if (found.model !== GEEKMAGIC_ULTRA)
+        throw new ScreenError(`This is a GeekMagic ${found.model}: RaptHooker only knows the ${GEEKMAGIC_ULTRA}`);
+      const fw = this.deps.firmware.get(screenStock('geekmagic').model);
+      if (!fw) throw new ScreenError('The hub has no firmware for this screen', 404);
+      let confirmed: boolean;
+      try {
+        confirmed = await flashGeekmagic(address, fw);
+      } catch (err) {
+        throw new ScreenError(`The firmware didn't install: ${(err as Error).message}`, 502);
+      }
+      this.deps.log.info({ address, found, version: fw.version, confirmed }, 'RaptHooker firmware sent to a GeekMagic on the network');
+      return { found, firmware: this.firmwareFor(fw.model)!, confirmed };
+    } finally {
+      this.installing = false;
+    }
   }
 }

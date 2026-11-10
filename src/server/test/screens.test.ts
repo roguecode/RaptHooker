@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_SCREEN_ITEMS, type ScreenSetupProgress } from '@rapthooker/shared';
+import { DEFAULT_SCREEN_ITEMS, hotspotKind, screenAddress, screenSetupSchema, type ScreenSetupProgress } from '@rapthooker/shared';
 import { Settings } from '../settings.js';
 import { parseConfig } from '../config.js';
 import {
@@ -13,7 +13,7 @@ import {
   STOCK_SAFE_SIZE,
 } from '../screens/firmware.js';
 import { ScreenClient } from '../screens/client.js';
-import { flashStock, identifyStock } from '../screens/stock.js';
+import { flashGeekmagic, flashStock, identifyGeekmagic, identifyStock } from '../screens/stock.js';
 import { ScreenManager, upgradeScreen } from '../screens/manager.js';
 import { FakeScreen, MockWifi, type FakeScreenOptions } from '../screens/simulator.js';
 import { NoUsb } from '../screens/usb/types.js';
@@ -125,6 +125,9 @@ async function world(
     stockOta?: FakeScreenOptions['stockOta'];
     legacy?: boolean;
     on5GHz?: number;
+    stockKind?: FakeScreenOptions['stockKind'];
+    geekmagicModel?: string;
+    stockOnNetwork?: boolean;
   } = {},
 ) {
   const t = tempStore();
@@ -135,6 +138,9 @@ async function world(
     fetchPictures: false,
     stockOta: opts.stockOta,
     legacy: opts.legacy,
+    stockKind: opts.stockKind,
+    geekmagicModel: opts.geekmagicModel,
+    stockOnNetwork: opts.stockOnNetwork,
   });
   await fake.start();
   const fakes = [fake];
@@ -342,6 +348,170 @@ describe('setting a screen up', () => {
     const done = finished(screens);
     screens.startSetup({ ...input, password: 'x' });
     expect(await done).toMatchObject({ state: 'failed', error: 'no-wifi-control', detail: 'no-networkmanager' });
+  });
+});
+
+describe('setting up a GeekMagic Ultra', () => {
+  const giftv = { ...input, hotspot: 'GIFTV' };
+
+  it('knows its hotspot, and addresses as people type them', () => {
+    expect(hotspotKind('GIFTV')).toBe('geekmagic');
+    expect(hotspotKind('Smart weather clock')).toBe('sdpro');
+    expect(hotspotKind('RaptHooker-Screen-1C1802')).toBe('rapthooker');
+    expect(hotspotKind('Brewery')).toBeNull();
+    expect(screenAddress(' http://192.168.1.50/ ')).toBe('192.168.1.50');
+    expect(screenAddress('geekmagic.local:8080')).toBe('geekmagic.local:8080');
+    expect(screenAddress('192.168.1.50/update')).toBeNull();
+    expect(screenAddress('')).toBeNull();
+    expect(screenSetupSchema.parse({ ...input, hotspot: '', address: 'http://192.168.1.50' })).toMatchObject({ address: '192.168.1.50' });
+    expect(() => screenSetupSchema.parse({ ...input, hotspot: '' })).toThrow();
+    expect(() => screenSetupSchema.parse({ ...input, address: 'not an address' })).toThrow();
+  });
+
+  it('puts RaptHooker on one from its hotspot, through its own update page, and saves it', async () => {
+    const { fake, wifi, screens } = await world({ stockKind: 'geekmagic' });
+    expect(await identifyGeekmagic(fake.address)).toEqual({ model: 'SmallTV-Ultra', version: 'Ultra-V9.0.50' });
+    const done = finished(screens);
+    screens.startSetup(giftv);
+    const p = await done;
+    expect(p).toMatchObject({ state: 'done', error: null, screenId: fake.id, hubBack: true });
+    expect(p.steps.map((s) => s.step)).toEqual(['hotspot', 'identify', 'install', 'restart', 'screen', 'wifi', 'back', 'find', 'done']);
+    expect(fake.events).toContain(`geekmagic ota ${fw.version}`);
+    expect(fake.settings).toMatchObject({ ssid: 'Brewery', pass: 'hops-and-barley', hub: screens.hubId(), name: 'Kitchen' });
+    // RaptHooker's hotspot went by the GeekMagic's: the same last three bytes.
+    expect(wifi.joins).toEqual(['GIFTV', 'RaptHooker-Screen-000001']);
+    expect(wifi.current).toBe('Brewery');
+    // The same hardware, and the same firmware, as a Smart weather clock.
+    expect(screens.get(fake.id)).toMatchObject({ model: 'sdpro-240', mac: '02:52:48:00:00:01', firmware: fw.version });
+  });
+
+  it("finds RaptHooker's hotspot when it isn't named as expected", async () => {
+    const { fake, wifi, screens } = await world({ stockKind: 'geekmagic' });
+    Object.defineProperty(fake, 'bssid', { get: () => '0a:00:00:aa:bb:cc' });
+    const done = finished(screens);
+    screens.startSetup(giftv);
+    expect(await done).toMatchObject({ state: 'done', screenId: fake.id });
+    expect(wifi.joins).toContain('RaptHooker-Screen-AABBCC');
+    expect(wifi.joins.at(-1)).toBe('RaptHooker-Screen-000001');
+  });
+
+  it("sets one up that's on the network already, from its address", async () => {
+    const { fake, wifi, screens } = await world({ stockKind: 'geekmagic', stockOnNetwork: true });
+    const done = finished(screens);
+    const started = screens.startSetup(screenSetupSchema.parse({ ...input, hotspot: '', address: `http://${fake.address}/` }));
+    expect(started).toMatchObject({ step: 'identify', hotspot: fake.address });
+    const p = await done;
+    expect(p).toMatchObject({ state: 'done', screenId: fake.id, hubBack: true });
+    expect(p.steps.map((s) => s.step)).toEqual(['identify', 'install', 'restart', 'screen', 'wifi', 'back', 'find', 'done']);
+    expect(fake.events).toContain(`geekmagic ota ${fw.version}`);
+    expect(wifi.joins).toEqual(['RaptHooker-Screen-000001']);
+    expect(wifi.current).toBe('Brewery');
+  });
+
+  it('leaves other GeekMagic models alone', async () => {
+    const { fake, wifi, screens } = await world({ stockKind: 'geekmagic', geekmagicModel: 'SmallTV-Pro' });
+    const done = finished(screens);
+    screens.startSetup(giftv);
+    expect(await done).toMatchObject({
+      state: 'failed',
+      error: 'not-supported',
+      detail: expect.stringContaining('SmallTV-Pro'),
+      hubBack: true,
+    });
+    expect(fake.events).toEqual([]);
+    expect(fake.stock).toBe(true);
+    expect(wifi.current).toBe('Brewery');
+  });
+
+  it("won't install anything at an address that isn't a GeekMagic Ultra", async () => {
+    const { fake, screens } = await world({ stock: true });
+    const done = finished(screens);
+    screens.startSetup({ ...input, hotspot: '', address: fake.address });
+    expect(await done).toMatchObject({ state: 'failed', error: 'not-supported', hubBack: true });
+    expect(fake.events).toEqual([]);
+  });
+
+  it('says what its update page said when it refuses the firmware', async () => {
+    const { fake, screens } = await world({ stockKind: 'geekmagic', stockOta: 'refuse' });
+    const done = finished(screens);
+    screens.startSetup(giftv);
+    expect(await done).toMatchObject({
+      state: 'failed',
+      error: 'install-failed',
+      detail: 'the screen said ERROR[2]: Flash Write Failed',
+      hubBack: true,
+    });
+    expect(fake.stock).toBe(true);
+  });
+
+  it('carries on when it restarts without answering', async () => {
+    const { fake, screens } = await world({ stockKind: 'geekmagic', stockOta: 'no-reply' });
+    const done = finished(screens);
+    screens.startSetup(giftv);
+    expect(await done).toMatchObject({ state: 'done', screenId: fake.id });
+  });
+
+  it("says when the firmware didn't take, going by the GeekMagic coming back", { timeout: 10_000 }, async () => {
+    const { fake, wifi, screens } = await world({ stockKind: 'geekmagic', stockOta: 'refuse-quietly' });
+    const done = finished(screens);
+    screens.startSetup(giftv);
+    expect(await done).toMatchObject({ state: 'failed', error: 'install-failed', detail: 'The screen is still on its own firmware' });
+    expect(fake.stock).toBe(true);
+    expect(wifi.current).toBe('Brewery');
+  });
+
+  it("doesn't touch the hub's Wi-Fi from an address when RaptHooker's hotspot never comes", { timeout: 10_000 }, async () => {
+    const { fake, wifi, screens } = await world({ stockKind: 'geekmagic', stockOnNetwork: true, stockOta: 'refuse-quietly' });
+    // On Windows, restoring with nothing to go back to disconnects the hub: it mustn't be asked to when it never left.
+    let restores = 0;
+    const restore = wifi.restore.bind(wifi);
+    wifi.restore = async () => {
+      restores++;
+      return restore();
+    };
+    const done = finished(screens);
+    screens.startSetup({ ...input, hotspot: '', address: fake.address });
+    expect(await done).toMatchObject({ state: 'failed', error: 'install-failed', hubBack: true });
+    expect(wifi.joins).toEqual([]);
+    expect(restores).toBe(0);
+    expect(wifi.current).toBe('Brewery');
+  });
+
+  it('is sent only an image that passes, and told apart from other firmware', async () => {
+    const fake = new FakeScreen({ stockKind: 'geekmagic', fetchPictures: false });
+    await fake.start();
+    cleanups.push(() => fake.stop());
+    await expect(flashGeekmagic(fake.address, { ...fw, data: fw.data.subarray(0, 1000) })).rejects.toThrow("can't go to this screen");
+    expect(fake.events).toEqual([]);
+    expect(await identifyStock(fake.address)).toBeNull();
+    const sdpro = new FakeScreen({ fetchPictures: false });
+    await sdpro.start();
+    cleanups.push(() => sdpro.stop());
+    expect(await identifyGeekmagic(sdpro.address)).toBeNull();
+    expect(await flashGeekmagic(fake.address, fw)).toBe(true);
+    expect(fake.events).toEqual([`geekmagic ota ${fw.version}`]);
+  });
+
+  it('has RaptHooker put on one on the network for a browser to finish', async () => {
+    const { fake, screens } = await world({ stockKind: 'geekmagic', stockOnNetwork: true });
+    expect(await screens.install(fake.address)).toMatchObject({
+      found: { model: 'SmallTV-Ultra', version: 'Ultra-V9.0.50' },
+      firmware: { model: 'sdpro-240', version: fw.version, md5: fw.md5 },
+      confirmed: true,
+    });
+    expect(fake.events).toContain(`geekmagic ota ${fw.version}`);
+    // Restarted with RaptHooker, waiting on its hotspot to be set up.
+    await new Promise((r) => setTimeout(r, fake.restartMs + 50));
+    expect(fake.hotspot).toBe('RaptHooker-Screen-000001');
+  });
+
+  it("won't put RaptHooker on anything else from the network", async () => {
+    const pro = await world({ stockKind: 'geekmagic', geekmagicModel: 'SmallTV-Pro', stockOnNetwork: true });
+    await expect(pro.screens.install(pro.fake.address)).rejects.toThrow('SmallTV-Pro');
+    expect(pro.fake.events).toEqual([]);
+    const sdpro = await world();
+    await expect(sdpro.screens.install(sdpro.fake.address)).rejects.toThrow('No GeekMagic Ultra');
+    expect(sdpro.fake.events).toEqual([]);
   });
 });
 

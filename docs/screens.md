@@ -131,5 +131,5 @@ GeekMagic's small desk screens (240 × 240) run on an ESP8266, which decodes JPE
 screen** preset. What their own firmware can do with an image from a web address differs between models and versions;
 community firmware (ESPHome among it) can load one on a timer.
 
-The **Geekmagic Ultra/Smart weather clock** (and the **ESP32-2432S028** 2.8" board) can do better: RaptHooker puts its own firmware on it and looks after it from the
+The **Smart weather clock** (and the genuine **GeekMagic Ultra**, untested, and the **ESP32-2432S028** 2.8" board) can do better: RaptHooker puts its own firmware on it and looks after it from the
 **Screens** page, with no link to copy. See [RaptHooker screens](./rapthooker-screens.md).

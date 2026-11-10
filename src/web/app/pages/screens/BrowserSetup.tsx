@@ -1,11 +1,20 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { screenHotspot, screenTrialError, type HubAddress, type ScreenManualStart } from '@rapthooker/shared';
+import {
+  GEEKMAGIC_ULTRA,
+  screenHotspot,
+  screenStock,
+  screenTrialError,
+  type HubAddress,
+  type ScreenFirmware,
+  type ScreenManualStart,
+  type StockKind,
+} from '@rapthooker/shared';
 import { errorText, http } from '../../api';
 import { useLive } from '../../live';
 import { t } from '../../i18n';
 import { Icon } from '../../components/Icon';
 import { screensApi } from './screensApi';
-import { newScreenName, useNewLook } from './AddScreen';
+import { ByAddress, newScreenName, useNewLook } from './AddScreen';
 import { SETUP_ERRORS, WIFI_REASONS } from './strings';
 
 /**
@@ -15,14 +24,17 @@ import { SETUP_ERRORS, WIFI_REASONS } from './strings';
  * page, gives the screen the Wi-Fi details and its key, and once this device is back on the hub's network, tells the
  * hub about the new screen.
  *
- * The stock firmware doesn't allow other pages to read its answers (no CORS), so the page recognises it by its
- * stylesheet (which any page may use) and sends the firmware without seeing the reply; RaptHooker's firmware, once
- * running, says which firmware it has.
+ * The Smart weather clock's stock firmware doesn't allow other pages to read its answers (no CORS), so the page
+ * recognises it by its stylesheet (which any page may use) and sends the firmware without seeing the reply. A
+ * GeekMagic Ultra's own firmware lets other pages read its update page's answers, but perhaps not what model it is:
+ * then this asks. A GeekMagic already on the hub's network can have the hub put RaptHooker on it instead, and this
+ * finishes on RaptHooker's hotspot. RaptHooker's firmware, once running, says which firmware it has.
  */
 
 const SCREEN = 'http://192.168.4.1';
 /** What the stock firmware's update page can take: it cuts anything bigger short (and the screen won't start). */
 const STOCK_LIMIT = 0x7c000;
+/** Both stock firmwares get the same image: they're the same hardware. */
 const STOCK_MODEL = 'sdpro-240';
 
 interface Info {
@@ -35,7 +47,7 @@ interface Info {
   system?: { sketchMd5?: string };
 }
 
-type Phase = 'details' | 'join' | 'checking' | 'installing' | 'restarting' | 'wifi' | 'back' | 'done' | 'failed';
+type Phase = 'details' | 'join' | 'checking' | 'confirm' | 'installing' | 'restarting' | 'wifi' | 'back' | 'done' | 'failed';
 
 /** Where "Try again" goes after a failure. */
 type Retry = 'details' | 'join' | 'wifi' | 'back';
@@ -97,6 +109,30 @@ function stockScreen(timeoutMs = 10_000): Promise<boolean> {
     });
     document.body.append(frame);
   });
+}
+
+/**
+ * A GeekMagic on its own firmware at 192.168.4.1: what it says it is at /v.json; 'unreadable' when something answers
+ * there but doesn't let this page read it (GeekMagic's firmware may not); null when it isn't one, or nothing answers.
+ */
+export async function geekmagicScreen(): Promise<{ model: string } | 'unreadable' | null> {
+  let res: Response;
+  try {
+    res = await withTimeout(6000, (signal) => fetch(`${SCREEN}/v.json`, { signal, cache: 'no-store' }));
+  } catch {
+    try {
+      await withTimeout(6000, (signal) => fetch(`${SCREEN}/v.json`, { signal, mode: 'no-cors', cache: 'no-store' }));
+      return 'unreadable';
+    } catch {
+      return null;
+    }
+  }
+  try {
+    const v = (await res.json()) as { m?: unknown };
+    return res.ok && typeof v.m === 'string' && v.m ? { model: v.m } : null;
+  } catch {
+    return null;
+  }
 }
 
 export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone: () => void }) {
@@ -165,37 +201,81 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
       screen.current = ours;
       return void connect();
     }
-    if (await stockScreen()) return void install();
+    if (await stockScreen()) return void install('sdpro');
+    const gm = await geekmagicScreen();
+    if (gm === 'unreadable') return setPhase('confirm');
+    if (gm?.model === GEEKMAGIC_ULTRA) return void install('geekmagic');
+    if (gm)
+      return fail(
+        t("This is a GeekMagic {model}, which RaptHooker can't set up: only the Ultra has the hardware its firmware is for.", {
+          model: gm.model,
+        }),
+        'join',
+      );
     fail(
       t("This device can't see a screen RaptHooker knows."),
       'join',
-      t('Check this device is on the screen\'s Wi-Fi ("Smart weather clock"), then try again.'),
+      t('Check this device is on the screen\'s Wi-Fi ("Smart weather clock", or "GIFTV" on a GeekMagic Ultra), then try again.'),
     );
   };
 
-  const install = async () => {
+  const install = async (kind: StockKind) => {
     const p = prepared.current!;
     const fw = p.start.firmware.find((f) => f.model === STOCK_MODEL)!;
     setPhase('installing');
     const form = new FormData();
-    // The stock update page only sends files whose name starts SDP.
-    form.append(
-      'update',
-      new Blob([p.firmware], { type: 'application/octet-stream' }),
-      `SDP-rapthooker-screen-${fw.model}-${fw.version}.bin`,
-    );
+    const file = new Blob([p.firmware], { type: 'application/octet-stream' });
     let sent = true;
-    try {
-      await withTimeout(180_000, (signal) => fetch(`${SCREEN}/update_ota`, { method: 'POST', mode: 'no-cors', body: form, signal }));
-    } catch {
-      sent = false;
+    if (kind === 'sdpro') {
+      // The stock update page only sends files whose name starts SDP.
+      form.append('update', file, `SDP-rapthooker-screen-${fw.model}-${fw.version}.bin`);
+      try {
+        await withTimeout(180_000, (signal) => fetch(`${SCREEN}/update_ota`, { method: 'POST', mode: 'no-cors', body: form, signal }));
+      } catch {
+        sent = false;
+      }
+    } else {
+      // GeekMagic's update page lets this page read what it says: "Update Success! Rebooting..." or "Update error: …".
+      form.append('firmware', file, `rapthooker-screen-${fw.model}-${fw.version}.bin`);
+      try {
+        const text = await withTimeout(180_000, async (signal) =>
+          (await fetch(`${SCREEN}/update`, { method: 'POST', body: form, signal })).text(),
+        );
+        if (!/Update Success/i.test(text)) {
+          const error = /Update error:\s*([^<\r\n]*)/i.exec(text)?.[1]?.trim();
+          return fail(t(SETUP_ERRORS['install-failed']), 'join', error || text.trim().slice(0, 80));
+        }
+      } catch {
+        sent = false;
+      }
     }
     if (!alive.current) return;
     setNote(
-      sent ? null : t('The screen may not have got the whole firmware. If its network is still called "Smart weather clock", try again.'),
+      sent
+        ? null
+        : t('The screen may not have got the whole firmware. If its network is still called "{name}", try again.', {
+            name: screenStock(kind).hotspot,
+          }),
     );
+    await restarted(fw);
+  };
+
+  /** A GeekMagic Ultra on the hub's network: the hub puts RaptHooker on it, then this finishes on its hotspot. */
+  const installFromHub = async (address: string) => {
+    setNote(null);
+    setPhase('installing');
+    try {
+      const r = await screensApi.install(address);
+      if (!alive.current) return;
+      await restarted(r.firmware);
+    } catch (err) {
+      fail(t("Couldn't put RaptHooker on the screen"), 'join', errorText(err));
+    }
+  };
+
+  /** It restarts, copies the firmware into place and opens RaptHooker's network: this device has to join it. */
+  const restarted = async (fw: ScreenFirmware) => {
     setPhase('restarting');
-    // It restarts, copies the firmware into place and opens RaptHooker's network: this device has to join it.
     await sleep(8000);
     const until = Date.now() + 5 * 60_000;
     while (alive.current) {
@@ -303,6 +383,7 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
     details: 1,
     join: 2,
     checking: 2,
+    confirm: 2,
     installing: 3,
     restarting: 3,
     wifi: 3,
@@ -420,7 +501,7 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
         <div className="stack">
           <p>
             {t(
-              'On this device, join the Wi-Fi network called "Smart weather clock" (or "RaptHooker-Screen-…" for a screen that already has RaptHooker). Then come back to this page.',
+              'On this device, join the screen\'s Wi-Fi network: "Smart weather clock", "GIFTV" on a GeekMagic Ultra, or "RaptHooker-Screen-…" for a screen that already has RaptHooker. Then come back to this page.',
             )}
           </p>
           <p className="hint">{t("If the device says the network has no internet, choose to stay connected. Don't reload this page.")}</p>
@@ -429,10 +510,31 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
               <Icon name="check" size={16} /> {t("I've joined it")}
             </button>
           </div>
+          <ByAddress action={t('Install RaptHooker')} onPick={(address) => void installFromHub(address)} />
         </div>
       )}
 
       {phase === 'checking' && <Waiting text={t('Checking the screen…')} />}
+      {phase === 'confirm' && (
+        <div className="stack">
+          <div className="notice warning">
+            <Icon name="alert" />
+            <p>
+              {t(
+                "The screen doesn't let this page check which GeekMagic it is. Only go on if it's a GeekMagic Ultra (a new one shows GIFTV and http://192.168.4.1): other models can't take RaptHooker.",
+              )}
+            </p>
+          </div>
+          <div className="modal-actions">
+            <button type="button" className="btn ghost" onClick={() => setPhase('join')}>
+              {t('Back')}
+            </button>
+            <button type="button" className="btn primary" onClick={() => void install('geekmagic')}>
+              {t("It's a GeekMagic Ultra")}
+            </button>
+          </div>
+        </div>
+      )}
       {phase === 'installing' && <Waiting text={t('Installing RaptHooker firmware. Keep the screen plugged in and this page open…')} />}
       {phase === 'restarting' && (
         <Waiting

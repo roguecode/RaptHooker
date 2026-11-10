@@ -1,7 +1,7 @@
 import { ensurePill, expect, SIMULATED, test } from './helpers';
 
-// The hub runs with pretend Wi-Fi and a pretend "Smart weather clock" on its stock firmware (screens.wifi: mock), and
-// a pretend ESP32 board plugged into its USB (screens.usb: mock).
+// The hub runs with pretend Wi-Fi, a pretend "Smart weather clock" and a pretend GeekMagic Ultra on their stock
+// firmware (screens.wifi: mock), and a pretend ESP32 board plugged into its USB (screens.usb: mock).
 test('a new screen is set up from its hotspot, then shows the pill it is given', async ({ page, request }) => {
   test.setTimeout(120_000);
   const pill = await ensurePill(request, SIMULATED.water, 'Water test');
@@ -37,6 +37,32 @@ test('a new screen is set up from its hotspot, then shows the pill it is given',
   await page.goto(`/#/pill/${pill.id}`);
   await page.getByRole('button', { name: 'Kitchen', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Kitchen' })).toBeVisible();
+});
+
+// A pretend genuine GeekMagic Ultra too, on GeekMagic's own firmware: its hotspot is "GIFTV" and it updates through
+// the Arduino core's /update page.
+test('a GeekMagic Ultra is set up from its own hotspot', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto('/#/screens');
+  await page.getByRole('button', { name: 'Add a screen' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'Add a screen' });
+  await dialog.getByRole('button', { name: 'Wi-Fi screen' }).click();
+  const hotspot = dialog.getByRole('listitem').filter({ hasText: 'GIFTV' });
+  await expect(hotspot.getByText(/GeekMagic Ultra, as it came/)).toBeVisible();
+  await hotspot.getByRole('button', { name: 'Set up' }).click();
+  await expect(dialog.getByText(/Untested: RaptHooker hasn't been tried on a genuine GeekMagic Ultra yet/)).toBeVisible();
+  await dialog.getByRole('textbox', { name: 'Name' }).fill('Lounge');
+  await dialog.getByRole('button', { name: 'Set it up' }).click();
+  await expect(dialog).toBeHidden();
+
+  await expect(page.getByRole('heading', { name: 'Lounge is set up' })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole('button', { name: 'Done' }).click();
+  const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Lounge' }) });
+  await expect(card.getByText('Online')).toBeVisible({ timeout: 30_000 });
+  await card.getByRole('button', { name: 'Edit', exact: true }).click();
+  const editor = page.getByRole('dialog', { name: 'Lounge' });
+  await editor.getByText('Screen details').click();
+  await expect(editor.getByText('Smart weather clock / GeekMagic Ultra')).toBeVisible();
 });
 
 test('a board plugged into the hub is set up over USB, then its panel is checked', async ({ page }) => {

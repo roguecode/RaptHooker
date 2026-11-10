@@ -1,5 +1,6 @@
 import {
   screenAdoptSchema,
+  screenInstallSchema,
   screenManualDoneSchema,
   screenManualSchema,
   screenPatchSchema,
@@ -62,6 +63,8 @@ export function screensRoutes({ app, s, owner, broadcast }: RouteContext): void 
     return screens.manualStart(screenManualSchema.parse(req.body));
   });
   app.post('/api/screens/manual/done', owner, async (req) => screens.manualDone(screenManualDoneSchema.parse(req.body)));
+  // A GeekMagic Ultra already on the hub's network: RaptHooker goes on here, and the browser finishes on its hotspot.
+  app.post('/api/screens/install', owner, async (req) => screens.install(screenInstallSchema.parse(req.body).address));
   app.get('/api/screens/firmware/:model', owner, async (req, reply) => {
     const { model } = req.params as { model: string };
     const fw = screens.firmwareImage(model.replace(/\.bin$/, ''));

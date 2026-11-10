@@ -3,8 +3,10 @@ import { EventEmitter } from 'node:events';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import {
+  hotspotKind,
   screenHotspot,
   screenModel,
+  type StockKind,
   type UsbBoardId,
   type UsbPort,
   type UsbStatus,
@@ -19,9 +21,9 @@ import { tidyNetworks, type HotspotLink, type WifiController } from './wifi/type
 
 /**
  * A pretend screen and a pretend Wi-Fi, for tests, the end-to-end tests and the development server: a "Smart weather
- * clock" that starts on its stock firmware and becomes a RaptHooker screen when it's sent the firmware, then fetches
- * its picture from the hub like a real one. Its web server answers like both firmwares do. MockUsb is a pretend ESP32
- * board plugged into the hub, which becomes a FakeScreen when it's written to.
+ * clock" (or a GeekMagic Ultra) that starts on its stock firmware and becomes a RaptHooker screen when it's sent the
+ * firmware, then fetches its picture from the hub like a real one. Its web server answers like both firmwares do.
+ * MockUsb is a pretend ESP32 board plugged into the hub, which becomes a FakeScreen when it's written to.
  */
 
 interface FakeSettings {
@@ -44,6 +46,15 @@ export interface FakeScreenOptions {
   model?: string;
   /** Starts on the stock firmware (default) or already on RaptHooker's. */
   stock?: boolean;
+  /**
+   * Which stock firmware: the "Smart weather clock"'s SD Pro (default), or a genuine GeekMagic's own ("GIFTV", /v.json
+   * and the Arduino core's /update).
+   */
+  stockKind?: StockKind;
+  /** What a GeekMagic says it is at /v.json (default the Ultra; a "SmallTV-Pro" is an ESP32). */
+  geekmagicModel?: string;
+  /** A GeekMagic that has joined a network with its own firmware, so has no hotspot open (it's reached by address). */
+  stockOnNetwork?: boolean;
   firmware?: string;
   /** Wi-Fi networks it can join, with their passwords. */
   networks?: Record<string, string>;
@@ -60,11 +71,17 @@ export interface FakeScreenOptions {
   legacy?: boolean;
 }
 
+/** What a GeekMagic Ultra's own firmware sends back from its update page (POST /update). */
+const GEEKMAGIC_UPDATED = '<META http-equiv="refresh" content="15;URL=/">Update Success! Rebooting...';
+/** The space a GeekMagic Ultra on V9.0.50 has for an update: (free sketch space - 4 KB), as the Arduino updater works it out. */
+const GEEKMAGIC_SPACE = 0x83000;
+
 export class FakeScreen extends EventEmitter {
   readonly mac: string;
   readonly id: string;
   readonly model: string;
   stock: boolean;
+  readonly stockKind: StockKind;
   firmware: string;
   settings: FakeSettings = { ...EMPTY };
   /** Restarting: the hotspot and web server don't answer. */
@@ -86,8 +103,14 @@ export class FakeScreen extends EventEmitter {
   private server: http.Server | null = null;
   private timer: NodeJS.Timeout | null = null;
   port = 0;
-  private readonly opts: Required<Omit<FakeScreenOptions, 'mac' | 'model' | 'stock' | 'firmware' | 'legacy'>>;
+  private readonly opts: Required<
+    Omit<FakeScreenOptions, 'mac' | 'model' | 'stock' | 'stockKind' | 'firmware' | 'legacy' | 'geekmagicModel' | 'stockOnNetwork'>
+  >;
   legacy: boolean;
+  /** What a GeekMagic says it is at /v.json. */
+  geekmagicModel: string;
+  /** A GeekMagic on its own firmware that's on a network: no hotspot. */
+  stockOnNetwork: boolean;
 
   constructor(opts: FakeScreenOptions = {}) {
     super();
@@ -96,6 +119,9 @@ export class FakeScreen extends EventEmitter {
     this.id = this.mac.replace(/:/g, '').toLowerCase();
     this.model = opts.model ?? 'sdpro-240';
     this.stock = opts.stock ?? true;
+    this.stockKind = opts.stockKind ?? 'sdpro';
+    this.geekmagicModel = opts.geekmagicModel ?? 'SmallTV-Ultra';
+    this.stockOnNetwork = opts.stockOnNetwork ?? false;
     this.firmware = opts.firmware ?? '1.0.0';
     this.legacy = opts.legacy ?? false;
     this.opts = {
@@ -113,8 +139,16 @@ export class FakeScreen extends EventEmitter {
   /** The hotspot it has open now, or null (on its network, or restarting). */
   get hotspot(): string | null {
     if (this.down) return null;
-    if (this.stock) return 'Smart weather clock';
+    if (this.stock) return this.stockKind === 'geekmagic' ? (this.stockOnNetwork ? null : 'GIFTV') : 'Smart weather clock';
     return this.settings.ssid && this.trial.state !== 'connected' ? null : screenHotspot(this.mac);
+  }
+
+  /**
+   * A GeekMagic's hotspot address: an ESP8266's access point has its own MAC address, which differs from the station's
+   * only in the first byte. (Other fake screens get a made-up one from MockWifi.)
+   */
+  get bssid(): string | undefined {
+    return this.stockKind === 'geekmagic' ? `06${this.mac.slice(2)}`.toLowerCase() : undefined;
   }
 
   /** On the LAN (set up and online). */
@@ -186,9 +220,13 @@ export class FakeScreen extends EventEmitter {
     this.timer.unref();
   }
 
-  private send(res: ServerResponse, status: number, body: unknown, type = 'application/json'): void {
+  private send(res: ServerResponse, status: number, body: unknown, type = 'application/json', cors = true): void {
     const text = typeof body === 'string' ? body : JSON.stringify(body);
-    res.writeHead(status, { 'Content-Type': type, 'Content-Length': Buffer.byteLength(text), 'Access-Control-Allow-Origin': '*' });
+    res.writeHead(status, {
+      'Content-Type': type,
+      'Content-Length': Buffer.byteLength(text),
+      ...(cors ? { 'Access-Control-Allow-Origin': '*' } : {}),
+    });
     res.end(text);
   }
 
@@ -411,6 +449,7 @@ export class FakeScreen extends EventEmitter {
   }
 
   private handleStock(path: string, req: IncomingMessage, res: ServerResponse, body: Buffer): void {
+    if (this.stockKind === 'geekmagic') return this.handleGeekmagic(path, req, res, body);
     if (path === '/mac') return this.send(res, 200, this.mac, 'text/plain');
     if (path === '/config') {
       return this.send(res, 200, { gifnum: 4, theme: 0, brightness: 52, ssid: 'K500', weatherkey: 'x', freespace: 1253376 });
@@ -440,6 +479,44 @@ export class FakeScreen extends EventEmitter {
       '<!DOCTYPE html><html><head><title>Smart Weather Clock - WiFi Setup</title></head><body></body></html>',
       'text/html',
     );
+  }
+
+  /**
+   * A genuine GeekMagic Ultra on its own firmware (V9.0.50, going by its image): /v.json says what it is, without CORS
+   * headers; /update is the Arduino core's updater, which GeekMagic's answers with them. It takes any whole ESP8266
+   * image that fits, and says "Update error: …" (still 200) for one that doesn't.
+   */
+  private handleGeekmagic(path: string, req: IncomingMessage, res: ServerResponse, body: Buffer): void {
+    if (path === '/v.json') return this.send(res, 200, `{"m": "${this.geekmagicModel}","v":"Ultra-V9.0.50"}`, 'text/json', false);
+    if (path === '/update' && req.method === 'POST') {
+      const data = this.filePart(body, req.headers['content-type']);
+      const how = this.opts.stockOta;
+      const error =
+        !data || data[0] !== 0xe9
+          ? 'ERROR[6]: Magic byte is not 0xE9'
+          : data.length > GEEKMAGIC_SPACE
+            ? 'ERROR[4]: Not Enough Space'
+            : how === 'refuse' || how === 'refuse-quietly'
+              ? 'ERROR[2]: Flash Write Failed'
+              : null;
+      if (error) {
+        if (how === 'refuse-quietly') res.socket?.destroy();
+        else this.send(res, 200, `Update error: ${error}`, 'text/html');
+        return;
+      }
+      const marker = imageMarker(data!);
+      this.events.push(`geekmagic ota ${marker?.version ?? 'other'}`);
+      this.sketchMd5 = createHash('md5').update(data!).digest('hex');
+      if (how === 'no-reply') res.socket?.destroy();
+      else this.send(res, 200, GEEKMAGIC_UPDATED, 'text/html');
+      return this.restart(() => {
+        if (!marker) return;
+        this.stock = false;
+        this.firmware = marker.version;
+      });
+    }
+    if (path === '/update') return this.send(res, 200, '<form method="POST" action="" enctype="multipart/form-data">', 'text/html', false);
+    return this.send(res, 200, '<!DOCTYPE html><html><head><title>GeekMagic</title></head><body></body></html>', 'text/html', false);
   }
 }
 
@@ -530,12 +607,7 @@ export class MockWifi implements WifiController {
           current: this.current === h,
         });
     }
-    return tidyNetworks(
-      nets.map((n) => ({
-        ...n,
-        kind: n.secure ? null : n.ssid.startsWith('Smart') ? 'sdpro' : n.ssid.startsWith('RaptHooker') ? 'rapthooker' : null,
-      })),
-    );
+    return tidyNetworks(nets.map((n) => ({ ...n, kind: n.secure ? null : hotspotKind(n.ssid) })));
   }
 
   async join(ssid: string, timeoutMs: number): Promise<HotspotLink> {

@@ -2,7 +2,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { AlertRule, BrewAlert, BrewProfile } from '@rapthooker/shared';
-import { makeBrew, renderWithHub, settle, toastTexts, type FakeRequest } from '../../test/render';
+import { makeBrew, makeReading, renderWithHub, settle, toastTexts, type FakeRequest } from '../../test/render';
 import { BrewAlertsSection } from './BrewAlerts';
 
 const HOUR = 3_600_000;
@@ -22,6 +22,7 @@ const dryHop: BrewAlert = {
   addToTimeline: true,
   active: true,
   lastFiredAt: Date.now() - 2 * HOUR,
+  waitingForGravity: null,
 };
 const rule = (over: Partial<AlertRule>): AlertRule =>
   ({ id: 'r1', name: 'Too warm', enabled: true, pillIds: 'all', kind: 'temp_above', threshold: 24, active: [], ...over }) as AlertRule;
@@ -42,6 +43,33 @@ describe("a brew's own alerts", () => {
     expect(screen.getByText('“Add 100 g Citra”')).toBeTruthy();
     expect(screen.getByText(/^Went off 2 hours? ago|^Went off 2 h/)).toBeTruthy();
     expect(screen.getByText(/Also watching it, from Alerts: Too warm\./)).toBeTruthy();
+  });
+
+  it('says what a velocity alert is waiting for at the start of the brew, and watches the readings for it', async () => {
+    const slowing: BrewAlert = {
+      ...dryHop,
+      id: 'ba-2',
+      name: 'Slowing',
+      kind: 'velocity_slow',
+      threshold: 1,
+      message: '',
+      active: false,
+      lastFiredAt: null,
+      waitingForGravity: 1.0427,
+    };
+    let waiting = true;
+    const view = await renderWithHub(<BrewAlertsSection brew={brew} />, {
+      routes: { [ALERTS]: () => [waiting ? slowing : { ...slowing, waitingForGravity: null }], 'GET /api/alerts/rules': [] },
+    });
+    await settle();
+    expect(screen.getByText('Waiting for the gravity to reach 1.0427, 2 points below where the pill started')).toBeTruthy();
+    waiting = false;
+    const reading = makeReading({ gravity: 1.0426 });
+    await view.push({ type: 'reading', pillId: 'pill-2', reading });
+    await settle();
+    expect(screen.queryByText('Watching')).toBeNull();
+    await view.push({ type: 'reading', pillId: 'pill-1', reading });
+    expect(await screen.findByText('Watching')).toBeTruthy();
   });
 
   it('adds one for the brew, starting as "Fermentation starts"', async () => {

@@ -81,11 +81,23 @@ interface Check {
   firing: boolean | null;
   value: number | null;
   message: string;
+  /**
+   * Velocity alerts in a running brew: the gravity they wait for before they can go off, null once it's reached, and
+   * left out when the check can't tell.
+   */
+  waitingFor?: number | null;
+  /** Added to the message when it goes off straight after that wait. */
+  afterWait?: string;
 }
 
 const NOTHING: Check = { firing: null, value: null, message: '' };
 
 const HYSTERESIS = { temperature: 0.5, gravity: 0.003, battery: 5 };
+
+/** Velocity alerts in a brew wait for the gravity to drop this many points from where the pill started it. */
+const WAIT_POINTS = FERMENTATION_LIMITS.minDrop * 1000;
+
+const VELOCITY_KINDS: ReadonlySet<AlertKind> = new Set<AlertKind>(['velocity_slow', 'velocity_fast']);
 
 const DAY = 86_400_000;
 
@@ -112,7 +124,7 @@ const GRAVITY_KINDS: ReadonlySet<AlertKind> = new Set<AlertKind>([
 ]);
 
 /** What's saved for a rule: everything but what's worked out while running (fields a newer version added are kept). */
-const ruleInput = ({ id: _id, createdAt: _c, active: _a, ...input }: AlertRule): AlertRuleInput => input;
+const ruleInput = ({ id: _id, createdAt: _c, active: _a, waitingForGravity: _w, ...input }: AlertRule): AlertRuleInput => input;
 
 /** A brew's own alert as kept here. */
 type StoredBrewAlert = BrewAlertInput & { id: string; brewId: string; createdAt: number };
@@ -138,6 +150,11 @@ export class AlertService extends EventEmitter {
   private brewAlerts = new Map<string, StoredBrewAlert>();
   /** `quiet`: active, but not announced because of the cooldown. */
   private state = new Map<string, { active: boolean; quiet: boolean; lastFiredAt: number | null }>();
+  /**
+   * Velocity alerts waiting at the start of a brew, by rule and pill: the gravity they wait for. Only kept in memory:
+   * the checks work it out again within a minute of starting.
+   */
+  private waiting = new Map<string, number>();
   private timer: NodeJS.Timeout | undefined;
   private readonly now: () => number;
 
@@ -156,7 +173,14 @@ export class AlertService extends EventEmitter {
     for (const row of this.store.listAlertRuleRows()) {
       try {
         const saved = JSON.parse(row.json) as AlertRuleInput;
-        const rule: AlertRule = { ...saved, channelIds: channelIdsOf(saved.channelIds), id: row.id, createdAt: row.created_at, active: [] };
+        const rule: AlertRule = {
+          ...saved,
+          channelIds: channelIdsOf(saved.channelIds),
+          id: row.id,
+          createdAt: row.created_at,
+          active: [],
+          waitingForGravity: {},
+        };
         this.rules.set(row.id, rule);
       } catch (err) {
         this.log.error({ id: row.id, err: (err as Error).message }, 'skipped an alert rule that could not be read');
@@ -208,7 +232,7 @@ export class AlertService extends EventEmitter {
   }
 
   create(input: AlertRuleInput): AlertRule {
-    const rule: AlertRule = { ...input, id: randomUUID(), createdAt: this.now(), active: [] };
+    const rule: AlertRule = { ...input, id: randomUUID(), createdAt: this.now(), active: [], waitingForGravity: {} };
     this.rules.set(rule.id, rule);
     this.store.saveAlertRule(rule.id, input, rule.createdAt);
     this.evaluateAll();
@@ -305,12 +329,14 @@ export class AlertService extends EventEmitter {
       active ||= st.active;
       if (st.lastFiredAt !== null && (lastFiredAt === null || st.lastFiredAt > lastFiredAt)) lastFiredAt = st.lastFiredAt;
     }
-    return { ...a, active, lastFiredAt };
+    let waitingForGravity: number | null = null;
+    for (const [key, g] of this.waiting) if (key.startsWith(`${a.id}|`)) waitingForGravity = g;
+    return { ...a, active, lastFiredAt, waitingForGravity };
   }
 
   /** A brew's own alert, as a rule watching the brew's pill. */
   private brewWatch(a: StoredBrewAlert, pillId: string): Watch {
-    return { ...a, pillIds: [pillId], onlyDuringBrew: true, active: [] };
+    return { ...a, pillIds: [pillId], onlyDuringBrew: true, active: [], waitingForGravity: {} };
   }
 
   /** A rule or a brew's alert, by id. */
@@ -368,8 +394,11 @@ export class AlertService extends EventEmitter {
   }
 
   private withActive(rule: AlertRule): AlertRule {
-    const active = [...this.state.entries()].filter(([k, v]) => k.startsWith(`${rule.id}|`) && v.active).map(([k]) => k.split('|')[1]!);
-    return { ...rule, active };
+    const prefix = `${rule.id}|`;
+    const active = [...this.state.entries()].filter(([k, v]) => k.startsWith(prefix) && v.active).map(([k]) => k.slice(prefix.length));
+    const waitingForGravity: Record<string, number> = {};
+    for (const [k, g] of this.waiting) if (k.startsWith(prefix)) waitingForGravity[k.slice(prefix.length)] = g;
+    return { ...rule, active, waitingForGravity };
   }
 
   private appliesTo(rule: Watch, pillId: string): boolean {
@@ -413,6 +442,12 @@ export class AlertService extends EventEmitter {
       }
       this.state.set(key, { active: false, quiet: false, lastFiredAt: st.lastFiredAt });
       this.store.saveAlertState(ruleId, pillId, false, st.lastFiredAt);
+    }
+    // Nor does it wait any more.
+    for (const key of [...this.waiting.keys()]) {
+      const [ruleId, pillId] = key.split('|') as [string, string];
+      const rule = this.watchById(ruleId, pillId);
+      if (!rule || !this.appliesTo(rule, pillId)) this.waiting.delete(key);
     }
   }
 
@@ -544,10 +579,9 @@ export class AlertService extends EventEmitter {
         // The velocity the pill's page shows (the pill's or RaptHooker's): null until there's enough data, and for a
         // device without a gravity.
         const g = r.gravity;
-        const v = g === null ? null : r.velocity;
-        if (g === null || v === null) return { firing: null, value: null, message: '' };
+        if (g === null) return { firing: null, value: null, message: '' };
+        const v = r.velocity;
         const slow = rule.kind === 'velocity_slow';
-        const drop = -v;
         // Before fermentation gets going the gravity isn't dropping, but a velocity over a few hours of readings (or ones
         // from before the brew) can say it is: with a brew running, both wait until the gravity has dropped from where
         // the brew started (what the pill read then: a typed OG can be a few points off the pill). A fast one that went
@@ -555,14 +589,20 @@ export class AlertService extends EventEmitter {
         // fire, so it doesn't flap there).
         const stats = this.deps.brews.activeFor(pillId)?.stats;
         const og = stats ? (stats.startGravity ?? stats.og) : null;
-        if (og !== null && og - g < FERMENTATION_LIMITS.minDrop) {
-          if (slow || og - g >= FERMENTATION_LIMITS.minDrop / 2) return { firing: null, value: null, message: '' };
+        // Rounded off, so 1.0447 to 1.0427 is 2 points down rather than a float's hair under.
+        const down = og === null ? null : Math.round((og - g) * 1e6) / 1e6;
+        if (og !== null && down !== null && down < FERMENTATION_LIMITS.minDrop) {
+          const waitingFor = Math.round((og - FERMENTATION_LIMITS.minDrop) * 1e6) / 1e6;
+          if (slow || v === null || down >= FERMENTATION_LIMITS.minDrop / 2) return { firing: null, value: null, message: '', waitingFor };
           return {
             firing: false,
-            value: Math.round(drop * 10) / 10,
+            value: Math.round(-v * 10) / 10,
             message: `${name} is at ${this.fmtG(g)}, near the brew's OG of ${this.fmtG(og)}`,
+            waitingFor,
           };
         }
+        if (v === null) return { firing: null, value: null, message: '', waitingFor: null };
+        const drop = -v;
         // Past the threshold it fires; once it's back past where it clears (velocityClearsAt), it clears.
         const clearsAt = velocityClearsAt(rule.kind, th);
         const past = slow ? drop < th : drop > th;
@@ -571,10 +611,17 @@ export class AlertService extends EventEmitter {
         const rate = `${name}'s gravity is ${
           Math.abs(drop) < 0.05 ? 'steady' : `${drop > 0 ? 'dropping' : 'rising'} ${Math.abs(drop).toFixed(1)} points a day`
         }`;
+        const start = stats?.startGravity != null ? 'where the pill started' : "the brew's OG";
         return {
           firing,
           value: Math.round(drop * 10) / 10,
           message: firing === false ? rate : `${rate}, ${slow ? 'slower' : 'faster'} than ${th.toFixed(1)} points a day`,
+          waitingFor: null,
+          // Why it goes off now, at whatever the velocity has got to, rather than when it passed the threshold.
+          afterWait:
+            og === null
+              ? undefined
+              : `This alert waited until the gravity was ${WAIT_POINTS} points below ${start} (${this.fmtG(og)}); it's at ${this.fmtG(g)} now`,
         };
       }
       default:
@@ -621,6 +668,11 @@ export class AlertService extends EventEmitter {
       if (brew && (st.lastFiredAt ?? 0) < brew.startedAt) st = { active: false, quiet: false, lastFiredAt: st.lastFiredAt };
     }
     const c = this.check(rule, pill, st.active);
+    const waited = this.waiting.has(key);
+    if (!VELOCITY_KINDS.has(rule.kind) || c.waitingFor === null) this.waiting.delete(key);
+    else if (c.waitingFor !== undefined) this.waiting.set(key, c.waitingFor);
+    // Going off as the wait ends, it says so: the velocity may have passed the threshold long before.
+    const fired = waited && c.afterWait ? { ...c, message: `${c.message}. ${c.afterWait}` } : c;
     const now = this.now();
     // Steps in a brew go off once in it, so there's nothing to hold back.
     const cooling = (lastFiredAt: number | null) => !once && lastFiredAt !== null && now - lastFiredAt < rule.cooldownMin * 60_000;
@@ -629,7 +681,7 @@ export class AlertService extends EventEmitter {
       const next = { active: true, quiet, lastFiredAt: quiet ? st.lastFiredAt : now };
       this.state.set(key, next);
       this.store.saveAlertState(rule.id, pillId, true, next.lastFiredAt, quiet);
-      if (!quiet) this.record(rule, pillId, 'fired', c, true);
+      if (!quiet) this.record(rule, pillId, 'fired', fired, true);
     } else if (c.firing === true && st.quiet && !cooling(st.lastFiredAt)) {
       // Kept quiet by the cooldown and still going once it's over: it's news now.
       this.state.set(key, { active: true, quiet: false, lastFiredAt: now });

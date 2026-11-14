@@ -54,6 +54,8 @@ export function AlertsPage() {
     void loadChannels();
   }, [editing, loadChannels]);
   useLiveMessages((m) => {
+    // Whether a rule is still waiting for a pill's gravity changes with its readings.
+    if (m.type === 'reading' && rules?.some((r) => r.waitingForGravity?.[m.pillId] !== undefined)) void load();
     if (m.type !== 'alert') return;
     void load();
     // Sending through the services takes a moment (up to 10 s when one doesn't answer).
@@ -100,7 +102,7 @@ export function AlertsPage() {
                   disabled={!isOwner}
                   label={t('Enabled')}
                   onChange={(on) => {
-                    const { id: _id, createdAt: _c, active: _a, ...input } = r;
+                    const { id: _id, createdAt: _c, active: _a, waitingForGravity: _w, ...input } = r;
                     api.updateAlert(r.id, { ...input, enabled: on }).then(
                       () => load(),
                       (e) => toast({ tone: 'error', title: t('Failed'), body: errorText(e) }),
@@ -119,6 +121,16 @@ export function AlertsPage() {
                     {when(r)}
                   </p>
                   {r.message && <p className="rule-todo">“{r.message}”</p>}
+                  {Object.entries(r.waitingForGravity ?? {})
+                    .filter(([pillId]) => !r.active.includes(pillId))
+                    .map(([pillId, gravity]) => (
+                      <p key={pillId} className="muted">
+                        {t('Waiting for {pill} to reach {gravity}, 2 points below where it started its brew', {
+                          pill: pillName(pillId),
+                          gravity: u.gravityText(gravity),
+                        })}
+                      </p>
+                    ))}
                   <p className="rule-send-to">
                     <Icon name="send" size={12} /> {sendToText(r.channelIds, channels ?? [])}
                   </p>
@@ -129,7 +141,7 @@ export function AlertsPage() {
                       type="button"
                       className="btn small"
                       onClick={() => {
-                        const { id, createdAt: _c, active: _a, ...input } = r;
+                        const { id, createdAt: _c, active: _a, waitingForGravity: _w, ...input } = r;
                         setEditing({ id, input });
                       }}
                     >

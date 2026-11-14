@@ -4968,6 +4968,16 @@
       "pages/screens/BrowserSetup.tsx"
     ]
   },
+  "If the gravity is already dropping faster than this when the wait ends, it goes off straight away and says how fast it's dropping then.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
+  "If the gravity is already dropping slower than this when the wait ends, it goes off straight away and says how fast it's dropping then.": {
+    "files": [
+      "pages/alerts/RuleExample.tsx"
+    ]
+  },
   "If the hub was offline for the setup, the first reading can take one interval to arrive.": {
     "files": [
       "pages/devices/IspindelTab.tsx"
@@ -11310,6 +11320,11 @@
       "pages/settings/BackupSection.tsx"
     ]
   },
+  "Waiting for {pill} to reach {gravity}, 2 points below where it started its brew": {
+    "files": [
+      "pages/alerts/AlertsPage.tsx"
+    ]
+  },
   "Waiting for a reading": {
     "files": [
       "pages/webhooks/WebhooksPage.tsx"
@@ -11335,6 +11350,11 @@
   "Waiting for the clock": {
     "files": [
       "pages/Dashboard.tsx"
+    ]
+  },
+  "Waiting for the gravity to reach {gravity}, 2 points below where the pill started": {
+    "files": [
+      "pages/brews/BrewAlerts.tsx"
     ]
   },
   "Waiting for the hub to come back…": {
@@ -11618,7 +11638,7 @@
       "pages/screens/ScreensPage.tsx"
     ]
   },
-  "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.": {
+  "While a brew is running, it waits until the gravity is 0.002 below where the pill started (what it read in its first hours in the wort, not a typed OG), so it doesn't go off before fermentation starts.": {
     "files": [
       "pages/alerts/RuleExample.tsx"
     ]

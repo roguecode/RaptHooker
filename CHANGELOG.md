@@ -13,6 +13,10 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - The confirmed Wi-Fi screen is now listed as "Smart weather clock" rather than "Geekmagic Ultra/Smart weather clock"
+- "Fermentation slows" and "Fermentation speeds up" now say when they're waiting for a brew's gravity to drop 2 points
+  before they can go off: the brew's page and the Alerts page show the gravity they're waiting for instead of
+  "Watching". When one goes off as that wait ends, its notification says so, which explains why it went off at a
+  speed well past its threshold. The API's alert rules and brew alerts have a new `waitingForGravity` field
 
 ## [0.11.0] - 2026-11-09
 

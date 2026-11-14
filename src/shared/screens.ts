@@ -24,7 +24,7 @@ export interface ScreenModel {
   panel: boolean;
   /**
    * Shop listings users have bought one from that then worked with RaptHooker. Shown as just that: not endorsements,
-   * and a listing can change what it sends.
+   * and a listing can change what it sends. Screens set up over their hotspot have theirs in SCREEN_STOCKS instead.
    */
   confirmed: readonly { url: string; site: string }[];
 }
@@ -33,13 +33,13 @@ export interface ScreenModel {
 export const SCREEN_MODELS: readonly ScreenModel[] = [
   {
     id: 'sdpro-240',
-    name: 'Geekmagic Ultra/Smart weather clock',
+    name: 'Smart weather clock / GeekMagic Ultra',
     width: 240,
     height: 240,
     chip: 'esp8266',
     install: 'hotspot',
     panel: false,
-    confirmed: [{ url: 'https://www.aliexpress.com/item/1005011924447121.html', site: 'AliExpress' }],
+    confirmed: [],
   },
   {
     id: 'esp32-2432s028',
@@ -108,14 +108,71 @@ export interface ScreenDevice {
 /** The "panel" setting's bits, on top of what the firmware picked for the panel it found. */
 export const SCREEN_PANEL = { flip: 1, mirror: 2, swap: 4, invert: 8 } as const;
 
-/** What it is, going by a Wi-Fi network's name: a screen's own hotspot, or nothing RaptHooker knows. */
-export type HotspotKind = 'sdpro' | 'rapthooker';
+/** The firmware a Wi-Fi screen comes with, which RaptHooker installs its own over. */
+export type StockKind = 'sdpro' | 'geekmagic';
 
-/** Stock "Smart weather clock" hotspots ("… Pro" on some), and RaptHooker firmware's own. */
+/** What it is, going by a Wi-Fi network's name: a screen's own hotspot, or nothing RaptHooker knows. */
+export type HotspotKind = StockKind | 'rapthooker';
+
+export interface ScreenStock {
+  kind: StockKind;
+  /** What it's sold as, shown as it is (not translated). */
+  name: string;
+  /** The ScreenModel RaptHooker's firmware for it is: the same hardware, whichever firmware it came with. */
+  model: string;
+  /** The Wi-Fi network it opens when it's new. */
+  hotspot: string;
+  /** Someone has set one up with RaptHooker and it worked. */
+  tested: boolean;
+  /** Shop listings users have bought one from that then worked with RaptHooker (as ScreenModel's). */
+  confirmed: readonly { url: string; site: string }[];
+}
+
+/**
+ * The stock firmwares RaptHooker can install over. The unbranded "Smart weather clock" runs "SD Pro" firmware; a
+ * genuine GeekMagic Ultra runs GeekMagic's own, on the same hardware (an ESP8266 with a 240 × 240 ST7789).
+ */
+export const SCREEN_STOCKS: readonly ScreenStock[] = [
+  {
+    kind: 'sdpro',
+    name: 'Smart weather clock',
+    model: 'sdpro-240',
+    hotspot: 'Smart weather clock',
+    tested: true,
+    confirmed: [{ url: 'https://www.aliexpress.com/item/1005011924447121.html', site: 'AliExpress' }],
+  },
+  {
+    kind: 'geekmagic',
+    name: 'GeekMagic Ultra',
+    model: 'sdpro-240',
+    hotspot: 'GIFTV',
+    tested: true,
+    confirmed: [{ url: 'https://www.aliexpress.com/item/1005007542991850.html', site: 'AliExpress' }],
+  },
+];
+
+export const screenStock = (kind: StockKind): ScreenStock => SCREEN_STOCKS.find((s) => s.kind === kind)!;
+
+/** What a GeekMagic Ultra's own firmware calls the model at /v.json. Other GeekMagic models (the Pro is an ESP32) differ. */
+export const GEEKMAGIC_ULTRA = 'SmallTV-Ultra';
+
+/**
+ * Stock "Smart weather clock" hotspots ("… Pro" on some), a GeekMagic's own ("GIFTV"), and RaptHooker firmware's own.
+ */
 export function hotspotKind(ssid: string): HotspotKind | null {
   if (/^smart weather clock/i.test(ssid)) return 'sdpro';
+  if (/^GIFTV/i.test(ssid)) return 'geekmagic';
   if (/^RaptHooker-Screen-[0-9A-F]{6}$/i.test(ssid)) return 'rapthooker';
   return null;
+}
+
+/** A screen's address on the network as people type it ("http://192.168.1.50/"), or null if it isn't one. */
+export function screenAddress(text: string): string | null {
+  const host = text
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/+$/, '');
+  return /^[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?(:\d{1,5})?$/i.test(host) ? host : null;
 }
 
 /** The hotspot RaptHooker firmware opens: named after the last three bytes of the MAC address. */
@@ -209,7 +266,7 @@ export interface ScreenSetupProgress {
   id: string;
   /** Over the screen's hotspot, or over USB. Missing from hubs before USB set-up: 'wifi'. */
   via?: 'wifi' | 'usb';
-  /** The hotspot it started from, or the USB port. */
+  /** The hotspot it started from, the USB port, or its address on the network. */
   hotspot: string;
   step: ScreenSetupStep;
   state: 'running' | 'done' | 'failed';
@@ -329,18 +386,55 @@ export const screenPatchSchema = z.object({
 });
 export type ScreenPatch = z.infer<typeof screenPatchSchema>;
 
-export const screenSetupSchema = z.object({
-  /** The screen's hotspot. */
-  hotspot: z.string().min(1).max(32),
-  /** The network the screen joins. */
-  ssid: z.string().min(1).max(32),
-  /** Its password. Empty: the hub's own saved one (when ssid is the hub's network). */
-  password: z.string().max(64).default(''),
-  name: z.string().trim().min(1).max(32),
-  pillId: z.string().min(1).max(64).nullable().default(null),
-  look: screenLookSchema.default({}),
-});
+export const screenSetupSchema = z
+  .object({
+    /** The screen's hotspot. Empty when it's set up from its `address`. */
+    hotspot: z.string().max(32).default(''),
+    /**
+     * Where it is on the hub's network, for a GeekMagic Ultra on its own firmware that has joined it already: the hub
+     * installs RaptHooker there instead of on the screen's hotspot, then carries on on RaptHooker's hotspot.
+     */
+    address: z.string().max(260).optional(),
+    /** The network the screen joins. */
+    ssid: z.string().min(1).max(32),
+    /** Its password. Empty: the hub's own saved one (when ssid is the hub's network). */
+    password: z.string().max(64).default(''),
+    name: z.string().trim().min(1).max(32),
+    pillId: z.string().min(1).max(64).nullable().default(null),
+    look: screenLookSchema.default({}),
+  })
+  .transform((input, ctx) => {
+    if (input.address === undefined) {
+      if (!input.hotspot) ctx.addIssue({ code: 'custom', path: ['hotspot'], message: 'Pick the screen’s hotspot' });
+      return input;
+    }
+    const address = screenAddress(input.address);
+    if (!address) ctx.addIssue({ code: 'custom', path: ['address'], message: 'Not an address on the network' });
+    return { ...input, address: address ?? input.address };
+  });
 export type ScreenSetupInput = z.infer<typeof screenSetupSchema>;
+
+/** Installing RaptHooker on a GeekMagic Ultra on the hub's network, for a browser to finish setting it up. */
+export const screenInstallSchema = z.object({
+  address: z
+    .string()
+    .max(260)
+    .transform((text, ctx) => {
+      const address = screenAddress(text);
+      if (!address) ctx.addIssue({ code: 'custom', message: 'Not an address on the network' });
+      return address ?? text;
+    }),
+});
+
+/** What /api/screens/install did: which screen it found there, and the firmware it put on. */
+export interface ScreenInstallResult {
+  /** What the screen called itself ("SmallTV-Ultra") and its firmware ("Ultra-V9.0.50"). */
+  found: { model: string; version: string };
+  /** The RaptHooker firmware now on it. */
+  firmware: ScreenFirmware;
+  /** The screen said it took it; false when it restarted before saying (it may still have). */
+  confirmed: boolean;
+}
 
 /** Setting up a board plugged into the hub's USB. */
 export const screenUsbSetupSchema = z.object({

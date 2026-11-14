@@ -170,8 +170,8 @@ all fit, it rotates through them (every 10 to 60 seconds; move the mouse or tap 
 the screen awake for pages served over HTTPS (such as through Tailscale, below) or opened on the Pi itself as
 `http://localhost:8080/#/kiosk`; otherwise turn off screen blanking on the device showing it.
 
-For something smaller, RaptHooker can take over a **Geekmagic Ultra/Smart weather clock** desk screen, or an
-**ESP32-2432S028** 2.8" board plugged into the Pi's USB, and show a pill (or all of them)
+For something smaller, RaptHooker can take over a **Smart weather clock** or **GeekMagic Ultra** desk screen,
+or an **ESP32-2432S028** 2.8" board plugged into the Pi's USB, and show a pill (or all of them)
 on it, looking after it from the **Screens** page: see [RaptHooker screens](rapthooker-screens.md).
 
 ## 5. HTTPS and access away from home (Tailscale)

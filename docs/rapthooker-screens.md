@@ -15,22 +15,29 @@ reconnecting to Wi-Fi, it hasn't had a new picture for a while) the screen says 
 
 ## Supported screens
 
-| Screen                                           | Picture   | How the hub sets it up                         | Confirmed working                                                           |
-| ------------------------------------------------ | --------- | ---------------------------------------------- | --------------------------------------------------------------------------- |
-| **Geekmagic Ultra/Smart weather clock**          | 240 × 240 | Over its own Wi-Fi, from its original firmware | [AliExpress listing](https://www.aliexpress.com/item/1005011924447121.html) |
-| **ESP32-2432S028 2.8" ("Cheap Yellow Display")** | 320 × 240 | Plugged into the hub's USB                     | [AliExpress listing](https://www.aliexpress.com/item/1005010399042230.html) |
+| Screen                                                    | Picture   | How the hub sets it up                         | Confirmed working                                                           |
+| --------------------------------------------------------- | --------- | ---------------------------------------------- | --------------------------------------------------------------------------- |
+| **Smart weather clock** (unbranded, on "SD Pro" firmware) | 240 × 240 | Over its own Wi-Fi, from its original firmware | [AliExpress listing](https://www.aliexpress.com/item/1005011924447121.html) |
+| **GeekMagic Ultra** (genuine, on GeekMagic's firmware)    | 240 × 240 | Over its own Wi-Fi, or from its address        | [AliExpress listing](https://www.aliexpress.com/item/1005007542991850.html) |
+| **ESP32-2432S028 2.8" ("Cheap Yellow Display")**          | 320 × 240 | Plugged into the hub's USB                     | [AliExpress listing](https://www.aliexpress.com/item/1005010399042230.html) |
 
 The listings only show where users bought a screen that then worked with RaptHooker. **They aren't endorsements**:
 RaptHooker has nothing to do with the sellers, and a listing can change what it sends, so check the model in its
 pictures before you buy.
+
+The Smart weather clock copies the GeekMagic Ultra: the same hardware, which gets the same RaptHooker firmware, but
+other firmware out of the box. Before changing anything the hub checks a GeekMagic says it's an Ultra
+(`SmallTV-Ultra`). GeekMagic's firmware can go back on from
+[GeekMagic's GitHub](https://github.com/GeekMagicClock/smalltv-ultra) (see
+[Looking after a screen](#looking-after-a-screen)).
 
 ### Other screens
 
 - **Might work (untested):** ESP32-2432S028 boards with two USB sockets (USB-C and micro USB). They usually have another
   display chip, which RaptHooker tries; check it with [Does the screen look right?](#does-the-screen-look-right) after
   setting one up.
-- **Won't work:** other GeekMagic screens, and weather clocks on other firmware. The hub checks a screen before it
-  changes anything, so trying one does no harm.
+- **Won't work:** other GeekMagic models (the Pro is an ESP32, for one), and weather clocks on other firmware. The hub
+  checks a screen before it changes anything, so trying one does no harm.
 - **Won't work:** other ESP32 boards and sizes (2.4", 3.5", ESP32-S3 boards). Their displays are wired differently and
   would stay blank. Don't set one up as an ESP32-2432S028: that replaces what's on the board.
 - **Any screen** that can show a picture from a web address can use an [image link](./screens.md) instead, with no new
@@ -39,31 +46,36 @@ pictures before you buy.
 ## What you need
 
 - One of the screens above:
-  - a **Geekmagic Ultra/Smart weather clock** on its original "SD Pro" firmware. When it's new it opens a Wi-Fi network
-    called **Smart weather clock** (or **Smart weather clock Pro**) and shows set-up instructions with a QR code.
+  - a **Smart weather clock** on its original "SD Pro" firmware. When it's new it opens a Wi-Fi network called **Smart
+    weather clock** (or **Smart weather clock Pro**) and shows set-up instructions with a QR code.
+  - or a **GeekMagic Ultra** on GeekMagic's own firmware. When it's new it opens a Wi-Fi network called
+    **GIFTV**; once it's on your Wi-Fi it shows its address instead, and only opens **GIFTV** for a minute after it
+    starts.
   - an **ESP32-2432S028** board (sold as the "Cheap Yellow Display", with a 2.8" 320 × 240 touch screen), and a USB
     cable that carries data, not just power. Whatever it came with is replaced.
 - A **2.4 GHz** Wi-Fi network for the screen, on which it can reach the hub. The screens don't do 5 GHz.
-- For a Geekmagic: a hub that can leave its Wi-Fi for a minute to talk to the screen. A Raspberry Pi set up with the
-  installer can (see [Permissions](#permissions)). Otherwise, a phone or laptop with Wi-Fi does the setting up instead
-  (see [From a browser](#from-a-browser)).
+- For a weather clock: a hub that can leave its Wi-Fi for a minute to talk to the screen. A Raspberry Pi set up with
+  the installer can (see [Permissions](#permissions)). Otherwise, a phone or laptop with Wi-Fi does the setting up
+  instead (see [From a browser](#from-a-browser)).
 - For an ESP32 board: a hub with esptool, which the Pi installer adds (see [Permissions](#permissions)). The hub never
   leaves its own network for these.
 
 ## Adding a screen
 
-**Add a screen** has two tabs: **Wi-Fi screen** for a Geekmagic, and **Plugged into the hub (USB)** for an ESP32 board.
-It opens on the USB tab when a board is plugged in.
+**Add a screen** has two tabs: **Wi-Fi screen** for a weather clock, and **Plugged into the hub (USB)** for an ESP32
+board. It opens on the USB tab when a board is plugged in.
 
-### A Geekmagic, over Wi-Fi
+### A weather clock, over Wi-Fi
 
 1. Plug the screen in, near the hub.
 2. In the app, open **Screens**, press **Add a screen** and pick **Wi-Fi screen**. The hub looks for Wi-Fi networks and
-   picks out the screens' own; the rest are tucked away under **other networks** in case yours has another name.
+   picks out the screens' own (**Smart weather clock**, **GIFTV**); the rest are tucked away under **other networks**
+   in case yours has another name.
 3. Press **Set up** next to the screen. Give it a name, choose what it shows, and the Wi-Fi network it should join. The
    hub's own network is filled in, and on a Pi the hub knows its password, so you can leave that empty.
 4. Press **Set it up**. The hub then:
-   - joins the screen's Wi-Fi and checks it really is a Geekmagic Ultra/Smart weather clock on its original firmware,
+   - joins the screen's Wi-Fi and checks it really is a Smart weather clock on its original firmware (or a GeekMagic
+     Ultra on GeekMagic's),
    - installs RaptHooker's firmware through the screen's own update page and waits for it to restart,
    - has the screen try your Wi-Fi while the hub is still with it (so a wrong password is reported, not guessed at),
    - goes back to its own network, finds the screen there and saves it.
@@ -75,7 +87,16 @@ while it talks to the screen: the page says so and reconnects by itself.
 **Keep the screen plugged in while it's being set up.** Installing firmware is the one moment a screen can be harmed:
 for a few seconds after the firmware arrives the screen copies it into place, and losing power then could leave it
 unable to start. RaptHooker only ever sends firmware it has checked is complete and right for this screen, and small
-enough for the screen's update page (which cuts bigger files short), and only to a screen it has identified.
+enough for the screen's update page (the Smart weather clock's cuts bigger files short; the GeekMagic's turns them
+down), and only to a screen it has identified.
+
+### A GeekMagic Ultra that's on your Wi-Fi already
+
+A GeekMagic Ultra that has been set up with its own app or page is on your Wi-Fi, and only opens **GIFTV** for a minute
+after it starts. Instead of catching that, open **A GeekMagic Ultra already on your Wi-Fi?** under the list, type the
+address it shows on its screen (like `192.168.1.50`) and press **Set up**. The hub checks what's at that address is a
+GeekMagic Ultra, installs RaptHooker there over your network, then carries on as above on RaptHooker's own network
+(**RaptHooker-Screen-** and six characters), which the screen opens when it restarts.
 
 ### From a browser
 
@@ -85,11 +106,17 @@ does the same when the screen is out of the hub's reach.
 
 1. Fill in the screen's name, what it shows, and your Wi-Fi's name and password, and press **Next**. The page fetches
    the firmware from the hub while you're still on your network.
-2. Join the screen's Wi-Fi (**Smart weather clock**) on the phone or laptop, come back to the page and press
-   **I've joined it**. The page checks the screen and installs the firmware.
+2. Join the screen's Wi-Fi (**Smart weather clock**, or **GIFTV** on a GeekMagic Ultra) on the phone or laptop, come
+   back to the page and press **I've joined it**. The page checks the screen and installs the firmware. A GeekMagic's
+   own firmware may not let the page read which model it is: then the page asks you to confirm it's an Ultra (other
+   GeekMagic models can't take RaptHooker).
 3. When the screen restarts, join its new network, **RaptHooker-Screen-** and six characters. The page gives the
    screen your Wi-Fi details and waits for it to join.
 4. Go back to your own Wi-Fi. The page tells the hub about the screen.
+
+A GeekMagic Ultra that's on your Wi-Fi already can skip the second step: at that step, open **A GeekMagic Ultra already
+on your Wi-Fi?**, type its address and press **Install RaptHooker**. The hub checks it and installs RaptHooker over your
+network; then join **RaptHooker-Screen-…** as in the third step.
 
 Keep the page open (don't reload it) until it's done. It needs the hub's `http://` address: a page opened over
 `https://` (through Tailscale, say) isn't allowed to talk to the screen, and says so. If your phone warns that the
@@ -158,7 +185,7 @@ screen keeps its own size.
 | Its name, big                                               | **Show its name** was pressed                                                                                          |
 | Red, green and blue bars with their names                   | The test pattern, for **Does the screen look right?**                                                                  |
 
-To see a screen's own details over its picture for half a minute, press the button on a Geekmagic's back, or tap an
+To see a screen's own details over its picture for half a minute, press the button on a weather clock's back, or tap an
 ESP32 board's screen (or press its **BOOT** button).
 
 A screen that has been away from its Wi-Fi for 5 minutes opens its own network again (**RaptHooker-Screen-…**) while it
@@ -196,8 +223,10 @@ network, MAC address, Wi-Fi signal and how long it has been running, and:
 - **Update to …**, when there's newer firmware,
 - **Forget**: the hub stops looking after it. Tick **Also reset the screen** to have it forget its Wi-Fi and open its
   own network for setting up again.
-- **Put the original firmware back** (a Geekmagic): sends the screen's original firmware back to it, from the
-  firmware file its maker provides (`SDPro_V1.0.6.bin`, say). The hub checks the file is firmware for this screen first.
+- **Put the original firmware back** (a weather clock): sends the screen's original firmware back to it, from the
+  firmware file its maker provides: `SDPro_V1.0.6.bin`, say, for a Smart weather clock, or for a GeekMagic Ultra
+  `FW-Smalltv-Ultra-V9.0.50.bin` (unzipped) from [GeekMagic's GitHub](https://github.com/GeekMagicClock/smalltv-ultra).
+  The hub checks the file is firmware for this screen first.
   The screen restarts on its own firmware with its own settings as they were, RaptHooker's are wiped, and the hub
   forgets it. ESP32 boards don't have this: the demo they came with isn't kept. To keep it, copy the board's flash
   before setting it up (`python -m esptool --port COM7 read_flash 0 0x400000 backup.bin`) and write it back the same
@@ -226,7 +255,8 @@ RaptHooker running on a computer, then add it to the Docker hub from **Found on 
 
 - **The screen isn't in the list.** It only uses 2.4 GHz, and a new screen's network can take a minute to appear after
   it's plugged in. A screen set up before only opens its own network after 5 minutes away from its Wi-Fi. Press
-  **Scan again**.
+  **Scan again**. A GeekMagic Ultra that's on your Wi-Fi only opens **GIFTV** for a minute after it starts: set it up
+  [from its address](#a-geekmagic-ultra-thats-on-your-wi-fi-already) instead.
 - **Wrong password, network not found.** Check the name (it's case-sensitive) and that the network has a 2.4 GHz band.
 - **No IP address.** The screen joined but the router gave it no address. It tries the older 802.11g mode first (some
   mesh routers don't hand out addresses to ESP8266s on 802.11n) and switches modes by itself if it gets no address.

@@ -851,6 +851,16 @@
       "pages/settings/SystemSection.tsx"
     ]
   },
+  "A GeekMagic Ultra already on your Wi-Fi?": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
+  "A GeekMagic Ultra on your network": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
+    ]
+  },
   "A network RaptHooker doesn't recognise": {
     "files": [
       "pages/screens/AddScreen.tsx"
@@ -1717,7 +1727,8 @@
   },
   "Back": {
     "files": [
-      "pages/screens/AddScreen.tsx"
+      "pages/screens/AddScreen.tsx",
+      "pages/screens/BrowserSetup.tsx"
     ]
   },
   "Back on the hub's network": {
@@ -2300,7 +2311,7 @@
       "pages/devices/IspindelTab.tsx"
     ]
   },
-  "Check this device is on the screen's Wi-Fi (\"Smart weather clock\"), then try again.": {
+  "Check this device is on the screen's Wi-Fi (\"Smart weather clock\", or \"GIFTV\" on a GeekMagic Ultra), then try again.": {
     "files": [
       "pages/screens/BrowserSetup.tsx"
     ]
@@ -2829,6 +2840,11 @@
   "Couldn't pause": {
     "files": [
       "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "Couldn't put RaptHooker on the screen": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
     ]
   },
   "Couldn't put the original firmware back": {
@@ -4386,6 +4402,11 @@
       "components/ImageLink.tsx"
     ]
   },
+  "GeekMagic's firmware": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Get alerts on your phone through ntfy, Pushover, Telegram, Discord or email, wherever you are.": {
     "files": [
       "pages/alerts/ChannelsPanel.tsx"
@@ -5151,6 +5172,11 @@
       "pages/settings/SystemSection.tsx"
     ]
   },
+  "Install RaptHooker": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "Install the beta": {
     "files": [
       "components/UpdateBanner.tsx"
@@ -5402,6 +5428,11 @@
       "pages/pill/KegPanel.tsx"
     ]
   },
+  "It's a GeekMagic Ultra": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "It's an early version, for trying out what's coming. Your brews, readings and settings stay whichever version the hub is on.": {
     "files": [
       "pages/settings/UpdateSection.tsx"
@@ -5440,6 +5471,11 @@
   "Its final stats are saved. The pill keeps recording.": {
     "files": [
       "pages/brews/BrewPage.tsx"
+    ]
+  },
+  "Its own firmware shows its address on the screen, like 192.168.1.50. RaptHooker checks it's a GeekMagic Ultra before changing anything.": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
     ]
   },
   "Its Wi-Fi": {
@@ -7042,11 +7078,6 @@
       "pages/pill/KegPanel.tsx"
     ]
   },
-  "On the firmware it comes with (\"SD Pro\"): a new one opens a Wi-Fi network called \"Smart weather clock\".": {
-    "files": [
-      "pages/screens/SupportedScreens.tsx"
-    ]
-  },
   "On the go": {
     "files": [
       "pages/brews/BrewsPage.tsx"
@@ -7058,7 +7089,7 @@
       "pages/settings/StatusSection.tsx"
     ]
   },
-  "On this device, join the Wi-Fi network called \"Smart weather clock\" (or \"RaptHooker-Screen-…\" for a screen that already has RaptHooker). Then come back to this page.": {
+  "On this device, join the screen's Wi-Fi network: \"Smart weather clock\", \"GIFTV\" on a GeekMagic Ultra, or \"RaptHooker-Screen-…\" for a screen that already has RaptHooker. Then come back to this page.": {
     "files": [
       "pages/screens/BrowserSetup.tsx"
     ]
@@ -7296,7 +7327,7 @@
       "pages/screens/SupportedScreens.tsx"
     ]
   },
-  "Other GeekMagic screens, and weather clocks on other firmware. RaptHooker checks a screen before changing anything, so trying one does no harm.": {
+  "Other GeekMagic models (the Pro is an ESP32), and weather clocks on other firmware. RaptHooker checks a screen before changing anything, so trying one does no harm.": {
     "files": [
       "pages/screens/SupportedScreens.tsx"
     ]
@@ -7685,7 +7716,7 @@
       "pages/screens/AddScreen.tsx"
     ]
   },
-  "Plug the screen in near the hub. A new one opens its own Wi-Fi network, called \"Smart weather clock\": the hub joins it for a minute to put RaptHooker on the screen and connect it to your Wi-Fi.": {
+  "Plug the screen in near the hub. A new one opens its own Wi-Fi network, called \"Smart weather clock\" (\"GIFTV\" on a GeekMagic Ultra): the hub joins it for a minute to put RaptHooker on the screen and connect it to your Wi-Fi.": {
     "files": [
       "pages/screens/AddScreen.tsx"
     ]
@@ -9931,6 +9962,11 @@
       "pages/screens/BrowserSetup.tsx"
     ]
   },
+  "The genuine one, on GeekMagic's own firmware: a new one opens a Wi-Fi network called \"GIFTV\". One already on your Wi-Fi can be set up from its address. Other GeekMagic models won't work.": {
+    "files": [
+      "pages/screens/SupportedScreens.tsx"
+    ]
+  },
   "The graph shows": {
     "files": [
       "components/PictureDesigner.tsx"
@@ -10300,6 +10336,11 @@
       "pages/screens/strings.ts"
     ]
   },
+  "The screen doesn't let this page check which GeekMagic it is. Only go on if it's a GeekMagic Ultra (a new one shows GIFTV and http://192.168.4.1): other models can't take RaptHooker.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "The screen is on {name}. Now switch this device back to {name}.": {
     "files": [
       "pages/screens/BrowserSetup.tsx"
@@ -10325,7 +10366,7 @@
       "components/ImageLink.tsx"
     ]
   },
-  "The screen may not have got the whole firmware. If its network is still called \"Smart weather clock\", try again.": {
+  "The screen may not have got the whole firmware. If its network is still called \"{name}\", try again.": {
     "files": [
       "pages/screens/BrowserSetup.tsx"
     ]
@@ -10339,6 +10380,11 @@
   "The screen shows its name for a moment": {
     "files": [
       "pages/screens/ScreenCard.tsx"
+    ]
+  },
+  "The screen's address": {
+    "files": [
+      "pages/screens/AddScreen.tsx"
     ]
   },
   "The sensor's own, in the lid": {
@@ -10562,6 +10608,11 @@
       "pages/devices/IspindelTab.tsx"
     ]
   },
+  "This is a GeekMagic {model}, which RaptHooker can't set up: only the Ultra has the hardware its firmware is for.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
+    ]
+  },
   "This isn't a screen RaptHooker can set up.": {
     "files": [
       "pages/screens/strings.ts"
@@ -10592,7 +10643,7 @@
       "pages/brews/profiles.tsx"
     ]
   },
-  "This puts the firmware the screen came with back on it, and the hub forgets it. You need the firmware file from the screen's maker (for this screen, a file like SDPro_V1.0.6.bin).": {
+  "This puts the firmware the screen came with back on it, and the hub forgets it. You need the firmware file from the screen's maker: for a Smart weather clock, a file like SDPro_V1.0.6.bin; for a GeekMagic Ultra, one like FW-Smalltv-Ultra-V9.0.50.bin from GeekMagic's GitHub (unzipped).": {
     "files": [
       "pages/screens/ScreenEditor.tsx"
     ]
@@ -10879,6 +10930,11 @@
   "unavailable": {
     "files": [
       "pages/settings/StatusSection.tsx"
+    ]
+  },
+  "Unbranded, on the firmware it comes with (\"SD Pro\"): a new one opens a Wi-Fi network called \"Smart weather clock\".": {
+    "files": [
+      "pages/screens/SupportedScreens.tsx"
     ]
   },
   "Under {device}. Everything here is optional: how much is left comes from the Laser Level.": {

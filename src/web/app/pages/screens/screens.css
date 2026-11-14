@@ -194,6 +194,17 @@
   margin-bottom: 0.5rem;
 }
 
+.by-address-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.by-address-row .field {
+  flex: 1 1 12rem;
+}
+
 /* Set-up progress */
 .setup-steps {
   list-style: none;

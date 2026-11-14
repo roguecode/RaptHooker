@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useId, useState } from 'react';
 import {
   SCREEN_MODELS,
-  screenModel,
+  screenAddress,
+  screenStock,
+  type HotspotKind,
   type ScreenDevice,
   type ScreenSetupProgress,
   type UsbPort,
@@ -21,8 +23,9 @@ import { screensApi } from './screensApi';
 import { BrowserSetup } from './BrowserSetup';
 import { USB_REASONS } from './strings';
 
-const KIND_LABELS = {
-  sdpro: () => t('{name}, as it came', { name: screenModel('sdpro-240')?.name ?? 'Smart weather clock' }),
+const KIND_LABELS: Record<HotspotKind, () => string> = {
+  sdpro: () => t('{name}, as it came', { name: screenStock('sdpro').name }),
+  geekmagic: () => t('{name}, as it came', { name: screenStock('geekmagic').name }),
   rapthooker: () => t('RaptHooker screen, waiting to be set up'),
 };
 
@@ -43,17 +46,22 @@ export function useNewLook() {
 }
 
 type Method = 'wifi' | 'usb';
-/** What's being set up: a screen's own hotspot, or a board on one of the hub's USB ports (maybe a screen it has). */
-type Target = { kind: 'hotspot'; net: WifiNetwork } | { kind: 'usb'; port: UsbPort; screen?: ScreenDevice };
+/**
+ * What's being set up: a screen's own hotspot, a GeekMagic Ultra on the hub's network (by its address), or a board on
+ * one of the hub's USB ports (maybe a screen it has).
+ */
+type Target =
+  { kind: 'hotspot'; net: WifiNetwork } | { kind: 'address'; address: string } | { kind: 'usb'; port: UsbPort; screen?: ScreenDevice };
 
 /** The hub's screen on a port, if the board there said it's one of them. */
 const screenOn = (port: UsbPort, screens: ScreenDevice[]) => (port.board ? screens.find((s) => s.id === port.board!.id) : undefined);
 
 /**
  * Adding a screen, one of two ways. Wi-Fi screens: the hub looks for Wi-Fi networks (a new screen opens its own),
- * then joins the one picked to put RaptHooker firmware on the screen and connect it to the hub's network; a hub that
- * can't switch Wi-Fi networks hands over to BrowserSetup, which does the same from this browser. USB boards: plugged
- * into the hub, which writes the firmware and the Wi-Fi details over USB.
+ * then joins the one picked to put RaptHooker firmware on the screen and connect it to the hub's network (a GeekMagic
+ * Ultra already on the network can have RaptHooker put on it from its address instead); a hub that can't switch Wi-Fi
+ * networks hands over to BrowserSetup, which does the same from this browser. USB boards: plugged into the hub, which
+ * writes the firmware and the Wi-Fi details over USB.
  */
 export function AddScreen({ onClose, onStarted }: { onClose: () => void; onStarted: (p: ScreenSetupProgress) => void }) {
   const { screens } = useLive();
@@ -160,6 +168,7 @@ export function AddScreen({ onClose, onStarted }: { onClose: () => void; onStart
               onScan={() => void scan()}
               onPick={(net) => setPicked({ kind: 'hotspot', net })}
             />
+            {wifi?.canSetUp && <ByAddress onPick={(address) => setPicked({ kind: 'address', address })} />}
             {wifi?.canSetUp && (
               <p className="hint">
                 <button type="button" className="link-btn" onClick={() => setFromBrowser(true)}>
@@ -207,7 +216,7 @@ function ScanList({
     <div className="stack">
       <p className="muted">
         {t(
-          'Plug the screen in near the hub. A new one opens its own Wi-Fi network, called "Smart weather clock": the hub joins it for a minute to put RaptHooker on the screen and connect it to your Wi-Fi.',
+          'Plug the screen in near the hub. A new one opens its own Wi-Fi network, called "Smart weather clock" ("GIFTV" on a GeekMagic Ultra): the hub joins it for a minute to put RaptHooker on the screen and connect it to your Wi-Fi.',
         )}
       </p>
       <div className="row">
@@ -277,6 +286,53 @@ function WifiRow({ net, onPick, highlight = false }: { net: WifiNetwork; onPick:
         {t('Set up')}
       </button>
     </li>
+  );
+}
+
+/**
+ * A GeekMagic Ultra that has joined the network with its own firmware (its hotspot only opens for a minute after it
+ * starts then): set up from its address instead.
+ */
+export function ByAddress({ onPick, busy = false, action }: { onPick: (address: string) => void; busy?: boolean; action?: string }) {
+  const id = useId();
+  const [text, setText] = useState('');
+  const address = screenAddress(text);
+  return (
+    <details className="wifi-others by-address">
+      <summary>{t('A GeekMagic Ultra already on your Wi-Fi?')}</summary>
+      <form
+        className="stack"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (address && !busy) onPick(address);
+        }}
+      >
+        <p className="hint">
+          {t(
+            "Its own firmware shows its address on the screen, like 192.168.1.50. RaptHooker checks it's a GeekMagic Ultra before changing anything.",
+          )}
+        </p>
+        <div className="by-address-row">
+          <label className="field" htmlFor={id}>
+            <span>{t("The screen's address")}</span>
+            <input
+              id={id}
+              className="input"
+              inputMode="url"
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={260}
+              placeholder="192.168.1.50"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+          </label>
+          <button type="submit" className="btn" disabled={!address || busy}>
+            {action ?? t('Set up')}
+          </button>
+        </div>
+      </form>
+    </details>
   );
 }
 
@@ -470,13 +526,17 @@ function SetupForm({
       onStarted(
         target.kind === 'usb'
           ? await screensApi.startUsbSetup({ port: target.port.path, model, ...common })
-          : await screensApi.startSetup({ hotspot: target.net.ssid, ...common }),
+          : target.kind === 'address'
+            ? await screensApi.startSetup({ hotspot: '', address: target.address, ...common })
+            : await screensApi.startSetup({ hotspot: target.net.ssid, ...common }),
       );
     } catch (err) {
       toast({ tone: 'error', title: t("Couldn't start setting the screen up"), body: errorText(err) });
       setBusy(false);
     }
   };
+  const stock =
+    target.kind === 'address' || (target.kind === 'hotspot' && (target.net.kind === 'sdpro' || target.net.kind === 'geekmagic'));
 
   return (
     <form
@@ -492,13 +552,15 @@ function SetupForm({
       <div className="row">
         <Icon name={usb ? 'cpu' : 'screen'} />
         <div>
-          <strong>{target.kind === 'usb' ? target.port.name : target.net.ssid}</strong>
+          <strong>{target.kind === 'usb' ? target.port.name : target.kind === 'address' ? target.address : target.net.ssid}</strong>
           <div className="small muted">
             {target.kind === 'usb'
               ? target.port.path
-              : target.net.kind
-                ? KIND_LABELS[target.net.kind]()
-                : t("A network RaptHooker doesn't recognise")}
+              : target.kind === 'address'
+                ? t('A GeekMagic Ultra on your network')
+                : target.net.kind
+                  ? KIND_LABELS[target.net.kind]()
+                  : t("A network RaptHooker doesn't recognise")}
           </div>
         </div>
       </div>
@@ -582,7 +644,7 @@ function SetupForm({
           <p>{t("The hub only sees this network on 5 GHz, which the screen can't use.")}</p>
         </div>
       )}
-      {target.kind === 'hotspot' && target.net.kind === 'sdpro' && (
+      {stock && (
         <div className="notice">
           <Icon name="info" />
           <p>

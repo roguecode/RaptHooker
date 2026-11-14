@@ -1,6 +1,7 @@
 import type {
   FoundScreen,
   ScreenDevice,
+  ScreenInstallResult,
   ScreenLook,
   ScreenManualStart,
   ScreenPatch,
@@ -46,12 +47,16 @@ export const screensApi = {
   setup: () => http.get<ScreenSetupProgress | null>('/api/screens/setup'),
   startSetup: (input: {
     hotspot: string;
+    /** A GeekMagic Ultra on the hub's network: its address, with an empty hotspot. */
+    address?: string;
     ssid: string;
     password: string;
     name: string;
     pillId: string | null;
     look: Partial<ScreenLook>;
   }) => http.post<ScreenSetupProgress>('/api/screens/setup', input),
+  /** Puts RaptHooker on a GeekMagic Ultra on the hub's network, for this browser to finish setting it up. */
+  install: (address: string) => http.post<ScreenInstallResult>('/api/screens/install', { address }),
   usb: () => http.get<UsbStatus>('/api/screens/usb'),
   startUsbSetup: (input: Omit<ScreenUsbSetupInput, 'look'> & { look: Partial<ScreenLook> }) =>
     http.post<ScreenSetupProgress>('/api/screens/usb/setup', input),

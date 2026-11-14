@@ -4,10 +4,10 @@ Firmware for the screens RaptHooker sets up ([docs/rapthooker-screens.md](../../
 shows a picture fetched from the hub, and does everything else (set-up, settings, updates) over a small HTTP API the
 hub talks to. One source, one build per model (`RH_MODEL`, a PlatformIO environment each):
 
-| Model            | Env     | Board                                                                        | Installed                     |
-| ---------------- | ------- | ---------------------------------------------------------------------------- | ----------------------------- |
-| `sdpro-240`      | `sdpro` | "Geekmagic Ultra/Smart weather clock": ESP8266, 4 MB flash, ST7789 240 × 240 | Over the stock firmware's OTA |
-| `esp32-2432s028` | `cyd`   | ESP32-2432S028 ("Cheap Yellow Display"): ESP32, 4 MB flash, 320 × 240        | Over USB, with esptool        |
+| Model            | Env     | Board                                                                                   | Installed                     |
+| ---------------- | ------- | --------------------------------------------------------------------------------------- | ----------------------------- |
+| `sdpro-240`      | `sdpro` | "Smart weather clock" or genuine GeekMagic Ultra: ESP8266, 4 MB flash, ST7789 240 × 240 | Over the stock firmware's OTA |
+| `esp32-2432s028` | `cyd`   | ESP32-2432S028 ("Cheap Yellow Display"): ESP32, 4 MB flash, 320 × 240                   | Over USB, with esptool        |
 
 The chips differ in the platform layer ([src/platform.cpp](src/platform.cpp): crash counting, roll-back, HMAC, system
 details) and in `#if defined(ESP8266)` / `ESP32` blocks in place (Wi-Fi, mDNS, web server, updates, the settings
@@ -166,7 +166,25 @@ The layout is written only at set-up and never changes after: every later firmwa
 
 The stock firmware's update page (`POST /update_ota`, multipart, on its hotspot at 192.168.4.1) installs whatever it's
 sent and cuts anything past 512 KB short, which would leave a screen that can't start. So the hub only sends an image
-that has passed the checks above, and only to a screen it has identified as a stock Geekmagic Ultra/Smart weather clock (its `/mac`,
+that has passed the checks above, and only to a screen it has identified as a stock Smart weather clock (its `/mac`,
 `/config` and set-up page). The stock firmware sometimes restarts before its `OK` gets out: once the whole image has
 gone, the hub goes by what comes back (RaptHooker's hotspot, or the stock one again). After the image arrives the screen
 copies it into place for about 5 seconds, when it mustn't lose power.
+
+### A genuine GeekMagic Ultra
+
+The Smart weather clock copies the GeekMagic Ultra, which has the same hardware and gets the same `sdpro-240` image, but
+GeekMagic's own firmware (V9.0.x, published at [GeekMagicClock/smalltv-ultra](https://github.com/GeekMagicClock/smalltv-ultra))
+differs. Confirmed working on a real one; the details below are from its image (V9.0.50):
+
+- Its hotspot is `GIFTV` (open), at 192.168.4.1. Once it has joined a network it only opens it for a minute after it
+  starts, and shows its address on the screen instead.
+- `GET /v.json` says `{"m": "SmallTV-Ultra","v":"Ultra-V9.0.50"}`. The hub only goes on for `SmallTV-Ultra` (the Pro
+  is an ESP32). It has no `/mac`: RaptHooker's hotspot is worked out from GIFTV's BSSID (an ESP8266's access point MAC
+  differs from the station's only in the first byte), or else is the RaptHooker hotspot that wasn't there before.
+- `POST /update` is the Arduino core's updater (multipart, field `firmware`, no password). It checks the magic byte,
+  that the image's flash size fits and that it fits the free space (about 0x83000 bytes on V9.0.50), and refuses an image
+  that doesn't rather than installing part of it. It answers `Update Success! Rebooting...` or `Update error: …` (both
+  200), with `Access-Control-Allow-Origin: *`, so a browser can read it; `/v.json` has no CORS headers.
+- Its layout is 4 MB with LittleFS at 0x100000–0x3FA000, the same as `eagle.flash.4m3m.ld`, so RaptHooker's settings
+  sector (0x3FA000) is outside its files, and its own firmware can go back on with its settings as they were.

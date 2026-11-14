@@ -16,6 +16,9 @@ import './screens.css';
 /** Seconds between pictures that the editor offers (the screen's own value is added if it's another). */
 const INTERVALS = [30, 60, 120, 300, 600, 900, 1800, 3600];
 
+/** Where GeekMagic publishes the Ultra's own firmware, for putting it back. */
+const GEEKMAGIC_FIRMWARE = 'https://github.com/GeekMagicClock/smalltv-ultra';
+
 export const everyText = (sec: number): string =>
   sec < 60
     ? t('{n} s', { n: num(sec) })
@@ -351,8 +354,11 @@ function RestoreStock({ screen, onClose, onGone }: { screen: ScreenDevice; onClo
       <div className="stack">
         <p className="muted">
           {t(
-            "This puts the firmware the screen came with back on it, and the hub forgets it. You need the firmware file from the screen's maker (for this screen, a file like SDPro_V1.0.6.bin).",
-          )}
+            "This puts the firmware the screen came with back on it, and the hub forgets it. You need the firmware file from the screen's maker: for a Smart weather clock, a file like SDPro_V1.0.6.bin; for a GeekMagic Ultra, one like FW-Smalltv-Ultra-V9.0.50.bin from GeekMagic's GitHub (unzipped).",
+          )}{' '}
+          <a href={GEEKMAGIC_FIRMWARE} target="_blank" rel="noreferrer noopener">
+            {t("GeekMagic's firmware")}
+          </a>
         </p>
         <p className="muted small">
           {t("The hub checks the file is firmware for this screen before sending it. Keep the screen plugged in until it's back.")}

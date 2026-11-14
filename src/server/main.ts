@@ -169,10 +169,12 @@ async function main(): Promise<void> {
   });
   screens.load();
   if (config.screens.wifi === 'mock') {
-    // A pretend "Smart weather clock" on its stock firmware, ready to be set up.
-    const fake = new FakeScreen({ networks: { Brewery: 'hops-and-barley' } });
-    await fake.start();
-    fakes.push(fake);
+    // A pretend "Smart weather clock" and a pretend GeekMagic Ultra, on their stock firmware, ready to be set up.
+    for (const opts of [{}, { stockKind: 'geekmagic' as const, mac: '02:52:48:00:00:02' }]) {
+      const fake = new FakeScreen({ networks: { Brewery: 'hops-and-barley' }, ...opts });
+      await fake.start();
+      fakes.push(fake);
+    }
     // A pretend iSpindel in setup mode, ready to be set up from Add device; it then sends a reading a minute.
     const spindel = new FakeIspindel({ networks: { Brewery: 'hops-and-barley' }, postEveryMs: 60_000 });
     await spindel.start();

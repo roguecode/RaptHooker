@@ -1,12 +1,18 @@
-import { SCREEN_MODELS, type ScreenModel } from '@rapthooker/shared';
+import { SCREEN_MODELS, SCREEN_STOCKS, type ScreenModel } from '@rapthooker/shared';
 import { t, tk } from '../../i18n';
 import { Icon } from '../../components/Icon';
 
-/** How each model is set up, and what to know about it. */
+/** How each model is set up, and what to know about it: Wi-Fi screens by the firmware they come with. */
 const ABOUT: Record<string, { how: string; note: string }> = {
-  'sdpro-240': {
+  sdpro: {
     how: tk('Set up over its own Wi-Fi'),
-    note: tk('On the firmware it comes with ("SD Pro"): a new one opens a Wi-Fi network called "Smart weather clock".'),
+    note: tk('Unbranded, on the firmware it comes with ("SD Pro"): a new one opens a Wi-Fi network called "Smart weather clock".'),
+  },
+  geekmagic: {
+    how: tk('Set up over its own Wi-Fi'),
+    note: tk(
+      'The genuine one, on GeekMagic\'s own firmware: a new one opens a Wi-Fi network called "GIFTV". One already on your Wi-Fi can be set up from its address. Other GeekMagic models won\'t work.',
+    ),
   },
   'esp32-2432s028': {
     how: tk('Set up plugged into the hub (USB)'),
@@ -16,29 +22,50 @@ const ABOUT: Record<string, { how: string; note: string }> = {
   },
 };
 
-function ModelCard({ model }: { model: ScreenModel }) {
-  const about = ABOUT[model.id];
+function ModelCard({
+  model,
+  name,
+  about,
+  confirmed,
+}: {
+  model: ScreenModel;
+  name: string;
+  about?: string;
+  confirmed: ScreenModel['confirmed'];
+}) {
+  const a = about ? ABOUT[about] : undefined;
   return (
     <li className="supported-model">
       <div className="row supported-model-head">
         <Icon name="screen" />
         <div className="grow">
-          <strong>{model.name}</strong>
+          <strong>{name}</strong>
           <span className="small muted">
             <span className="num">
               {model.width} × {model.height}
             </span>
-            {about ? ` · ${t(about.how)}` : ''}
+            {a ? ` · ${t(a.how)}` : ''}
           </span>
         </div>
       </div>
-      {about && <p className="small">{t(about.note)}</p>}
-      {model.confirmed.map((l) => (
+      {a && <p className="small">{t(a.note)}</p>}
+      {confirmed.map((l) => (
         <a key={l.url} className="small supported-model-link" href={l.url} target="_blank" rel="noreferrer noopener nofollow">
           <Icon name="external" size={13} /> {t('Where a working one was bought ({site})', { site: l.site })}
         </a>
       ))}
     </li>
+  );
+}
+
+/** A card for each screen confirmed working: Wi-Fi ones by the firmware they come with, as that's how they're bought. */
+function confirmedCards() {
+  return SCREEN_MODELS.flatMap((m) =>
+    m.install === 'hotspot'
+      ? SCREEN_STOCKS.filter((s) => s.model === m.id && s.tested).map((s) => (
+          <ModelCard key={s.kind} model={m} name={s.name} about={s.kind} confirmed={s.confirmed} />
+        ))
+      : [<ModelCard key={m.id} model={m} name={m.name} about={m.id} confirmed={m.confirmed} />],
   );
 }
 
@@ -57,11 +84,7 @@ export function SupportedScreens() {
           <p>{t('These have been confirmed working. RaptHooker puts its own firmware on them and looks after them from here.')}</p>
         </div>
       </div>
-      <ul className="supported-models">
-        {SCREEN_MODELS.map((m) => (
-          <ModelCard key={m.id} model={m} />
-        ))}
-      </ul>
+      <ul className="supported-models">{confirmedCards()}</ul>
       <p className="small muted supported-disclaimer">
         <Icon name="info" size={13} />{' '}
         {t(
@@ -83,7 +106,7 @@ export function SupportedScreens() {
           <span className="chip danger">{t("Won't work")}</span>
           <span>
             {t(
-              'Other GeekMagic screens, and weather clocks on other firmware. RaptHooker checks a screen before changing anything, so trying one does no harm.',
+              'Other GeekMagic models (the Pro is an ESP32), and weather clocks on other firmware. RaptHooker checks a screen before changing anything, so trying one does no harm.',
             )}
           </span>
         </li>

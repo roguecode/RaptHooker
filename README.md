@@ -11,7 +11,7 @@ RaptHooker - A fully local dashboard for Kegland Rapt devices that runs on a Ras
 - Only requires a cheap Raspberry Pi with SD card and power, and a PC to install it for the first time
 - Anytime-calibration, even when the Pill is in a fermenter
 - TV/Kiosk mode for an always-on brewery screen, [image endpoint for simple screens](docs/screens.md),
-  [RaptHooker screens](docs/rapthooker-screens.md) (turn a Geekmagic Ultra/Smart weather clock or an ESP32-2432S028 board into a display for your pills), predictions, backups and exports, etc.
+  [RaptHooker screens](docs/rapthooker-screens.md) (turn a Smart weather clock or an ESP32-2432S028 board into a display for your pills), predictions, backups and exports, etc.
 
 (Click to play quick description video)
 
@@ -51,8 +51,10 @@ Press **Add device** on the dashboard to add any of them.
 RaptHooker can put its own firmware on these and use them as displays for your pills
 ([guide](docs/rapthooker-screens.md)):
 
-- **Geekmagic Ultra/Smart weather clock**, set up over its own Wi-Fi
+- **Smart weather clock** (unbranded, on "SD Pro" firmware), set up over its own Wi-Fi
   ([confirmed working](https://www.aliexpress.com/item/1005011924447121.html))
+- **GeekMagic Ultra** (the genuine one the Smart weather clock copies), set up over its own Wi-Fi or from its address
+  ([confirmed working](https://www.aliexpress.com/item/1005007542991850.html))
 - **ESP32-2432S028 2.8" ("Cheap Yellow Display")**, set up plugged into the Pi's USB
   ([confirmed working](https://www.aliexpress.com/item/1005010399042230.html))
 

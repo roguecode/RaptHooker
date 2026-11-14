@@ -14,6 +14,7 @@ import { makePill, makeScreen, renderWithHub, settle, toastTexts, type FakeReque
 import { ImageLinkButton } from '../../components/ImageLink';
 import { ScreensPage } from './ScreensPage';
 import { ScreenChips } from './ScreenCard';
+import { geekmagicScreen } from './BrowserSetup';
 
 const picture = () => new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), { headers: { 'Content-Type': 'image/jpeg' } });
 
@@ -130,6 +131,74 @@ describe('screens page', () => {
     expect(screen.queryByRole('heading', { name: 'Kitchen is set up' })).toBeNull();
   });
 
+  it('sets a GeekMagic Ultra up from its hotspot', async () => {
+    const giftv: WifiNetwork = {
+      ssid: 'GIFTV',
+      bssid: 'dd',
+      signal: 75,
+      channel: 1,
+      band: 2.4,
+      secure: false,
+      kind: 'geekmagic',
+      current: false,
+    };
+    const view = await renderWithHub(<ScreensPage />, {
+      routes: {
+        ...BASE,
+        'GET /api/screens/wifi': WIFI,
+        'POST /api/screens/wifi/scan': [...NETS, giftv],
+        'POST /api/screens/setup': () => progress({ hotspot: 'GIFTV' }),
+      },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add a screen' })[0]!);
+    const dialog = await screen.findByRole('dialog', { name: 'Add a screen' });
+    const row = (await within(dialog).findByText('GIFTV')).closest('li')!;
+    expect(row.className).toContain('likely');
+    expect(within(row).getByText(/GeekMagic Ultra, as it came/)).toBeTruthy();
+    // The Smart weather clock's row doesn't mention GeekMagic.
+    expect(
+      within(within(dialog).getByText('Smart weather clock').closest('li')!).getByText(/^Smart weather clock, as it came/),
+    ).toBeTruthy();
+    fireEvent.click(within(row).getByRole('button', { name: 'Set up' }));
+    expect(within(dialog).queryByText(/Untested/)).toBeNull();
+    expect(within(dialog).getByText(/RaptHooker puts its own firmware on the screen/)).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Set it up' }));
+    await settle();
+    expect(view.calls('POST /api/screens/setup')[0]!.body).toMatchObject({ hotspot: 'GIFTV', ssid: 'Brewery' });
+  });
+
+  it("sets a GeekMagic Ultra that's on the network up from its address", async () => {
+    const view = await renderWithHub(<ScreensPage />, {
+      routes: {
+        ...BASE,
+        'GET /api/screens/wifi': WIFI,
+        'POST /api/screens/wifi/scan': NETS,
+        'POST /api/screens/setup': () => progress({ hotspot: '192.168.1.77', step: 'identify', steps: [{ step: 'identify', at: 1 }] }),
+      },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add a screen' })[0]!);
+    const dialog = await screen.findByRole('dialog', { name: 'Add a screen' });
+    await within(dialog).findByText('Smart weather clock');
+    const byAddress = within(dialog).getByText('A GeekMagic Ultra already on your Wi-Fi?').closest('details')!;
+    fireEvent.click(within(byAddress).getByText('A GeekMagic Ultra already on your Wi-Fi?'));
+    const go = within(byAddress).getByRole('button', { name: 'Set up' }) as HTMLButtonElement;
+    const address = within(byAddress).getByRole('textbox', { name: "The screen's address" });
+    fireEvent.change(address, { target: { value: '192.168.1.77/update' } });
+    expect(go.disabled).toBe(true);
+    fireEvent.change(address, { target: { value: ' http://192.168.1.77/ ' } });
+    fireEvent.click(go);
+
+    expect(within(dialog).getByText('192.168.1.77')).toBeTruthy();
+    expect(within(dialog).getByText('A GeekMagic Ultra on your network')).toBeTruthy();
+    expect(within(dialog).queryByText(/Untested/)).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Set it up' }));
+    await settle();
+    expect(view.calls('POST /api/screens/setup')[0]!.body).toMatchObject({ hotspot: '', address: '192.168.1.77', ssid: 'Brewery' });
+    // There was no hotspot to join: that step isn't needed.
+    expect(step("Joining the screen's Wi-Fi").className).toBe('skipped');
+    expect(step('Checking the screen').getAttribute('aria-current')).toBe('step');
+  });
+
   it('picks a set-up back up when the hub comes back, and explains what went wrong', async () => {
     let now = progress({ step: 'wifi', steps: [...reached('hotspot'), { step: 'screen', at: 1 }, { step: 'wifi', at: 2 }] });
     const view = await renderWithHub(<ScreensPage />, {
@@ -206,6 +275,69 @@ describe('screens page', () => {
       ip: '192.168.1.50',
     });
   }, 15_000);
+
+  it('has the hub put RaptHooker on a GeekMagic Ultra on the network, then finishes on its hotspot', async () => {
+    const firmware = new Uint8Array(64).fill(0xff);
+    firmware[0] = 0xe9;
+    const fw = { model: 'sdpro-240', version: '1.0.0', size: firmware.length, md5: 'x' };
+    const view = await renderWithHub(<ScreensPage />, {
+      routes: {
+        ...BASE,
+        'GET /api/screens/wifi': { ...WIFI, canSetUp: false, reason: 'no-networkmanager', ssid: null, goesOffline: false },
+        'POST /api/screens/manual': { pending: 'p1', token: 't', hub: 'hub-1', imageBase: null, firmware: [fw] },
+        'GET /api/screens/firmware/*': () => new Response(firmware),
+        'POST /api/screens/install': { found: { model: 'SmallTV-Ultra', version: 'Ultra-V9.0.50' }, firmware: fw, confirmed: true },
+      },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add a screen' })[0]!);
+    const dialog = await screen.findByRole('dialog', { name: 'Add a screen' });
+    fireEvent.change(await within(dialog).findByRole('textbox', { name: 'Wi-Fi for the screen' }), { target: { value: 'Brewery' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
+    expect(await within(dialog).findByText(/"GIFTV" on a GeekMagic Ultra/)).toBeTruthy();
+    fireEvent.click(within(dialog).getByText('A GeekMagic Ultra already on your Wi-Fi?'));
+    fireEvent.change(within(dialog).getByRole('textbox', { name: "The screen's address" }), { target: { value: '192.168.1.77' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Install RaptHooker' }));
+    expect(
+      await within(dialog).findByText(/The screen is restarting with RaptHooker. When the network "RaptHooker-Screen-…" appears/),
+    ).toBeTruthy();
+    expect(view.calls('POST /api/screens/install')[0]!.body).toEqual({ address: '192.168.1.77' });
+  });
+
+  it("says when the hub couldn't put RaptHooker on what's at an address", async () => {
+    const firmware = new Uint8Array(64).fill(0xff);
+    firmware[0] = 0xe9;
+    await renderWithHub(<ScreensPage />, {
+      routes: {
+        ...BASE,
+        'GET /api/screens/wifi': { ...WIFI, canSetUp: false, reason: 'no-networkmanager', ssid: null, goesOffline: false },
+        'POST /api/screens/manual': {
+          pending: 'p1',
+          token: 't',
+          hub: 'hub-1',
+          imageBase: null,
+          firmware: [{ model: 'sdpro-240', version: '1.0.0', size: firmware.length, md5: 'x' }],
+        },
+        'GET /api/screens/firmware/*': () => new Response(firmware),
+        'POST /api/screens/install': () =>
+          new Response(JSON.stringify({ error: 'This is a GeekMagic SmallTV-Pro: RaptHooker only knows the SmallTV-Ultra' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+      },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add a screen' })[0]!);
+    const dialog = await screen.findByRole('dialog', { name: 'Add a screen' });
+    fireEvent.change(await within(dialog).findByRole('textbox', { name: 'Wi-Fi for the screen' }), { target: { value: 'Brewery' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
+    fireEvent.click(await within(dialog).findByText('A GeekMagic Ultra already on your Wi-Fi?'));
+    fireEvent.change(within(dialog).getByRole('textbox', { name: "The screen's address" }), { target: { value: '192.168.1.78' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Install RaptHooker' }));
+    expect(await within(dialog).findByText("Couldn't put RaptHooker on the screen")).toBeTruthy();
+    expect(within(dialog).getByText(/SmallTV-Pro/)).toBeTruthy();
+    // Back to joining the screen's Wi-Fi, or trying another address.
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Try again' }));
+    expect(within(dialog).getByRole('button', { name: "I've joined it" })).toBeTruthy();
+  });
 
   it('adds a screen found on the network with the code it shows', async () => {
     const found: FoundScreen = {
@@ -442,11 +574,15 @@ describe('screens page', () => {
     expect(scrolled).toEqual([panel]);
 
     expect(within(panel).getByText('Experimental')).toBeTruthy();
-    expect(within(panel).getByText('Geekmagic Ultra/Smart weather clock')).toBeTruthy();
+    // The unbranded Smart weather clock and the genuine GeekMagic Ultra it copies are listed apart.
+    expect(within(panel).getByText('Smart weather clock')).toBeTruthy();
+    expect(within(panel).getByText('GeekMagic Ultra')).toBeTruthy();
+    expect(within(panel).queryByText(/Geekmagic Ultra\/Smart weather clock/)).toBeNull();
     expect(within(panel).getByText('ESP32-2432S028 2.8" (Cheap Yellow Display)')).toBeTruthy();
     const links = within(panel).getAllByRole('link', { name: 'Where a working one was bought (AliExpress)' });
     expect(links.map((a) => a.getAttribute('href'))).toEqual([
       'https://www.aliexpress.com/item/1005011924447121.html',
+      'https://www.aliexpress.com/item/1005007542991850.html',
       'https://www.aliexpress.com/item/1005010399042230.html',
     ]);
     for (const a of links) {
@@ -454,7 +590,8 @@ describe('screens page', () => {
       expect(a.getAttribute('rel')).toContain('noopener');
     }
     expect(within(panel).getByText(/They aren't endorsements/)).toBeTruthy();
-    expect(within(panel).getByText('Might work')).toBeTruthy();
+    expect(within(panel).getAllByText('Might work')).toHaveLength(1);
+    expect(within(panel).queryByText(/GeekMagic Ultra.*untested/i)).toBeNull();
     expect(within(panel).getAllByText("Won't work")).toHaveLength(2);
     // The one-line list it replaces is gone.
     expect(screen.queryByText(/Supported Screens:/)).toBeNull();
@@ -496,5 +633,51 @@ describe('screens with the pills they show', () => {
       look: { theme: 'light', show: expect.any(Array) },
     });
     expect(toastTexts()).toContain('Kitchen shows this now');
+  });
+});
+
+describe("a GeekMagic's own firmware, seen from the browser", () => {
+  const stub = (answer: (init?: RequestInit) => Promise<Response>) => {
+    const real = globalThis.fetch;
+    globalThis.fetch = ((_url: string, init?: RequestInit) => answer(init)) as typeof fetch;
+    return () => (globalThis.fetch = real);
+  };
+
+  it('reads what model it is, when it lets the page', async () => {
+    const restore = stub(
+      async () => new Response('{"m": "SmallTV-Ultra","v":"Ultra-V9.0.50"}', { headers: { 'Content-Type': 'text/json' } }),
+    );
+    try {
+      expect(await geekmagicScreen()).toEqual({ model: 'SmallTV-Ultra' });
+    } finally {
+      restore();
+    }
+  });
+
+  it("says when something answers but won't say what (no CORS), and when nothing does", async () => {
+    // A cross-origin answer without CORS headers fails a normal fetch; one that doesn't read it ('no-cors') gets through.
+    let restore = stub(async (init) => {
+      if (init?.mode === 'no-cors') return new Response(null);
+      throw new TypeError('Failed to fetch');
+    });
+    try {
+      expect(await geekmagicScreen()).toBe('unreadable');
+    } finally {
+      restore();
+    }
+    restore = stub(async () => {
+      throw new TypeError('Failed to fetch');
+    });
+    try {
+      expect(await geekmagicScreen()).toBeNull();
+    } finally {
+      restore();
+    }
+    restore = stub(async () => new Response('<html>Smart Weather Clock</html>', { headers: { 'Content-Type': 'text/html' } }));
+    try {
+      expect(await geekmagicScreen()).toBeNull();
+    } finally {
+      restore();
+    }
   });
 });

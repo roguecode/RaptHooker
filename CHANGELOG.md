@@ -7,8 +7,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Support for genuine GeekMagic Ultra screens (untested). Set one up from its GIFTV hotspot, or by its IP address if
-  it's already on your Wi-Fi
+- Support for genuine GeekMagic Ultra screens. Set one up from its GIFTV hotspot, or by its IP address if it's already
+  on your Wi-Fi
 
 ### Changed
 

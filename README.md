@@ -52,8 +52,9 @@ RaptHooker can put its own firmware on these and use them as displays for your p
 ([guide](docs/rapthooker-screens.md)):
 
 - **Smart weather clock** (unbranded, on "SD Pro" firmware), set up over its own Wi-Fi
-  ([confirmed working](https://www.aliexpress.com/item/1005011924447121.html)). A genuine GeekMagic Ultra, which it
-  copies, should work too but is untested.
+  ([confirmed working](https://www.aliexpress.com/item/1005011924447121.html))
+- **GeekMagic Ultra** (the genuine one the Smart weather clock copies), set up over its own Wi-Fi or from its address
+  ([confirmed working](https://www.aliexpress.com/item/1005007542991850.html))
 - **ESP32-2432S028 2.8" ("Cheap Yellow Display")**, set up plugged into the Pi's USB
   ([confirmed working](https://www.aliexpress.com/item/1005010399042230.html))
 

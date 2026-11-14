@@ -146,8 +146,8 @@ export const SCREEN_STOCKS: readonly ScreenStock[] = [
     name: 'GeekMagic Ultra',
     model: 'sdpro-240',
     hotspot: 'GIFTV',
-    tested: false,
-    confirmed: [],
+    tested: true,
+    confirmed: [{ url: 'https://www.aliexpress.com/item/1005007542991850.html', site: 'AliExpress' }],
   },
 ];
 

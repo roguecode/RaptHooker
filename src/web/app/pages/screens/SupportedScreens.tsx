@@ -6,8 +6,12 @@ import { Icon } from '../../components/Icon';
 const ABOUT: Record<string, { how: string; note: string }> = {
   sdpro: {
     how: tk('Set up over its own Wi-Fi'),
+    note: tk('Unbranded, on the firmware it comes with ("SD Pro"): a new one opens a Wi-Fi network called "Smart weather clock".'),
+  },
+  geekmagic: {
+    how: tk('Set up over its own Wi-Fi'),
     note: tk(
-      'Unbranded, on the firmware it comes with ("SD Pro"): a new one opens a Wi-Fi network called "Smart weather clock". A genuine GeekMagic Ultra looks the same but has other firmware (see below).',
+      'The genuine one, on GeekMagic\'s own firmware: a new one opens a Wi-Fi network called "GIFTV". One already on your Wi-Fi can be set up from its address. Other GeekMagic models won\'t work.',
     ),
   },
   'esp32-2432s028': {
@@ -90,14 +94,6 @@ export function SupportedScreens() {
 
       <h3 className="subhead">{t('Other screens')}</h3>
       <ul className="small supported-others">
-        <li>
-          <span className="chip">{t('Might work')}</span>
-          <span>
-            {t(
-              "A genuine GeekMagic Ultra, on GeekMagic's own firmware (a new one opens a Wi-Fi network called \"GIFTV\"), is untested. It's the same hardware as the Smart weather clock, and RaptHooker checks it's an Ultra before changing anything. GeekMagic's firmware can go back on from the screen's details.",
-            )}
-          </span>
-        </li>
         <li>
           <span className="chip">{t('Might work')}</span>
           <span>

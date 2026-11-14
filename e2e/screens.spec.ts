@@ -50,7 +50,7 @@ test('a GeekMagic Ultra is set up from its own hotspot', async ({ page }) => {
   const hotspot = dialog.getByRole('listitem').filter({ hasText: 'GIFTV' });
   await expect(hotspot.getByText(/GeekMagic Ultra, as it came/)).toBeVisible();
   await hotspot.getByRole('button', { name: 'Set up' }).click();
-  await expect(dialog.getByText(/Untested: RaptHooker hasn't been tried on a genuine GeekMagic Ultra yet/)).toBeVisible();
+  await expect(dialog.getByText(/RaptHooker puts its own firmware on the screen/)).toBeVisible();
   await dialog.getByRole('textbox', { name: 'Name' }).fill('Lounge');
   await dialog.getByRole('button', { name: 'Set it up' }).click();
   await expect(dialog).toBeHidden();

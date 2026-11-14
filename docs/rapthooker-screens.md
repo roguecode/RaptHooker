@@ -18,22 +18,21 @@ reconnecting to Wi-Fi, it hasn't had a new picture for a while) the screen says 
 | Screen                                                    | Picture   | How the hub sets it up                         | Confirmed working                                                           |
 | --------------------------------------------------------- | --------- | ---------------------------------------------- | --------------------------------------------------------------------------- |
 | **Smart weather clock** (unbranded, on "SD Pro" firmware) | 240 × 240 | Over its own Wi-Fi, from its original firmware | [AliExpress listing](https://www.aliexpress.com/item/1005011924447121.html) |
+| **GeekMagic Ultra** (genuine, on GeekMagic's firmware)    | 240 × 240 | Over its own Wi-Fi, or from its address        | [AliExpress listing](https://www.aliexpress.com/item/1005007542991850.html) |
 | **ESP32-2432S028 2.8" ("Cheap Yellow Display")**          | 320 × 240 | Plugged into the hub's USB                     | [AliExpress listing](https://www.aliexpress.com/item/1005010399042230.html) |
 
 The listings only show where users bought a screen that then worked with RaptHooker. **They aren't endorsements**:
 RaptHooker has nothing to do with the sellers, and a listing can change what it sends, so check the model in its
 pictures before you buy.
 
-A genuine **GeekMagic Ultra** looks just like the Smart weather clock (which copies it), but comes with GeekMagic's own
-firmware. RaptHooker can set one up too, but it hasn't been tried on one yet: see below.
+The Smart weather clock copies the GeekMagic Ultra: the same hardware, which gets the same RaptHooker firmware, but
+other firmware out of the box. Before changing anything the hub checks a GeekMagic says it's an Ultra
+(`SmallTV-Ultra`). GeekMagic's firmware can go back on from
+[GeekMagic's GitHub](https://github.com/GeekMagicClock/smalltv-ultra) (see
+[Looking after a screen](#looking-after-a-screen)).
 
 ### Other screens
 
-- **Might work (untested):** a genuine **GeekMagic Ultra**, on GeekMagic's own firmware. A new one opens a Wi-Fi
-  network called **GIFTV** and shows `http://192.168.4.1`. It's the same hardware as the Smart weather clock and gets
-  the same firmware, through its own update page; the hub first checks it says it's an Ultra (`SmallTV-Ultra`).
-  GeekMagic's firmware can go back on from [GeekMagic's GitHub](https://github.com/GeekMagicClock/smalltv-ultra) (see
-  [Looking after a screen](#looking-after-a-screen)). If you try one, please say how it went in an issue.
 - **Might work (untested):** ESP32-2432S028 boards with two USB sockets (USB-C and micro USB). They usually have another
   display chip, which RaptHooker tries; check it with [Does the screen look right?](#does-the-screen-look-right) after
   setting one up.
@@ -49,7 +48,7 @@ firmware. RaptHooker can set one up too, but it hasn't been tried on one yet: se
 - One of the screens above:
   - a **Smart weather clock** on its original "SD Pro" firmware. When it's new it opens a Wi-Fi network called **Smart
     weather clock** (or **Smart weather clock Pro**) and shows set-up instructions with a QR code.
-  - or a **GeekMagic Ultra** on GeekMagic's own firmware (untested). When it's new it opens a Wi-Fi network called
+  - or a **GeekMagic Ultra** on GeekMagic's own firmware. When it's new it opens a Wi-Fi network called
     **GIFTV**; once it's on your Wi-Fi it shows its address instead, and only opens **GIFTV** for a minute after it
     starts.
   - an **ESP32-2432S028** board (sold as the "Cheap Yellow Display", with a 2.8" 320 × 240 touch screen), and a USB

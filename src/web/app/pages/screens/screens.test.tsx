@@ -131,7 +131,7 @@ describe('screens page', () => {
     expect(screen.queryByRole('heading', { name: 'Kitchen is set up' })).toBeNull();
   });
 
-  it("sets a GeekMagic Ultra up from its hotspot, saying it's untested", async () => {
+  it('sets a GeekMagic Ultra up from its hotspot', async () => {
     const giftv: WifiNetwork = {
       ssid: 'GIFTV',
       bssid: 'dd',
@@ -160,7 +160,7 @@ describe('screens page', () => {
       within(within(dialog).getByText('Smart weather clock').closest('li')!).getByText(/^Smart weather clock, as it came/),
     ).toBeTruthy();
     fireEvent.click(within(row).getByRole('button', { name: 'Set up' }));
-    expect(within(dialog).getByText(/Untested: RaptHooker hasn't been tried on a genuine GeekMagic Ultra yet/)).toBeTruthy();
+    expect(within(dialog).queryByText(/Untested/)).toBeNull();
     expect(within(dialog).getByText(/RaptHooker puts its own firmware on the screen/)).toBeTruthy();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Set it up' }));
     await settle();
@@ -190,7 +190,7 @@ describe('screens page', () => {
 
     expect(within(dialog).getByText('192.168.1.77')).toBeTruthy();
     expect(within(dialog).getByText('A GeekMagic Ultra on your network')).toBeTruthy();
-    expect(within(dialog).getByText(/Untested/)).toBeTruthy();
+    expect(within(dialog).queryByText(/Untested/)).toBeNull();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Set it up' }));
     await settle();
     expect(view.calls('POST /api/screens/setup')[0]!.body).toMatchObject({ hotspot: '', address: '192.168.1.77', ssid: 'Brewery' });
@@ -574,13 +574,15 @@ describe('screens page', () => {
     expect(scrolled).toEqual([panel]);
 
     expect(within(panel).getByText('Experimental')).toBeTruthy();
-    // Confirmed: the unbranded Smart weather clock, not a genuine GeekMagic Ultra (which looks the same).
+    // The unbranded Smart weather clock and the genuine GeekMagic Ultra it copies are listed apart.
     expect(within(panel).getByText('Smart weather clock')).toBeTruthy();
+    expect(within(panel).getByText('GeekMagic Ultra')).toBeTruthy();
     expect(within(panel).queryByText(/Geekmagic Ultra\/Smart weather clock/)).toBeNull();
     expect(within(panel).getByText('ESP32-2432S028 2.8" (Cheap Yellow Display)')).toBeTruthy();
     const links = within(panel).getAllByRole('link', { name: 'Where a working one was bought (AliExpress)' });
     expect(links.map((a) => a.getAttribute('href'))).toEqual([
       'https://www.aliexpress.com/item/1005011924447121.html',
+      'https://www.aliexpress.com/item/1005007542991850.html',
       'https://www.aliexpress.com/item/1005010399042230.html',
     ]);
     for (const a of links) {
@@ -588,8 +590,8 @@ describe('screens page', () => {
       expect(a.getAttribute('rel')).toContain('noopener');
     }
     expect(within(panel).getByText(/They aren't endorsements/)).toBeTruthy();
-    expect(within(panel).getAllByText('Might work')).toHaveLength(2);
-    expect(within(panel).getByText(/A genuine GeekMagic Ultra, on GeekMagic's own firmware .* is untested/)).toBeTruthy();
+    expect(within(panel).getAllByText('Might work')).toHaveLength(1);
+    expect(within(panel).queryByText(/GeekMagic Ultra.*untested/i)).toBeNull();
     expect(within(panel).getAllByText("Won't work")).toHaveLength(2);
     // The one-line list it replaces is gone.
     expect(screen.queryByText(/Supported Screens:/)).toBeNull();

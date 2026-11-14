@@ -175,7 +175,7 @@ copies it into place for about 5 seconds, when it mustn't lose power.
 
 The Smart weather clock copies the GeekMagic Ultra, which has the same hardware and gets the same `sdpro-240` image, but
 GeekMagic's own firmware (V9.0.x, published at [GeekMagicClock/smalltv-ultra](https://github.com/GeekMagicClock/smalltv-ultra))
-differs. Untested on a real one; this is from its image (V9.0.50):
+differs. Confirmed working on a real one; the details below are from its image (V9.0.50):
 
 - Its hotspot is `GIFTV` (open), at 192.168.4.1. Once it has joined a network it only opens it for a minute after it
   starts, and shows its address on the screen instead.

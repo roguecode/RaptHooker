@@ -537,7 +537,6 @@ function SetupForm({
   };
   const stock =
     target.kind === 'address' || (target.kind === 'hotspot' && (target.net.kind === 'sdpro' || target.net.kind === 'geekmagic'));
-  const geekmagic = target.kind === 'address' || (target.kind === 'hotspot' && target.net.kind === 'geekmagic');
 
   return (
     <form
@@ -651,16 +650,6 @@ function SetupForm({
           <p>
             {t(
               "RaptHooker puts its own firmware on the screen in place of the one it came with. Keep the screen plugged in until it's done. You can put the original back later from the screen's details.",
-            )}
-          </p>
-        </div>
-      )}
-      {geekmagic && (
-        <div className="notice warning">
-          <Icon name="alert" />
-          <p>
-            {t(
-              "Untested: RaptHooker hasn't been tried on a genuine GeekMagic Ultra yet. It's the same hardware as the Smart weather clock, and the hub checks it's an Ultra before changing anything.",
             )}
           </p>
         </div>

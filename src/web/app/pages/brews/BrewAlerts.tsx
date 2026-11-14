@@ -43,6 +43,8 @@ export function BrewAlertsSection({ brew, onChanged }: { brew: Brew; onChanged?:
   useEffect(load, [load]);
   useLiveMessages((m) => {
     if (m.type === 'alert' && m.event.pillId === brew.pillId) load();
+    // Whether one is still waiting for the gravity changes with the readings.
+    else if (m.type === 'reading' && m.pillId === brew.pillId && alerts?.some((a) => a.waitingForGravity != null)) load();
   });
   useEffect(() => {
     if (editing) channelApi.list().then(setChannels, () => undefined);
@@ -115,7 +117,11 @@ export function BrewAlertsSection({ brew, onChanged }: { brew: Brew; onChanged?:
                     ? t('Went off {time}', { time: timeAgo(a.lastFiredAt, now) })
                     : running
                       ? a.enabled
-                        ? t('Watching')
+                        ? a.waitingForGravity != null
+                          ? t('Waiting for the gravity to reach {gravity}, 2 points below where the pill started', {
+                              gravity: u.gravityText(a.waitingForGravity),
+                            })
+                          : t('Watching')
                         : t('Switched off')
                       : t("Didn't go off")}
                 </p>

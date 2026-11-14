@@ -28,11 +28,15 @@ gravity is dropping, so a velocity of −12 /day is 12 points (0.012) a day, and
 "Fermentation slows" at 10 tells you fermentation is nearing its end, so you can plan the next step. A gravity that
 isn't dropping at all, or is rising, counts as slower than any threshold. Right after pitching the gravity isn't
 dropping yet either, but a velocity can still say it is: a tenth of a point in an hour is 2.4 points a day, and the
-velocity can include readings from before the brew. So while a brew is running, both wait until the gravity has dropped
-2 points from where the brew started, and a "Fermentation speeds up" that went off before then clears while the gravity
-is within a point of the start. Either velocity is a trend over hours, so these alerts follow a change a little late,
-and a small threshold (a few points a day) can be set off by the pill's normal drift. To be told when fermentation gets
-going, use **Fermentation starts** rather than a small "Fermentation speeds up".
+velocity can include readings from before the brew. So while a brew is running, both wait until the gravity is 2 points
+below where the pill started (what it read in its first hours in the wort, as for **Fermentation starts**), and a
+"Fermentation speeds up" that went off before then clears while the gravity is within a point of the start. While one
+waits, the brew's page and the Alerts page say which gravity it's waiting for. If the velocity is already past the
+threshold when the wait ends, it goes off straight away, at whatever speed the gravity is dropping by then (3.2 points a
+day for one set at 0.1, say), and the notification says it waited. Either velocity is a trend over hours, so these
+alerts follow a change a little late, and a small threshold (a few points a day) can be set off by the pill's normal
+drift. To be told when fermentation gets going, use **Fermentation starts** rather than a small "Fermentation speeds
+up".
 
 ### Steps in a brew
 

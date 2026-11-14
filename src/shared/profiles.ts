@@ -1,8 +1,15 @@
 import type { Brew, BrewAlert, BrewAlertInput, BrewEventInput, BrewProfileInput, ProfileEvent } from './types.js';
 
 /** A brew alert as a profile keeps it: what it watches for, without what's worked out while it runs. */
-export const alertInputOf = ({ id: _id, brewId: _b, createdAt: _c, active: _a, lastFiredAt: _l, ...input }: BrewAlert): BrewAlertInput =>
-  input;
+export const alertInputOf = ({
+  id: _id,
+  brewId: _b,
+  createdAt: _c,
+  active: _a,
+  lastFiredAt: _l,
+  waitingForGravity: _w,
+  ...input
+}: BrewAlert): BrewAlertInput => input;
 
 /**
  * A profile from a brew: its own alerts, and its events timed from its start (events from before the start, and notes

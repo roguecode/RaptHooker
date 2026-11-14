@@ -6,7 +6,7 @@ import { t } from '../../i18n';
 import { Icon } from '../../components/Icon';
 import { PanelFix } from './PanelFix';
 import { ScreenThumb } from './ScreenCard';
-import { SETUP_ERRORS, STEP_LABELS, USB_REASONS } from './strings';
+import { SETUP_ERRORS, STEP_LABELS, USB_INSTALL_DOCS, USB_REASONS } from './strings';
 
 type Mark = 'done' | 'on' | 'failed' | 'skipped' | 'todo';
 
@@ -107,6 +107,13 @@ export function SetupPanel({
             </p>
             {progress.detail && progress.detail !== 'claimed' && !(progress.error === 'no-usb' && USB_REASONS[progress.detail]) && (
               <p className="small">{progress.detail}</p>
+            )}
+            {progress.error === 'no-store' && (
+              <p className="small">
+                <a href={USB_INSTALL_DOCS} target="_blank" rel="noreferrer">
+                  {t('How to install it over USB')}
+                </a>
+              </p>
             )}
           </div>
         </div>

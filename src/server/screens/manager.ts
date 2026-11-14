@@ -778,6 +778,7 @@ export class ScreenManager extends EventEmitter {
     const info = await client.info().catch((err: Error) => {
       throw new ScreenError(`The screen didn't answer: ${err.message}`, 502);
     });
+    if (info.system.store === false) throw new ScreenError('no-store', 409);
     if (!code) {
       await client.showCode().catch((err: Error) => {
         throw new ScreenError(`The screen didn't answer: ${err.message}`, 502);

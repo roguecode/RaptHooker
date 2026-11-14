@@ -246,6 +246,8 @@ export type ScreenSetupError =
   | 'network-not-found'
   | 'no-address'
   | 'wifi-failed'
+  /** An ESP32 board without RaptHooker's flash layout: it can't keep its settings. */
+  | 'no-store'
   | 'not-found'
   | 'no-password'
   | 'no-usb'

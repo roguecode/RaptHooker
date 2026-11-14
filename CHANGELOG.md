@@ -14,6 +14,13 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 - The confirmed Wi-Fi screen is now listed as "Smart weather clock" rather than "Geekmagic Ultra/Smart weather clock"
 
+### Fixed
+
+- Setting up an ESP32 screen whose RaptHooker firmware went on some other way than over USB (as an update over
+  ESPHome, say) now stops straight away and says it can't keep its settings, instead of timing out as if it couldn't
+  join the Wi-Fi. [docs/rapthooker-screens.md](docs/rapthooker-screens.md#an-esp32-board-from-a-computer) has how to
+  put RaptHooker on a board from a computer, for hubs that can't use USB (in Docker, say)
+
 ## [0.11.0] - 2026-11-09
 
 ### Added

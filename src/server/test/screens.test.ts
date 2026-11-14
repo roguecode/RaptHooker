@@ -128,6 +128,7 @@ async function world(
     stockKind?: FakeScreenOptions['stockKind'];
     geekmagicModel?: string;
     stockOnNetwork?: boolean;
+    noStore?: boolean;
   } = {},
 ) {
   const t = tempStore();
@@ -141,6 +142,7 @@ async function world(
     stockKind: opts.stockKind,
     geekmagicModel: opts.geekmagicModel,
     stockOnNetwork: opts.stockOnNetwork,
+    noStore: opts.noStore,
   });
   await fake.start();
   const fakes = [fake];
@@ -310,6 +312,25 @@ describe('setting a screen up', () => {
     screens.startSetup({ ...input, hotspot: 'RaptHooker-Screen-000001' });
     expect(await done).toMatchObject({ state: 'failed', error: 'not-supported', hubBack: true });
     expect(wifi.current).toBe('Brewery');
+  });
+
+  it("says a board can't keep its settings before giving it any, even one a set-up it couldn't save left claimed", async () => {
+    // RaptHooker put on an ESP32 board as an update over ESPHome: no flash layout of its own.
+    const { fake, wifi, screens } = await world({ stock: false, noStore: true });
+    const hotspot = { ...input, hotspot: 'RaptHooker-Screen-000001', password: 'hops-and-barley' };
+    let done = finished(screens);
+    screens.startSetup(hotspot);
+    expect(await done).toMatchObject({ state: 'failed', error: 'no-store', step: 'screen', hubBack: true });
+    expect(fake.events.filter((e) => e.startsWith('setup'))).toEqual([]);
+    expect(fake.settings.token).toBe('');
+    expect(wifi.current).toBe('Brewery');
+    expect(screens.list()).toEqual([]);
+
+    // A set-up from a browser joined it to the network, but couldn't save: it holds the key until it restarts.
+    fake.settings = { ...fake.settings, token: 'a-key-it-could-not-keep', hub: screens.hubId() };
+    done = finished(screens);
+    screens.startSetup(hotspot);
+    expect(await done).toMatchObject({ state: 'failed', error: 'no-store', step: 'screen' });
   });
 
   it('brings a screen on older firmware up to date first', async () => {
@@ -586,6 +607,16 @@ describe('looking after screens', () => {
     expect(screen).toMatchObject({ id: fake.id, name: 'Garage' });
     expect(fake.settings.token).not.toBe('someone-elses-key-0123456789');
     expect(screens.found()).toEqual([]);
+  });
+
+  it("won't add a board found on the network that can't keep its settings", async () => {
+    const { fake, screens } = await setUp();
+    await screens.remove(fake.id, false);
+    fake.noStore = true;
+    await screens.discover();
+    await expect(screens.adopt(fake.id, undefined, undefined)).rejects.toMatchObject({ message: 'no-store', statusCode: 409 });
+    expect(fake.pairingCode).toBeNull();
+    expect(screens.list()).toEqual([]);
   });
 
   it('forgets a screen, resetting it if asked', async () => {

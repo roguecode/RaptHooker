@@ -4857,6 +4857,12 @@
       "pages/screens/AddScreen.tsx"
     ]
   },
+  "How to install it over USB": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx",
+      "pages/screens/SetupPanel.tsx"
+    ]
+  },
   "How to set it up": {
     "files": [
       "pages/devices/IspindelTab.tsx"
@@ -10510,6 +10516,11 @@
   "They've been tested with a few screens only, and how screens work may still change.": {
     "files": [
       "pages/screens/ScreensPage.tsx"
+    ]
+  },
+  "This board can't keep its settings: RaptHooker's firmware went on it without the flash layout it needs (as an update over ESPHome, say). Install it again over USB, plugged into the hub or a computer.": {
+    "files": [
+      "pages/screens/strings.ts"
     ]
   },
   "This board is {name}. Setting it up again rewrites its firmware and Wi-Fi details; it keeps what it shows and its display corrections.": {

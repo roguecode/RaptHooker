@@ -140,6 +140,10 @@ the app, or through Tailscale. Tokens can't do it. Owner-only extras for webhook
 | `POST /api/webhooks/:id/duplicate`                  | A switched-off copy                                                                                        |
 | `GET`, `POST /api/tokens`, `DELETE /api/tokens/:id` | List, create (`{ "name": "Grafana", "scope": "read" }`, the response has the token once) and delete tokens |
 
+Each rule from `/api/alerts/rules` has `active` (the pills it's going off for) and `waitingForGravity`: for a velocity
+rule at the start of a brew, by pill id, the gravity it waits for before it can go off (see
+[Alerts](./alerts.md#kinds-of-alert)).
+
 An alert that goes off waits to be [acknowledged](./alerts.md#alerts-to-acknowledge) (`ackedAt` is `null`), until the
 owner acknowledges it, its brew ends or is deleted, or its device is removed. The live updates send `alert-acks`
 (`{ "ids": [...], "at": <ms> }`) for those acknowledged, whichever way.

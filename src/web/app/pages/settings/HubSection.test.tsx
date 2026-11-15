@@ -4,13 +4,17 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { DEFAULT_HUB_SETTINGS, type HubSettings } from '@rapthooker/shared';
 import { makeBle, renderWithHub, toastTexts, type FakeRequest } from '../../test/render';
 import { setThemePref } from '../../theme';
+import { PAGE_WIDTH_KEY, setPageWidth } from '../../pageWidth';
 import { HubSection } from './HubSection';
 
 const saved = (req: FakeRequest) => req.body as HubSettings;
 const nameInput = () => screen.getByLabelText(/^Hub name/) as HTMLInputElement;
 const save = () => screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
 
-afterEach(() => setThemePref('auto'));
+afterEach(() => {
+  setThemePref('auto');
+  setPageWidth('standard');
+});
 
 describe('Settings: Hub', () => {
   it('lets the owner rename the hub and change its default units', async () => {
@@ -120,5 +124,20 @@ describe('Settings: Hub', () => {
 
     fireEvent.click(within(screen.getByRole('group', { name: 'Theme' })).getByRole('button', { name: 'Light' }));
     expect(document.documentElement.dataset.theme).toBe('light');
+  });
+
+  it('widens the pages in this browser, for a big screen', async () => {
+    await renderWithHub(<HubSection />, { session: { role: 'viewer', via: 'lan' } });
+    const width = within(screen.getByRole('group', { name: 'Page width' }));
+    expect(width.getByRole('button', { name: 'Standard' }).getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(width.getByRole('button', { name: 'Full' }));
+    expect(width.getByRole('button', { name: 'Full' }).getAttribute('aria-pressed')).toBe('true');
+    expect(document.documentElement.dataset.width).toBe('full');
+    expect(localStorage.getItem(PAGE_WIDTH_KEY)).toBe('full');
+
+    fireEvent.click(width.getByRole('button', { name: 'Standard' }));
+    expect(document.documentElement.dataset.width).toBe('standard');
+    expect(localStorage.getItem(PAGE_WIDTH_KEY)).toBeNull();
   });
 });

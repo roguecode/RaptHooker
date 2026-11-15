@@ -477,7 +477,8 @@ export interface RenderedRequest {
 
 /**
  * `velocity_slow` and `velocity_fast` compare how fast the gravity is dropping (points per day, so the reading's
- * velocity with its sign turned round: 12 while the velocity is −12) with the threshold.
+ * velocity with its sign turned round: 12 while the velocity is −12) with the threshold. In a running brew they wait
+ * until the gravity is 2 points below where the pill started it.
  *
  * `fermentation_started`, `attenuation_reached` and `brew_day` are steps in a brew: they only watch a running brew and
  * go off once in it (see ONCE_PER_BREW).
@@ -529,6 +530,11 @@ export interface BrewAlert extends BrewAlertInput {
   active: boolean;
   /** When it last went off (and notified), or null. */
   lastFiredAt: number | null;
+  /**
+   * The gravity a velocity alert is waiting for before it can go off (2 points below where the pill started the brew),
+   * or null when it isn't waiting. Worked out while it runs, never saved.
+   */
+  waitingForGravity: number | null;
 }
 
 /** A planned event in a brew profile, timed from the brew's start. */
@@ -583,6 +589,11 @@ export interface AlertRule extends AlertRuleInput {
   createdAt: number;
   /** Pills the rule is currently firing for. */
   active: string[];
+  /**
+   * Pills a velocity rule is waiting on before it can go off for them, by id: the gravity each has to reach first (2
+   * points below where it started its brew). Worked out while it runs, never saved.
+   */
+  waitingForGravity: Record<string, number>;
 }
 
 export interface AlertEvent {

@@ -70,8 +70,15 @@ export function RuleExample({ rule, threshold, plato }: { rule: AlertRuleInput; 
         ? t('It clears once the gravity drops by more than {amount} a day.', { amount: sg(velocityClearsAt('velocity_slow', threshold)) })
         : t('It clears once the gravity drops by less than {amount} a day.', { amount: sg(velocityClearsAt('velocity_fast', threshold)) }),
       t(
-        "While a brew is running, it waits until the gravity has dropped 0.002 from the OG, so it doesn't go off before fermentation starts.",
+        "While a brew is running, it waits until the gravity is 0.002 below where the pill started (what it read in its first hours in the wort, not a typed OG), so it doesn't go off before fermentation starts.",
       ),
+      kind === 'velocity_slow'
+        ? t(
+            "If the gravity is already dropping slower than this when the wait ends, it goes off straight away and says how fast it's dropping then.",
+          )
+        : t(
+            "If the gravity is already dropping faster than this when the wait ends, it goes off straight away and says how fast it's dropping then.",
+          ),
     );
   else if (once) {
     if (kind === 'fermentation_started')

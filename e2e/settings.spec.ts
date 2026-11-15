@@ -33,6 +33,31 @@ test('the hub gets a name, and this browser a theme, colours and a language', as
   await expect(page.locator('html')).toHaveAttribute('lang', 'de');
 });
 
+test('a big screen can use its full width, with bigger charts', async ({ page, request }) => {
+  test.skip(test.info().project.name === 'phone', "A phone's pages are as wide as its screen");
+  const pill = await ensurePill(request, SIMULATED.water, 'Water test');
+  await page.setViewportSize({ width: 2560, height: 1200 });
+  await page.goto(`/#/pill/${pill.id}`);
+  const main = page.locator('main');
+  const chart = page.locator('.uplot canvas').first();
+  await expect(chart).toBeVisible();
+  // Standard unless this browser picks otherwise.
+  await expect(page.locator('html')).toHaveAttribute('data-width', 'standard');
+  expect((await main.boundingBox())!.width).toBeLessThan(1400);
+  expect((await chart.boundingBox())!.height).toBe(360);
+
+  await page.getByRole('button', { name: 'Display options' }).click();
+  const options = page.getByRole('group', { name: 'Display options' });
+  await options.getByRole('group', { name: 'Page width' }).getByRole('button', { name: 'Full' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-width', 'full');
+  await expect.poll(async () => (await main.boundingBox())!.width).toBe(2560);
+  await expect.poll(async () => (await chart.boundingBox())!.height).toBeGreaterThan(600);
+
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-width', 'full');
+  await expect.poll(async () => (await chart.boundingBox())?.height ?? 0).toBeGreaterThan(600);
+});
+
 test("the hub's Bluetooth is switched off and back on", async ({ page, request }) => {
   try {
     await page.goto('/#/settings');

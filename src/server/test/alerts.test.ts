@@ -386,12 +386,13 @@ describe('velocity alerts', () => {
     t.alerts.create(rule({ name: 'Slow', kind: 'velocity_slow', threshold: 2 }));
     t.alerts.create(rule({ name: 'Fast', kind: 'velocity_fast', threshold: 0.2 }));
     expect(t.alerts.events(10)).toEqual([]);
-    // Once the gravity has dropped two points from the OG, it counts.
+    // Once the gravity has dropped two points from the OG, it counts, and they say they waited for that.
     current.gravity = 1.0479;
     t.alerts.evaluatePill('p1');
+    const waited = "This alert waited until the gravity was 2 points below the brew's OG (1.0500); it's at 1.0479 now";
     expect(t.alerts.events(10).map((e) => [e.ruleName, e.message])).toEqual([
-      ['Fast', "Kveik's gravity is dropping 0.3 points a day, faster than 0.2 points a day"],
-      ['Slow', "Kveik's gravity is dropping 0.3 points a day, slower than 2.0 points a day"],
+      ['Fast', `Kveik's gravity is dropping 0.3 points a day, faster than 0.2 points a day. ${waited}`],
+      ['Slow', `Kveik's gravity is dropping 0.3 points a day, slower than 2.0 points a day. ${waited}`],
     ]);
   });
 
@@ -424,14 +425,15 @@ describe('velocity alerts', () => {
     current.gravity = 1.0485;
     t.alerts.evaluatePill('p1');
     expect(t.alerts.list()[0]!.active).toEqual(['p1']);
+    const waited = "This alert waited until the gravity was 2 points below the brew's OG (1.0500); it's at 1.0475 now";
     expect(t.alerts.events(10).map((e) => [e.kind, e.message])).toEqual([
-      ['fired', "Kveik's gravity is dropping 12.0 points a day, faster than 2.0 points a day"],
+      ['fired', `Kveik's gravity is dropping 12.0 points a day, faster than 2.0 points a day. ${waited}`],
       ['resolved', "Back to normal: Kveik is at 1.0500, near the brew's OG of 1.0500"],
       ['fired', "Kveik's gravity is dropping 2.3 points a day, faster than 2.0 points a day"],
     ]);
     expect(t.sent).toEqual([
       "Kveik's gravity is dropping 2.3 points a day, faster than 2.0 points a day",
-      "Kveik's gravity is dropping 12.0 points a day, faster than 2.0 points a day",
+      `Kveik's gravity is dropping 12.0 points a day, faster than 2.0 points a day. ${waited}`,
     ]);
   });
 
@@ -439,6 +441,65 @@ describe('velocity alerts', () => {
     const t = setup({ gravity: 1.05, velocity: -0.3 }, { brew: () => brew(null) });
     t.alerts.create(rule({ kind: 'velocity_slow', threshold: 2 }));
     expect(t.alerts.events(10)).toHaveLength(1);
+    expect(t.alerts.list()[0]!.waitingForGravity).toEqual({});
+  });
+
+  it('says which gravity it waits for at the start of a brew, and why it then goes off at a velocity well past its threshold', () => {
+    // The pill started at 1.0447, and the gravity was dropping faster than 0.1 a day long before it was 2 points down.
+    const current: Partial<Reading> = { gravity: 1.0434, velocity: null };
+    const running = { id: 'b1', pillId: 'p1', startedAt: 0, endedAt: null, stats: { og: 1.05, startGravity: 1.0447 } } as unknown as Brew;
+    const t = setup(current, { brew: () => running });
+    const input = rule({ name: 'Started', kind: 'velocity_fast', threshold: 0.1, onlyDuringBrew: true });
+    const made = t.alerts.create(input);
+    // Before there's a velocity, it says what it waits for.
+    expect(made.waitingForGravity).toEqual({ p1: 1.0427 });
+    current.velocity = -2.2;
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.events(10)).toEqual([]);
+    expect(t.alerts.list()[0]!.waitingForGravity).toEqual({ p1: 1.0427 });
+    // Exactly 2 points down is far enough.
+    Object.assign(current, { gravity: 1.0427, velocity: -3.2 });
+    t.alerts.evaluatePill('p1');
+    expect(t.alerts.list()[0]).toMatchObject({ active: ['p1'], waitingForGravity: {} });
+    expect(t.sent).toEqual([
+      "Kveik's gravity is dropping 3.2 points a day, faster than 0.1 points a day. This alert waited until the gravity was 2 points below where the pill started (1.0447); it's at 1.0427 now",
+    ]);
+    // Only when it goes off as the wait ends.
+    current.velocity = -0.02;
+    t.alerts.evaluatePill('p1');
+    t.at(120);
+    current.velocity = -3;
+    t.alerts.evaluatePill('p1');
+    expect(t.sent.slice(1)).toEqual(["Kveik's gravity is dropping 3.0 points a day, faster than 0.1 points a day"]);
+    // What it waits for is never saved with the rule.
+    t.alerts.update(made.id, { ...input, cooldownMin: 30 });
+    expect(t.store.listAlertRuleRows()[0]!.json).not.toContain('waitingForGravity');
+  });
+
+  it("says so on a brew's own alert, and stops waiting when the brew ends", () => {
+    let running: Brew | null = {
+      id: 'b1',
+      pillId: 'p1',
+      startedAt: 0,
+      endedAt: null,
+      stats: { og: 1.05, startGravity: 1.05 },
+    } as unknown as Brew;
+    const t = setup({ gravity: 1.0495, velocity: -0.4 }, { brew: () => running });
+    const a = t.alerts.createBrewAlert('b1', {
+      name: 'Slowing',
+      enabled: true,
+      kind: 'velocity_slow',
+      threshold: 1,
+      hours: 48,
+      cooldownMin: 60,
+      channelIds: 'all',
+    });
+    expect(a.waitingForGravity).toBe(1.048);
+    expect(t.store.listBrewAlertRows()[0]!.json).not.toContain('waitingForGravity');
+    running = null;
+    t.alerts.evaluateAll();
+    expect(t.alerts.listBrewAlerts('b1')[0]!.waitingForGravity).toBeNull();
+    expect(t.alerts.events(10)).toEqual([]);
   });
 });
 

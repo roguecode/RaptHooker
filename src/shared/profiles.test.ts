@@ -21,6 +21,8 @@ const alert: BrewAlert = {
   createdAt: 1,
   active: true,
   lastFiredAt: 2,
+  // Worked out while it runs: not for a profile.
+  waitingForGravity: 1.0427,
   name: 'Started',
   enabled: true,
   kind: 'fermentation_started',

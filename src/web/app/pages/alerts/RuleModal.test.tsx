@@ -126,7 +126,12 @@ describe('alert rule editor', () => {
     fireEvent.change(threshold, { target: { value: '0.5' } });
     expect(example()).toContain("Alerts when the gravity drops by less than 0.0005 in a day (that's 1.0500 to 1.0495).");
     expect(example()).toContain('It clears once the gravity drops by more than 0.00075 a day.');
-    expect(example()).toContain('it waits until the gravity has dropped 0.002 from the OG');
+    expect(example()).toContain(
+      'it waits until the gravity is 0.002 below where the pill started (what it read in its first hours in the wort, not a typed OG)',
+    );
+    expect(example()).toContain(
+      "If the gravity is already dropping slower than this when the wait ends, it goes off straight away and says how fast it's dropping then.",
+    );
     expect(example()).toContain("It notifies you at most once every 60 minutes (Don't repeat for).");
     expect(example()).not.toContain('°P');
 
@@ -136,7 +141,8 @@ describe('alert rule editor', () => {
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'velocity_fast' } });
     expect(example()).toContain("Alerts when the gravity drops by more than 0.010 in a day (that's 1.050 to 1.040).");
     expect(example()).toContain('It clears once the gravity drops by less than 0.009 a day.');
-    expect(example()).toContain('it waits until the gravity has dropped 0.002 from the OG');
+    expect(example()).toContain('it waits until the gravity is 0.002 below where the pill started');
+    expect(example()).toContain('If the gravity is already dropping faster than this when the wait ends, it goes off straight away');
   });
 
   it('wants a velocity threshold as the points it drops, not the velocity', async () => {

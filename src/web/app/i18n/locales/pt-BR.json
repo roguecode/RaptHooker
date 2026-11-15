@@ -2463,5 +2463,11 @@
   "Waiting for {pill} to reach {gravity}, 2 points below where it started its brew": "Esperando {pill} chegar a {gravity}, 2 pontos abaixo de onde começou o lote",
   "While a brew is running, it waits until the gravity is 0.002 below where the pill started (what it read in its first hours in the wort, not a typed OG), so it doesn't go off before fermentation starts.": "Enquanto um lote estiver em andamento, ele espera a densidade ficar 0,002 abaixo de onde o Pill começou (o que ele leu nas primeiras horas no mosto, não uma OG digitada), para não disparar antes de a fermentação começar.",
   "If the gravity is already dropping slower than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Se a densidade já estiver caindo mais devagar do que isso quando a espera terminar, ele dispara na hora e diz a que velocidade ela está caindo nesse momento.",
-  "If the gravity is already dropping faster than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Se a densidade já estiver caindo mais rápido do que isso quando a espera terminar, ele dispara na hora e diz a que velocidade ela está caindo nesse momento."
+  "If the gravity is already dropping faster than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Se a densidade já estiver caindo mais rápido do que isso quando a espera terminar, ele dispara na hora e diz a que velocidade ela está caindo nesse momento.",
+  "Page width": "Largura da página",
+  "Page width in this browser": "Largura da página neste navegador",
+  "page width::Standard": "Padrão",
+  "page width::Wide": "Larga",
+  "page width::Full": "Total",
+  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Larga e Total aproveitam melhor uma tela grande ou ultrawide, com gráficos maiores."
 }

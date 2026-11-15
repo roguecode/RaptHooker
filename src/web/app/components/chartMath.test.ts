@@ -12,6 +12,7 @@ import {
   panWindow,
   pinchWindow,
   placeTip,
+  plotHeight,
   pngFileName,
   pngLayout,
   presetRange,
@@ -431,5 +432,29 @@ describe('axis ticks', () => {
     expect(axisIncrs(1).slice(0, 5)).toEqual([0.1, 0.2, 0.5, 1, 2]);
     expect(axisIncrs(0).slice(0, 4)).toEqual([1, 2, 5, 10]);
     for (const d of [0, 1, 2, 3, 4, 6]) for (const step of axisIncrs(d)) expect(Number(step.toFixed(d)), `${d}: ${step}`).toBe(step);
+  });
+});
+
+describe('plot height', () => {
+  const desktop = { width: 1920, height: 1080 };
+  const ultrawide = { width: 5120, height: 1300 };
+
+  it('is the usual height on a standard page, however wide the chart', () => {
+    expect(plotHeight({ width: 1200, viewport: desktop })).toBe(360);
+    expect(plotHeight({ width: 4900, viewport: ultrawide })).toBe(360);
+    expect(plotHeight({ width: 380, viewport: { width: 412, height: 915 } })).toBe(260);
+    expect(plotHeight({ width: 300, viewport: desktop, compact: true })).toBe(180);
+  });
+
+  it('grows with a wider page, keeping its shape, up to what fits on the screen', () => {
+    // As wide as on a standard page: no change.
+    expect(plotHeight({ width: 1200, viewport: desktop, grow: true })).toBe(360);
+    expect(plotHeight({ width: 900, viewport: desktop, grow: true })).toBe(360);
+    expect(plotHeight({ width: 1800, viewport: desktop, grow: true })).toBe(540);
+    expect(plotHeight({ width: 4900, viewport: ultrawide, grow: true })).toBe(780);
+    // Never shorter than usual on a short window, and phones and small charts keep their size.
+    expect(plotHeight({ width: 1800, viewport: { width: 1920, height: 500 }, grow: true })).toBe(360);
+    expect(plotHeight({ width: 380, viewport: { width: 412, height: 915 }, grow: true })).toBe(260);
+    expect(plotHeight({ width: 1800, viewport: desktop, compact: true, grow: true })).toBe(180);
   });
 });

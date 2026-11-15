@@ -2414,5 +2414,11 @@
   "Waiting for {pill} to reach {gravity}, 2 points below where it started its brew": "Wacht tot {pill} {gravity} bereikt, 2 punten onder waar hij aan het brouwsel begon",
   "While a brew is running, it waits until the gravity is 0.002 below where the pill started (what it read in its first hours in the wort, not a typed OG), so it doesn't go off before fermentation starts.": "Terwijl een brouwsel loopt, wacht de melding tot de dichtheid 0,002 onder waar de pill begon zit (wat hij in de eerste uren in het wort aangaf, niet een ingevulde OG), zodat hij niet afgaat voordat de vergisting begint.",
   "If the gravity is already dropping slower than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Daalt de dichtheid aan het eind van het wachten al langzamer dan dit, dan gaat hij meteen af en zegt hij hoe snel ze dan daalt.",
-  "If the gravity is already dropping faster than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Daalt de dichtheid aan het eind van het wachten al sneller dan dit, dan gaat hij meteen af en zegt hij hoe snel ze dan daalt."
+  "If the gravity is already dropping faster than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Daalt de dichtheid aan het eind van het wachten al sneller dan dit, dan gaat hij meteen af en zegt hij hoe snel ze dan daalt.",
+  "Page width": "Paginabreedte",
+  "Page width in this browser": "Paginabreedte in deze browser",
+  "page width::Standard": "Standaard",
+  "page width::Wide": "Breed",
+  "page width::Full": "Volledig",
+  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Breed en Volledig gebruiken meer van een groot of ultrabreed scherm, met grotere grafieken."
 }

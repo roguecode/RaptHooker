@@ -38,6 +38,7 @@ import {
   MIN_SPAN_MS,
   panWindow,
   pinchWindow,
+  plotHeight,
   skipImplausible,
   smoothColumn,
   splitImplausible,
@@ -47,6 +48,7 @@ import {
   type TimeWindow,
 } from './chartMath';
 import { exportChartPng, type PngLegendItem } from './pngExport';
+import { currentPageWidth } from '../pageWidth';
 
 export type { ChartAnnotation } from './annotations';
 export type { TimeWindow } from './chartMath';
@@ -158,7 +160,13 @@ function alpha(color: string, a: number): string {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 }
 
-const plotHeight = (compact: boolean) => (compact ? 180 : window.innerWidth < 640 ? 260 : 360);
+const heightFor = (width: number, compact: boolean) =>
+  plotHeight({
+    width,
+    viewport: { width: window.innerWidth, height: window.innerHeight },
+    compact,
+    grow: currentPageWidth() !== 'standard',
+  });
 const sameWindow = (a: TimeWindow, b: TimeWindow) => Math.abs(a.from - b.from) < 1 && Math.abs(a.to - b.to) < 1;
 const finite = (v: number | null | undefined): v is number => v !== null && v !== undefined && Number.isFinite(v);
 
@@ -829,9 +837,10 @@ export function Chart({
       });
     };
 
+    const width = Math.max(260, el.clientWidth);
     const opts: Options = {
-      width: Math.max(260, el.clientWidth),
-      height: plotHeight(compact),
+      width,
+      height: heightFor(width, compact),
       padding: [12, 8, 0, 4],
       cursor: {
         drag: { x: zoomable, y: false, setScale: false, dist: 8 },
@@ -1119,12 +1128,17 @@ export function Chart({
     over.addEventListener('wheel', onWheel, { passive: false });
     const releaseTap = keepTappedValues(chart);
 
-    const ro = new ResizeObserver(() => {
+    // The window's height matters too: a chart on a wide page is no taller than fits on the screen.
+    const fit = () => {
       const w = Math.max(260, el.clientWidth);
-      if (w !== chart.width) chart.setSize({ width: w, height: plotHeight(compact) });
-    });
+      const h = heightFor(w, compact);
+      if (w !== chart.width || h !== chart.height) chart.setSize({ width: w, height: h });
+    };
+    const ro = new ResizeObserver(fit);
     ro.observe(el);
+    window.addEventListener('resize', fit);
     return () => {
+      window.removeEventListener('resize', fit);
       window.clearTimeout(ready);
       window.clearTimeout(wheelTimer);
       window.clearTimeout(tapTimer);

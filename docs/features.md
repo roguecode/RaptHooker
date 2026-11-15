@@ -113,9 +113,10 @@ Everything RaptHooker does, in more detail than the [README](../README.md).
 
 ## The app
 
-- **Installable app** (PWA) on phones and computers. SG/°P and °C/°F per browser (or the hub's defaults), and an Auto,
-  Dark or Light theme in your choice of colours: Violet, Ocean, Hops, Amber, Rosé or Graphite (Settings → Hub → This
-  browser, or the top bar menu). Opens offline with the last readings this browser saw, clearly marked as saved.
+- **Installable app** (PWA) on phones and computers. SG/°P and °C/°F per browser (or the hub's defaults), an Auto,
+  Dark or Light theme in your choice of colours: Violet, Ocean, Hops, Amber, Rosé or Graphite, and on a big or
+  ultrawide screen, Wide or Full width pages with bigger charts (Settings → Hub → This browser, or the top bar menu).
+  Opens offline with the last readings this browser saw, clearly marked as saved.
 - **Your dashboard, your way.** Arrange the pills in your own order (drag them, or use the arrow buttons), switch to a
   compact list, or show only the pills with a brew on the go. A step-by-step guide gets a new hub going, ticking itself
   off as you create the PIN and add your first pill. Each card's small chart covers its brew (or the beer on tap) from

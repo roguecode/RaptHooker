@@ -738,6 +738,15 @@ main {
   padding: clamp(1rem, 3vw, 2rem) clamp(0.9rem, 3vw, 2rem) 6rem;
 }
 
+/* Wider pages for big and ultrawide screens, picked in this browser (pageWidth.ts). */
+html[data-width='wide'] main {
+  width: min(100%, 120rem);
+}
+
+html[data-width='full'] main {
+  width: 100%;
+}
+
 main > .notice {
   margin-bottom: 1rem;
 }
@@ -843,8 +852,9 @@ main > .notice {
     white-space: nowrap;
   }
 
+  /* Over any display a class sets (.field, .menu-section). */
   .hide-mobile {
-    display: none;
+    display: none !important;
   }
 
   /*

@@ -2414,5 +2414,11 @@
   "Waiting for {pill} to reach {gravity}, 2 points below where it started its brew": "Wartet, bis {pill} {gravity} erreicht, 2 Punkte unter ihrem Startwert im Sud",
   "While a brew is running, it waits until the gravity is 0.002 below where the pill started (what it read in its first hours in the wort, not a typed OG), so it doesn't go off before fermentation starts.": "Während ein Sud läuft, wartet er, bis die Dichte 0,002 unter dem Startwert der Pill liegt (was sie in ihren ersten Stunden in der Würze gemessen hat, nicht eine eingegebene OG), damit er nicht vor Gärbeginn auslöst.",
   "If the gravity is already dropping slower than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Sinkt die Dichte am Ende der Wartezeit schon langsamer als das, löst er sofort aus und nennt, wie schnell sie dann sinkt.",
-  "If the gravity is already dropping faster than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Sinkt die Dichte am Ende der Wartezeit schon schneller als das, löst er sofort aus und nennt, wie schnell sie dann sinkt."
+  "If the gravity is already dropping faster than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Sinkt die Dichte am Ende der Wartezeit schon schneller als das, löst er sofort aus und nennt, wie schnell sie dann sinkt.",
+  "Page width": "Seitenbreite",
+  "Page width in this browser": "Seitenbreite in diesem Browser",
+  "page width::Standard": "Standard",
+  "page width::Wide": "Breit",
+  "page width::Full": "Voll",
+  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Breit und Voll nutzen mehr von einem großen oder Ultrawide-Bildschirm, mit größeren Diagrammen."
 }

@@ -402,6 +402,22 @@ export function placeTip(x: number, y: number, w: number, h: number, area: TipAr
   return { left, top: above >= area.top ? above : clamp(y + gap, area.top, area.bottom - h) };
 }
 
+/**
+ * How tall a chart's plot is (CSS px). On a page set wider than standard (`grow`, for big and ultrawide screens) a chart
+ * gets taller as it gets wider, keeping the shape it has on a standard page, as far as fits on the screen.
+ */
+export function plotHeight(opts: {
+  width: number;
+  viewport: { width: number; height: number };
+  compact?: boolean;
+  grow?: boolean;
+}): number {
+  if (opts.compact) return 180;
+  if (opts.viewport.width < 640) return 260;
+  if (!opts.grow) return 360;
+  return Math.max(360, Math.min(Math.round(opts.width * 0.3), Math.round(opts.viewport.height * 0.6)));
+}
+
 /** Lays items out left to right, wrapping onto new rows. */
 export function flowLayout(widths: number[], maxWidth: number, gap: number): { x: number; row: number }[] {
   let x = 0;

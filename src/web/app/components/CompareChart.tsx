@@ -6,8 +6,9 @@ import { useTheme } from '../theme';
 import { fixed, num } from '../format';
 import { t } from '../i18n';
 import { ChartTip, type ChartTipHandle, type ChartTipRow } from './ChartTip';
-import { axisIncrs } from './chartMath';
+import { axisIncrs, plotHeight } from './chartMath';
 import { keepTappedValues } from './tapCursor';
+import { currentPageWidth } from '../pageWidth';
 import './CompareChart.css';
 
 export interface CompareLine {
@@ -27,7 +28,8 @@ export interface CompareLine {
 export const COMPARE_COLORS = ['#8b5cf6', '#f97316', '#10b981', '#3b82f6', '#ec4899', '#eab308', '#06b6d4', '#ef4444'];
 
 const cssVar = (name: string, fallback: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
-const plotHeight = () => (window.innerWidth < 640 ? 260 : 360);
+const heightFor = (width: number) =>
+  plotHeight({ width, viewport: { width: window.innerWidth, height: window.innerHeight }, grow: currentPageWidth() !== 'standard' });
 
 type UnitsNow = ReturnType<typeof useUnits>;
 interface Reading {
@@ -121,9 +123,10 @@ export function CompareChart({ lines, showTemp }: { lines: CompareLine[]; showTe
         });
       }
     }
+    const width = Math.max(260, el.clientWidth);
     const opts: Options = {
-      width: Math.max(260, el.clientWidth),
-      height: plotHeight(),
+      width,
+      height: heightFor(width),
       padding: [12, 8, 0, 4],
       legend: { show: false },
       cursor: { drag: { x: false, y: false }, points: { size: 6 } },
@@ -173,12 +176,16 @@ export function CompareChart({ lines, showTemp }: { lines: CompareLine[]; showTe
     };
     const chart = new uPlot(opts, data, el);
     const releaseTap = keepTappedValues(chart);
-    const ro = new ResizeObserver(() => {
+    const fit = () => {
       const w = Math.max(260, el.clientWidth);
-      if (w !== chart.width) chart.setSize({ width: w, height: plotHeight() });
-    });
+      const h = heightFor(w);
+      if (w !== chart.width || h !== chart.height) chart.setSize({ width: w, height: h });
+    };
+    const ro = new ResizeObserver(fit);
     ro.observe(el);
+    window.addEventListener('resize', fit);
     return () => {
+      window.removeEventListener('resize', fit);
       ro.disconnect();
       releaseTap();
       chart.destroy();

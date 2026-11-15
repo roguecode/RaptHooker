@@ -7378,6 +7378,32 @@
       "pages/settings/OwnerSection.tsx"
     ]
   },
+  "Page width": {
+    "files": [
+      "components/PageWidthSwitch.tsx",
+      "pages/settings/HubSection.tsx"
+    ]
+  },
+  "Page width in this browser": {
+    "files": [
+      "components/DisplayMenu.tsx"
+    ]
+  },
+  "page width::Full": {
+    "files": [
+      "components/PageWidthSwitch.tsx"
+    ]
+  },
+  "page width::Standard": {
+    "files": [
+      "components/PageWidthSwitch.tsx"
+    ]
+  },
+  "page width::Wide": {
+    "files": [
+      "components/PageWidthSwitch.tsx"
+    ]
+  },
   "Part of the range shown on the chart": {
     "files": [
       "components/OverviewStrip.tsx"
@@ -11699,6 +11725,11 @@
   "Wi-Fi: {quality} ({rssi} dBm)": {
     "files": [
       "pages/dashboard/NearbyCard.tsx"
+    ]
+  },
+  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": {
+    "files": [
+      "pages/settings/HubSection.tsx"
     ]
   },
   "Width (px)": {

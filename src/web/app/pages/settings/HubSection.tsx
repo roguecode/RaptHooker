@@ -17,6 +17,7 @@ import { Icon } from '../../components/Icon';
 import { OwnerOnly, Switch } from '../../components/ui';
 import { ThemeSwitch } from '../../components/ThemeSwitch';
 import { PalettePicker } from '../../components/PalettePicker';
+import { PageWidthSwitch } from '../../components/PageWidthSwitch';
 
 const GRAVITY: { id: GravityUnit; label: string; name: string }[] = [
   { id: 'sg', label: 'SG', name: tk('SG, specific gravity') },
@@ -264,6 +265,12 @@ export function HubSection() {
           <span className="label">{t('Colours')}</span>
           <PalettePicker />
           <span className="hint">{t('Each comes in a dark and a light version, following the theme.')}</span>
+        </div>
+        {/* A phone's pages are as wide as its screen whatever is picked. */}
+        <div className="field hide-mobile">
+          <span className="label">{t('Page width')}</span>
+          <PageWidthSwitch />
+          <span className="hint">{t('Wide and Full use more of a big or ultrawide screen, with bigger charts.')}</span>
         </div>
         <label className="field">
           <span className="label">{t('Language')}</span>

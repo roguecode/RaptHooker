@@ -4,9 +4,11 @@ import './styles.css';
 import './palettes.css';
 import { App } from './App';
 import { startTheme } from './theme';
+import { startPageWidth } from './pageWidth';
 import { initI18n } from './i18n';
 
 startTheme();
+startPageWidth();
 
 // The language loads first, so the page doesn't flash English before it's translated.
 const render = () =>

@@ -9,6 +9,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 - Support for genuine GeekMagic Ultra screens. Set one up from its GIFTV hotspot, or by its IP address if it's already
   on your Wi-Fi
+- Wider pages for big and ultrawide screens. Pick **Wide** or **Full** page width under **Settings → Hub → This
+  browser** or in the top bar menu, and charts grow taller to match ([#38](https://github.com/roguecode/RaptHooker/issues/38))
 
 ### Changed
 

@@ -2463,5 +2463,11 @@
   "Waiting for {pill} to reach {gravity}, 2 points below where it started its brew": "Attend que {pill} atteigne {gravity}, 2 points sous sa valeur de départ dans le brassin",
   "While a brew is running, it waits until the gravity is 0.002 below where the pill started (what it read in its first hours in the wort, not a typed OG), so it doesn't go off before fermentation starts.": "Pendant un brassin, elle attend que la densité soit 0,002 sous la valeur de départ de la Pill (ce qu'elle a lu pendant ses premières heures dans le moût, pas une DI saisie), pour ne pas se déclencher avant le début de la fermentation.",
   "If the gravity is already dropping slower than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Si la densité baisse déjà moins vite que cela à la fin de l'attente, elle se déclenche aussitôt et indique à quelle vitesse la densité baisse à ce moment-là.",
-  "If the gravity is already dropping faster than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Si la densité baisse déjà plus vite que cela à la fin de l'attente, elle se déclenche aussitôt et indique à quelle vitesse la densité baisse à ce moment-là."
+  "If the gravity is already dropping faster than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Si la densité baisse déjà plus vite que cela à la fin de l'attente, elle se déclenche aussitôt et indique à quelle vitesse la densité baisse à ce moment-là.",
+  "Page width": "Largeur de page",
+  "Page width in this browser": "Largeur de page dans ce navigateur",
+  "page width::Standard": "Standard",
+  "page width::Wide": "Large",
+  "page width::Full": "Pleine",
+  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Large et Pleine utilisent davantage un grand écran ou un écran ultra-large, avec des graphiques plus grands."
 }

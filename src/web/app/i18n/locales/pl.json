@@ -2512,5 +2512,11 @@
   "Waiting for {pill} to reach {gravity}, 2 points below where it started its brew": "Czeka, aż {pill} dojdzie do {gravity}, 2 punkty poniżej wartości, od której zaczął warkę",
   "While a brew is running, it waits until the gravity is 0.002 below where the pill started (what it read in its first hours in the wort, not a typed OG), so it doesn't go off before fermentation starts.": "Gdy trwa warka, czeka, aż gęstość będzie o 0,002 niższa niż na starcie czujnika (to, co odczytał w pierwszych godzinach w brzeczce, a nie wpisane OG), żeby nie włączyć się przed startem fermentacji.",
   "If the gravity is already dropping slower than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Jeśli po zakończeniu czekania gęstość już spada wolniej niż ten próg, włącza się od razu i podaje, jak szybko wtedy spada.",
-  "If the gravity is already dropping faster than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Jeśli po zakończeniu czekania gęstość już spada szybciej niż ten próg, włącza się od razu i podaje, jak szybko wtedy spada."
+  "If the gravity is already dropping faster than this when the wait ends, it goes off straight away and says how fast it's dropping then.": "Jeśli po zakończeniu czekania gęstość już spada szybciej niż ten próg, włącza się od razu i podaje, jak szybko wtedy spada.",
+  "Page width": "Szerokość strony",
+  "Page width in this browser": "Szerokość strony w tej przeglądarce",
+  "page width::Standard": "Standardowa",
+  "page width::Wide": "Szeroka",
+  "page width::Full": "Pełna",
+  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Szeroka i Pełna lepiej wykorzystują duży lub ultraszeroki ekran, z większymi wykresami."
 }

@@ -2420,5 +2420,7 @@
   "page width::Standard": "Standard",
   "page width::Wide": "Ampia",
   "page width::Full": "Piena",
-  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Ampia e Piena sfruttano di più uno schermo grande o ultrawide, con grafici più grandi."
+  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Ampia e Piena sfruttano di più uno schermo grande o ultrawide, con grafici più grandi.",
+  "This board can't keep its settings: RaptHooker's firmware went on it without the flash layout it needs (as an update over ESPHome, say). Install it again over USB, plugged into the hub or a computer.": "Questa scheda non può conservare le sue impostazioni: il firmware RaptHooker è stato installato senza la suddivisione della memoria flash di cui ha bisogno (per esempio come aggiornamento da ESPHome). Installalo di nuovo tramite USB, collegando la scheda all'hub o a un computer.",
+  "How to install it over USB": "Come installarlo tramite USB"
 }

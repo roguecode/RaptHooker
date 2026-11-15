@@ -2518,5 +2518,7 @@
   "page width::Standard": "Standardowa",
   "page width::Wide": "Szeroka",
   "page width::Full": "Pełna",
-  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Szeroka i Pełna lepiej wykorzystują duży lub ultraszeroki ekran, z większymi wykresami."
+  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Szeroka i Pełna lepiej wykorzystują duży lub ultraszeroki ekran, z większymi wykresami.",
+  "This board can't keep its settings: RaptHooker's firmware went on it without the flash layout it needs (as an update over ESPHome, say). Install it again over USB, plugged into the hub or a computer.": "Ta płytka nie może zachować swoich ustawień: firmware RaptHooker trafił na nią bez układu pamięci flash, którego potrzebuje (na przykład jako aktualizacja przez ESPHome). Wgraj go ponownie przez USB, podłączając płytkę do huba lub komputera.",
+  "How to install it over USB": "Jak wgrać go przez USB"
 }

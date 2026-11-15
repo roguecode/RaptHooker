@@ -2469,5 +2469,7 @@
   "page width::Standard": "Padrão",
   "page width::Wide": "Larga",
   "page width::Full": "Total",
-  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Larga e Total aproveitam melhor uma tela grande ou ultrawide, com gráficos maiores."
+  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Larga e Total aproveitam melhor uma tela grande ou ultrawide, com gráficos maiores.",
+  "This board can't keep its settings: RaptHooker's firmware went on it without the flash layout it needs (as an update over ESPHome, say). Install it again over USB, plugged into the hub or a computer.": "Esta placa não consegue guardar as configurações: o firmware do RaptHooker foi instalado nela sem o layout de flash de que precisa (por exemplo, como uma atualização pelo ESPHome). Instale-o de novo via USB, conectando a placa ao hub ou a um computador.",
+  "How to install it over USB": "Como instalar via USB"
 }

@@ -1,7 +1,7 @@
 {
   "name": "@rapthooker/server",
   "private": true,
-  "version": "0.11.1-geekmagic.1",
+  "version": "0.11.1-nonusb.1",
   "license": "GPL-3.0-only",
   "type": "module",
   "scripts": {

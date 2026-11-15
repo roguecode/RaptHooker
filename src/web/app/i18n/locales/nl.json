@@ -2420,5 +2420,7 @@
   "page width::Standard": "Standaard",
   "page width::Wide": "Breed",
   "page width::Full": "Volledig",
-  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Breed en Volledig gebruiken meer van een groot of ultrabreed scherm, met grotere grafieken."
+  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Breed en Volledig gebruiken meer van een groot of ultrabreed scherm, met grotere grafieken.",
+  "This board can't keep its settings: RaptHooker's firmware went on it without the flash layout it needs (as an update over ESPHome, say). Install it again over USB, plugged into the hub or a computer.": "Dit bordje kan zijn instellingen niet bewaren: de RaptHooker-firmware is erop gezet zonder de flash-indeling die hij nodig heeft (bijvoorbeeld als update via ESPHome). Zet hem er opnieuw op via USB, met het bordje aangesloten op de hub of op een computer.",
+  "How to install it over USB": "Zo zet je hem erop via USB"
 }

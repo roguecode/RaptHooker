@@ -34,6 +34,11 @@ export interface ScreenInfo {
     chip?: string;
     /** ESP32: new firmware not yet proved good (it goes back to the old one if it isn't). */
     trial?: boolean;
+    /**
+     * Whether it has somewhere to keep its settings. False on an ESP32 board whose firmware went on without RaptHooker's
+     * flash layout (as an update over ESPHome, say): it can join a network but never save it.
+     */
+    store?: boolean;
   };
 }
 

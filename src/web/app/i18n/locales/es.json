@@ -2421,5 +2421,7 @@
   "page width::Standard": "Estándar",
   "page width::Wide": "Amplio",
   "page width::Full": "Completo",
-  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Amplio y Completo aprovechan más una pantalla grande o ultrapanorámica, con gráficos más grandes."
+  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Amplio y Completo aprovechan más una pantalla grande o ultrapanorámica, con gráficos más grandes.",
+  "This board can't keep its settings: RaptHooker's firmware went on it without the flash layout it needs (as an update over ESPHome, say). Install it again over USB, plugged into the hub or a computer.": "Esta placa no puede guardar su configuración: el firmware de RaptHooker se instaló sin la distribución de la memoria flash que necesita (por ejemplo, como actualización desde ESPHome). Vuelve a instalarlo por USB, conectando la placa al hub o a un ordenador.",
+  "How to install it over USB": "Cómo instalarlo por USB"
 }

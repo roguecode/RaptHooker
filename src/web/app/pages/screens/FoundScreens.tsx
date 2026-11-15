@@ -6,6 +6,12 @@ import { t } from '../../i18n';
 import { Icon } from '../../components/Icon';
 import { screensApi } from './screensApi';
 import { newScreenName, useNewLook } from './AddScreen';
+import { SETUP_ERRORS } from './strings';
+
+/** What went wrong, in words: the hub says some things as codes. */
+function why(err: unknown): string {
+  return errorText(err) === 'no-store' ? t(SETUP_ERRORS['no-store']) : errorText(err);
+}
 
 /**
  * RaptHooker screens heard on the network that this hub doesn't have (set up by another hub, or before its data was
@@ -49,7 +55,8 @@ function FoundRow({ found }: { found: FoundScreen }) {
       await screensApi.adopt({ id: found.id });
       setAsking(true);
     } catch (err) {
-      toast({ tone: 'error', title: t("The screen didn't answer"), body: errorText(err) });
+      const noStore = errorText(err) === 'no-store';
+      toast({ tone: 'error', title: noStore ? t("Couldn't add the screen") : t("The screen didn't answer"), body: why(err) });
     } finally {
       setBusy(false);
     }
@@ -67,7 +74,7 @@ function FoundRow({ found }: { found: FoundScreen }) {
       toast({
         tone: 'error',
         title: wrong ? t("That code isn't the one on the screen") : t("Couldn't add the screen"),
-        body: wrong ? undefined : errorText(err),
+        body: wrong ? undefined : why(err),
       });
       if (wrong) setCode('');
     } finally {

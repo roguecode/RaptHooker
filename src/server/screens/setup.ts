@@ -296,6 +296,8 @@ export class ScreenSetup extends EventEmitter {
       this.step('screen');
       info = info!;
       ours = screenHotspot(info.mac);
+      // Before anything else: such a board says it's claimed after a set-up that couldn't be saved.
+      if (info.system.store === false) throw new SetupError('no-store');
       let token = this.deps.tokenOf(info.id);
       if (info.claimed && !token) throw new SetupError('not-supported', 'claimed');
       // One the hub knows: it has to prove it has the key before the hub sends it (it could be a fake hotspot).

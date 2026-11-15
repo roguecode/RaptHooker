@@ -58,7 +58,8 @@ other firmware out of the box. Before changing anything the hub checks a GeekMag
   the installer can (see [Permissions](#permissions)). Otherwise, a phone or laptop with Wi-Fi does the setting up
   instead (see [From a browser](#from-a-browser)).
 - For an ESP32 board: a hub with esptool, which the Pi installer adds (see [Permissions](#permissions)). The hub never
-  leaves its own network for these.
+  leaves its own network for these. Otherwise, a computer puts the firmware on it instead (see
+  [From a computer](#an-esp32-board-from-a-computer)).
 
 ## Adding a screen
 
@@ -145,6 +146,32 @@ within reach of your Wi-Fi. If you leave it powered from the hub, the USB tab kn
 screen it is (without restarting it), lists your screens under **Already set up** (with **Set up again**), and only
 opens on the USB tab by itself when a board isn't one of your screens yet. Boards on firmware older than 1.1.1 don't
 answer, so they're listed as new until they're updated.
+
+### An ESP32 board, from a computer
+
+When the board can't be plugged into the hub (it runs in [Docker](./docker.md) without USB passed through, say), put
+RaptHooker on it from a computer, then set it up from a browser:
+
+1. Download `esp32-2432s028.boot.bin` and `esp32-2432s028.bin` from [firmware/screen/bin](../firmware/screen/bin).
+2. Plug the board into the computer and write both files, at these addresses, with
+   [esptool](https://github.com/espressif/esptool) (`pip install esptool`). Use the board's port: `COM7`, say, on
+   Windows, or `/dev/ttyUSB0` on Linux.
+
+   ```bash
+   python -m esptool --chip esp32 --port COM7 --baud 230400 erase_flash
+   python -m esptool --chip esp32 --port COM7 --baud 230400 write_flash 0x1000 esp32-2432s028.boot.bin 0x10000 esp32-2432s028.bin
+   ```
+
+   Espressif's [esptool-js](https://espressif.github.io/esptool-js/) page does the same from Chrome or Edge: the same
+   two files at the same addresses, with **Erase all** ticked.
+
+3. The board restarts with RaptHooker and opens its own network, **RaptHooker-Screen-** and six characters. Give it
+   power wherever you like and set it up [from a browser](#from-a-browser): join **RaptHooker-Screen-…** when the page
+   asks you to join the screen's Wi-Fi.
+
+Write both files: `esp32-2432s028.boot.bin` has the flash layout the board keeps RaptHooker's settings in. Firmware put
+on any other way (as an update over ESPHome, or `esp32-2432s028.bin` on its own) runs, but can't keep its settings, so
+setting it up stops and says so.
 
 ### Does the screen look right?
 
@@ -249,7 +276,8 @@ that has it (`python3`, `python`), or set `screens.python` in the [config](./con
 In [Docker](./docker.md) the hub sets screens up from a browser, and needs to be told the address screens should
 fetch pictures from: set `screens.hubUrl` in the [config](./configuration.md) to the host's address, e.g.
 `http://192.168.1.20:8080`. USB set-up is off there (`screens.usb`): set an ESP32 board up from a Pi, or from
-RaptHooker running on a computer, then add it to the Docker hub from **Found on your network**.
+RaptHooker running on a computer, then add it to the Docker hub from **Found on your network**. Or put RaptHooker on it
+[from a computer](#an-esp32-board-from-a-computer) and set it up from a browser.
 
 ## Troubleshooting
 
@@ -271,6 +299,10 @@ RaptHooker running on a computer, then add it to the Docker hub from **Found on 
   CP2102) may need a driver on Windows or macOS; a Pi has them.
 - **The hub couldn't talk to the board.** Unplug it and plug it back in. If it still won't, hold the board's **BOOT**
   button while the hub starts writing to it. Close anything else using the port (a serial monitor).
+- **This board can't keep its settings** (an ESP32 board). RaptHooker's firmware went on it without the flash layout
+  it keeps its settings in: as an update over ESPHome, say, or `esp32-2432s028.bin` written on its own. It can join
+  your Wi-Fi but forgets it when it restarts, so the hub never adds it. Put RaptHooker on it again over USB, plugged
+  into the hub or [a computer](#an-esp32-board-from-a-computer).
 - **The picture is upside down, mirrored or the wrong colours** on an ESP32 board: see
   [Does the screen look right?](#does-the-screen-look-right)
 

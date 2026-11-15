@@ -69,6 +69,11 @@ export interface FakeScreenOptions {
   stockOta?: 'ok' | 'no-reply' | 'refuse' | 'refuse-quietly';
   /** Firmware from before "proof": it can't prove it has its key. */
   legacy?: boolean;
+  /**
+   * An ESP32 board whose firmware went on without RaptHooker's flash layout (as an update over ESPHome): nowhere to
+   * keep its settings, so it joins a network at set-up but never saves it.
+   */
+  noStore?: boolean;
 }
 
 /** What a GeekMagic Ultra's own firmware sends back from its update page (POST /update). */
@@ -104,9 +109,14 @@ export class FakeScreen extends EventEmitter {
   private timer: NodeJS.Timeout | null = null;
   port = 0;
   private readonly opts: Required<
-    Omit<FakeScreenOptions, 'mac' | 'model' | 'stock' | 'stockKind' | 'firmware' | 'legacy' | 'geekmagicModel' | 'stockOnNetwork'>
+    Omit<
+      FakeScreenOptions,
+      'mac' | 'model' | 'stock' | 'stockKind' | 'firmware' | 'legacy' | 'geekmagicModel' | 'stockOnNetwork' | 'noStore'
+    >
   >;
   legacy: boolean;
+  /** Nowhere to keep its settings. */
+  noStore: boolean;
   /** What a GeekMagic says it is at /v.json. */
   geekmagicModel: string;
   /** A GeekMagic on its own firmware that's on a network: no hotspot. */
@@ -124,6 +134,7 @@ export class FakeScreen extends EventEmitter {
     this.stockOnNetwork = opts.stockOnNetwork ?? false;
     this.firmware = opts.firmware ?? '1.0.0';
     this.legacy = opts.legacy ?? false;
+    this.noStore = opts.noStore ?? false;
     this.opts = {
       networks: opts.networks ?? {},
       restartMs: opts.restartMs ?? 300,
@@ -183,6 +194,7 @@ export class FakeScreen extends EventEmitter {
     this.down = true;
     setTimeout(() => {
       then();
+      if (this.noStore) this.settings = { ...EMPTY };
       this.down = false;
       this.trial = { state: 'idle', error: '', saved: false };
       this.events.push('restarted');
@@ -323,6 +335,7 @@ export class FakeScreen extends EventEmitter {
           freeSketch: 600000,
           sketchMd5: this.sketchMd5,
           resetReason: 'Software/System restart',
+          store: !this.noStore,
         },
       });
     }
@@ -351,6 +364,8 @@ export class FakeScreen extends EventEmitter {
         name: String(b.name ?? this.settings.name),
       };
       if (typeof b.imageUrl === 'string') this.settings.imageUrl = b.imageUrl;
+      // As the firmware does: the new key is taken, then it can't be kept.
+      if (this.noStore) return this.send(res, 500, { ok: false, error: "couldn't save" });
       this.events.push('adopted');
       this.schedule(1);
       return this.send(res, 200, { ok: true });
@@ -376,7 +391,7 @@ export class FakeScreen extends EventEmitter {
             brightness: Number(b.brightness ?? 80),
             panel: 0,
           };
-          this.trial = { state: 'connected', error: '', ip: this.address, saved: true };
+          this.trial = { state: 'connected', error: '', ip: this.address, saved: !this.noStore };
         }
       }, 50);
       return this.send(res, 202, { ok: true, trial: 'testing', channel: Number(b.channel ?? 0) });

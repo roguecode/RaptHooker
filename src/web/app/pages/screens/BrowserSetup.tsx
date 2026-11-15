@@ -15,7 +15,7 @@ import { t } from '../../i18n';
 import { Icon } from '../../components/Icon';
 import { screensApi } from './screensApi';
 import { ByAddress, newScreenName, useNewLook } from './AddScreen';
-import { SETUP_ERRORS, WIFI_REASONS } from './strings';
+import { SETUP_ERRORS, USB_INSTALL_DOCS, WIFI_REASONS } from './strings';
 
 /**
  * Setting a screen up from this browser, for a hub that can't switch Wi-Fi networks (in Docker, say). The page
@@ -44,7 +44,7 @@ interface Info {
   id: string;
   mac: string;
   claimed: boolean;
-  system?: { sketchMd5?: string };
+  system?: { sketchMd5?: string; store?: boolean };
 }
 
 type Phase = 'details' | 'join' | 'checking' | 'confirm' | 'installing' | 'restarting' | 'wifi' | 'back' | 'done' | 'failed';
@@ -145,7 +145,7 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
   const [password, setPassword] = useState('');
   const [phase, setPhase] = useState<Phase>('details');
   const [note, setNote] = useState<string | null>(null);
-  const [failure, setFailure] = useState<{ message: string; detail?: string; retry: Retry } | null>(null);
+  const [failure, setFailure] = useState<{ message: string; detail?: string; retry: Retry; help?: string } | null>(null);
   const [lan, setLan] = useState<string[]>([]);
   const prepared = useRef<{ start: ScreenManualStart; firmware: ArrayBuffer } | null>(null);
   const screen = useRef<Info | null>(null);
@@ -165,10 +165,10 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
     };
   }, [https]);
 
-  const fail = (message: string, retry: Retry, detail?: string) => {
+  const fail = (message: string, retry: Retry, detail?: string, help?: string) => {
     if (!alive.current) return;
     setNote(null);
-    setFailure({ message, detail, retry });
+    setFailure({ message, detail, retry, help });
     setPhase('failed');
   };
 
@@ -196,6 +196,8 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
     setPhase('checking');
     const ours = await ourScreen();
     if (ours) {
+      // Before the rest: such a board says it's claimed after a set-up it couldn't save.
+      if (ours.system?.store === false) return fail(t(SETUP_ERRORS['no-store']), 'join', undefined, USB_INSTALL_DOCS);
       if (ours.claimed)
         return fail(t('This screen belongs to another hub.'), 'join', t('Reset it from that hub, or add it from Found on your network.'));
       screen.current = ours;
@@ -565,6 +567,13 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
               <strong>{failure.message}</strong>
             </p>
             {failure.detail && <p className="small">{failure.detail}</p>}
+            {failure.help && (
+              <p className="small">
+                <a href={failure.help} target="_blank" rel="noreferrer">
+                  {t('How to install it over USB')}
+                </a>
+              </p>
+            )}
             {failure.retry === 'wifi' && (
               <div className="form-grid">
                 <label className="field" htmlFor={`${ids.ssid}-again`}>

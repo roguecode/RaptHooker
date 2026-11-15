@@ -32,6 +32,9 @@ export const SETUP_ERRORS: Record<ScreenSetupError, string> = {
   'network-not-found': tk("The screen can't see that network. Screens only use 2.4 GHz Wi-Fi: check the name, and that it's in range."),
   'no-address': tk('The screen joined the network but the router gave it no IP address.'),
   'wifi-failed': tk("The screen couldn't join the network."),
+  'no-store': tk(
+    "This board can't keep its settings: RaptHooker's firmware went on it without the flash layout it needs (as an update over ESPHome, say). Install it again over USB, plugged into the hub or a computer.",
+  ),
   'not-found': tk("The screen is on your network, but the hub can't find it there yet. It may turn up under Found on your network."),
   'no-password': tk("Enter the Wi-Fi password: the hub doesn't know it."),
   'no-usb': tk("The hub can't put firmware on boards over USB."),
@@ -42,6 +45,10 @@ export const SETUP_ERRORS: Record<ScreenSetupError, string> = {
   'wrong-board': tk("That board isn't one RaptHooker has firmware for."),
   failed: tk('Something went wrong.'),
 };
+
+/** Putting RaptHooker on an ESP32 board over USB, for one that can't keep its settings ('no-store'). */
+export const USB_INSTALL_DOCS =
+  'https://github.com/roguecode/RaptHooker/blob/main/docs/rapthooker-screens.md#an-esp32-board-from-a-computer';
 
 /** Why the hub can't set boards up over USB (UsbStatus.reason, or the detail of a 'no-usb' set-up error). */
 export const USB_REASONS: Record<string, string> = {

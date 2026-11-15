@@ -2469,5 +2469,7 @@
   "page width::Standard": "Standard",
   "page width::Wide": "Large",
   "page width::Full": "Pleine",
-  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Large et Pleine utilisent davantage un grand écran ou un écran ultra-large, avec des graphiques plus grands."
+  "Wide and Full use more of a big or ultrawide screen, with bigger charts.": "Large et Pleine utilisent davantage un grand écran ou un écran ultra-large, avec des graphiques plus grands.",
+  "This board can't keep its settings: RaptHooker's firmware went on it without the flash layout it needs (as an update over ESPHome, say). Install it again over USB, plugged into the hub or a computer.": "Cette carte ne peut pas conserver ses réglages : le firmware RaptHooker y a été installé sans le partitionnement de la mémoire flash dont il a besoin (par exemple par une mise à jour depuis ESPHome). Réinstallez-le par USB, en branchant la carte au hub ou à un ordinateur.",
+  "How to install it over USB": "Comment l'installer par USB"
 }

@@ -276,6 +276,49 @@ describe('screens page', () => {
     });
   }, 15_000);
 
+  it("stops a browser set-up on a board that can't keep its settings, and says how to put that right", async () => {
+    const firmware = new Uint8Array(64).fill(0xff);
+    firmware[0] = 0xe9;
+    // RaptHooker put on an ESP32 board as an update over ESPHome: a set-up it couldn't save left it saying it's claimed.
+    const info = {
+      firmware: 'rapthooker-screen',
+      version: '1.1.1',
+      model: 'esp32-2432s028',
+      id: 'e465b80fda54',
+      mac: 'E4:65:B8:0F:DA:54',
+      claimed: true,
+      system: { sketchMd5: 'x', store: false },
+    };
+    const view = await renderWithHub(<ScreensPage />, {
+      routes: {
+        ...BASE,
+        'GET /api/screens/wifi': { ...WIFI, canSetUp: false, reason: 'no-networkmanager', ssid: null, goesOffline: false },
+        'POST /api/screens/manual': {
+          pending: 'p1',
+          token: 'secret-token-for-the-screen',
+          hub: 'hub-1',
+          imageBase: null,
+          firmware: [{ model: 'sdpro-240', version: '1.0.0', size: firmware.length, md5: 'x' }],
+        },
+        'GET /api/screens/firmware/*': () => new Response(firmware),
+        'GET /api/info': info,
+      },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add a screen' })[0]!);
+    const dialog = await screen.findByRole('dialog', { name: 'Add a screen' });
+    fireEvent.change(await within(dialog).findByRole('textbox', { name: 'Wi-Fi for the screen' }), { target: { value: 'Brewery' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
+    fireEvent.click(await within(dialog).findByRole('button', { name: "I've joined it" }));
+
+    expect(await within(dialog).findByText(/This board can't keep its settings/)).toBeTruthy();
+    expect(within(dialog).queryByText(/belongs to another hub/)).toBeNull();
+    expect(within(dialog).getByRole('link', { name: 'How to install it over USB' }).getAttribute('href')).toMatch(
+      /rapthooker-screens\.md#an-esp32-board-from-a-computer$/,
+    );
+    expect(view.calls('POST /api/setup')).toEqual([]);
+    expect(view.calls('POST /api/screens/manual/done')).toEqual([]);
+  });
+
   it('has the hub put RaptHooker on a GeekMagic Ultra on the network, then finishes on its hotspot', async () => {
     const firmware = new Uint8Array(64).fill(0xff);
     firmware[0] = 0xe9;
@@ -371,6 +414,31 @@ describe('screens page', () => {
     await settle();
     expect(view.calls('POST /api/screens/adopt').map((r) => (r.body as { code?: string }).code)).toEqual([undefined, '111111', '123456']);
     expect(toastTexts()).toContain('Screen added');
+  });
+
+  it("says why a board found on the network that can't keep its settings can't be added", async () => {
+    const found: FoundScreen = {
+      id: 'e465b80fda54',
+      model: 'esp32-2432s028',
+      firmware: '1.1.1',
+      api: 1,
+      ip: '192.168.10.91',
+      hostname: 'rh-screen-0fda54',
+      claimed: true,
+    };
+    await renderWithHub(<ScreensPage />, {
+      routes: {
+        ...BASE,
+        'GET /api/screens/found': [found],
+        'POST /api/screens/adopt': () => new Response(JSON.stringify({ error: 'no-store' }), { status: 409 }),
+      },
+    });
+    const panel = await screen.findByRole('region', { name: 'Screens found on your network' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Add' }));
+    await settle();
+    const toast = toastTexts().find((s) => s.includes("Couldn't add the screen"));
+    expect(toast).toContain("This board can't keep its settings");
+    expect(within(panel).queryByLabelText('The code on the screen')).toBeNull();
   });
 
   it("changes what a screen shows, with the image link's choices", async () => {

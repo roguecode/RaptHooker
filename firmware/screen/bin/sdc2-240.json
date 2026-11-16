@@ -1,0 +1,10 @@
+{
+  "model": "sdc2-240",
+  "chip": "esp32c2",
+  "version": "1.1.2",
+  "api": 1,
+  "file": "sdc2-240.bin",
+  "size": 744240,
+  "md5": "2bfcb7fea443bc1f314e1bea2e8a365c",
+  "sha256": "6307ee0114fb661995b75b518a225cd858ae2f2b301f7280dcbde942ef7500ef"
+}

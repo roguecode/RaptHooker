@@ -2,7 +2,9 @@
 
 #include <stdarg.h>
 
-#if defined(ESP32)
+#if defined(RH_BOARD_SDC2)
+static const size_t LOG_SIZE = 4096;
+#elif defined(ESP32)
 static const size_t LOG_SIZE = 8192;
 #else
 static const size_t LOG_SIZE = 3072;

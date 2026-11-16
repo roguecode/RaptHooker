@@ -103,6 +103,14 @@ export function SupportedScreens() {
           </span>
         </li>
         <li>
+          <span className="chip">{t('Might work')}</span>
+          <span>
+            {t(
+              'Smart weather clocks whose update page asks for files named SDC2… (the same clock on an ESP32-C2) are untested. Connect one to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.',
+            )}
+          </span>
+        </li>
+        <li>
           <span className="chip danger">{t("Won't work")}</span>
           <span>
             {t(

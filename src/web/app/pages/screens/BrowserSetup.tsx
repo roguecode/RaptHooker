@@ -7,11 +7,10 @@ import {
   type HubAddress,
   type ScreenFirmware,
   type ScreenManualStart,
-  type StockKind,
 } from '@rapthooker/shared';
 import { errorText, http } from '../../api';
 import { useLive } from '../../live';
-import { t } from '../../i18n';
+import { t, tk } from '../../i18n';
 import { Icon } from '../../components/Icon';
 import { screensApi } from './screensApi';
 import { ByAddress, newScreenName, useNewLook } from './AddScreen';
@@ -27,15 +26,23 @@ import { SETUP_ERRORS, USB_INSTALL_DOCS, WIFI_REASONS } from './strings';
  * The Smart weather clock's stock firmware doesn't allow other pages to read its answers (no CORS), so the page
  * recognises it by its stylesheet (which any page may use) and sends the firmware without seeing the reply. A
  * GeekMagic Ultra's own firmware lets other pages read its update page's answers, but perhaps not what model it is:
- * then this asks. A GeekMagic already on the hub's network can have the hub put RaptHooker on it instead, and this
- * finishes on RaptHooker's hotspot. RaptHooker's firmware, once running, says which firmware it has.
+ * then this asks. A GeekMagic, or an SDC2 clock, already on the hub's network can have the hub put RaptHooker on it
+ * instead, and this finishes on RaptHooker's hotspot. RaptHooker's firmware, once running, says which firmware it has.
  */
 
 const SCREEN = 'http://192.168.4.1';
 /** What the stock firmware's update page can take: it cuts anything bigger short (and the screen won't start). */
 const STOCK_LIMIT = 0x7c000;
-/** Both stock firmwares get the same image: they're the same hardware. */
+/** The SD Pro and the GeekMagic Ultra get the same image: they're the same hardware. */
 const STOCK_MODEL = 'sdpro-240';
+/**
+ * An SDC2 (the Smart weather clock on an ESP32-C2) needs another image, and this page can't tell it from an SD Pro on
+ * its hotspot (it can't read the stock page). The stock update pages install whatever they're sent, so that image
+ * only goes from the hub, to a clock on the network whose own page it has read.
+ */
+const SDC2_HINT = tk(
+  'A Smart weather clock whose update page asks for files named SDC2… is set up from its address instead: connect it to your Wi-Fi from its own page first.',
+);
 
 interface Info {
   firmware: string;
@@ -221,7 +228,7 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
     );
   };
 
-  const install = async (kind: StockKind) => {
+  const install = async (kind: 'sdpro' | 'geekmagic') => {
     const p = prepared.current!;
     const fw = p.start.firmware.find((f) => f.model === STOCK_MODEL)!;
     setPhase('installing');
@@ -259,7 +266,7 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
             name: screenStock(kind).hotspot,
           }),
     );
-    await restarted(fw);
+    await restarted(fw, kind === 'sdpro' && sent);
   };
 
   /** A GeekMagic Ultra on the hub's network: the hub puts RaptHooker on it, then this finishes on its hotspot. */
@@ -275,11 +282,16 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
     }
   };
 
-  /** It restarts, copies the firmware into place and opens RaptHooker's network: this device has to join it. */
-  const restarted = async (fw: ScreenFirmware) => {
+  /**
+   * It restarts, copies the firmware into place and opens RaptHooker's network: this device has to join it. A Smart
+   * weather clock still showing its own page a minute on didn't take it: an SDC2 (an ESP32-C2) won't start the SD Pro's
+   * firmware, and is set up from its address instead.
+   */
+  const restarted = async (fw: ScreenFirmware, stockStays = false) => {
     setPhase('restarting');
     await sleep(8000);
     const until = Date.now() + 5 * 60_000;
+    let stockAt = Date.now() + 60_000;
     while (alive.current) {
       const info = await ourScreen();
       if (info) {
@@ -287,6 +299,10 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
           return fail(t(SETUP_ERRORS['install-failed']), 'join', t("The firmware on the screen isn't the one sent."));
         screen.current = info;
         return void connect();
+      }
+      if (stockStays && Date.now() > stockAt) {
+        stockAt = Date.now() + 30_000;
+        if (await stockScreen(4000)) return fail(t(SETUP_ERRORS['install-failed']), 'join', t(SDC2_HINT));
       }
       if (Date.now() > until) return fail(t(SETUP_ERRORS['no-restart']), 'join');
       await sleep(2500);
@@ -507,6 +523,7 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
             )}
           </p>
           <p className="hint">{t("If the device says the network has no internet, choose to stay connected. Don't reload this page.")}</p>
+          <p className="hint">{t(SDC2_HINT)}</p>
           <div className="modal-actions">
             <button type="button" className="btn primary" onClick={() => void check()}>
               <Icon name="check" size={16} /> {t("I've joined it")}

@@ -27,9 +27,18 @@ import type { Store } from '../db.js';
 import type { Logger } from '../log.js';
 import type { Settings } from '../settings.js';
 import { ScreenClient, ScreenRequestError, type ScreenInfo } from './client.js';
-import { compareVersions, imageMarker, imageProblems, md5, type FirmwareImage } from './firmware.js';
+import {
+  compareVersions,
+  esp32ImageProblems,
+  firmwareProblems,
+  imageMarker,
+  md5,
+  sdc2FlashProblems,
+  STOCK_OTA_LIMIT,
+  type FirmwareImage,
+} from './firmware.js';
 import { ScreenSetup } from './setup.js';
-import { flashGeekmagic, identifyGeekmagic } from './stock.js';
+import { flashGeekmagic, flashStock, identifyGeekmagic, identifyStock } from './stock.js';
 import { UsbSetup } from './usb/setup.js';
 import type { UsbFlasher } from './usb/types.js';
 import type { WifiController } from './wifi/types.js';
@@ -619,22 +628,61 @@ export class ScreenManager extends EventEmitter {
 
   /**
    * Puts the screen's original firmware back (a file from its maker), then forgets the screen. Only a complete,
-   * well-formed image is sent.
+   * well-formed image for its chip is sent, and never to an SDC2.
    */
   async restoreStock(id: string, data: Buffer): Promise<void> {
     const entry = this.screens.get(id);
     if (!entry) throw new ScreenError('Unknown screen', 404);
-    if (screenModel(entry.saved.model)?.install !== 'hotspot') throw new ScreenError('This screen has no original firmware to put back');
-    const problems = imageProblems(data);
+    const model = screenModel(entry.saved.model);
+    if (model?.install !== 'hotspot') throw new ScreenError('This screen has no original firmware to put back');
+    // Nothing in a file says it was built for the SDC2's 26 MHz crystal, and firmware for another ESP32-C2 board could
+    // leave it unable to start, with no USB to put it right. It can only go back to the firmware it kept (restoreKept).
+    if (model.chip === 'esp32c2')
+      throw new ScreenError("This screen can't be sent firmware from a file: it can go back to its own while it still has it");
+    const problems = firmwareProblems(data, model.chip);
     if (problems.length) throw new ScreenError(`That file isn't firmware the screen can take: ${problems.join(', ')}`);
     if (imageMarker(data)) throw new ScreenError("That's RaptHooker's own firmware, not the screen's original");
-    if (data.length > 0x80000) throw new ScreenError('That file is too big for this screen');
+    if (model.chip === 'esp8266' && data.length > STOCK_OTA_LIMIT) throw new ScreenError('That file is too big for this screen');
     try {
       await (await this.trusted(id)).client.ota(data, md5(data), 1);
     } catch (err) {
       throw new ScreenError(`The screen didn't take it: ${(err as Error).message}`, 502);
     }
     this.deps.log.info({ id }, 'original firmware put back on a screen');
+    await this.remove(id, false);
+  }
+
+  /**
+   * A screen that keeps the firmware it came with until its first update (firmware with "original": the SDC2): that
+   * firmware, for keeping a copy of.
+   */
+  async originalCopy(id: string): Promise<Buffer> {
+    const { client, info } = await this.trusted(id);
+    if (!info.features?.includes('original'))
+      throw new ScreenError('The screen no longer has the firmware it came with: an update replaced it', 404);
+    let data: Buffer;
+    try {
+      data = await client.original();
+    } catch (err) {
+      throw new ScreenError(`The screen didn't send it: ${(err as Error).message}`, 502);
+    }
+    // Only a whole image is worth keeping: it may be what goes back on one day.
+    const problems = [...esp32ImageProblems(data, 'esp32c2'), ...sdc2FlashProblems(data)];
+    if (problems.length) throw new ScreenError(`The copy didn't come through whole: ${problems.join(', ')}`, 502);
+    return data;
+  }
+
+  /** Such a screen goes back to the firmware it kept (no file needed), and the hub forgets it. */
+  async restoreKept(id: string): Promise<void> {
+    const { client, info } = await this.trusted(id);
+    if (!info.features?.includes('original'))
+      throw new ScreenError('The screen no longer has the firmware it came with: an update replaced it', 404);
+    try {
+      await client.originalBack();
+    } catch (err) {
+      throw new ScreenError(`The screen didn't go back: ${(err as Error).message}`, 502);
+    }
+    this.deps.log.info({ id }, 'a screen went back to the firmware it kept');
     await this.remove(id, false);
   }
 
@@ -827,18 +875,22 @@ export class ScreenManager extends EventEmitter {
   }
 
   /**
-   * Puts RaptHooker on a GeekMagic Ultra on the hub's network, through its own firmware's update page, for a browser
-   * to finish setting it up on RaptHooker's hotspot (a hub that can switch Wi-Fi does it all with startSetup). What's
-   * at the address has to say it's an Ultra first.
+   * Puts RaptHooker on a GeekMagic Ultra or SDC2 clock on the hub's network, through its own firmware's update page,
+   * for a browser to finish setting it up on RaptHooker's hotspot (a hub that can switch Wi-Fi does it all with
+   * startSetup). What's at the address has to say it's an Ultra, or its own page that it's an SDC2, first: the stock
+   * update pages install whatever they're sent.
    */
   async install(address: string): Promise<ScreenInstallResult> {
     if (this.job || this.installing) throw new ScreenError('A screen is already being set up', 409);
     this.installing = true;
     try {
       const found = await identifyGeekmagic(address);
-      if (!found) throw new ScreenError(`No GeekMagic Ultra on its own firmware answered at ${address}`, 404);
-      if (found.model !== GEEKMAGIC_ULTRA)
-        throw new ScreenError(`This is a GeekMagic ${found.model}: RaptHooker only knows the ${GEEKMAGIC_ULTRA}`);
+      if (found) {
+        if (found.model !== GEEKMAGIC_ULTRA)
+          throw new ScreenError(`This is a GeekMagic ${found.model}: RaptHooker only knows the ${GEEKMAGIC_ULTRA}`);
+      } else {
+        return await this.installStock(address);
+      }
       const fw = this.deps.firmware.get(screenStock('geekmagic').model);
       if (!fw) throw new ScreenError('The hub has no firmware for this screen', 404);
       let confirmed: boolean;
@@ -852,5 +904,30 @@ export class ScreenManager extends EventEmitter {
     } finally {
       this.installing = false;
     }
+  }
+
+  private async installStock(address: string): Promise<ScreenInstallResult> {
+    const stock = await identifyStock(address);
+    if (!stock || stock.kind !== 'sdc2') {
+      throw new ScreenError(
+        stock
+          ? `No GeekMagic Ultra or SDC2 clock answered at ${address}: a Smart weather clock on SD Pro firmware is set up over its own Wi-Fi`
+          : `No GeekMagic Ultra or SDC2 clock on its own firmware answered at ${address}`,
+        404,
+      );
+    }
+    const fw = this.deps.firmware.get(stock.model);
+    if (!fw) throw new ScreenError('The hub has no firmware for this screen', 404);
+    let confirmed: boolean;
+    try {
+      confirmed = await flashStock(address, fw);
+    } catch (err) {
+      throw new ScreenError(`The firmware didn't install: ${(err as Error).message}`, 502);
+    }
+    this.deps.log.info(
+      { address, kind: stock.kind, mac: stock.mac, version: fw.version, confirmed },
+      'RaptHooker firmware sent to a Smart weather clock on the network',
+    );
+    return { found: { model: stock.title, version: '' }, firmware: this.firmwareFor(fw.model)!, confirmed };
   }
 }

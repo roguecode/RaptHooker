@@ -17,6 +17,10 @@
 #if defined(ESP8266)
 static const size_t MAX_PICTURE = 64 * 1024;
 static const size_t HEAP_SPARE = 6 * 1024;
+#elif defined(RH_BOARD_SDC2)
+// The ESP32-C2 has a fraction of the ESP32's memory; its pictures are the size of the ESP8266's.
+static const size_t MAX_PICTURE = 64 * 1024;
+static const size_t HEAP_SPARE = 16 * 1024;
 #else
 static const size_t MAX_PICTURE = 160 * 1024;
 static const size_t HEAP_SPARE = 24 * 1024;
@@ -127,7 +131,9 @@ static void run() {
     return;
   }
   WiFiClient* stream = http.getStreamPtr();
-#if defined(ESP32)
+#if defined(ESP32) && ESP_ARDUINO_VERSION_MAJOR >= 3
+  stream->setTimeout(10000);  // Arduino 3's is Stream's, in milliseconds
+#elif defined(ESP32)
   stream->setTimeout(10);  // the ESP32's WiFiClient takes seconds
 #else
   stream->setTimeout(10000);

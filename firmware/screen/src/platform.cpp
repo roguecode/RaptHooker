@@ -72,14 +72,90 @@ void plat::systemInfo(JsonObject s) {
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <mbedtls/md.h>
+#if defined(RH_BOARD_SDC2)
+#include <esp_app_desc.h>
+#include <esp_partition.h>
+#include <nvs.h>
+#endif
 
 static const uint64_t TRIAL_US = 10ULL * 60 * 1000 * 1000;
 
+#if defined(RH_BOARD_SDC2)
+// The ESP32-C2 has no RTC memory: this keeps across restarts too.
+#define RH_KEEP __NOINIT_ATTR
+#else
+#define RH_KEEP RTC_NOINIT_ATTR
+#endif
+
 // Kept across restarts (not power cuts, which the magic catches).
-RTC_NOINIT_ATTR static uint32_t rtcMagic;
-RTC_NOINIT_ATTR static uint32_t rtcCrashes;
+RH_KEEP static uint32_t rtcMagic;
+RH_KEEP static uint32_t rtcCrashes;
 static volatile bool trial = false;
 static esp_timer_handle_t guard = nullptr;
+
+#if defined(RH_BOARD_SDC2)
+// The SDC2's boot loader is the stock firmware's, which may not take new firmware back by itself. So the firmware
+// keeps its own trial: new firmware (a build that hasn't yet been kept, by its ELF SHA-256 in NVS) is kept once it has
+// been reached over the network, and otherwise goes back to what's in the other app slot (the stock firmware, at
+// first) after 10 minutes, or after it has started four times without being kept.
+static const char* BOOT_NS = "rhboot";
+static const uint8_t TRIAL_STARTS = 4;
+static bool bootloaderTrial = false;
+static char build[17];
+
+static bool keptBuild() {
+  nvs_handle_t h;
+  if (nvs_open(BOOT_NS, NVS_READONLY, &h) != ESP_OK) return false;
+  char kept[17] = "";
+  size_t len = sizeof(kept);
+  bool same = nvs_get_str(h, "kept", kept, &len) == ESP_OK && !strcmp(kept, build);
+  nvs_close(h);
+  return same;
+}
+
+// How many times this build has started without being kept (the count starts again for each new build: the boot loader
+// can take one back without this firmware ever running again to clear it). 0 if it couldn't be kept count of.
+static uint8_t countStart() {
+  nvs_handle_t h;
+  if (nvs_open(BOOT_NS, NVS_READWRITE, &h) != ESP_OK) return 0;
+  char counting[17] = "";
+  size_t len = sizeof(counting);
+  uint8_t starts = 0;
+  if (nvs_get_str(h, "counting", counting, &len) == ESP_OK && !strcmp(counting, build)) nvs_get_u8(h, "starts", &starts);
+  if (starts < 255) starts++;
+  bool ok = nvs_set_str(h, "counting", build) == ESP_OK && nvs_set_u8(h, "starts", starts) == ESP_OK && nvs_commit(h) == ESP_OK;
+  nvs_close(h);
+  return ok ? starts : 0;
+}
+
+static bool keepBuild() {
+  nvs_handle_t h;
+  if (nvs_open(BOOT_NS, NVS_READWRITE, &h) != ESP_OK) return false;
+  bool ok = nvs_set_str(h, "kept", build) == ESP_OK && nvs_set_u8(h, "starts", 0) == ESP_OK && nvs_commit(h) == ESP_OK;
+  nvs_close(h);
+  return ok;
+}
+
+// Back to the firmware in the other app slot, if there's a whole one there.
+static void goBack(const char* why) {
+  if (bootloaderTrial) esp_ota_mark_app_invalid_rollback_and_reboot();
+  const esp_partition_t* other = esp_ota_get_next_update_partition(nullptr);
+  if (other && esp_ota_set_boot_partition(other) == ESP_OK) {
+    nvs_handle_t h;
+    if (nvs_open(BOOT_NS, NVS_READWRITE, &h) == ESP_OK) {
+      nvs_set_u8(h, "starts", 0);
+      nvs_commit(h);
+      nvs_close(h);
+    }
+    logf("boot: %s, going back to the firmware in %s", why, other->label);
+    delay(100);
+    esp_restart();
+  }
+  logf("boot: %s, but there's no firmware to go back to: keeping this one", why);
+  trial = false;
+  keepBuild();
+}
+#endif
 
 // Arduino marks new firmware good as it starts unless this says otherwise: here it has to earn it (markGood).
 extern "C" bool verifyRollbackLater() { return true; }
@@ -101,7 +177,11 @@ static const char* describe(esp_reset_reason_t r) {
 
 static void giveUp(void*) {
   // Still on trial after all this time: whatever this firmware is doing, it isn't working. The old one goes back.
+#if defined(RH_BOARD_SDC2)
+  if (trial) goBack("not reached in 10 minutes");
+#else
   if (trial) esp_ota_mark_app_invalid_rollback_and_reboot();
+#endif
 }
 
 void plat::begin() {
@@ -117,12 +197,32 @@ void plat::begin() {
   logf("boot: %s, %u crash(es) in a row%s", reasonText.c_str(), rtcCrashes, safe ? ", safe mode" : "");
   const esp_partition_t* running = esp_ota_get_running_partition();
   esp_ota_img_states_t state;
+#if defined(RH_BOARD_SDC2)
+  esp_app_get_elf_sha256(build, sizeof(build));
+  bootloaderTrial = running && esp_ota_get_state_partition(running, &state) == ESP_OK && state == ESP_OTA_IMG_PENDING_VERIFY;
+  bool newBuild = bootloaderTrial || !keptBuild();
+  if (newBuild) {
+    uint8_t starts = countStart();
+    logf("boot: build %s not kept yet, start %u", build, starts);
+    // Without a count (NVS full, say) nothing would take a broken build back, and settings couldn't be kept either.
+    if (!starts || starts >= TRIAL_STARTS) {
+      goBack(starts ? "started four times without being kept" : "can't count its starts");
+      newBuild = false;  // still here: there was nothing to go back to, so this one is kept
+    }
+  }
+  if (newBuild) {
+#else
   if (running && esp_ota_get_state_partition(running, &state) == ESP_OK && state == ESP_OTA_IMG_PENDING_VERIFY) {
+#endif
     trial = true;
     esp_timer_create_args_t args = {};
     args.callback = giveUp;
     args.name = "trial";
+#if defined(RH_BOARD_SDC2)
+    if (esp_timer_create(&args, &guard) != ESP_OK || esp_timer_start_once(guard, TRIAL_US) != ESP_OK) goBack("can't time its trial");
+#else
     if (esp_timer_create(&args, &guard) == ESP_OK) esp_timer_start_once(guard, TRIAL_US);
+#endif
     logf("boot: new firmware in %s, on trial", running->label);
   }
 }
@@ -135,6 +235,13 @@ void plat::clearCrashes() {
 void plat::markGood() {
   clearCrashes();
   if (!trial) return;
+#if defined(RH_BOARD_SDC2)
+  // Unless it's on record as kept, it would be taken back after four starts: the trial (and its timer) carries on.
+  if (!keepBuild()) {
+    logf("boot: couldn't record this firmware as kept");
+    return;
+  }
+#endif
   trial = false;
   if (guard) esp_timer_stop(guard);
   esp_err_t e = esp_ota_mark_app_valid_cancel_rollback();
@@ -142,7 +249,11 @@ void plat::markGood() {
 }
 
 bool plat::onTrial() { return trial; }
+#if defined(RH_BOARD_SDC2)
+const char* plat::chip() { return "esp32c2"; }
+#else
 const char* plat::chip() { return "esp32"; }
+#endif
 uint32_t plat::maxBlock() { return ESP.getMaxAllocHeap(); }
 uint32_t plat::random32() { return esp_random(); }
 

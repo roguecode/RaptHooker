@@ -27,4 +27,5 @@ void begin();
 void loop();
 bool updating();
 bool installed();  // an update is in place for the next start
+bool reached();    // SDC2: something has talked to it over the network since it started
 }  // namespace web

@@ -57,6 +57,9 @@ RaptHooker can put its own firmware on these and use them as displays for your p
   ([confirmed working](https://www.aliexpress.com/item/1005007542991850.html))
 - **ESP32-2432S028 2.8" ("Cheap Yellow Display")**, set up plugged into the Pi's USB
   ([confirmed working](https://www.aliexpress.com/item/1005010399042230.html))
+- **SDC2 Smart weather clock** (the same clock on an ESP32-C2; its update page asks for files named `SDC2…`), set up
+  from its address: experimental, not yet tried on a real one
+  ([details](docs/rapthooker-screens.md#an-sdc2-clock-experimental))
 
 The links only show where users bought one that then worked; they aren't endorsements, and a listing can change what
 it sends. Other screens may not work: see [Other screens](docs/rapthooker-screens.md#other-screens). Any screen that

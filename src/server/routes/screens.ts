@@ -3,6 +3,7 @@ import {
   screenInstallSchema,
   screenManualDoneSchema,
   screenManualSchema,
+  screenModel,
   screenPatchSchema,
   screenSetupSchema,
   screenUsbSetupSchema,
@@ -63,15 +64,18 @@ export function screensRoutes({ app, s, owner, broadcast }: RouteContext): void 
     return screens.manualStart(screenManualSchema.parse(req.body));
   });
   app.post('/api/screens/manual/done', owner, async (req) => screens.manualDone(screenManualDoneSchema.parse(req.body)));
-  // A GeekMagic Ultra already on the hub's network: RaptHooker goes on here, and the browser finishes on its hotspot.
+  // A GeekMagic Ultra or SDC2 clock already on the hub's network: RaptHooker goes on here, and the browser finishes on
+  // its hotspot.
   app.post('/api/screens/install', owner, async (req) => screens.install(screenInstallSchema.parse(req.body).address));
   app.get('/api/screens/firmware/:model', owner, async (req, reply) => {
     const { model } = req.params as { model: string };
     const fw = screens.firmwareImage(model.replace(/\.bin$/, ''));
     if (!fw) throw new ScreenError('No firmware for that screen', 404);
+    // Named as the stock update pages want it: SDP... for the ESP8266 clocks, SDC2... for the ESP32-C2 one.
+    const prefix = screenModel(fw.model)?.chip === 'esp32c2' ? 'SDC2' : 'SDP';
     return reply
       .header('Content-Type', 'application/octet-stream')
-      .header('Content-Disposition', `attachment; filename="SDP-rapthooker-screen-${fw.model}-${fw.version}.bin"`)
+      .header('Content-Disposition', `attachment; filename="${prefix}-rapthooker-screen-${fw.model}-${fw.version}.bin"`)
       .header('X-Firmware-Version', fw.version)
       .header('X-Firmware-Md5', fw.md5)
       .send(fw.data);
@@ -96,6 +100,20 @@ export function screensRoutes({ app, s, owner, broadcast }: RouteContext): void 
   app.get('/api/screens/:id/log', owner, async (req, reply) => {
     const text = await screens.log(one(req));
     return reply.header('Content-Type', 'text/plain; charset=utf-8').header('Cache-Control', 'no-store').send(text);
+  });
+  // A screen that keeps the firmware it came with until its first update (the SDC2): a copy of it, or going back to it.
+  app.get('/api/screens/:id/original', owner, async (req, reply) => {
+    const id = one(req);
+    const data = await screens.originalCopy(id);
+    return reply
+      .header('Content-Type', 'application/octet-stream')
+      .header('Content-Disposition', `attachment; filename="original-${id}.bin"`)
+      .header('Cache-Control', 'no-store')
+      .send(data);
+  });
+  app.post('/api/screens/:id/original', owner, async (req, reply) => {
+    await screens.restoreKept(one(req));
+    return reply.code(204).send();
   });
 
   // The original firmware comes in as raw bytes, so this route has its own body parser and size limit.

@@ -9,7 +9,7 @@ import { loadFirmwareFiles, type FirmwareFile } from './firmware-files.js';
 
 export interface FirmwareImage {
   model: string;
-  chip: 'esp8266' | 'esp32';
+  chip: 'esp8266' | 'esp32' | 'esp32c2';
   version: string;
   size: number;
   md5: string;
@@ -32,6 +32,19 @@ const ESP32_PARTITIONS_AT = 0x8000;
 export const STOCK_OTA_LIMIT = 0x80000;
 /** What RaptHooker sends to a stock screen at most, leaving a margin. */
 export const STOCK_SAFE_SIZE = 0x7c000;
+/**
+ * The SDC2's app slots (firmware/screen/partitions-sdc2.csv): its stock firmware's layout, which never changes. Its
+ * update page writes the slot it isn't running from, and checks the whole image before it starts it.
+ */
+export const SDC2_APP_SIZE = 0xc0000;
+/**
+ * What RaptHooker sends to an SDC2 on its stock firmware at most. Its update page (the SD Pro's, ported) makes room
+ * for the free space less 4 KB, in whole 4 KB sectors: 0xBF000 bytes. This leaves a margin.
+ */
+export const SDC2_STOCK_SAFE_SIZE = 0xbe000;
+
+/** The chip id an ESP32-family image carries at 12. */
+const CHIP_IDS = { esp32: 0, esp32c2: 12 } as const;
 
 const MARKER = 'RHSCREEN-FW:';
 
@@ -130,6 +143,7 @@ export function imageProblems(d: Uint8Array): string[] {
 
 /** Why an image mustn't go to a stock screen's OTA (empty if it may): on top of imageProblems, the stock's own limits. */
 export function stockProblems(d: Uint8Array, model: string): string[] {
+  if (screenModel(model)?.chip === 'esp32c2') return sdc2Problems(d, model);
   const problems = imageProblems(d);
   if (d.length > STOCK_SAFE_SIZE) problems.push(`${d.length} bytes is over the ${STOCK_SAFE_SIZE} the stock firmware can take`);
   if (d[2] !== 2) problems.push('not DIO flash mode');
@@ -140,13 +154,39 @@ export function stockProblems(d: Uint8Array, model: string): string[] {
 }
 
 /**
- * What's wrong with an ESP32 app image (empty if nothing): the header (ESP32, SHA-256 appended), every segment inside
- * the file, the checksum, the SHA-256, and that it fits the app partition. The board's own update code checks the
- * same again before it starts it.
+ * Why an image mustn't go to an SDC2 on its stock firmware (empty if it may): a whole ESP32-C2 image for DIO, 4 MB
+ * flash, that fits its app slot and is RaptHooker's firmware for it. The stock firmware checks the image again before
+ * it starts it, but nothing more: the file name its page asks for isn't checked at all.
  */
-export function esp32ImageProblems(d: Uint8Array): string[] {
-  if (d.length < 64 || d[0] !== 0xe9) return ['not ESP32 firmware'];
-  if ((d[12]! | (d[13]! << 8)) !== 0) return ['not for the ESP32'];
+function sdc2Problems(d: Uint8Array, model: string): string[] {
+  const problems = esp32ImageProblems(d, 'esp32c2');
+  if (problems.length) return problems;
+  problems.push(...sdc2FlashProblems(d));
+  if (d.length > SDC2_STOCK_SAFE_SIZE) problems.push(`${d.length} bytes is over the ${SDC2_STOCK_SAFE_SIZE} the stock firmware can take`);
+  if (imageMarker(d)?.model !== model) problems.push(`not RaptHooker firmware for ${model}`);
+  return problems;
+}
+
+/**
+ * Whether an ESP32-C2 image is for the SDC2's flash (DIO, 4 MB): firmware for another ESP32-C2 board may never start
+ * on it, and with no USB, nothing could put it right.
+ */
+export function sdc2FlashProblems(d: Uint8Array): string[] {
+  const problems: string[] = [];
+  if (d[2] !== 2) problems.push('not DIO flash mode');
+  if (d[3]! >> 4 !== 2) problems.push('not built for 4 MB of flash');
+  return problems;
+}
+
+/**
+ * What's wrong with an ESP32 (or ESP32-C2) app image (empty if nothing): the header (the chip, SHA-256 appended),
+ * every segment inside the file, the checksum, the SHA-256, and that it fits the app partition. The board's own update
+ * code checks the same again before it starts it.
+ */
+export function esp32ImageProblems(d: Uint8Array, chip: 'esp32' | 'esp32c2' = 'esp32'): string[] {
+  const name = chip === 'esp32' ? 'ESP32' : 'ESP32-C2';
+  if (d.length < 64 || d[0] !== 0xe9) return [`not ${name} firmware`];
+  if ((d[12]! | (d[13]! << 8)) !== CHIP_IDS[chip]) return [`not for the ${name}`];
   const segs = d[1]!;
   if (!segs || segs > 16) return ['bad segment count'];
   if (d[23] !== 1) return ['no SHA-256'];
@@ -166,7 +206,8 @@ export function esp32ImageProblems(d: Uint8Array): string[] {
     .update(d.subarray(0, pos + 1))
     .digest();
   if (!digest.equals(Buffer.from(d.subarray(pos + 1)))) return ["SHA-256 doesn't match"];
-  if (d.length > ESP32_APP_SIZE) return [`${d.length} bytes is over the ${ESP32_APP_SIZE} the app partition holds`];
+  const limit = chip === 'esp32' ? ESP32_APP_SIZE : SDC2_APP_SIZE;
+  if (d.length > limit) return [`${d.length} bytes is over the ${limit} the app partition holds`];
   return [];
 }
 
@@ -207,8 +248,8 @@ export function esp32BootProblems(d: Uint8Array): string[] {
 }
 
 /** Why an image can't be a screen's firmware (empty if it can), by the chip its model is built for. */
-export function firmwareProblems(d: Uint8Array, chip: 'esp8266' | 'esp32'): string[] {
-  return chip === 'esp32' ? esp32ImageProblems(d) : imageProblems(d);
+export function firmwareProblems(d: Uint8Array, chip: 'esp8266' | 'esp32' | 'esp32c2'): string[] {
+  return chip === 'esp8266' ? imageProblems(d) : esp32ImageProblems(d, chip);
 }
 
 /** Compares dotted versions (1.2.10 > 1.2.9). A pre-release (1.0.0-beta) comes before its release. */
@@ -243,7 +284,13 @@ export function loadFirmware(files: FirmwareFile[] = loadFirmwareFiles()): Map<s
     const data = buffer(file.data);
     const marker = imageMarker(data);
     if (!marker) continue;
-    const chip = screenModel(marker.model)?.chip ?? (data[12] === 0 && data[13] === 0 && data[23] === 1 ? 'esp32' : 'esp8266');
+    const chip =
+      screenModel(marker.model)?.chip ??
+      (data[23] === 1 && data[13] === 0 && data[12] === 0
+        ? 'esp32'
+        : data[23] === 1 && data[13] === 0 && data[12] === 12
+          ? 'esp32c2'
+          : 'esp8266');
     if (firmwareProblems(data, chip).length) continue;
     let boot: Buffer | null = null;
     if (chip === 'esp32') {

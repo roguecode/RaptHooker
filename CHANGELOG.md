@@ -11,6 +11,13 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   on your Wi-Fi
 - Wider pages for big and ultrawide screens. Pick **Wide** or **Full** page width under **Settings → Hub → This
   browser** or in the top bar menu, and charts grow taller to match ([#38](https://github.com/roguecode/RaptHooker/issues/38))
+- Experimental, untested support for the SDC2 Smart weather clock: the same clock on an ESP32-C2 chip, whose update
+  page asks for files named `SDC2…` (some come from the same listing as the ordinary one). It gets firmware of its own,
+  and is set up from its address once it's on your Wi-Fi, under **A GeekMagic Ultra or SDC2 clock already on your
+  Wi-Fi?**. Until its first update it keeps the firmware it came with: **Put the original firmware back** can go back
+  to it, or save a copy, without a file. RaptHooker's firmware goes back to it by itself if nothing has reached the
+  screen over the network within 10 minutes. The API has `GET` and `POST /api/screens/:id/original` for this, and
+  [docs/rapthooker-screens.md](docs/rapthooker-screens.md#an-sdc2-clock-experimental) has the details
 
 ### Changed
 
@@ -26,6 +33,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   ESPHome, say) now stops straight away and says it can't keep its settings, instead of timing out as if it couldn't
   join the Wi-Fi. [docs/rapthooker-screens.md](docs/rapthooker-screens.md#an-esp32-board-from-a-computer) has how to
   put RaptHooker on a board from a computer, for hubs that can't use USB (in Docker, say)
+- Setting up a Smart weather clock from a browser now says within a minute when the clock didn't take RaptHooker's
+  firmware (an SDC2 won't), instead of waiting five minutes for it to restart
 
 ## [0.11.0] - 2026-11-09
 

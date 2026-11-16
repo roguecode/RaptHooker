@@ -85,6 +85,11 @@ void app::clearCrashes() { plat::clearCrashes(); }
 // proved itself sooner, once it's on the network and has drawn a picture (if it has one to draw).
 static bool runningWell() {
   if (app::safeMode) return false;
+#if defined(RH_BOARD_SDC2)
+  // Its own trial is all that takes broken firmware back (platform.cpp): only something that has reached it over the
+  // network shows its Wi-Fi works.
+  if (plat::onTrial() && !web::reached()) return false;
+#endif
   uint32_t up = millis();
   if (plat::onTrial() && up > 30000 && net::online() && (fetch::draws() > 0 || !store::settings().imageUrl.length()))
     return true;

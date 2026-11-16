@@ -325,26 +325,61 @@ function ForgetScreen({ screen, onClose, onGone }: { screen: ScreenDevice; onClo
   );
 }
 
-/** Sends the maker's firmware file (which the hub checks) to put the screen back as it came. */
+/**
+ * Sends the maker's firmware file (which the hub checks) to put the screen back as it came. A screen that keeps the
+ * firmware it came with until its first update (an SDC2) can also go back to that, or have a copy saved, with no file.
+ */
 function RestoreStock({ screen, onClose, onGone }: { screen: ScreenDevice; onClose: () => void; onGone: () => void }) {
   const { toast } = useLive();
   const file = useRef<HTMLInputElement>(null);
   const [picked, setPicked] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const keeps = screenModel(screen.model)?.chip === 'esp32c2';
+  const gone = () => {
+    toast({
+      tone: 'success',
+      title: t('{name} is going back to its original firmware', { name: screen.name }),
+      body: t('Keep it plugged in while it restarts. It opens its own Wi-Fi again once done.'),
+    });
+    onClose();
+    onGone();
+  };
   const send = async () => {
     if (!picked) return;
     setBusy(true);
     try {
       await screensApi.restore(screen.id, picked);
-      toast({
-        tone: 'success',
-        title: t('{name} is going back to its original firmware', { name: screen.name }),
-        body: t('Keep it plugged in while it restarts. It opens its own Wi-Fi again once done.'),
-      });
-      onClose();
-      onGone();
+      gone();
     } catch (err) {
       toast({ tone: 'error', title: t("Couldn't put the original firmware back"), body: errorText(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const back = async () => {
+    setBusy(true);
+    try {
+      await screensApi.restoreKept(screen.id);
+      gone();
+    } catch (err) {
+      toast({ tone: 'error', title: t("Couldn't put the original firmware back"), body: errorText(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const save = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch(screensApi.originalUrl(screen.id), { credentials: 'same-origin', cache: 'no-store' });
+      if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error ?? `${res.status} ${res.statusText}`);
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `original-${screen.id}.bin`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    } catch (err) {
+      toast({ tone: 'error', title: t("Couldn't save the original firmware"), body: errorText(err) });
     } finally {
       setBusy(false);
     }
@@ -352,40 +387,63 @@ function RestoreStock({ screen, onClose, onGone }: { screen: ScreenDevice; onClo
   return (
     <Modal title={t('Put the original firmware back')} onClose={onClose}>
       <div className="stack">
-        <p className="muted">
-          {t(
-            "This puts the firmware the screen came with back on it, and the hub forgets it. You need the firmware file from the screen's maker: for a Smart weather clock, a file like SDPro_V1.0.6.bin; for a GeekMagic Ultra, one like FW-Smalltv-Ultra-V9.0.50.bin from GeekMagic's GitHub (unzipped).",
-          )}{' '}
-          <a href={GEEKMAGIC_FIRMWARE} target="_blank" rel="noreferrer noopener">
-            {t("GeekMagic's firmware")}
-          </a>
-        </p>
-        <p className="muted small">
-          {t("The hub checks the file is firmware for this screen before sending it. Keep the screen plugged in until it's back.")}
-        </p>
-        <div className="row">
-          <button type="button" className="btn" onClick={() => file.current?.click()}>
-            <Icon name="file" size={16} /> {picked ? picked.name : t('Choose the file')}
-          </button>
-          <input
-            ref={file}
-            type="file"
-            accept=".bin,application/octet-stream"
-            hidden
-            onChange={(e) => {
-              setPicked(e.target.files?.[0] ?? null);
-              e.target.value = '';
-            }}
-          />
-        </div>
+        {keeps && (
+          <>
+            <p className="muted">
+              {t(
+                "Until its first update, this screen keeps the firmware it came with, and can go back to it without a file. Save a copy first if you'd like to keep it.",
+              )}
+            </p>
+            <div className="row">
+              <button type="button" className="btn" disabled={busy} onClick={() => void save()}>
+                <Icon name="download" size={16} /> {t('Save a copy')}
+              </button>
+              <button type="button" className="btn danger" disabled={busy} onClick={() => void back()}>
+                <Icon name="undo" size={16} /> {t('Go back to it')}
+              </button>
+            </div>
+          </>
+        )}
+        {!keeps && (
+          <>
+            <p className="muted">
+              {t(
+                "This puts the firmware the screen came with back on it, and the hub forgets it. You need the firmware file from the screen's maker: for a Smart weather clock, a file like SDPro_V1.0.6.bin; for a GeekMagic Ultra, one like FW-Smalltv-Ultra-V9.0.50.bin from GeekMagic's GitHub (unzipped).",
+              )}{' '}
+              <a href={GEEKMAGIC_FIRMWARE} target="_blank" rel="noreferrer noopener">
+                {t("GeekMagic's firmware")}
+              </a>
+            </p>
+            <p className="muted small">
+              {t("The hub checks the file is firmware for this screen before sending it. Keep the screen plugged in until it's back.")}
+            </p>
+            <div className="row">
+              <button type="button" className="btn" onClick={() => file.current?.click()}>
+                <Icon name="file" size={16} /> {picked ? picked.name : t('Choose the file')}
+              </button>
+              <input
+                ref={file}
+                type="file"
+                accept=".bin,application/octet-stream"
+                hidden
+                onChange={(e) => {
+                  setPicked(e.target.files?.[0] ?? null);
+                  e.target.value = '';
+                }}
+              />
+            </div>
+          </>
+        )}
       </div>
       <div className="modal-actions">
         <button type="button" className="btn ghost" onClick={onClose}>
           {t('Cancel')}
         </button>
-        <button type="button" className="btn danger" disabled={!picked || busy} onClick={() => void send()}>
-          <Icon name="upload" size={16} /> {busy ? t('Sending…') : t('Put it back')}
-        </button>
+        {!keeps && (
+          <button type="button" className="btn danger" disabled={!picked || busy} onClick={() => void send()}>
+            <Icon name="upload" size={16} /> {busy ? t('Sending…') : t('Put it back')}
+          </button>
+        )}
       </div>
     </Modal>
   );

@@ -15,5 +15,11 @@ coverage/
 test-results/
 playwright-report/
 firmware/screen/.pio/
+# What pioarduino's ESP-IDF build of the SDC2's libraries leaves behind.
+firmware/screen/.dummy/
+firmware/screen/managed_components/
+firmware/screen/sdkconfig.*
+firmware/screen/dependencies.lock
+firmware/screen/CMakeLists.txt
 firmware/screen/test/host/*.exe
 firmware/screen/test/host/*.pdb

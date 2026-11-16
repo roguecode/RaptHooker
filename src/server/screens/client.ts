@@ -271,6 +271,25 @@ export class ScreenClient {
   }
 
   /**
+   * Firmware with "original": the firmware the screen came with, which it keeps in its other app slot until its first
+   * update replaces it (the SDC2).
+   */
+  async original(): Promise<Buffer> {
+    const res = await request(this.host, '/api/original', {
+      headers: this.bearer(),
+      timeoutMs: 60_000,
+      localAddress: this.localAddress,
+    });
+    if (res.status !== 200) throw new ScreenRequestError(errorOf(res), res.status);
+    return res.body;
+  }
+
+  /** Firmware with "original": it goes back to the firmware it kept, forgetting RaptHooker's settings, and restarts. */
+  originalBack(): Promise<unknown> {
+    return this.call('POST', '/api/original');
+  }
+
+  /**
    * Sends new firmware. The screen checks it (size, MD5, that it's a complete image for its model unless `force`),
    * installs it and restarts. force 1 takes firmware that isn't RaptHooker's (the stock firmware, to go back to it).
    */
@@ -285,12 +304,15 @@ export class ScreenClient {
       timeoutMs: 120_000,
       localAddress: this.localAddress,
     });
-    if (res.status !== 200) {
-      let error = `HTTP ${res.status}`;
-      try {
-        error = (JSON.parse(res.body.toString('utf8')) as { error?: string }).error ?? error;
-      } catch {}
-      throw new ScreenRequestError(error, res.status);
-    }
+    if (res.status !== 200) throw new ScreenRequestError(errorOf(res), res.status);
+  }
+}
+
+/** The error a screen's JSON answer gives, or its HTTP status. */
+function errorOf(res: Response): string {
+  try {
+    return (JSON.parse(res.body.toString('utf8')) as { error?: string }).error ?? `HTTP ${res.status}`;
+  } catch {
+    return `HTTP ${res.status}`;
   }
 }

@@ -17,8 +17,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   already on your Wi-Fi?**. Until its first update it keeps the firmware it came with: **Put the original firmware
   back** can go back to it, or save a copy, without a file. RaptHooker's firmware goes back to it by itself if nothing
   has reached the screen over the network within 10 minutes, or it has started four times without that. Its log is
-  kept through a restart, so a crash during set-up can be looked into. The API has `GET` and
-  `POST /api/screens/:id/original` for this, and
+  kept through a restart, and after a crash its screen shows where it was, so a crash during set-up can be looked
+  into. The API has `GET` and `POST /api/screens/:id/original` for this, and
   [docs/rapthooker-screens.md](docs/rapthooker-screens.md#an-sdc2-clock-experimental) has the details
 
 ### Changed
@@ -37,6 +37,24 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   put RaptHooker on a board from a computer, for hubs that can't use USB (in Docker, say)
 - Setting up a Smart weather clock from a browser now says within a minute when the clock didn't take RaptHooker's
   firmware (an SDC2 won't), instead of waiting five minutes for it to restart
+
+## [0.11.1-sdc2.3] - 2026-11-16
+
+The third beta for the SDC2 Smart weather clock. On the second, RaptHooker crashed on the clock whenever something
+joined its Wi-Fi during set-up. This one shows where. It has everything under [Unreleased] too.
+
+### Added
+
+- After a crash, the SDC2's set-up screen shows where it was: **Crash** (what went wrong), **Task**, **At** and
+  **Stack** (addresses in RaptHooker's firmware). Its log has the rest, along with how close each part of the
+  firmware has come to running out of memory for its stack
+
+### To try it
+
+1. Update the hub to this beta, under **Settings → Updates → Beta versions**.
+2. Set the clock up from its address again, as before.
+3. Join **RaptHooker-Screen-…** when asked. When the clock restarts with **Crash**, **Task**, **At** and **Stack** on
+   its screen, take a clear photo of it, close enough to read every letter and number. One crash is enough.
 
 ## [0.11.1-sdc2.2] - 2026-11-16
 

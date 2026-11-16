@@ -91,8 +91,14 @@ from that address (a second Wi-Fi adapter on the screen's hotspot). On Windows, 
   well (which shows its Wi-Fi works). If nothing has within 10 minutes, or it has started four times without being kept,
   it switches to the other app slot and restarts: the firmware it came with, the first time. Its log is kept through a
   restart (in `.noinit` RAM, not through a power cut), and logs the requests new firmware is sent, phones joining and
-  leaving its hotspot, and its free memory, so a crash during set-up can be traced from `/api/log`. After such a
-  restart its set-up screen shows the reset reason (**Restart**) and the last line logged before it (**Before**).
+  leaving its hotspot, its free memory and how much of each task's stack has never been used, so a crash during set-up
+  can be traced from `/api/log`. After such a restart its set-up screen shows the reset reason (**Restart**) and the
+  last line logged before it (**Before**). After a crash, ESP-IDF's panic handler has kept (through
+  `panic_arch_fill_info` and `panic_soc_fill_info`, wrapped with `-Wl,--wrap`) the exception or abort message, the task,
+  `pc`, `ra` and the code addresses on its stack: the next start logs them, keeps a summary in NVS (namespace `rhboot`,
+  key `crash`, shown as `system.crash` in `/api/info`) and shows them on the set-up screen instead (**Crash**, **Task**,
+  **At** for `pc` and `ra`, **Stack** for the first two from its stack). The build is reproducible, so they can be
+  looked up in its ELF.
 - **Settings** are JSON in a 4 KB sector: `"RHS1"`, the length and a CRC-32 (each 4 bytes, little-endian), then the
   JSON. On the ESP8266 it's the sector between the stock file system and EEPROM (0x3FA000), which the stock firmware
   doesn't use: its own files and settings are left alone, so the original firmware can go back. On the ESP32 it's the

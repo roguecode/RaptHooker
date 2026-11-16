@@ -108,7 +108,8 @@ screen opens when it restarts.
 Some Smart weather clocks, sold the same way and looking the same, have an ESP32-C2 inside instead of an ESP8266: the
 JUZIPi **SDC2**. Its own page tells it apart: its **Firmware Update (OTA)** section asks for files named `SDC2…`
 (an ordinary one asks for `SDP…`). It needs firmware of its own, which RaptHooker has, but **it hasn't been set up on a
-real one yet**: on the one it's been tried on so far, it started and then went back to its own firmware during set-up.
+real one yet**: on the one it's been tried on so far, it starts, then crashes when something joins its Wi-Fi during
+set-up, and goes back to its own firmware.
 
 The hub only puts that firmware on a clock whose own page says SDC2, since the clocks' update pages install whatever
 they're sent (an SDC2's firmware on an ordinary clock would leave it unable to start). On its own Wi-Fi a browser can't
@@ -135,7 +136,8 @@ If you try one, its **Log** (in **Screen details**) says how it's getting on, an
 something's wrong. It keeps its log through a restart (not a power cut), so if it restarts during set-up, before it's
 on your Wi-Fi, join **RaptHooker-Screen-…** again and open `http://192.168.4.1/api/log` for it, before it goes back to
 its own firmware. Its set-up screen then shows why it restarted (**Restart**) and the last thing it logged before
-that (**Before**), so a photo of the screen helps too.
+that (**Before**). After a crash it shows where instead (**Crash**, **Task**, **At** and **Stack**), so a photo of the
+screen helps too.
 
 ### From a browser
 

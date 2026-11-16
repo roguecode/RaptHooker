@@ -30,4 +30,13 @@ uint32_t random32();
 String hmacSha256(const String& key, const String& message);  // hex
 void systemInfo(JsonObject s);
 
+#if defined(RH_BOARD_SDC2)
+// The crash this start followed, short enough for the set-up screen (empty if it didn't follow one). The whole of it
+// is in the log, and in /api/info's system.crash until the next.
+struct Crash {
+  String what, task, at, stack;
+};
+const Crash& crash();
+#endif
+
 }  // namespace plat

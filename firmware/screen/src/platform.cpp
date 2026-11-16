@@ -74,8 +74,11 @@ void plat::systemInfo(JsonObject s) {
 #include <mbedtls/md.h>
 #if defined(RH_BOARD_SDC2)
 #include <esp_app_desc.h>
+#include <esp_memory_utils.h>
 #include <esp_partition.h>
+#include <esp_private/panic_internal.h>
 #include <nvs.h>
+#include <riscv/rvruntime-frames.h>
 #endif
 
 static const uint64_t TRIAL_US = 10ULL * 60 * 1000 * 1000;
@@ -103,6 +106,145 @@ static const char* BOOT_NS = "rhboot";
 static const uint8_t TRIAL_STARTS = 4;
 static bool bootloaderTrial = false;
 static char build[17];
+
+// What a crash left, for the next start: the panic handler's own report goes to a serial port nobody can reach. Kept by
+// ESP-IDF's panic handler as it works out what happened (panic_arch_fill_info and panic_soc_fill_info are wrapped:
+// -Wl,--wrap in platformio.ini), the flash cache back on, in memory a restart keeps.
+static const uint32_t CRASH_MAGIC = 0x43525348;
+static const size_t CRASH_CALLS = 32;
+static const size_t CRASH_SCAN = 256;  // words of stack looked through for code addresses
+struct CrashRecord {
+  uint32_t magic;
+  uint32_t pc, ra, sp, cause, tval;
+  uint32_t abort;
+  char reason[72];  // the exception, or what abort() was given
+  char task[16];
+  uint32_t calls;
+  uint32_t call[CRASH_CALLS];  // code addresses on its stack, from the top: where it was called from
+};
+__NOINIT_ATTR static CrashRecord rec;
+static bool crashKept = false;  // a crash in the panic handler itself comes through again: the first is the one
+static plat::Crash crashNow;
+static String crashSaved;
+
+static void keepText(char* to, size_t size, const char* from) {
+  size_t i = 0;
+  if (from && (esp_ptr_internal(from) || esp_ptr_in_drom(from)))
+    for (; i + 1 < size && from[i]; i++) to[i] = from[i];
+  to[i] = 0;
+}
+
+// Only what's in RAM or flash is read (the stack pointer may be anything), and the task's name last, since the crash
+// may have overwritten its control block.
+static void keepCrash(void* frame, panic_info_t* info) {
+  if (crashKept) return;
+  crashKept = true;
+  rec.magic = 0;
+  const RvExcFrame* f = (const RvExcFrame*)frame;
+  bool ok = f && esp_ptr_internal(f);
+  rec.pc = (uint32_t)info->addr;
+  rec.ra = ok ? f->ra : 0;
+  rec.sp = ok ? f->sp : 0;
+  rec.cause = ok ? f->mcause : 0;
+  rec.tval = ok ? f->mtval : 0;
+  rec.abort = g_panic_abort;
+  keepText(rec.reason, sizeof(rec.reason), g_panic_abort ? g_panic_abort_details : info->reason);
+  rec.calls = 0;
+  const uint32_t* s = (const uint32_t*)rec.sp;
+  for (size_t i = 0; !(rec.sp & 3) && i < CRASH_SCAN && rec.calls < CRASH_CALLS; i++) {
+    if (!esp_ptr_internal(s + i) || !esp_ptr_internal((const uint8_t*)(s + i) + 3)) break;
+    uint32_t w = s[i];
+    if (!(w & 1) && esp_ptr_executable((const void*)w)) rec.call[rec.calls++] = w;
+  }
+  rec.task[0] = 0;
+  rec.magic = CRASH_MAGIC;
+  TaskHandle_t t = xTaskGetCurrentTaskHandle();
+  if (t && esp_ptr_internal(t)) keepText(rec.task, sizeof(rec.task), pcTaskGetName(t));
+}
+
+extern "C" void __real_panic_arch_fill_info(void* frame, panic_info_t* info);
+extern "C" void __real_panic_soc_fill_info(void* frame, panic_info_t* info);
+
+extern "C" void __wrap_panic_arch_fill_info(void* frame, panic_info_t* info) {
+  __real_panic_arch_fill_info(frame, info);
+  keepCrash(frame, info);
+}
+
+// Watchdogs, cache errors and the stack guard.
+extern "C" void __wrap_panic_soc_fill_info(void* frame, panic_info_t* info) {
+  __real_panic_soc_fill_info(frame, info);
+  keepCrash(frame, info);
+}
+
+static String hex8(uint32_t v) {
+  char b[9];
+  snprintf(b, sizeof(b), "%08lx", (unsigned long)v);
+  return b;
+}
+
+// Logs what the last crash left, keeps it in NVS (so it outlasts going back to the stock firmware, and a power cut),
+// and works out the short version the set-up screen shows.
+static void readCrash(esp_reset_reason_t r) {
+  bool crashed = r == ESP_RST_PANIC || r == ESP_RST_INT_WDT || r == ESP_RST_TASK_WDT || r == ESP_RST_WDT;
+  if (crashed && rec.magic == CRASH_MAGIC) {
+    rec.reason[sizeof(rec.reason) - 1] = 0;
+    rec.task[sizeof(rec.task) - 1] = 0;
+    if (rec.calls > CRASH_CALLS) rec.calls = 0;
+    String what = rec.reason, task = rec.task, at;
+    // A task watchdog aborts without saying anything: the reset reason does.
+    if (!what.length()) what = reasonText;
+    if (rec.abort) {
+      const char* x = strstr(rec.reason, "0x");
+      uint32_t a = x ? strtoul(x + 2, nullptr, 16) : 0;
+      const char* over = strstr(rec.reason, "overflow in task ");
+      if (over) {
+        what = "Stack overflow";
+        task = String(over + 17);
+        int end = task.indexOf(' ');
+        if (end > 0) task = task.substring(0, end);
+      } else if (!strncmp(rec.reason, "assert", 6)) {
+        what = "Assert failed";
+      } else if (!strncmp(rec.reason, "abort()", 7)) {
+        what = "abort()";
+      }
+      at = a ? hex8(a) : String("-");
+    } else {
+      at = hex8(rec.pc) + " " + hex8(rec.ra);
+    }
+    String calls;
+    uint8_t shown = 0;
+    for (uint32_t i = 0; i < rec.calls; i++) {
+      uint32_t w = rec.call[i];
+      if ((w & 1) || w == rec.pc || w == rec.ra) continue;
+      calls += " " + hex8(w);
+      if (shown < 2) crashNow.stack += (shown++ ? " " : "") + hex8(w);
+    }
+    crashNow.what = what;
+    crashNow.task = task.length() ? task : String("?");
+    crashNow.at = at;
+    logf("crash: %s, in task %s", rec.reason, crashNow.task.c_str());
+    logf("crash: pc %08lx ra %08lx sp %08lx cause %lu tval %08lx", (unsigned long)rec.pc, (unsigned long)rec.ra,
+         (unsigned long)rec.sp, (unsigned long)rec.cause, (unsigned long)rec.tval);
+    for (size_t i = 0; i < calls.length(); i += 12 * 9) logf("crash: stack%s", calls.substring(i, i + 12 * 9).c_str());
+    String saved = String(build) + " " + rec.reason + " | " + crashNow.task + " | " + hex8(rec.pc) + " " + hex8(rec.ra) + " |" + calls;
+    nvs_handle_t h;
+    if (nvs_open(BOOT_NS, NVS_READWRITE, &h) == ESP_OK) {
+      nvs_set_str(h, "crash", saved.substring(0, 400).c_str());
+      nvs_commit(h);
+      nvs_close(h);
+    }
+  }
+  rec.magic = 0;
+  nvs_handle_t h;
+  if (nvs_open(BOOT_NS, NVS_READONLY, &h) == ESP_OK) {
+    char saved[401];
+    size_t len = sizeof(saved);
+    if (nvs_get_str(h, "crash", saved, &len) == ESP_OK) crashSaved = saved;
+    nvs_close(h);
+  }
+}
+
+const plat::Crash& plat::crash() { return crashNow; }
 
 static bool keptBuild() {
   nvs_handle_t h;
@@ -200,6 +342,7 @@ void plat::begin() {
   esp_ota_img_states_t state;
 #if defined(RH_BOARD_SDC2)
   esp_app_get_elf_sha256(build, sizeof(build));
+  readCrash(r);
   bootloaderTrial = running && esp_ota_get_state_partition(running, &state) == ESP_OK && state == ESP_OTA_IMG_PENDING_VERIFY;
   bool newBuild = bootloaderTrial || !keptBuild();
   if (newBuild) {
@@ -288,6 +431,9 @@ void plat::systemInfo(JsonObject s) {
   s["chipRev"] = ESP.getChipRevision();
   s["partition"] = running ? running->label : "";
   s["trial"] = trial;
+#if defined(RH_BOARD_SDC2)
+  if (crashSaved.length()) s["crash"] = crashSaved;
+#endif
 }
 
 #endif

@@ -57,7 +57,7 @@ static int trialChannel = 0;
 static uint32_t trialStartAt = 0;
 
 #if defined(RH_BOARD_SDC2)
-#include <esp_image_format.h>
+#include <esp_app_desc.h>
 #include <esp_ota_ops.h>
 #include <esp_partition.h>
 
@@ -69,35 +69,35 @@ static uint32_t trialStartAt = 0;
 static bool reached = false;  // something has talked to it over the network since it started
 
 // The firmware the screen came with stays in the other app slot until the first update replaces it: its length there
-// (0 if that slot holds none, or RaptHooker's), worked out once.
+// (0 if that slot holds none, or RaptHooker's), worked out once. Only the headers are read, so /api/info stays quick:
+// the hub checks a copy is whole, and the screen checks the image again before it goes back to it.
 static int32_t originalLen = -1;
 
-static bool hasMarker(const esp_partition_t* p, size_t len) {
-  static const char m[] = "RHSCREEN-FW:";
-  const size_t ml = sizeof(m) - 1;
-  uint8_t chunk[512];
-  size_t match = 0;
-  for (size_t at = 0; at < len; at += sizeof(chunk)) {
-    size_t n = min(sizeof(chunk), len - at);
-    if (esp_partition_read(p, at, chunk, n) != ESP_OK) return false;
-    for (size_t i = 0; i < n; i++) {
-      // The marker has no repeated prefix, so a mismatch only has to check its first character again.
-      match = chunk[i] == (uint8_t)m[match] ? match + 1 : chunk[i] == (uint8_t)m[0] ? 1 : 0;
-      if (match == ml) return true;
-    }
+static int32_t imageLength(const esp_partition_t* p) {
+  uint8_t h[24];
+  if (esp_partition_read(p, 0, h, sizeof(h)) != ESP_OK || h[0] != 0xE9 || h[12] != CHIP_ID || h[13] != 0) return 0;
+  uint32_t at = sizeof(h);
+  for (uint8_t s = 0; s < h[1]; s++) {
+    uint32_t seg[2];
+    if (esp_partition_read(p, at, seg, sizeof(seg)) != ESP_OK) return 0;
+    at += sizeof(seg) + seg[1];
+    if (at > p->size) return 0;
   }
-  return false;
+  at = (at + 16) & ~15u;  // padded so the checksum byte ends a 16-byte block
+  if (h[23] == 1) at += 32;  // the SHA-256
+  return at <= p->size ? at : 0;
 }
 
 static const esp_partition_t* original() {
   const esp_partition_t* other = esp_ota_get_next_update_partition(nullptr);
   if (originalLen < 0) {
     originalLen = 0;
-    esp_image_metadata_t meta = {};
-    esp_partition_pos_t pos = {other ? other->address : 0, other ? other->size : 0};
-    if (other && esp_image_verify(ESP_IMAGE_VERIFY_SILENT, &pos, &meta) == ESP_OK && !hasMarker(other, meta.image_len))
-      originalLen = meta.image_len;
-    logf("web: original firmware %s", originalLen ? "kept" : "not kept");
+    esp_app_desc_t desc;
+    // RaptHooker's builds all have this one's project name; the stock firmware's is its own.
+    if (other && esp_ota_get_partition_description(other, &desc) == ESP_OK &&
+        strncmp(desc.project_name, esp_app_get_description()->project_name, sizeof(desc.project_name)) != 0)
+      originalLen = imageLength(other);
+    logf("web: original firmware %s (%ld bytes)", originalLen ? "kept" : "not kept", (long)originalLen);
   }
   return originalLen ? other : nullptr;
 }
@@ -738,8 +738,16 @@ void web::begin() {
 #if defined(RH_BOARD_SDC2)
   server.on("/api/original", HTTP_GET, handleOriginal);
   server.on("/api/original", HTTP_POST, handleOriginalBack);
-  server.addMiddleware([](WebServer&, Middleware::Callback next) {
+  server.addMiddleware([](WebServer& s, Middleware::Callback next) {
     ::reached = true;
+    // What new firmware is asked for, in the log (once for a run of the same): the last line before a crash says what
+    // did it.
+    static String last;
+    if (plat::onTrial()) {
+      String what = String(s.method() == HTTP_GET ? "GET " : s.method() == HTTP_POST ? "POST " : "OTHER ") + s.uri();
+      if (what != last) logf("web: %s", what.c_str());
+      last = what;
+    }
     return next();
   });
 #endif

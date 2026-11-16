@@ -94,9 +94,10 @@ static volatile bool trial = false;
 static esp_timer_handle_t guard = nullptr;
 
 #if defined(RH_BOARD_SDC2)
-// The SDC2's boot loader is the stock firmware's, which may not take new firmware back by itself. So the firmware
-// keeps its own trial: new firmware (a build that hasn't yet been kept, by its ELF SHA-256 in NVS) is kept once it has
-// been reached over the network, and otherwise goes back to what's in the other app slot (the stock firmware, at
+// The SDC2's boot loader is the stock firmware's. It takes new firmware back at its first restart, crash or not, which
+// leaves no trace of why, and may not on every clock. So the firmware keeps a trial of its own, and ends the boot
+// loader's once that's armed: new firmware (a build that hasn't yet been kept, by its ELF SHA-256 in NVS) is kept once it
+// has been reached over the network, and otherwise goes back to what's in the other app slot (the stock firmware, at
 // first) after 10 minutes, or after it has started four times without being kept.
 static const char* BOOT_NS = "rhboot";
 static const uint8_t TRIAL_STARTS = 4;
@@ -220,6 +221,9 @@ void plat::begin() {
     args.name = "trial";
 #if defined(RH_BOARD_SDC2)
     if (esp_timer_create(&args, &guard) != ESP_OK || esp_timer_start_once(guard, TRIAL_US) != ESP_OK) goBack("can't time its trial");
+    // Its own trial is armed: the boot loader's ends here, so a crash restarts this firmware (counted above, and logged)
+    // rather than going straight back with no trace of why.
+    if (trial && bootloaderTrial && esp_ota_mark_app_valid_cancel_rollback() == ESP_OK) bootloaderTrial = false;
 #else
     if (esp_timer_create(&args, &guard) == ESP_OK) esp_timer_start_once(guard, TRIAL_US);
 #endif

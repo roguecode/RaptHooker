@@ -68,6 +68,9 @@ enum : int {
 // Set by the Wi-Fi task, logged by net::loop.
 static volatile bool evLeft = false, evJoined = false, evGotIp = false;
 static volatile uint8_t evChannel = 0;
+#if defined(RH_BOARD_SDC2)
+static volatile uint8_t evApJoined = 0, evApLeft = 0;
+#endif
 static String txtHub, txtClaimed;
 
 static void beginStation(const String& ssid, const String& pass, int channel = 0) {
@@ -213,6 +216,10 @@ static void onWifiEvent(WiFiEvent_t e, WiFiEventInfo_t info) {
       evJoined = true;
       break;
     case ARDUINO_EVENT_WIFI_STA_GOT_IP: evGotIp = true; break;
+#if defined(RH_BOARD_SDC2)
+    case ARDUINO_EVENT_WIFI_AP_STACONNECTED: evApJoined = evApJoined + 1; break;
+    case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED: evApLeft = evApLeft + 1; break;
+#endif
     default: break;
   }
 }
@@ -231,6 +238,16 @@ static void logEvents() {
     evGotIp = false;
     logf("net: address %s, gateway %s", WiFi.localIP().toString().c_str(), WiFi.gatewayIP().toString().c_str());
   }
+#if defined(RH_BOARD_SDC2)
+  if (evApJoined) {
+    evApJoined = 0;
+    logf("net: joined the hotspot, %d on it", WiFi.softAPgetStationNum());
+  }
+  if (evApLeft) {
+    evApLeft = 0;
+    logf("net: left the hotspot, %d on it", WiFi.softAPgetStationNum());
+  }
+#endif
 }
 
 // The ESP32's station stops trying after some failures (a network that isn't there, a wrong password): it's asked

@@ -11,12 +11,14 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   on your Wi-Fi
 - Wider pages for big and ultrawide screens. Pick **Wide** or **Full** page width under **Settings → Hub → This
   browser** or in the top bar menu, and charts grow taller to match ([#38](https://github.com/roguecode/RaptHooker/issues/38))
-- Experimental, untested support for the SDC2 Smart weather clock: the same clock on an ESP32-C2 chip, whose update
-  page asks for files named `SDC2…` (some come from the same listing as the ordinary one). It gets firmware of its own,
-  and is set up from its address once it's on your Wi-Fi, under **A GeekMagic Ultra or SDC2 clock already on your
-  Wi-Fi?**. Until its first update it keeps the firmware it came with: **Put the original firmware back** can go back
-  to it, or save a copy, without a file. RaptHooker's firmware goes back to it by itself if nothing has reached the
-  screen over the network within 10 minutes. The API has `GET` and `POST /api/screens/:id/original` for this, and
+- Experimental support for the SDC2 Smart weather clock, not yet set up on a real one: the same clock on an ESP32-C2
+  chip, whose update page asks for files named `SDC2…` (some come from the same listing as the ordinary one). It gets
+  firmware of its own, and is set up from its address once it's on your Wi-Fi, under **A GeekMagic Ultra or SDC2 clock
+  already on your Wi-Fi?**. Until its first update it keeps the firmware it came with: **Put the original firmware
+  back** can go back to it, or save a copy, without a file. RaptHooker's firmware goes back to it by itself if nothing
+  has reached the screen over the network within 10 minutes, or it has started four times without that. Its log is
+  kept through a restart, so a crash during set-up can be looked into. The API has `GET` and
+  `POST /api/screens/:id/original` for this, and
   [docs/rapthooker-screens.md](docs/rapthooker-screens.md#an-sdc2-clock-experimental) has the details
 
 ### Changed
@@ -35,6 +37,35 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   put RaptHooker on a board from a computer, for hubs that can't use USB (in Docker, say)
 - Setting up a Smart weather clock from a browser now says within a minute when the clock didn't take RaptHooker's
   firmware (an SDC2 won't), instead of waiting five minutes for it to restart
+
+## [0.11.1-sdc2.2] - 2026-11-16
+
+The second beta for the SDC2 Smart weather clock. On the first, the clock took RaptHooker and started it, then went
+back to the firmware it came with when a phone joined its Wi-Fi during set-up. This one is for finding out why. It has
+everything under [Unreleased] too.
+
+### Added
+
+- The SDC2 keeps its log through a restart, and it now says what the clock was asked for during set-up, when phones
+  join and leave its Wi-Fi, and how much memory it has. After a restart during set-up, its screen shows why
+  (**Restart**) and the last thing it logged (**Before**)
+
+### Fixed
+
+- A restart during set-up (a crash, say) no longer sends the SDC2 straight back to the firmware it came with: it starts
+  RaptHooker again, so its log can be read. It still goes back after four starts, or 10 minutes, without being set up
+- The SDC2 answers the set-up sooner: it no longer reads through all of the firmware it came with first
+
+### To try it
+
+1. Update the hub to this beta, under **Settings → Updates → Beta versions**.
+2. Set the clock up from its address again, as before: in **Screens**, **Add a screen**, open **A GeekMagic Ultra or
+   SDC2 clock already on your Wi-Fi?**, type its address and press **Set up** or **Install RaptHooker**.
+3. Join **RaptHooker-Screen-…** when asked.
+4. If the clock restarts (it shows RaptHooker's set-up screen again, with **Restart** and **Before** lines), take a photo
+   of the screen. Then join **RaptHooker-Screen-…** again if you need to, open `http://192.168.4.1/api/log` and send
+   all of it. If set-up gets through, send its **Log** (in **Screen details**) anyway, and save a copy of its original
+   firmware: **Put the original firmware back** → **Save a copy**.
 
 ## [0.11.1-sdc2.1] - 2026-11-16
 

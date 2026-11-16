@@ -107,8 +107,8 @@ screen opens when it restarts.
 
 Some Smart weather clocks, sold the same way and looking the same, have an ESP32-C2 inside instead of an ESP8266: the
 JUZIPi **SDC2**. Its own page tells it apart: its **Firmware Update (OTA)** section asks for files named `SDC2…`
-(an ordinary one asks for `SDP…`). It needs firmware of its own, which RaptHooker has, but **nobody has tried it on a
-real one yet**.
+(an ordinary one asks for `SDP…`). It needs firmware of its own, which RaptHooker has, but **it hasn't been set up on a
+real one yet**: on the one it's been tried on so far, it started and then went back to its own firmware during set-up.
 
 The hub only puts that firmware on a clock whose own page says SDC2, since the clocks' update pages install whatever
 they're sent (an SDC2's firmware on an ordinary clock would leave it unable to start). On its own Wi-Fi a browser can't
@@ -125,14 +125,17 @@ What's different about it:
 - **It keeps the firmware it came with** until its first update replaces it: **Put the original firmware back** can go
   back to that without a file, and save a copy of it first (see [Looking after a screen](#looking-after-a-screen)).
 - **New firmware has to show it works.** RaptHooker's firmware on an SDC2 is kept once something has reached it over
-  the network (the set-up, say). If nothing has within 10 minutes, or it has started four times without that, it goes
-  back to the firmware in its other slot: the one it came with, the first time.
+  the network (the set-up, say). If nothing has within 10 minutes, or it has started four times without that (a crash
+  restarts it), it goes back to the firmware in its other slot: the one it came with, the first time.
 - **No WPA3:** WPA2, or a network that takes both, as with the other weather clocks.
 - If the picture is upside down, mirrored or the wrong colours, fix it with
   [Does the screen look right?](#does-the-screen-look-right) in its settings.
 
 If you try one, its **Log** (in **Screen details**) says how it's getting on, and is the most useful thing to send if
-something's wrong.
+something's wrong. It keeps its log through a restart (not a power cut), so if it restarts during set-up, before it's
+on your Wi-Fi, join **RaptHooker-Screen-…** again and open `http://192.168.4.1/api/log` for it, before it goes back to
+its own firmware. Its set-up screen then shows why it restarted (**Restart**) and the last thing it logged before
+that (**Before**), so a photo of the screen helps too.
 
 ### From a browser
 

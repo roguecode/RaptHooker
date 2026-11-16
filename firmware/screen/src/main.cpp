@@ -11,6 +11,9 @@
 #include "store.h"
 #include "version.h"
 
+#if defined(RH_BOARD_SDC2)
+#include <esp_system.h>
+#endif
 // Firmware for a small Wi-Fi screen that shows a picture from RaptHooker. RaptHooker sets it up (over the screen's
 // hotspot, or over USB with the settings written straight into flash), then manages it over the network: see
 // /api/info and web.cpp.
@@ -125,6 +128,14 @@ static void showDetails() {
     lines[n++] = {"Wi-Fi", net::apName()};
     lines[n++] = {"MAC", app::mac};
     lines[n++] = {"Firmware", FW_VERSION};
+#if defined(RH_BOARD_SDC2)
+    // Why it restarted during set-up (a crash, say), and what it was doing: on screen, as joining its hotspot to read
+    // the log might be what did it.
+    esp_reset_reason_t why = esp_reset_reason();
+    if (*logBefore() || (why != ESP_RST_POWERON && why != ESP_RST_SW && why != ESP_RST_UNKNOWN))
+      lines[n++] = {"Restart", app::resetReason()};
+    if (*logBefore()) lines[n++] = {"Before", logBefore()};
+#endif
     switch (net::trial()) {
       case net::Trial::Idle: status = "Waiting for RaptHooker"; break;
       case net::Trial::Testing: status = "Joining Wi-Fi..."; color = display::AMBER; break;
@@ -304,6 +315,9 @@ static void button() {
 }
 
 void setup() {
+#if defined(RH_BOARD_SDC2)
+  logKeep();
+#endif
   Serial.begin(115200);
   Serial.println();
   char build[96];
@@ -345,6 +359,15 @@ void loop() {
     button();
   }
   if (!stable && runningWell()) markStable();
+#if defined(RH_BOARD_SDC2)
+  // How much memory there is, for the log: every minute at first, then every half hour.
+  static uint32_t heapAt = 0;
+  if (!heapAt || millis() - heapAt >= (millis() < 15 * 60 * 1000 ? 60000u : 30 * 60 * 1000u)) {
+    heapAt = millis();
+    logf("heap: %u free, %u at the least, %u in one piece", (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMinFreeHeap(),
+         (unsigned)ESP.getMaxAllocHeap());
+  }
+#endif
   if (rebootAt && (int32_t)(millis() - rebootAt) >= 0) {
     // Asked to restart (new settings, say) by someone who reached it: new firmware on trial works well enough to keep,
     // and would otherwise be taken back by the restart. Not after installing an update, though: that would keep the

@@ -5,3 +5,7 @@
 // case has no serial port to read.
 void logf(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 void logWrite(Print& out);
+// SDC2: keeps what was logged before a restart (a crash, say), so /api/log has it. Before anything is logged.
+void logKeep();
+// SDC2: the last line logged before that restart, without its time ("" if it didn't keep one).
+const char* logBefore();

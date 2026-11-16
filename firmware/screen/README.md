@@ -84,12 +84,15 @@ from that address (a second Wi-Fi adapter on the screen's hotspot). On Windows, 
   on the network and has drawn a picture (or after six minutes with a way in), or before a restart it was asked for. If
   it crashes first, or hasn't managed within 10 minutes, the boot loader goes back to the firmware it replaced (the
   ESP32 keeps both, in `app0` and `app1`).
-- **On the SDC2** the boot loader is the stock firmware's, which may not take firmware back by itself, so the firmware
-  keeps a trial of its own: a build is new until it has been kept (its ELF SHA-256 in NVS, namespace `rhboot`), and it's
-  only kept, as above, once something has reached it over the network as well (which shows its Wi-Fi works). If nothing
-  has within 10 minutes, or it has started four times without being kept, it switches to the other app slot and
-  restarts: the firmware it came with, the first time. (Where the boot loader does take firmware back, that happens
-  too.)
+- **On the SDC2** the boot loader is the stock firmware's. It takes new firmware back at its first restart, crash or not,
+  and may not on every clock, so the firmware keeps a trial of its own and ends the boot loader's
+  (`esp_ota_mark_app_valid_cancel_rollback`) as soon as that's set: a build is new until it has been kept (its ELF
+  SHA-256 in NVS, namespace `rhboot`), and it's only kept, as above, once something has reached it over the network as
+  well (which shows its Wi-Fi works). If nothing has within 10 minutes, or it has started four times without being kept,
+  it switches to the other app slot and restarts: the firmware it came with, the first time. Its log is kept through a
+  restart (in `.noinit` RAM, not through a power cut), and logs the requests new firmware is sent, phones joining and
+  leaving its hotspot, and its free memory, so a crash during set-up can be traced from `/api/log`. After such a
+  restart its set-up screen shows the reset reason (**Restart**) and the last line logged before it (**Before**).
 - **Settings** are JSON in a 4 KB sector: `"RHS1"`, the length and a CRC-32 (each 4 bytes, little-endian), then the
   JSON. On the ESP8266 it's the sector between the stock file system and EEPROM (0x3FA000), which the stock firmware
   doesn't use: its own files and settings are left alone, so the original firmware can go back. On the ESP32 it's the

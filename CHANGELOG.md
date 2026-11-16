@@ -38,6 +38,31 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 - Setting up a Smart weather clock from a browser now says within a minute when the clock didn't take RaptHooker's
   firmware (an SDC2 won't), instead of waiting five minutes for it to restart
 
+## [0.11.1-sdc2.4] - 2026-11-16
+
+The fourth beta for the SDC2 Smart weather clock. The third showed where RaptHooker's firmware crashed on it: the first
+time anything connected to it. This one fixes that, so set-up should get further. It has everything under [Unreleased]
+too.
+
+### Added
+
+- Each build of the SDC2's firmware is now checked for instructions the clock's chip doesn't have, so firmware that would
+  crash like this can't go out again
+
+### Fixed
+
+- RaptHooker's firmware crashed on the SDC2 ("Illegal instruction") as soon as anything connected to it, so it couldn't
+  be set up. It had been built with instructions the clock's chip doesn't have, which would have crashed it reading
+  its settings too
+
+### To try it
+
+1. Update the hub to this beta, under **Settings → Updates → Beta versions**.
+2. Set the clock up from its address again, as before.
+3. Join **RaptHooker-Screen-…** when asked, and let set-up finish. If it crashes again, send a photo of its screen. If
+   it works, send its **Log** (in **Screen details**) anyway, and save a copy of its original firmware: **Put the
+   original firmware back** → **Save a copy**.
+
 ## [0.11.1-sdc2.3] - 2026-11-16
 
 The third beta for the SDC2 Smart weather clock. On the second, RaptHooker crashed on the clock whenever something

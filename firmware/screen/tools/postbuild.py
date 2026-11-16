@@ -3,9 +3,16 @@
 #   <model>.boot.bin  ESP32 only: flash from 0x1000 to 0x10000 for the first install over USB: the boot loader, the
 #                     partition table, an empty NVS and the OTA data that starts app0
 #   <model>.json      what's in them
-import hashlib, json, os, re, shutil, struct
+import hashlib, json, os, re, shutil, struct, subprocess
 
 Import("env")  # noqa: F821
+
+# The ESP32-C2 is RV32IMC. pioarduino's build script for it gives neither the compiler (platformio.ini does) nor the
+# linker the architecture, so the linker would take the C and C++ libraries built for the toolchain's default, which use
+# atomic instructions the chip doesn't have.
+RV32IMC = ["-march=rv32imc_zicsr_zifencei", "-mabi=ilp32"]
+if env.BoardConfig().get("build.mcu", "") == "esp32c2":  # noqa: F821
+    env.Append(LINKFLAGS=RV32IMC)  # noqa: F821
 
 # ESP8266: the stock /update_ota drops everything past 512 KB and still commits what it got, which would brick the
 # screen. Keep a margin under that.
@@ -82,6 +89,24 @@ def check_esp32(data, chip, env):
     print(f"{len(data) * 100 // limit}% of the app partition")
 
 
+# Atomic and floating-point instructions: an RV32IMC chip stops with "Illegal instruction" at the first one it runs.
+NOT_RV32IMC = re.compile(r"\t(amo[a-z]+\.w|lr\.w|sc\.w|f[a-z]+\.(s|d|w|wu|x)|flw|fsw|fld|fsd|frcsr|fscsr|frflags|fsflags|frrm|fsrm)\b")
+
+
+def check_rv32imc(elf, env):
+    objdump = re.sub(r"gcc(\.exe)?$", r"objdump\1", env.subst("$CC"))
+    out = subprocess.run([objdump, "-d", elf], capture_output=True, text=True, env=env["ENV"], check=True).stdout
+    where, found = "", {}
+    for line in out.splitlines():
+        m = re.match(r"^[0-9a-f]+ <(.+)>:$", line)
+        if m:
+            where = m.group(1)
+        elif NOT_RV32IMC.search(line):
+            found[where] = found.get(where, 0) + 1
+    if found:
+        raise SystemExit("instructions the ESP32-C2 doesn't have, in: " + ", ".join(sorted(found)))
+
+
 def boot_blob(build_dir):
     blob = bytearray(b"\xff" * (APP_AT - BOOT_AT))
     parts = [
@@ -109,6 +134,8 @@ def check(source, target, env):
     chip = env.BoardConfig().get("build.mcu", "esp32") if esp32 else "esp8266"
     if esp32:
         check_esp32(data, chip, env)
+        if chip == "esp32c2":
+            check_rv32imc(os.path.splitext(path)[0] + ".elf", env)
     else:
         check_esp8266(data)
     if f"RHSCREEN-FW:{model}:{version}".encode() not in data:

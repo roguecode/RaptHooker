@@ -47,7 +47,10 @@ ready-made Arduino libraries for the ESP32-C2: the first build compiles them fro
 `custom_sdkconfig` (the 26 MHz crystal, and what's left out to fit: logging, assertion messages, C++ exceptions, core
 dumps, PPP, WPA3), which takes several minutes, and again whenever those change. It leaves `.dummy/`,
 `managed_components/`, `CMakeLists.txt` and `sdkconfig.*` behind, which git ignores. Its first run may also set up
-PlatformIO's own Python environment again.
+PlatformIO's own Python environment again. pioarduino's Arduino build script for the ESP32-C2 gives no architecture,
+so `platformio.ini` (for the compiler) and `tools/postbuild.py` (for the linker) say `rv32imc`: otherwise the code and
+the C and C++ libraries are built for the toolchain's default, with atomic and floating-point instructions the chip
+doesn't have. The build fails if the image has any.
 
 Builds are reproducible: the same source gives the same bytes. The `cyd-crashtest` environment (not built by default,
 and not copied to `bin/`) crashes 20 s after it starts, to check on a board that a bad update is taken back. ESP32

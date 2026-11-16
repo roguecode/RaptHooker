@@ -11,7 +11,7 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   on your Wi-Fi
 - Wider pages for big and ultrawide screens. Pick **Wide** or **Full** page width under **Settings → Hub → This
   browser** or in the top bar menu, and charts grow taller to match ([#38](https://github.com/roguecode/RaptHooker/issues/38))
-- Experimental support for the SDC2 Smart weather clock, not yet set up on a real one: the same clock on an ESP32-C2
+- Experimental support for the SDC2 Smart weather clock, so far set up on one real clock: the same clock on an ESP32-C2
   chip, whose update page asks for files named `SDC2…` (some come from the same listing as the ordinary one). It gets
   firmware of its own, and is set up from its address once it's on your Wi-Fi, under **A GeekMagic Ultra or SDC2 clock
   already on your Wi-Fi?**. Until its first update it keeps the firmware it came with: **Put the original firmware

@@ -159,7 +159,7 @@ static void startMdns() {
     return;
   }
   uint8_t mac[6];
-  WiFi.macAddress(mac);
+  plat::stationMac(mac);
   char id[13];
   snprintf(id, sizeof(id), "%02x%02x%02x%02x%02x%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 #if defined(ESP32)
@@ -263,7 +263,7 @@ static void retryStation(uint32_t now, const String& ssid, const String& pass) {
 
 void net::begin() {
   uint8_t mac[6];
-  WiFi.macAddress(mac);
+  plat::stationMac(mac);
   ap = "RaptHooker-Screen-" + hex3(mac, true);
   host = "rh-screen-" + hex3(mac, false);
   WiFi.persistent(false);

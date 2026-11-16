@@ -36,9 +36,9 @@ other firmware out of the box. Before changing anything the hub checks a GeekMag
 - **Might work (untested):** ESP32-2432S028 boards with two USB sockets (USB-C and micro USB). They usually have another
   display chip, which RaptHooker tries; check it with [Does the screen look right?](#does-the-screen-look-right) after
   setting one up.
-- **Might work (untested, experimental):** a Smart weather clock whose update page asks for files named `SDC2…`. It's
-  the JUZIPi SDC2: the same clock on an ESP32-C2, sold the same way (even from the listing above). It gets firmware of
-  its own, and is set up from its address: see [An SDC2 clock](#an-sdc2-clock-experimental).
+- **Might work (experimental):** a Smart weather clock whose update page asks for files named `SDC2…`. It's the JUZIPi
+  SDC2: the same clock on an ESP32-C2, sold the same way (even from the listing above). It gets firmware of its own, and
+  is set up from its address: see [An SDC2 clock](#an-sdc2-clock-experimental).
 - **Won't work:** other GeekMagic models (the Pro is an ESP32, for one), and weather clocks on other firmware. The hub
   checks a screen before it changes anything, so trying one does no harm.
 - **Won't work:** other ESP32 boards and sizes (2.4", 3.5", ESP32-S3 boards). Their displays are wired differently and
@@ -107,9 +107,8 @@ screen opens when it restarts.
 
 Some Smart weather clocks, sold the same way and looking the same, have an ESP32-C2 inside instead of an ESP8266: the
 JUZIPi **SDC2**. Its own page tells it apart: its **Firmware Update (OTA)** section asks for files named `SDC2…`
-(an ordinary one asks for `SDP…`). It needs firmware of its own, which RaptHooker has, but **it hasn't been set up on a
-real one yet**: on the one it's been tried on so far, it started but crashed as soon as anything connected to it, which
-should now be fixed.
+(an ordinary one asks for `SDP…`). It needs firmware of its own, which RaptHooker has. It's been set up on one real
+clock so far, so it's still experimental.
 
 The hub only puts that firmware on a clock whose own page says SDC2, since the clocks' update pages install whatever
 they're sent (an SDC2's firmware on an ordinary clock would leave it unable to start). On its own Wi-Fi a browser can't

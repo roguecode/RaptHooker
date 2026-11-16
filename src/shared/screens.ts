@@ -42,8 +42,8 @@ export const SCREEN_MODELS: readonly ScreenModel[] = [
     confirmed: [],
   },
   {
-    // The same maker's clock on an ESP32-C2: its update page asks for files named SDC2... Untested on a real one, so
-    // its panel can be turned, mirrored and have its colours fixed from RaptHooker.
+    // The same maker's clock on an ESP32-C2: its update page asks for files named SDC2... Set up on one real clock so
+    // far, so its panel can be turned, mirrored and have its colours fixed from RaptHooker.
     id: 'sdc2-240',
     name: 'Smart weather clock (SDC2)',
     width: 240,

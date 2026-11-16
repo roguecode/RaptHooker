@@ -6,6 +6,9 @@
 #include <ESP8266WiFi.h>
 #elif defined(ESP32)
 #include <WiFi.h>
+#if defined(RH_BOARD_SDC2)
+#include <esp_mac.h>
+#endif
 #else
 #error "ESP8266 or ESP32 only"
 #endif
@@ -29,6 +32,14 @@ uint32_t maxBlock();      // the biggest block that can be allocated
 uint32_t random32();
 String hmacSha256(const String& key, const String& message);  // hex
 void systemInfo(JsonObject s);
+
+// The station's MAC address, which names the screen: its id, hotspot and host name. Arduino 3 (the SDC2's) leaves the
+// buffer as it was until Wi-Fi has started, so there it's read from the chip.
+#if defined(RH_BOARD_SDC2)
+inline void stationMac(uint8_t* mac) { esp_read_mac(mac, ESP_MAC_WIFI_STA); }
+#else
+inline void stationMac(uint8_t* mac) { WiFi.macAddress(mac); }
+#endif
 
 #if defined(RH_BOARD_SDC2)
 // The crash this start followed, short enough for the set-up screen (empty if it didn't follow one). The whole of it

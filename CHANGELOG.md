@@ -36,6 +36,30 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 - Setting up a Smart weather clock from a browser now says within a minute when the clock didn't take RaptHooker's
   firmware (an SDC2 won't), instead of waiting five minutes for it to restart
 
+## [0.11.1-sdc2.1] - 2026-11-16
+
+A beta for trying RaptHooker on an SDC2 Smart weather clock: one whose update page asks for files named `SDC2…`. Nobody
+has tried it on a real one yet. It has everything under [Unreleased] too.
+
+### Added
+
+- Experimental support for the SDC2 Smart weather clock, the same clock on an ESP32-C2 chip. It gets RaptHooker
+  firmware of its own, put on from its address on your Wi-Fi
+- If nothing reaches the screen over the network within 10 minutes of RaptHooker going on, or it starts four times
+  without being set up, it goes back to the firmware it came with by itself. Until its first update, **Put the original
+  firmware back** can also take it back, or save a copy of that firmware
+
+### To try it
+
+1. Connect the clock to your Wi-Fi from its own page, as its instructions say, and note the address it shows.
+2. In **Screens**, press **Add a screen**. Open **A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?** (when the
+   hub sets screens up from your browser, it's at the step where you join the screen's Wi-Fi), type its address and
+   press **Set up** or **Install RaptHooker**.
+3. Join **RaptHooker-Screen-…** when asked, and let it finish.
+4. Then, in the screen's settings: **Put the original firmware back** → **Save a copy**, and keep the file. If the
+   picture is upside down, mirrored or the wrong colours, use **Does the screen look right?**. If something's wrong,
+   its **Log** (in **Screen details**) is the most useful thing to send.
+
 ## [0.11.0] - 2026-11-09
 
 ### Added

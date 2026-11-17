@@ -26,6 +26,7 @@ import { USB_REASONS } from './strings';
 const KIND_LABELS: Record<HotspotKind, () => string> = {
   sdpro: () => t('{name}, as it came', { name: screenStock('sdpro').name }),
   geekmagic: () => t('{name}, as it came', { name: screenStock('geekmagic').name }),
+  sdc2: () => t('{name}, as it came', { name: screenStock('sdc2').name }),
   rapthooker: () => t('RaptHooker screen, waiting to be set up'),
 };
 
@@ -290,8 +291,9 @@ function WifiRow({ net, onPick, highlight = false }: { net: WifiNetwork; onPick:
 }
 
 /**
- * A GeekMagic Ultra that has joined the network with its own firmware (its hotspot only opens for a minute after it
- * starts then): set up from its address instead.
+ * A GeekMagic Ultra or SDC2 clock that has joined the network with its own firmware (a GeekMagic's hotspot only opens
+ * for a minute after it starts then; an SDC2 can only be told from an SD Pro by its own page): set up from its address
+ * instead.
  */
 export function ByAddress({ onPick, busy = false, action }: { onPick: (address: string) => void; busy?: boolean; action?: string }) {
   const id = useId();
@@ -299,7 +301,7 @@ export function ByAddress({ onPick, busy = false, action }: { onPick: (address: 
   const address = screenAddress(text);
   return (
     <details className="wifi-others by-address">
-      <summary>{t('A GeekMagic Ultra already on your Wi-Fi?')}</summary>
+      <summary>{t('A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?')}</summary>
       <form
         className="stack"
         onSubmit={(e) => {
@@ -309,7 +311,7 @@ export function ByAddress({ onPick, busy = false, action }: { onPick: (address: 
       >
         <p className="hint">
           {t(
-            "Its own firmware shows its address on the screen, like 192.168.1.50. RaptHooker checks it's a GeekMagic Ultra before changing anything.",
+            'Its own firmware shows its address on the screen, like 192.168.1.50, or your router lists it. RaptHooker checks which screen it is before changing anything.',
           )}
         </p>
         <div className="by-address-row">
@@ -557,7 +559,7 @@ function SetupForm({
             {target.kind === 'usb'
               ? target.port.path
               : target.kind === 'address'
-                ? t('A GeekMagic Ultra on your network')
+                ? t('A GeekMagic Ultra or SDC2 clock on your network')
                 : target.net.kind
                   ? KIND_LABELS[target.net.kind]()
                   : t("A network RaptHooker doesn't recognise")}

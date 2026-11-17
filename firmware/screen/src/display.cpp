@@ -1,6 +1,10 @@
 #include "display.h"
 
+#if defined(RH_BOARD_SDC2)
+#include "lcd.h"
+#else
 #include <TFT_eSPI.h>
+#endif
 
 #include "hw.h"
 #include "jpeg.h"
@@ -8,7 +12,11 @@
 #include "logo.h"
 #include "store.h"
 
+#if defined(RH_BOARD_SDC2)
+static Lcd tft;
+#else
 static TFT_eSPI tft;
+#endif
 static bool started = false;
 static char controllerId[8] = "st7789";
 
@@ -20,6 +28,7 @@ static bool pushBlock(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* da
   return true;
 }
 
+#if !defined(RH_BOARD_SDC2)
 static void replayPanelInit(const uint8_t* p) {
   uint8_t count = pgm_read_byte(p++);
   while (count--) {
@@ -33,6 +42,7 @@ static void replayPanelInit(const uint8_t* p) {
     }
   }
 }
+#endif
 
 static String fit(const String& s, int width) {
   if (tft.textWidth(s) <= width) return s;
@@ -186,6 +196,63 @@ void display::setPanel(uint8_t c) {
 }
 
 const char* display::profile() { return panel.name; }
+
+#elif defined(RH_BOARD_SDC2)
+
+static uint8_t corrections = 0;
+
+// The stock set-up leaves MADCTL at 0 (RGB, rows and columns in order) with the colours inverted (it's an IPS panel).
+// Turning it round reverses both; the picture then starts 80 rows into the controller's memory.
+static void applyPanel() {
+  uint8_t m = 0;
+  if (corrections & PANEL_FLIP) m ^= MADCTL_MX | MADCTL_MY;
+  if (corrections & PANEL_MIRROR) m ^= MADCTL_MX;
+  if (corrections & PANEL_SWAP) m ^= MADCTL_BGR;
+  tft.setMadctl(m, (m & MADCTL_MY) ? PANEL_ROW_OFFSET_TURNED : 0);
+  tft.invertDisplay(!(corrections & PANEL_INVERT));
+}
+
+void display::begin(uint8_t brightness) {
+  ledcAttach(PIN_BACKLIGHT, 5000, 10);
+  ledcWrite(PIN_BACKLIGHT, 1024);  // off (low is on) while the panel starts
+  if (!tft.begin(PIN_SCLK, PIN_MOSI, PIN_DC, PIN_RST, SPI_MODE_PANEL, SPI_HZ)) {
+    logf("display: couldn't start the panel's SPI");
+    return;
+  }
+  tft.command(0x01);  // SWRESET, then the stock set-up from a clean slate
+  delay(150);
+  const uint8_t* p = PANEL_INIT;
+  for (uint8_t count = *p++; count--;) {
+    uint8_t cmd = *p++, args = *p++, n = args & 0x7F;
+    tft.command(cmd, p, n);
+    p += n;
+    if (args & 0x80) {
+      uint8_t ms = *p++;
+      delay(ms == 255 ? 500 : ms);
+    }
+  }
+  corrections = store::settings().panel;
+  applyPanel();
+  tft.fillScreen(TFT_BLACK);
+  started = true;
+  setBrightness(brightness);
+  logf("display: ready, corrections %u", corrections);
+}
+
+void display::setBrightness(uint8_t percent) {
+  if (!started) return;
+  percent = constrain(percent, 1, 100);
+  ledcWrite(PIN_BACKLIGHT, 1024 - (uint32_t)percent * 1024 / 100);
+}
+
+void display::setPanel(uint8_t c) {
+  corrections = c & 0x0F;
+  if (!started) return;
+  applyPanel();
+  logf("display: corrections %u", corrections);
+}
+
+const char* display::profile() { return "sdc2"; }
 
 #endif
 

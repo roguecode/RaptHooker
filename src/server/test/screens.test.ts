@@ -5,17 +5,20 @@ import { parseConfig } from '../config.js';
 import {
   compareVersions,
   crc8266,
+  esp32ImageProblems,
+  firmwareProblems,
   imageMarker,
   imageProblems,
   loadFirmware,
   md5,
+  SDC2_STOCK_SAFE_SIZE,
   stockProblems,
   STOCK_SAFE_SIZE,
 } from '../screens/firmware.js';
 import { ScreenClient } from '../screens/client.js';
 import { flashGeekmagic, flashStock, identifyGeekmagic, identifyStock } from '../screens/stock.js';
 import { ScreenManager, upgradeScreen } from '../screens/manager.js';
-import { FakeScreen, MockWifi, type FakeScreenOptions } from '../screens/simulator.js';
+import { FakeScreen, MockWifi, SDC2_ORIGINAL, type FakeScreenOptions } from '../screens/simulator.js';
 import { NoUsb } from '../screens/usb/types.js';
 import { NoWifi } from '../screens/wifi/types.js';
 import { parseNetworks } from '../screens/wifi/netsh.js';
@@ -76,6 +79,23 @@ describe('screen firmware', () => {
     expect(compareVersions('1.0.0', '1.0.0')).toBe(0);
     expect(compareVersions('1.0.0-beta', '1.0.0')).toBe(-1);
   });
+
+  it('ships an image for the SDC2 that its stock update page can take', () => {
+    const c2 = firmware.get('sdc2-240')!;
+    expect(c2).toMatchObject({ model: 'sdc2-240', chip: 'esp32c2', version: fw.version, boot: null });
+    expect(imageMarker(c2.data)).toEqual({ model: 'sdc2-240', version: c2.version });
+    expect(esp32ImageProblems(c2.data, 'esp32c2')).toEqual([]);
+    expect(stockProblems(c2.data, 'sdc2-240')).toEqual([]);
+    expect(c2.size).toBeLessThanOrEqual(SDC2_STOCK_SAFE_SIZE);
+    // Not for the other chips, and the other chips' images aren't for it.
+    expect(esp32ImageProblems(c2.data)).toEqual(['not for the ESP32']);
+    expect(firmwareProblems(c2.data, 'esp8266')).not.toEqual([]);
+    expect(stockProblems(fw.data, 'sdc2-240')).toEqual(['not for the ESP32-C2']);
+    expect(stockProblems(c2.data, 'sdpro-240')).not.toEqual([]);
+    const flipped = Buffer.from(c2.data);
+    flipped[300_000]! ^= 1;
+    expect(stockProblems(flipped, 'sdc2-240')).not.toEqual([]);
+  });
 });
 
 describe('netsh', () => {
@@ -129,6 +149,7 @@ async function world(
     geekmagicModel?: string;
     stockOnNetwork?: boolean;
     noStore?: boolean;
+    model?: string;
   } = {},
 ) {
   const t = tempStore();
@@ -143,6 +164,7 @@ async function world(
     geekmagicModel: opts.geekmagicModel,
     stockOnNetwork: opts.stockOnNetwork,
     noStore: opts.noStore,
+    model: opts.model,
   });
   await fake.start();
   const fakes = [fake];
@@ -162,7 +184,7 @@ async function world(
         ? [
             {
               id: fake.id,
-              model: 'sdpro-240',
+              model: fake.model,
               firmware: fake.firmware,
               api: 1,
               ip: fake.address,
@@ -533,6 +555,92 @@ describe('setting up a GeekMagic Ultra', () => {
     const sdpro = await world();
     await expect(sdpro.screens.install(sdpro.fake.address)).rejects.toThrow('No GeekMagic Ultra');
     expect(sdpro.fake.events).toEqual([]);
+  });
+});
+
+describe('the SDC2 (the Smart weather clock on an ESP32-C2)', () => {
+  const c2 = firmware.get('sdc2-240')!;
+  const sdc2 = { stockKind: 'sdc2', model: 'sdc2-240' } as const;
+
+  it('is told from an SD Pro only by its own page, which asks for files named SDC2', async () => {
+    const one = new FakeScreen({ ...sdc2, fetchPictures: false });
+    const sdpro = new FakeScreen({ fetchPictures: false, mac: '02:52:48:00:00:02' });
+    await one.start();
+    await sdpro.start();
+    cleanups.push(
+      () => one.stop(),
+      () => sdpro.stop(),
+    );
+    expect(await identifyStock(one.address)).toMatchObject({ kind: 'sdc2', model: 'sdc2-240', mac: '02:52:48:00:00:01' });
+    expect(await identifyStock(sdpro.address)).toMatchObject({ kind: 'sdpro', model: 'sdpro-240', mac: '02:52:48:00:00:02' });
+  });
+
+  it('gets its own firmware over its hotspot, and an SD Pro never does', async () => {
+    const { fake, wifi, screens } = await world(sdc2);
+    const done = finished(screens);
+    screens.startSetup(input);
+    expect(await done).toMatchObject({ state: 'done', screenId: fake.id, hubBack: true });
+    expect(fake.events).toContain(`sdc2 ota ${c2.version}`);
+    expect(fake.sketchMd5).toBe(c2.md5);
+    expect(wifi.joins).toEqual(['Smart weather clock', 'RaptHooker-Screen-000001']);
+    expect(screens.get(fake.id)).toMatchObject({ model: 'sdc2-240', panel: 0 });
+
+    const sdpro = await world();
+    const sdproDone = finished(sdpro.screens);
+    sdpro.screens.startSetup(input);
+    expect(await sdproDone).toMatchObject({ state: 'done' });
+    expect(sdpro.fake.events).toContain(`stock ota ${fw.version}`);
+    expect(sdpro.fake.events).not.toContain('bricked');
+  });
+
+  it('is set up from its address, by the hub or for a browser to finish', async () => {
+    const hub = await world({ ...sdc2, stockOnNetwork: true });
+    const done = finished(hub.screens);
+    hub.screens.startSetup({ ...input, hotspot: '', address: hub.fake.address });
+    expect(await done).toMatchObject({ state: 'done', screenId: hub.fake.id });
+    expect(hub.fake.events).toContain(`sdc2 ota ${c2.version}`);
+
+    const browser = await world({ ...sdc2, stockOnNetwork: true });
+    expect(await browser.screens.install(browser.fake.address)).toMatchObject({
+      found: { model: 'Smart Weather Clock - WiFi Setup', version: '' },
+      firmware: { model: 'sdc2-240', version: c2.version, md5: c2.md5 },
+      confirmed: true,
+    });
+    await new Promise((r) => setTimeout(r, browser.fake.restartMs + 50));
+    expect(browser.fake.hotspot).toBe('RaptHooker-Screen-000001');
+  });
+
+  it('keeps the firmware it came with until its first update, to save or go back to', async () => {
+    const { fake, screens } = await world(sdc2);
+    const done = finished(screens);
+    screens.startSetup(input);
+    await done;
+    expect((await screens.originalCopy(fake.id)).equals(SDC2_ORIGINAL)).toBe(true);
+    await screens.restoreKept(fake.id);
+    expect(fake.events).toContain('original back');
+    expect(screens.list()).toEqual([]);
+    await new Promise((r) => setTimeout(r, fake.restartMs + 50));
+    expect(fake.stock).toBe(true);
+
+    const updated = await world(sdc2);
+    const again = finished(updated.screens);
+    updated.screens.startSetup(input);
+    await again;
+    updated.fake.keptOriginal = false;
+    await expect(updated.screens.originalCopy(updated.fake.id)).rejects.toThrow('an update replaced it');
+    await expect(updated.screens.restoreKept(updated.fake.id)).rejects.toThrow('an update replaced it');
+    expect(updated.screens.list()).toHaveLength(1);
+  });
+
+  it('is never sent firmware from a file, which nothing can check is for its crystal', async () => {
+    const { fake, screens } = await world(sdc2);
+    const done = finished(screens);
+    screens.startSetup(input);
+    await done;
+    await expect(screens.restoreStock(fake.id, SDC2_ORIGINAL)).rejects.toThrow("can't be sent firmware from a file");
+    await expect(screens.restoreStock(fake.id, fw.data)).rejects.toThrow("can't be sent firmware from a file");
+    expect(fake.events.filter((e) => e.startsWith('ota'))).toEqual([]);
+    expect(screens.list()).toHaveLength(1);
   });
 });
 

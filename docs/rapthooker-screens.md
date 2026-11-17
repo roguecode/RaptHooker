@@ -19,6 +19,7 @@ reconnecting to Wi-Fi, it hasn't had a new picture for a while) the screen says 
 | --------------------------------------------------------- | --------- | ---------------------------------------------- | --------------------------------------------------------------------------- |
 | **Smart weather clock** (unbranded, on "SD Pro" firmware) | 240 × 240 | Over its own Wi-Fi, from its original firmware | [AliExpress listing](https://www.aliexpress.com/item/1005011924447121.html) |
 | **GeekMagic Ultra** (genuine, on GeekMagic's firmware)    | 240 × 240 | Over its own Wi-Fi, or from its address        | [AliExpress listing](https://www.aliexpress.com/item/1005007542991850.html) |
+| **SDC2 Smart weather clock** (on an ESP32-C2)             | 240 × 240 | From its address ([see below](#an-sdc2-clock)) | Yes (no listing yet)                                                        |
 | **ESP32-2432S028 2.8" ("Cheap Yellow Display")**          | 320 × 240 | Plugged into the hub's USB                     | [AliExpress listing](https://www.aliexpress.com/item/1005010399042230.html) |
 
 The listings only show where users bought a screen that then worked with RaptHooker. **They aren't endorsements**:
@@ -94,10 +95,46 @@ down), and only to a screen it has identified.
 ### A GeekMagic Ultra that's on your Wi-Fi already
 
 A GeekMagic Ultra that has been set up with its own app or page is on your Wi-Fi, and only opens **GIFTV** for a minute
-after it starts. Instead of catching that, open **A GeekMagic Ultra already on your Wi-Fi?** under the list, type the
-address it shows on its screen (like `192.168.1.50`) and press **Set up**. The hub checks what's at that address is a
-GeekMagic Ultra, installs RaptHooker there over your network, then carries on as above on RaptHooker's own network
-(**RaptHooker-Screen-** and six characters), which the screen opens when it restarts.
+after it starts. Instead of catching that, open **A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?** under the
+list, type the address it shows on its screen (like `192.168.1.50`) and press **Set up**. The hub checks what's at that
+address is a GeekMagic Ultra (or an [SDC2 clock](#an-sdc2-clock)), installs RaptHooker there over your
+network, then carries on as above on RaptHooker's own network (**RaptHooker-Screen-** and six characters), which the
+screen opens when it restarts.
+
+### An SDC2 clock
+
+Some Smart weather clocks, sold the same way and looking the same, have an ESP32-C2 inside instead of an ESP8266: the
+JUZIPi **SDC2**. Its own page tells it apart: its **Firmware Update (OTA)** section asks for files named `SDC2…`
+(an ordinary one asks for `SDP…`). It needs firmware of its own, which RaptHooker has.
+
+The hub only puts that firmware on a clock whose own page says SDC2, since the clocks' update pages install whatever
+they're sent (an SDC2's firmware on an ordinary clock would leave it unable to start). On its own Wi-Fi a browser can't
+read that page, so an SDC2 is set up from its address:
+
+1. Connect it to your Wi-Fi from its own page (join its Wi-Fi network, open `http://192.168.4.1`), as its instructions
+   say. It shows its address on the screen, or your router lists it.
+2. In **Add a screen**, open **A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?** (under the list, or at the
+   second step [from a browser](#from-a-browser)), type its address and press **Set up** (or **Install RaptHooker**).
+3. Carry on as for any other screen on its new network, **RaptHooker-Screen-…**.
+
+What's different about it:
+
+- **It keeps the firmware it came with** until its first update replaces it: **Put the original firmware back** can go
+  back to that without a file, and save a copy of it first (see [Looking after a screen](#looking-after-a-screen)).
+  Once back, it rejoins the Wi-Fi it was on; if it shows its own Wi-Fi set-up screen instead, unplug it for a few
+  seconds and plug it back in.
+- **New firmware has to show it works.** RaptHooker's firmware on an SDC2 is kept once something has reached it over
+  the network (the set-up, say). If nothing has within 10 minutes, or it has started four times without that (a crash
+  restarts it), it goes back to the firmware in its other slot: the one it came with, the first time.
+- **No WPA3:** WPA2, or a network that takes both, as with the other weather clocks.
+- If the picture is upside down, mirrored or the wrong colours, fix it with
+  [Does the screen look right?](#does-the-screen-look-right) in its settings.
+
+If something's wrong, its **Log** (in **Screen details**) says how it's getting on, and is the most useful thing to send. It keeps its log through a restart (not a power cut), so if it restarts during set-up, before it's
+on your Wi-Fi, join **RaptHooker-Screen-…** again and open `http://192.168.4.1/api/log` for it, before it goes back to
+its own firmware. Its set-up screen then shows why it restarted (**Restart**) and the last thing it logged before
+that (**Before**). After a crash it shows where instead (**Crash**, **Task**, **At** and **Stack**), so a photo of the
+screen helps too.
 
 ### From a browser
 
@@ -115,9 +152,11 @@ does the same when the screen is out of the hub's reach.
    screen your Wi-Fi details and waits for it to join.
 4. Go back to your own Wi-Fi. The page tells the hub about the screen.
 
-A GeekMagic Ultra that's on your Wi-Fi already can skip the second step: at that step, open **A GeekMagic Ultra already
-on your Wi-Fi?**, type its address and press **Install RaptHooker**. The hub checks it and installs RaptHooker over your
-network; then join **RaptHooker-Screen-…** as in the third step.
+A GeekMagic Ultra or [SDC2 clock](#an-sdc2-clock) that's on your Wi-Fi already can skip the second step:
+at that step, open **A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?**, type its address and press **Install
+RaptHooker**. The hub checks it and installs RaptHooker over your network; then join **RaptHooker-Screen-…** as in the
+third step. An SDC2 can only be set up this way: on its own Wi-Fi the page can't tell it from an ordinary Smart weather
+clock, so it sends the ordinary clock's firmware, which an SDC2 won't take (the page then says so).
 
 Keep the page open (don't reload it) until it's done. It needs the hub's `http://` address: a page opened over
 `https://` (through Tailscale, say) isn't allowed to talk to the screen, and says so. If your phone warns that the
@@ -255,10 +294,14 @@ network, MAC address, Wi-Fi signal and how long it has been running, and:
   `FW-Smalltv-Ultra-V9.0.50.bin` (unzipped) from [GeekMagic's GitHub](https://github.com/GeekMagicClock/smalltv-ultra).
   The hub checks the file is firmware for this screen first.
   The screen restarts on its own firmware with its own settings as they were, RaptHooker's are wiped, and the hub
-  forgets it. ESP32 boards don't have this: the demo they came with isn't kept. To keep it, copy the board's flash
+  forgets it. An [SDC2 clock](#an-sdc2-clock) keeps its own firmware until its first update: until then
+  this offers **Go back to it**, with no file, and **Save a copy** of it (after going back, unplug it for a few seconds if
+  it doesn't rejoin its Wi-Fi). It can't be sent firmware from a file: nothing
+  in one says it was built for the SDC2's crystal, and the wrong one could leave it unable to start, with no USB to put
+  it right. ESP32 boards don't have this: the demo they came with isn't kept. To keep it, copy the board's flash
   before setting it up (`python -m esptool --port COM7 read_flash 0 0x400000 backup.bin`) and write it back the same
   way (`write_flash 0 backup.bin`).
-- **Does the screen look right?** (an ESP32 board): the test pattern and the display corrections.
+- **Does the screen look right?** (an ESP32 board or SDC2 clock): the test pattern and the display corrections.
 
 ## Permissions
 
@@ -303,8 +346,10 @@ RaptHooker running on a computer, then add it to the Docker hub from **Found on 
   it keeps its settings in: as an update over ESPHome, say, or `esp32-2432s028.bin` written on its own. It can join
   your Wi-Fi but forgets it when it restarts, so the hub never adds it. Put RaptHooker on it again over USB, plugged
   into the hub or [a computer](#an-esp32-board-from-a-computer).
-- **The picture is upside down, mirrored or the wrong colours** on an ESP32 board: see
+- **The picture is upside down, mirrored or the wrong colours** on an ESP32 board or SDC2 clock: see
   [Does the screen look right?](#does-the-screen-look-right)
+- **A Smart weather clock won't take RaptHooker over its own Wi-Fi** (it's still on its own firmware afterwards). If its
+  update page asks for files named `SDC2…`, it's an [SDC2](#an-sdc2-clock): set it up from its address.
 
 ## Privacy and security
 

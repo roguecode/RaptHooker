@@ -56,6 +56,57 @@ static bool trialPending = false, trialSaved = false;
 static int trialChannel = 0;
 static uint32_t trialStartAt = 0;
 
+#if defined(RH_BOARD_SDC2)
+#include <esp_app_desc.h>
+#include <esp_ota_ops.h>
+#include <esp_partition.h>
+
+// Firmware images carry their chip's id at 12 in the header.
+#define CHIP_ID 12  // ESP32-C2
+#define CHIP_TEXT "not ESP32-C2 firmware"
+// And its flash mode and size: anything else (another ESP32-C2 board's firmware, say) may never start on this one.
+#define FLASH_OK(b) ((b)[2] == 2 && ((b)[3] >> 4) == 2)  // DIO, 4 MB
+static bool reached = false;  // something has talked to it over the network since it started
+
+// The firmware the screen came with stays in the other app slot until the first update replaces it: its length there
+// (0 if that slot holds none, or RaptHooker's), worked out once. Only the headers are read, so /api/info stays quick:
+// the hub checks a copy is whole, and the screen checks the image again before it goes back to it.
+static int32_t originalLen = -1;
+
+static int32_t imageLength(const esp_partition_t* p) {
+  uint8_t h[24];
+  if (esp_partition_read(p, 0, h, sizeof(h)) != ESP_OK || h[0] != 0xE9 || h[12] != CHIP_ID || h[13] != 0) return 0;
+  uint32_t at = sizeof(h);
+  for (uint8_t s = 0; s < h[1]; s++) {
+    uint32_t seg[2];
+    if (esp_partition_read(p, at, seg, sizeof(seg)) != ESP_OK) return 0;
+    at += sizeof(seg) + seg[1];
+    if (at > p->size) return 0;
+  }
+  at = (at + 16) & ~15u;  // padded so the checksum byte ends a 16-byte block
+  if (h[23] == 1) at += 32;  // the SHA-256
+  return at <= p->size ? at : 0;
+}
+
+static const esp_partition_t* original() {
+  const esp_partition_t* other = esp_ota_get_next_update_partition(nullptr);
+  if (originalLen < 0) {
+    originalLen = 0;
+    esp_app_desc_t desc;
+    // RaptHooker's builds all have this one's project name; the stock firmware's is its own.
+    if (other && esp_ota_get_partition_description(other, &desc) == ESP_OK &&
+        strncmp(desc.project_name, esp_app_get_description()->project_name, sizeof(desc.project_name)) != 0)
+      originalLen = imageLength(other);
+    logf("web: original firmware %s (%ld bytes)", originalLen ? "kept" : "not kept", (long)originalLen);
+  }
+  return originalLen ? other : nullptr;
+}
+#else
+#define CHIP_ID 0  // ESP32
+#define CHIP_TEXT "not ESP32 firmware"
+#define FLASH_OK(b) true
+#endif
+
 static bool authorized() {
   const String& t = store::settings().token;
   if (!t.length()) return true;  // not set up yet: whoever is on its hotspot may set it up
@@ -129,6 +180,9 @@ static void handleInfo() {
 #if RH_HAS_PANEL
   f.add("panel");
   f.add("test-pattern");
+#endif
+#if defined(RH_BOARD_SDC2)
+  if (original()) f.add("original");
 #endif
   JsonObject w = d["wifi"].to<JsonObject>();
   w["ssid"] = c.ssid;
@@ -455,6 +509,39 @@ static void handleRoot() {
   server.send(200, "text/html", h);
 }
 
+#if defined(RH_BOARD_SDC2)
+// A copy of the firmware the screen came with, while it's still in the other app slot.
+static void handleOriginal() {
+  if (!requireAuth()) return;
+  const esp_partition_t* p = original();
+  if (!p) return sendError(404, "the original firmware has been replaced");
+  static uint8_t chunk[1024];
+  server.setContentLength(originalLen);
+  server.sendHeader("Content-Disposition", String("attachment; filename=\"original-") + app::id + ".bin\"");
+  server.send(200, "application/octet-stream", "");
+  for (int32_t at = 0; at < originalLen; at += sizeof(chunk)) {
+    size_t n = min<int32_t>(sizeof(chunk), originalLen - at);
+    if (esp_partition_read(p, at, chunk, n) != ESP_OK) break;
+    server.sendContent((const char*)chunk, n);
+  }
+}
+
+// Goes back to the firmware the screen came with, while it's still in the other app slot. RaptHooker's settings go,
+// as when other firmware is installed.
+static void handleOriginalBack() {
+  if (!requireAuth()) return;
+  const esp_partition_t* p = original();
+  if (!p) return sendError(404, "the original firmware has been replaced");
+  if (esp_ota_set_boot_partition(p) != ESP_OK) return sendError(500, "the original firmware doesn't check out");
+  installed = true;
+  store::wipe();
+  app::clearCrashes();
+  logf("web: going back to the original firmware in %s", p->label);
+  sendOk();
+  app::rebootIn(500);
+}
+#endif
+
 static void otaFail(const String& why) {
   if (!ota.error.length()) ota.error = why;
   logf("ota: %s", ota.error.c_str());
@@ -505,6 +592,9 @@ static void handleUpload() {
       otaFail(UPDATE_ERROR());
       return otaReset();
     }
+#if defined(RH_BOARD_SDC2)
+    originalLen = 0;  // the update goes where the original firmware was
+#endif
     Update.setMD5(md5.c_str());
 #if defined(ESP8266)
     check.begin(ota.size);
@@ -519,9 +609,9 @@ static void handleUpload() {
       return otaReset();
     }
 #else
-    // ESP32 image header: magic, then the chip id at 12 (0 for the ESP32). The rest is checked as it's installed.
-    if (ota.received == 0 && (up.currentSize < 16 || up.buf[0] != 0xE9 || up.buf[12] != 0 || up.buf[13] != 0)) {
-      otaFail("not ESP32 firmware");
+    // ESP32 image header: magic, then the chip id at 12. The rest is checked as it's installed.
+    if (ota.received == 0 && (up.currentSize < 16 || up.buf[0] != 0xE9 || up.buf[12] != CHIP_ID || up.buf[13] != 0 || !FLASH_OK(up.buf))) {
+      otaFail(CHIP_TEXT);
       return otaReset();
     }
 #endif
@@ -645,6 +735,22 @@ void web::begin() {
   server.on("/api/refresh", HTTP_POST, handleRefresh);
   server.on("/api/log", HTTP_GET, handleLog);
   server.on("/api/scan", HTTP_GET, handleScan);
+#if defined(RH_BOARD_SDC2)
+  server.on("/api/original", HTTP_GET, handleOriginal);
+  server.on("/api/original", HTTP_POST, handleOriginalBack);
+  server.addMiddleware([](WebServer& s, Middleware::Callback next) {
+    ::reached = true;
+    // What new firmware is asked for, in the log (once for a run of the same): the last line before a crash says what
+    // did it.
+    static String last;
+    if (plat::onTrial()) {
+      String what = String(s.method() == HTTP_GET ? "GET " : s.method() == HTTP_POST ? "POST " : "OTHER ") + s.uri();
+      if (what != last) logf("web: %s", what.c_str());
+      last = what;
+    }
+    return next();
+  });
+#endif
   server.onNotFound(handleNotFound);
   server.begin();
   logf("web: listening");
@@ -667,3 +773,6 @@ void web::loop() {
 
 bool web::updating() { return ota.active; }
 bool web::installed() { return ::installed; }
+#if defined(RH_BOARD_SDC2)
+bool web::reached() { return ::reached; }
+#endif

@@ -154,6 +154,11 @@ People's own setups depend on these, and changes break them silently:
 - **ESP32 boards' flash layout** ([partitions-esp32.csv](../firmware/screen/partitions-esp32.csv)) is written once,
   over USB, and can't be changed by an update: every later firmware has to fit its app partitions and read its
   settings from the `rhscreen` partition, in the same sector format the hub writes.
+- **The SDC2's flash layout** ([partitions-sdc2.csv](../firmware/screen/partitions-sdc2.csv)) is its stock firmware's
+  and never changes: every later firmware has to fit its 0xC0000 app slots (and, to go on over the stock firmware, the
+  0xBF000 its update page makes room for), and keep its settings in NVS (`rhscreen`/`sector`, the same sector format)
+  and its trial in `rhboot`. A hub that doesn't know the `sdc2-240` model (older than this) treats such a screen as an
+  unknown 240 × 240 one: it shows and is looked after, but gets no firmware updates or display corrections.
 
 ## Tests
 

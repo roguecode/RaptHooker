@@ -11,6 +11,9 @@
 #include "store.h"
 #include "version.h"
 
+#if defined(RH_BOARD_SDC2)
+#include <esp_system.h>
+#endif
 // Firmware for a small Wi-Fi screen that shows a picture from RaptHooker. RaptHooker sets it up (over the screen's
 // hotspot, or over USB with the settings written straight into flash), then manages it over the network: see
 // /api/info and web.cpp.
@@ -85,6 +88,11 @@ void app::clearCrashes() { plat::clearCrashes(); }
 // proved itself sooner, once it's on the network and has drawn a picture (if it has one to draw).
 static bool runningWell() {
   if (app::safeMode) return false;
+#if defined(RH_BOARD_SDC2)
+  // Its own trial is all that takes broken firmware back (platform.cpp): only something that has reached it over the
+  // network shows its Wi-Fi works.
+  if (plat::onTrial() && !web::reached()) return false;
+#endif
   uint32_t up = millis();
   if (plat::onTrial() && up > 30000 && net::online() && (fetch::draws() > 0 || !store::settings().imageUrl.length()))
     return true;
@@ -120,6 +128,23 @@ static void showDetails() {
     lines[n++] = {"Wi-Fi", net::apName()};
     lines[n++] = {"MAC", app::mac};
     lines[n++] = {"Firmware", FW_VERSION};
+#if defined(RH_BOARD_SDC2)
+    // Why it restarted during set-up (a crash, say), and what it was doing: on screen, as joining its hotspot to read
+    // the log might be what did it. After a crash, where it was instead of the usual lines.
+    esp_reset_reason_t why = esp_reset_reason();
+    const plat::Crash& k = plat::crash();
+    if (k.what.length()) {
+      n = 0;
+      lines[n++] = {"Wi-Fi", net::apName()};
+      lines[n++] = {"Crash", k.what};
+      lines[n++] = {"Task", k.task};
+      lines[n++] = {"At", k.at};
+      lines[n++] = {"Stack", k.stack.length() ? k.stack : String("-")};
+    } else if (*logBefore() || (why != ESP_RST_POWERON && why != ESP_RST_SW && why != ESP_RST_UNKNOWN)) {
+      lines[n++] = {"Restart", app::resetReason()};
+    }
+    if (*logBefore()) lines[n++] = {"Before", logBefore()};
+#endif
     switch (net::trial()) {
       case net::Trial::Idle: status = "Waiting for RaptHooker"; break;
       case net::Trial::Testing: status = "Joining Wi-Fi..."; color = display::AMBER; break;
@@ -299,6 +324,9 @@ static void button() {
 }
 
 void setup() {
+#if defined(RH_BOARD_SDC2)
+  logKeep();
+#endif
   Serial.begin(115200);
   Serial.println();
   char build[96];
@@ -312,7 +340,7 @@ void setup() {
   pinMode(PIN_TOUCH_IRQ, INPUT);
 #endif
   uint8_t m[6];
-  WiFi.macAddress(m);
+  plat::stationMac(m);
   char buf[18];
   snprintf(buf, sizeof(buf), "%02x%02x%02x%02x%02x%02x", m[0], m[1], m[2], m[3], m[4], m[5]);
   app::id = buf;
@@ -340,6 +368,24 @@ void loop() {
     button();
   }
   if (!stable && runningWell()) markStable();
+#if defined(RH_BOARD_SDC2)
+  // How much memory there is, for the log: every minute at first, then every half hour. With how close each task has
+  // come to the end of its stack (bytes it has never used).
+  static uint32_t heapAt = 0;
+  if (!heapAt || millis() - heapAt >= (millis() < 15 * 60 * 1000 ? 60000u : 30 * 60 * 1000u)) {
+    heapAt = millis();
+    logf("heap: %u free, %u at the least, %u in one piece", (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMinFreeHeap(),
+         (unsigned)ESP.getMaxAllocHeap());
+    static const char* const tasks[] = {"loopTask", "arduino_events", "sys_evt", "tiT", "wifi", "esp_timer"};
+    char line[140];
+    size_t len = snprintf(line, sizeof(line), "stacks:");
+    for (const char* name : tasks) {
+      TaskHandle_t t = xTaskGetHandle(name);
+      if (t && len < sizeof(line)) len += snprintf(line + len, sizeof(line) - len, " %s %u", name, (unsigned)uxTaskGetStackHighWaterMark(t));
+    }
+    logf("%s", line);
+  }
+#endif
   if (rebootAt && (int32_t)(millis() - rebootAt) >= 0) {
     // Asked to restart (new settings, say) by someone who reached it: new firmware on trial works well enough to keep,
     // and would otherwise be taken back by the restart. Not after installing an update, though: that would keep the

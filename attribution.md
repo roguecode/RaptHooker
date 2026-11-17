@@ -160,6 +160,18 @@ The channels in [src/server/channels.ts](src/server/channels.ts) follow each ser
   GeekMagic's that decode JPEG but not PNG.
 - The layout, colours, pill figure and icons are the app's own (see above), drawn again as SVG.
 
+## Screen firmware
+
+- **[TFT_eSPI](https://github.com/Bodmer/TFT_eSPI)** by Bodmer (FreeBSD licence, with Adafruit's BSD-licensed GFX
+  parts): drives the weather clocks' and ESP32 boards' panels. Its fonts 2 and 4 are copied, unchanged, into
+  [firmware/screen/src/fonts](firmware/screen/src/fonts) (with the licence) for the SDC2, which TFT_eSPI doesn't support:
+  [lcd.cpp](firmware/screen/src/lcd.cpp) draws them the same way over ESP-IDF's `esp_lcd`.
+- **[yanirta/sdc2-stock-clock](https://github.com/yanirta/sdc2-stock-clock)**, a community firmware for the SDC2 (its
+  repository has no licence, so it was only read): its README gave the SDC2's chip, crystal, flash, layout and panel
+  wiring as read from the stock firmware, and the stock update page's file names and size. No code was copied.
+- The SD Pro clock's own firmware (V1.0.6, from its maker's download page) was taken apart to see what its update page
+  does with a file (it installs anything, whatever its name) and how much room it makes, which the SDC2's is a port of.
+
 ## Libraries and tools
 
 - Server: [Fastify](https://fastify.dev) with [@fastify/cookie](https://github.com/fastify/fastify-cookie),

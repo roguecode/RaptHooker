@@ -45,7 +45,7 @@ npx playwright install chromium   # once
 npm run test:e2e     # Playwright: a real hub with simulated pills, on a desktop and a phone screen
 npm run test:compat  # every published release on this build's data and back (needs the build; see below)
 npm run i18n:check   # every translatable string is extractable and every translation's placeholders match
-npm run firmware     # the screens' firmware (needs PlatformIO); see firmware/screen/README.md
+npm run firmware     # the screens' firmware (needs PlatformIO; the SDC2's first build takes several minutes); see firmware/screen/README.md
 ```
 
 `npm run test:compat` ([scripts/release-compat.mjs](../scripts/release-compat.mjs)) downloads each published release

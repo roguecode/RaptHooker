@@ -47,7 +47,8 @@ export interface FakeScreenOptions {
   /** Starts on the stock firmware (default) or already on RaptHooker's. */
   stock?: boolean;
   /**
-   * Which stock firmware: the "Smart weather clock"'s SD Pro (default), or a genuine GeekMagic's own ("GIFTV", /v.json
+   * Which stock firmware: the "Smart weather clock"'s SD Pro (default), the same clock's SDC2 on an ESP32-C2 (its page
+   * asks for files named SDC2..., and it only starts an ESP32-C2 image), or a genuine GeekMagic's own ("GIFTV", /v.json
    * and the Arduino core's /update).
    */
   stockKind?: StockKind;
@@ -80,6 +81,30 @@ export interface FakeScreenOptions {
 const GEEKMAGIC_UPDATED = '<META http-equiv="refresh" content="15;URL=/">Update Success! Rebooting...';
 /** The space a GeekMagic Ultra on V9.0.50 has for an update: (free sketch space - 4 KB), as the Arduino updater works it out. */
 const GEEKMAGIC_SPACE = 0x83000;
+/**
+ * Stands in for the firmware an SDC2 came with, which it keeps until its first update: a whole ESP32-C2 image (DIO,
+ * 4 MB, one segment, its checksum and SHA-256), as small as one can be.
+ */
+export const SDC2_ORIGINAL = ((): Buffer => {
+  const payload = Buffer.from('the firmware the SDC2 came with.');
+  const head = Buffer.alloc(24);
+  head[0] = 0xe9;
+  head[1] = 1;
+  head[2] = 2;
+  head[3] = 0x2f;
+  head.writeUInt32LE(0x40380000, 4);
+  head[12] = 12;
+  head[23] = 1;
+  const segment = Buffer.alloc(8);
+  segment.writeUInt32LE(0x3c000020, 0);
+  segment.writeUInt32LE(payload.length, 4);
+  let sum = 0xef;
+  for (const b of payload) sum ^= b;
+  let image = Buffer.concat([head, segment, payload]);
+  const pad = (16 - ((image.length + 1) % 16)) % 16;
+  image = Buffer.concat([image, Buffer.alloc(pad), Buffer.from([sum])]);
+  return Buffer.concat([image, createHash('sha256').update(image).digest()]);
+})();
 
 export class FakeScreen extends EventEmitter {
   readonly mac: string;
@@ -121,6 +146,8 @@ export class FakeScreen extends EventEmitter {
   geekmagicModel: string;
   /** A GeekMagic on its own firmware that's on a network: no hotspot. */
   stockOnNetwork: boolean;
+  /** An SDC2 running RaptHooker keeps the firmware it came with in its other app slot until its first update. */
+  keptOriginal = false;
 
   constructor(opts: FakeScreenOptions = {}) {
     super();
@@ -150,7 +177,10 @@ export class FakeScreen extends EventEmitter {
   /** The hotspot it has open now, or null (on its network, or restarting). */
   get hotspot(): string | null {
     if (this.down) return null;
-    if (this.stock) return this.stockKind === 'geekmagic' ? (this.stockOnNetwork ? null : 'GIFTV') : 'Smart weather clock';
+    if (this.stock) {
+      if (this.stockOnNetwork) return null;
+      return this.stockKind === 'geekmagic' ? 'GIFTV' : 'Smart weather clock';
+    }
     return this.settings.ssid && this.trial.state !== 'connected' ? null : screenHotspot(this.mac);
   }
 
@@ -233,7 +263,7 @@ export class FakeScreen extends EventEmitter {
   }
 
   private send(res: ServerResponse, status: number, body: unknown, type = 'application/json', cors = true): void {
-    const text = typeof body === 'string' ? body : JSON.stringify(body);
+    const text = Buffer.isBuffer(body) || typeof body === 'string' ? body : JSON.stringify(body);
     res.writeHead(status, {
       'Content-Type': type,
       'Content-Length': Buffer.byteLength(text),
@@ -301,6 +331,7 @@ export class FakeScreen extends EventEmitter {
           'adopt',
           ...(this.legacy ? [] : ['proof']),
           ...(screenModel(this.model)?.panel ? ['panel', 'test-pattern'] : []),
+          ...(this.keptOriginal ? ['original'] : []),
         ],
         proof: challenge && this.settings.token && !this.legacy ? screenProof(this.settings.token, this.id, challenge) : undefined,
         wifi: {
@@ -433,6 +464,8 @@ export class FakeScreen extends EventEmitter {
         return this.send(res, 400, { ok: false, error: 'not RaptHooker firmware for this screen' });
       this.events.push(`ota ${marker?.version ?? 'stock'}`);
       this.sketchMd5 = md5;
+      // An update goes into the other app slot, where the original firmware was.
+      this.keptOriginal = false;
       this.send(res, 200, { ok: true });
       return this.restart(() => {
         if (marker) this.firmware = marker.version;
@@ -448,6 +481,17 @@ export class FakeScreen extends EventEmitter {
       this.send(res, 200, { ok: true });
       return this.restart(() => (this.settings = { ...EMPTY }));
     }
+    if (path === '/api/original' && this.keptOriginal) {
+      if (req.method === 'GET') return this.send(res, 200, SDC2_ORIGINAL, 'application/octet-stream');
+      this.events.push('original back');
+      this.send(res, 200, { ok: true });
+      return this.restart(() => {
+        this.stock = true;
+        this.keptOriginal = false;
+        this.settings = { ...EMPTY };
+      });
+    }
+    if (path === '/api/original') return this.send(res, 404, { ok: false, error: 'the original firmware has been replaced' });
     if (path === '/api/test-pattern' && screenModel(this.model)?.panel) {
       this.events.push('test-pattern');
       return this.send(res, 200, { ok: true });
@@ -465,20 +509,35 @@ export class FakeScreen extends EventEmitter {
 
   private handleStock(path: string, req: IncomingMessage, res: ServerResponse, body: Buffer): void {
     if (this.stockKind === 'geekmagic') return this.handleGeekmagic(path, req, res, body);
+    const sdc2 = this.stockKind === 'sdc2';
     if (path === '/mac') return this.send(res, 200, this.mac, 'text/plain');
     if (path === '/config') {
       return this.send(res, 200, { gifnum: 4, theme: 0, brightness: 52, ssid: 'K500', weatherkey: 'x', freespace: 1253376 });
+    }
+    // Made up, but where its update page's file name check would be.
+    if (path === '/javascript.js') {
+      const prefix = sdc2 ? 'SDC2' : 'SDP';
+      return this.send(res, 200, `function okName(f) { return f.name.startsWith('${prefix}'); }`, 'application/javascript');
     }
     if (path === '/update_ota' && req.method === 'POST') {
       const data = this.filePart(body, req.headers['content-type']);
       const marker = data ? imageMarker(data) : null;
       const how = this.opts.stockOta;
-      if (!data || !marker || data.length > 0x80000 || how === 'refuse' || how === 'refuse-quietly') {
+      // What the SD Pro would do with an ESP32-C2 image: install it, and never start again.
+      if (!sdc2 && data && data[0] === 0xe9 && data[12] === 12 && data[23] === 1) {
+        this.events.push('bricked');
+        this.send(res, 200, 'OK', 'text/plain');
+        this.down = true;
+        return;
+      }
+      // The SDC2 makes room for 0xBF000 bytes, and only starts a whole ESP32-C2 image; the SD Pro cuts at 512 KB.
+      const fits = sdc2 ? data !== null && data.length <= 0xbf000 && data[12] === 12 : data !== null && data.length <= 0x80000;
+      if (!data || !marker || !fits || how === 'refuse' || how === 'refuse-quietly') {
         if (how === 'refuse-quietly') res.socket?.destroy();
         else this.send(res, 500, 'FAIL', 'text/plain');
         return this.restart();
       }
-      this.events.push(`stock ota ${marker.version}`);
+      this.events.push(`${sdc2 ? 'sdc2' : 'stock'} ota ${marker.version}`);
       this.sketchMd5 = createHash('md5').update(data).digest('hex');
       // RaptHooker's settings, if it was on this screen before, are still in their flash sector.
       if (how === 'no-reply') res.socket?.destroy();
@@ -486,12 +545,13 @@ export class FakeScreen extends EventEmitter {
       return this.restart(() => {
         this.stock = false;
         this.firmware = marker.version;
+        this.keptOriginal = sdc2;
       });
     }
     return this.send(
       res,
       200,
-      '<!DOCTYPE html><html><head><title>Smart Weather Clock - WiFi Setup</title></head><body></body></html>',
+      '<!DOCTYPE html><html><head><title>Smart Weather Clock - WiFi Setup</title><script src="/javascript.js"></script></head><body></body></html>',
       'text/html',
     );
   }

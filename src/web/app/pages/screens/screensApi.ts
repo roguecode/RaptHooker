@@ -47,7 +47,7 @@ export const screensApi = {
   setup: () => http.get<ScreenSetupProgress | null>('/api/screens/setup'),
   startSetup: (input: {
     hotspot: string;
-    /** A GeekMagic Ultra on the hub's network: its address, with an empty hotspot. */
+    /** A GeekMagic Ultra or SDC2 clock on the hub's network: its address, with an empty hotspot. */
     address?: string;
     ssid: string;
     password: string;
@@ -55,7 +55,7 @@ export const screensApi = {
     pillId: string | null;
     look: Partial<ScreenLook>;
   }) => http.post<ScreenSetupProgress>('/api/screens/setup', input),
-  /** Puts RaptHooker on a GeekMagic Ultra on the hub's network, for this browser to finish setting it up. */
+  /** Puts RaptHooker on a GeekMagic Ultra or SDC2 clock on the hub's network, for this browser to finish setting it up. */
   install: (address: string) => http.post<ScreenInstallResult>('/api/screens/install', { address }),
   usb: () => http.get<UsbStatus>('/api/screens/usb'),
   startUsbSetup: (input: Omit<ScreenUsbSetupInput, 'look'> & { look: Partial<ScreenLook> }) =>
@@ -76,6 +76,10 @@ export const screensApi = {
   update: (id: string) => http.post<ScreenDevice>(`${one(id)}/update`),
   log: (id: string) => raw('GET', `${one(id)}/log`),
   restore: (id: string, file: Blob) => raw('POST', `${one(id)}/restore`, file),
+  /** A screen that keeps the firmware it came with (an SDC2, until its first update): a copy of it to save. */
+  originalUrl: (id: string) => `${one(id)}/original`,
+  /** Such a screen goes back to the firmware it kept, and the hub forgets it. */
+  restoreKept: (id: string) => raw('POST', `${one(id)}/original`),
   /** The picture the screen shows; `version` makes the browser fetch it again. */
   pictureUrl: (id: string, version: number | string) => `${one(id)}/image.jpg?v=${encodeURIComponent(String(version))}`,
 };

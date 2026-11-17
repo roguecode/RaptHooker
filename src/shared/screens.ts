@@ -14,7 +14,7 @@ export interface ScreenModel {
   width: number;
   height: number;
   /** The chip its firmware is built for. */
-  chip: 'esp8266' | 'esp32';
+  chip: 'esp8266' | 'esp32' | 'esp32c2';
   /**
    * How RaptHooker first puts its firmware on: 'hotspot' over the screen's own Wi-Fi and its stock firmware's update
    * page; 'usb' plugged into the hub (ESP32 boards, which come with no firmware worth keeping).
@@ -39,6 +39,18 @@ export const SCREEN_MODELS: readonly ScreenModel[] = [
     chip: 'esp8266',
     install: 'hotspot',
     panel: false,
+    confirmed: [],
+  },
+  {
+    // The same maker's clock on an ESP32-C2: its update page asks for files named SDC2... Its panel can be turned,
+    // mirrored and have its colours fixed from RaptHooker.
+    id: 'sdc2-240',
+    name: 'Smart weather clock (SDC2)',
+    width: 240,
+    height: 240,
+    chip: 'esp32c2',
+    install: 'hotspot',
+    panel: true,
     confirmed: [],
   },
   {
@@ -109,7 +121,7 @@ export interface ScreenDevice {
 export const SCREEN_PANEL = { flip: 1, mirror: 2, swap: 4, invert: 8 } as const;
 
 /** The firmware a Wi-Fi screen comes with, which RaptHooker installs its own over. */
-export type StockKind = 'sdpro' | 'geekmagic';
+export type StockKind = 'sdpro' | 'geekmagic' | 'sdc2';
 
 /** What it is, going by a Wi-Fi network's name: a screen's own hotspot, or nothing RaptHooker knows. */
 export type HotspotKind = StockKind | 'rapthooker';
@@ -130,7 +142,9 @@ export interface ScreenStock {
 
 /**
  * The stock firmwares RaptHooker can install over. The unbranded "Smart weather clock" runs "SD Pro" firmware; a
- * genuine GeekMagic Ultra runs GeekMagic's own, on the same hardware (an ESP8266 with a 240 × 240 ST7789).
+ * genuine GeekMagic Ultra runs GeekMagic's own, on the same hardware (an ESP8266 with a 240 × 240 ST7789). The SDC2 is
+ * the Smart weather clock on an ESP32-C2, sold the same way: its update page asks for files named SDC2..., and it gets
+ * firmware of its own.
  */
 export const SCREEN_STOCKS: readonly ScreenStock[] = [
   {
@@ -148,6 +162,15 @@ export const SCREEN_STOCKS: readonly ScreenStock[] = [
     hotspot: 'GIFTV',
     tested: true,
     confirmed: [{ url: 'https://www.aliexpress.com/item/1005007542991850.html', site: 'AliExpress' }],
+  },
+  {
+    // Its stock firmware is the SD Pro's, ported, with the same hotspot name (as a copy of SDC2 V1.2.0 shows).
+    kind: 'sdc2',
+    name: 'Smart weather clock (SDC2)',
+    model: 'sdc2-240',
+    hotspot: 'Smart weather clock',
+    tested: true,
+    confirmed: [],
   },
 ];
 
@@ -393,8 +416,9 @@ export const screenSetupSchema = z
     /** The screen's hotspot. Empty when it's set up from its `address`. */
     hotspot: z.string().max(32).default(''),
     /**
-     * Where it is on the hub's network, for a GeekMagic Ultra on its own firmware that has joined it already: the hub
-     * installs RaptHooker there instead of on the screen's hotspot, then carries on on RaptHooker's hotspot.
+     * Where it is on the hub's network, for a GeekMagic Ultra or Smart weather clock on its own firmware that has
+     * joined it already: the hub installs RaptHooker there instead of on the screen's hotspot, then carries on on
+     * RaptHooker's hotspot.
      */
     address: z.string().max(260).optional(),
     /** The network the screen joins. */
@@ -416,7 +440,7 @@ export const screenSetupSchema = z
   });
 export type ScreenSetupInput = z.infer<typeof screenSetupSchema>;
 
-/** Installing RaptHooker on a GeekMagic Ultra on the hub's network, for a browser to finish setting it up. */
+/** Installing RaptHooker on a GeekMagic Ultra or Smart weather clock on the hub's network, for a browser to finish setting it up. */
 export const screenInstallSchema = z.object({
   address: z
     .string()
@@ -430,7 +454,10 @@ export const screenInstallSchema = z.object({
 
 /** What /api/screens/install did: which screen it found there, and the firmware it put on. */
 export interface ScreenInstallResult {
-  /** What the screen called itself ("SmallTV-Ultra") and its firmware ("Ultra-V9.0.50"). */
+  /**
+   * What the screen called itself ("SmallTV-Ultra") and its firmware ("Ultra-V9.0.50"); for a Smart weather clock,
+   * its page's title and an empty version.
+   */
   found: { model: string; version: string };
   /** The RaptHooker firmware now on it. */
   firmware: ScreenFirmware;

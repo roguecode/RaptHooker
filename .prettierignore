@@ -13,3 +13,5 @@ test-results
 playwright-report
 firmware/screen/bin
 firmware/screen/.pio
+# C font data from TFT_eSPI, which Prettier would take for HTML (.inc).
+firmware/screen/src/fonts

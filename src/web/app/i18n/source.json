@@ -851,12 +851,12 @@
       "pages/settings/SystemSection.tsx"
     ]
   },
-  "A GeekMagic Ultra already on your Wi-Fi?": {
+  "A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?": {
     "files": [
       "pages/screens/AddScreen.tsx"
     ]
   },
-  "A GeekMagic Ultra on your network": {
+  "A GeekMagic Ultra or SDC2 clock on your network": {
     "files": [
       "pages/screens/AddScreen.tsx"
     ]
@@ -930,6 +930,11 @@
   "A rough guess: the curve hasn't turned yet, or the readings are noisy.": {
     "files": [
       "pages/brews/Prediction.tsx"
+    ]
+  },
+  "A Smart weather clock whose update page asks for files named SDC2… is set up from its address instead: connect it to your Wi-Fi from its own page first.": {
+    "files": [
+      "pages/screens/BrowserSetup.tsx"
     ]
   },
   "A straight line through the last {count} hour of readings, leaving out any where the pill wasn't floating.|A straight line through the last {count} hours of readings, leaving out any where the pill wasn't floating.": {
@@ -2913,6 +2918,11 @@
       "pages/Dashboard.tsx"
     ]
   },
+  "Couldn't save the original firmware": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Couldn't save the screen": {
     "files": [
       "pages/screens/ScreenEditor.tsx"
@@ -4452,6 +4462,11 @@
       "pages/alerts/strings.ts"
     ]
   },
+  "Go back to it": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Go back to RaptHooker {version}?": {
     "files": [
       "components/UpdateBanner.tsx"
@@ -5367,6 +5382,11 @@
       "pages/devices/IspindelTab.tsx"
     ]
   },
+  "It rejoins the Wi-Fi it was on before. If it shows its own Wi-Fi set-up instead, unplug it for a few seconds and plug it back in.": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "It saves them. The iSpindel leaves setup mode, restarts and joins your Wi-Fi.": {
     "files": [
       "pages/devices/IspindelTab.tsx"
@@ -5489,7 +5509,7 @@
       "pages/brews/BrewPage.tsx"
     ]
   },
-  "Its own firmware shows its address on the screen, like 192.168.1.50. RaptHooker checks it's a GeekMagic Ultra before changing anything.": {
+  "Its own firmware shows its address on the screen, like 192.168.1.50, or your router lists it. RaptHooker checks which screen it is before changing anything.": {
     "files": [
       "pages/screens/AddScreen.tsx"
     ]
@@ -8578,6 +8598,11 @@
       "pages/settings/MqttSection.tsx"
     ]
   },
+  "Save a copy": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
+    ]
+  },
   "Save alert": {
     "files": [
       "pages/alerts/RuleModal.tsx"
@@ -8916,6 +8941,11 @@
   "set up by another hub": {
     "files": [
       "pages/screens/FoundScreens.tsx"
+    ]
+  },
+  "Set up from its address": {
+    "files": [
+      "pages/screens/SupportedScreens.tsx"
     ]
   },
   "Set up over its own Wi-Fi": {
@@ -10345,6 +10375,11 @@
       "components/ExclusionControls.tsx"
     ]
   },
+  "The same clock on an ESP32-C2, whose update page asks for files named SDC2…: connect it to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.": {
+    "files": [
+      "pages/screens/SupportedScreens.tsx"
+    ]
+  },
   "The same payload as the RAPT portal integration": {
     "files": [
       "pages/webhooks/strings.ts"
@@ -11047,6 +11082,11 @@
   "Until I resume it": {
     "files": [
       "pages/webhooks/PauseButton.tsx"
+    ]
+  },
+  "Until its first update, this screen keeps the firmware it came with, and can go back to it without a file. Save a copy first if you'd like to keep it.": {
+    "files": [
+      "pages/screens/ScreenEditor.tsx"
     ]
   },
   "Up to {count} brew at a time|Up to {count} brews at a time": {

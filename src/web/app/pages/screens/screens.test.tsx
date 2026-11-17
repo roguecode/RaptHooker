@@ -179,8 +179,8 @@ describe('screens page', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Add a screen' })[0]!);
     const dialog = await screen.findByRole('dialog', { name: 'Add a screen' });
     await within(dialog).findByText('Smart weather clock');
-    const byAddress = within(dialog).getByText('A GeekMagic Ultra already on your Wi-Fi?').closest('details')!;
-    fireEvent.click(within(byAddress).getByText('A GeekMagic Ultra already on your Wi-Fi?'));
+    const byAddress = within(dialog).getByText('A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?').closest('details')!;
+    fireEvent.click(within(byAddress).getByText('A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?'));
     const go = within(byAddress).getByRole('button', { name: 'Set up' }) as HTMLButtonElement;
     const address = within(byAddress).getByRole('textbox', { name: "The screen's address" });
     fireEvent.change(address, { target: { value: '192.168.1.77/update' } });
@@ -189,7 +189,7 @@ describe('screens page', () => {
     fireEvent.click(go);
 
     expect(within(dialog).getByText('192.168.1.77')).toBeTruthy();
-    expect(within(dialog).getByText('A GeekMagic Ultra on your network')).toBeTruthy();
+    expect(within(dialog).getByText('A GeekMagic Ultra or SDC2 clock on your network')).toBeTruthy();
     expect(within(dialog).queryByText(/Untested/)).toBeNull();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Set it up' }));
     await settle();
@@ -337,7 +337,7 @@ describe('screens page', () => {
     fireEvent.change(await within(dialog).findByRole('textbox', { name: 'Wi-Fi for the screen' }), { target: { value: 'Brewery' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
     expect(await within(dialog).findByText(/"GIFTV" on a GeekMagic Ultra/)).toBeTruthy();
-    fireEvent.click(within(dialog).getByText('A GeekMagic Ultra already on your Wi-Fi?'));
+    fireEvent.click(within(dialog).getByText('A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?'));
     fireEvent.change(within(dialog).getByRole('textbox', { name: "The screen's address" }), { target: { value: '192.168.1.77' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Install RaptHooker' }));
     expect(
@@ -372,7 +372,7 @@ describe('screens page', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Add a screen' });
     fireEvent.change(await within(dialog).findByRole('textbox', { name: 'Wi-Fi for the screen' }), { target: { value: 'Brewery' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
-    fireEvent.click(await within(dialog).findByText('A GeekMagic Ultra already on your Wi-Fi?'));
+    fireEvent.click(await within(dialog).findByText('A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?'));
     fireEvent.change(within(dialog).getByRole('textbox', { name: "The screen's address" }), { target: { value: '192.168.1.78' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Install RaptHooker' }));
     expect(await within(dialog).findByText("Couldn't put RaptHooker on the screen")).toBeTruthy();
@@ -616,6 +616,30 @@ describe('screens page', () => {
     expect(within(dialog).queryByRole('button', { name: 'Put the original firmware back' })).toBeNull();
   });
 
+  it('puts an SDC2 back on the firmware it kept, never one from a file', async () => {
+    const view = await renderWithHub(<ScreensPage />, {
+      screens: [makeScreen({ model: 'sdc2-240', panel: 0 })],
+      routes: { ...BASE, 'POST /api/screens/*/original': () => undefined },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    const editor = screen.getByRole('dialog', { name: 'Kitchen' });
+    expect(within(editor).getByText('Does the screen look right?')).toBeTruthy();
+    fireEvent.click(within(editor).getByRole('button', { name: 'Put the original firmware back' }));
+    const dialog = screen.getByRole('dialog', { name: 'Put the original firmware back' });
+    expect(within(dialog).getByText(/keeps the firmware it came with/)).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: 'Save a copy' })).toBeTruthy();
+    expect(within(dialog).queryByRole('button', { name: 'Choose the file' })).toBeNull();
+    expect(within(dialog).queryByRole('button', { name: 'Put it back' })).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Go back to it' }));
+    await settle();
+    expect(view.calls('POST /api/screens/*/original')).toHaveLength(1);
+    // It rejoins its Wi-Fi rather than opening its own, and may need unplugging to.
+    const toast = toastTexts().find((s) => s.includes('Kitchen is going back to its original firmware'));
+    expect(toast).toContain('It rejoins the Wi-Fi it was on before');
+    expect(toast).toContain('unplug it for a few seconds');
+    expect(toast).not.toContain('opens its own Wi-Fi again');
+  });
+
   it("doesn't offer changes to someone who isn't the owner", async () => {
     await renderWithHub(<ScreensPage />, {
       session: { role: 'viewer' },
@@ -658,6 +682,13 @@ describe('screens page', () => {
       expect(a.getAttribute('rel')).toContain('noopener');
     }
     expect(within(panel).getByText(/They aren't endorsements/)).toBeTruthy();
+    // The SDC2 is a confirmed screen, set up from its address, with no listing to link to yet.
+    expect(within(panel).getByText('Smart weather clock (SDC2)')).toBeTruthy();
+    expect(within(panel).getByText(/Set up from its address/)).toBeTruthy();
+    expect(
+      within(panel).getByText(/files named SDC2…: connect it to your Wi-Fi from its own page, then set it up from its address/),
+    ).toBeTruthy();
+    expect(within(panel).queryByText(/SDC2.*untested/)).toBeNull();
     expect(within(panel).getAllByText('Might work')).toHaveLength(1);
     expect(within(panel).queryByText(/GeekMagic Ultra.*untested/i)).toBeNull();
     expect(within(panel).getAllByText("Won't work")).toHaveLength(2);

@@ -4,8 +4,9 @@
 // The board each build is for (RH_BOARD_* from platformio.ini): its pins, screen size and panel set-up. The display
 // pins themselves are TFT_eSPI's, set in platformio.ini too.
 
-#if defined(RH_BOARD_SDPRO)
+#if defined(RH_BOARD_SDPRO) || defined(RH_BOARD_SDC2)
 
+#if defined(RH_BOARD_SDPRO)
 // Worked out from the stock "SD Pro" firmware. The panel is an ST7789 on HSPI (SCLK 14, MOSI 13) with
 // CS 15, DC 0 and RST 2, SPI mode 3 at 40 MHz: those are set for TFT_eSPI in platformio.ini.
 static const uint8_t PIN_BACKLIGHT = 5;  // PWM, low is on
@@ -13,8 +14,26 @@ static const uint8_t PIN_BUTTON = 4;     // pulled up, reads low when pressed
 static const uint16_t SCREEN_W = 240;
 static const uint16_t SCREEN_H = 240;
 #define RH_HAS_PANEL 0
+#else
+// The JUZIPi SDC2 (ESP32-C2), as its stock firmware drives it: an ST7789 240x240 IPS panel on SPI mode 3 at 40 MHz,
+// SCLK 1, MOSI 2, DC 0 and RST 3, with CS tied low (so nothing can be read back from it). Untested on a real one, so
+// RaptHooker can turn, mirror and fix the colours of the picture (the "panel" setting).
+static const uint8_t PIN_SCLK = 1, PIN_MOSI = 2, PIN_DC = 0, PIN_RST = 3;
+static const uint32_t SPI_HZ = 40000000;
+static const uint8_t SPI_MODE_PANEL = 3;
+static const uint8_t PIN_BACKLIGHT = 5;  // PWM, low is on
+static const uint8_t PIN_BUTTON = 18;    // pulled up in the stock firmware; no button on the case
+static const uint16_t SCREEN_W = 240;
+static const uint16_t SCREEN_H = 240;
+#define RH_HAS_PANEL 1
+// The panel's 240x320 memory shows rows 0-239: turned round, the picture starts 80 rows in.
+static const uint8_t PANEL_ROW_OFFSET_TURNED = 80;
+static const uint8_t MADCTL_MY = 0x80, MADCTL_MX = 0x40, MADCTL_BGR = 0x08;
+static const uint8_t PANEL_FLIP = 1, PANEL_MIRROR = 2, PANEL_SWAP = 4, PANEL_INVERT = 8;
+#endif
 
-// The stock firmware's own panel set-up, replayed after TFT_eSPI's so the colours match it exactly.
+// The stock firmware's own panel set-up, replayed after TFT_eSPI's (on the SDC2, after a reset) so the colours match it
+// exactly. The SDC2 is the same maker's clock on another chip, with the same panel, and gets the same set-up.
 // Format: count, then per command: cmd, args | 0x80 if a delay follows, args..., delay ms (255 = 500).
 static const uint8_t PANEL_INIT[] PROGMEM = {
     20,
@@ -106,5 +125,5 @@ static const uint8_t MADCTL_MY = 0x80, MADCTL_MX = 0x40, MADCTL_BGR = 0x08;
 static const uint8_t PANEL_FLIP = 1, PANEL_MIRROR = 2, PANEL_SWAP = 4, PANEL_INVERT = 8;
 
 #else
-#error "Set a board (RH_BOARD_SDPRO, RH_BOARD_CYD) in platformio.ini"
+#error "Set a board (RH_BOARD_SDPRO, RH_BOARD_SDC2, RH_BOARD_CYD) in platformio.ini"
 #endif

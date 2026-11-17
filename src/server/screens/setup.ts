@@ -61,8 +61,8 @@ interface Stock {
  * network and saves it. The hub leaves its own Wi-Fi for this when it has no other connection, so the whole thing
  * runs here, and getting back on the network is in a `finally` that nothing skips.
  *
- * A GeekMagic Ultra that's on the hub's network already can be set up from its `address` instead: RaptHooker goes on
- * over the network, then the rest is done on RaptHooker's hotspot as for any other.
+ * A GeekMagic Ultra or SDC2 clock that's on the hub's network already can be set up from its `address` instead:
+ * RaptHooker goes on over the network, then the rest is done on RaptHooker's hotspot as for any other.
  *
  * Emits 'progress' (ScreenSetupProgress) at every step.
  */
@@ -241,9 +241,15 @@ export class ScreenSetup extends EventEmitter {
       const local = lan ? undefined : (this.link!.address ?? undefined);
       let info: ScreenInfo | null = null;
       let stock: Stock | null = null;
+      // A Smart weather clock: an SD Pro, or an SDC2 if its own page says so (only then does it get the ESP32-C2 image).
+      const clock = async (): Promise<Stock | null> => {
+        const found = await identifyStock(host, local);
+        if (!found) return null;
+        this.deps.log.info({ kind: found.kind, title: found.title, mac: found.mac }, 'stock screen identified');
+        return { kind: found.kind, model: found.model, mac: found.mac };
+      };
       if (kind === 'sdpro') {
-        const sdpro = await identifyStock(host, local);
-        if (sdpro) stock = { kind, model: sdpro.model, mac: sdpro.mac };
+        stock = await clock();
       } else if (kind === 'geekmagic') {
         const gm = await identifyGeekmagic(host, local);
         if (gm && gm.model !== GEEKMAGIC_ULTRA)
@@ -252,9 +258,14 @@ export class ScreenSetup extends EventEmitter {
           ? null
           : (around.filter((n) => n.ssid === input.hotspot && n.bssid).sort((a, b) => b.signal - a.signal)[0]?.bssid ?? null);
         if (gm) stock = { kind, model: 'sdpro-240', mac: bssid };
+        else if (lan) {
+          // From an address, an SDC2 clock on the network (an SD Pro is set up over its own hotspot).
+          const found = await clock();
+          if (found?.kind === 'sdc2') stock = found;
+        }
       }
       if (!stock) {
-        if (lan) throw new SetupError('not-supported', `No GeekMagic Ultra on its own firmware answered at ${lan}`);
+        if (lan) throw new SetupError('not-supported', `No GeekMagic Ultra or SDC2 clock on its own firmware answered at ${lan}`);
         info = await this.client()
           .info()
           .catch(() => null);
@@ -267,7 +278,7 @@ export class ScreenSetup extends EventEmitter {
         this.step('install');
         let confirmed: boolean;
         try {
-          confirmed = await (stock.kind === 'sdpro' ? flashStock : flashGeekmagic)(host, fw, local);
+          confirmed = await (stock.kind === 'geekmagic' ? flashGeekmagic : flashStock)(host, fw, local);
         } catch (err) {
           throw new SetupError('install-failed', (err as Error).message);
         }
@@ -275,7 +286,7 @@ export class ScreenSetup extends EventEmitter {
         this.step('restart');
         // It restarts, copies the firmware into place (it mustn't lose power now) and opens its own hotspot.
         await this.wait(8000);
-        if (stock.kind === 'sdpro') {
+        if (stock.kind !== 'geekmagic') {
           await this.joinInstalled(ours!, `rh-screen-${stock.mac!.replace(/:/g, '').slice(-6).toLowerCase()}`);
         } else {
           const before = new Set(around.filter((n) => n.kind === 'rapthooker').map((n) => n.ssid));

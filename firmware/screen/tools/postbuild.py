@@ -3,9 +3,16 @@
 #   <model>.boot.bin  ESP32 only: flash from 0x1000 to 0x10000 for the first install over USB: the boot loader, the
 #                     partition table, an empty NVS and the OTA data that starts app0
 #   <model>.json      what's in them
-import hashlib, json, os, re, shutil, struct
+import hashlib, json, os, re, shutil, struct, subprocess
 
 Import("env")  # noqa: F821
+
+# The ESP32-C2 is RV32IMC. pioarduino's build script for it gives neither the compiler (platformio.ini does) nor the
+# linker the architecture, so the linker would take the C and C++ libraries built for the toolchain's default, which use
+# atomic instructions the chip doesn't have.
+RV32IMC = ["-march=rv32imc_zicsr_zifencei", "-mabi=ilp32"]
+if env.BoardConfig().get("build.mcu", "") == "esp32c2":  # noqa: F821
+    env.Append(LINKFLAGS=RV32IMC)  # noqa: F821
 
 # ESP8266: the stock /update_ota drops everything past 512 KB and still commits what it got, which would brick the
 # screen. Keep a margin under that.
@@ -45,29 +52,59 @@ def check_esp8266(data):
     print(f"{size * 100 // STOCK_OTA_LIMIT}% of the stock OTA limit")
 
 
-def app_partition_size():
-    for line in open(project_file("partitions-esp32.csv")):
+def app_partition_size(env):
+    name = env.GetProjectOption("board_build.partitions")
+    for line in open(project_file(name)):
         cols = [c.strip() for c in line.split("#")[0].split(",")]
         if len(cols) >= 5 and cols[0] == "app0":
             return int(cols[4], 0)
-    raise SystemExit("no app0 in partitions-esp32.csv")
+    raise SystemExit(f"no app0 in {name}")
 
 
-def check_esp32(data):
+# The chip id esp_image_header_t carries at 12.
+CHIP_IDS = {"esp32": 0, "esp32c2": 12}
+SDC2_STOCK_LIMIT = 0xBE000
+
+
+def check_esp32(data, chip, env):
     # esp_image_header_t: magic, segments, flash mode, size/speed, entry, then the extended header with the chip id at
     # 12 and "hash appended" at 23.
     if data[0] != 0xE9 or data[2] != 2:
         raise SystemExit(f"unexpected image header {data[:4].hex()}: want E9 .. 02 (DIO)")
-    if struct.unpack_from("<H", data, 12)[0] != 0:
-        raise SystemExit("not built for the ESP32")
+    if struct.unpack_from("<H", data, 12)[0] != CHIP_IDS[chip]:
+        raise SystemExit(f"not built for the {chip}")
+    if chip != "esp32" and data[3] >> 4 != 2:
+        raise SystemExit(f"not built for 4 MB of flash ({data[3]:02x})")
     if data[23] != 1:
         raise SystemExit("image has no SHA-256")
     if hashlib.sha256(data[:-32]).digest() != data[-32:]:
         raise SystemExit("image SHA-256 doesn't match")
-    limit = app_partition_size()
+    limit = app_partition_size(env)
+    if chip == "esp32c2":
+        # Installed through the stock firmware's update page, which makes room for the slot less 4 KB, in whole sectors
+        # (0xBF000). Keep a margin under that.
+        limit = min(limit, SDC2_STOCK_LIMIT)
     if len(data) > limit:
         raise SystemExit(f"firmware is {len(data)} bytes: over the {limit} byte app partition")
     print(f"{len(data) * 100 // limit}% of the app partition")
+
+
+# Atomic and floating-point instructions: an RV32IMC chip stops with "Illegal instruction" at the first one it runs.
+NOT_RV32IMC = re.compile(r"\t(amo[a-z]+\.w|lr\.w|sc\.w|f[a-z]+\.(s|d|w|wu|x)|flw|fsw|fld|fsd|frcsr|fscsr|frflags|fsflags|frrm|fsrm)\b")
+
+
+def check_rv32imc(elf, env):
+    objdump = re.sub(r"gcc(\.exe)?$", r"objdump\1", env.subst("$CC"))
+    out = subprocess.run([objdump, "-d", elf], capture_output=True, text=True, env=env["ENV"], check=True).stdout
+    where, found = "", {}
+    for line in out.splitlines():
+        m = re.match(r"^[0-9a-f]+ <(.+)>:$", line)
+        if m:
+            where = m.group(1)
+        elif NOT_RV32IMC.search(line):
+            found[where] = found.get(where, 0) + 1
+    if found:
+        raise SystemExit("instructions the ESP32-C2 doesn't have, in: " + ", ".join(sorted(found)))
 
 
 def boot_blob(build_dir):
@@ -94,8 +131,11 @@ def check(source, target, env):
     data = open(path, "rb").read()
     model, version, api = model_and_version(env)
     esp32 = env.PioPlatform().name == "espressif32"
+    chip = env.BoardConfig().get("build.mcu", "esp32") if esp32 else "esp8266"
     if esp32:
-        check_esp32(data)
+        check_esp32(data, chip, env)
+        if chip == "esp32c2":
+            check_rv32imc(os.path.splitext(path)[0] + ".elf", env)
     else:
         check_esp8266(data)
     if f"RHSCREEN-FW:{model}:{version}".encode() not in data:
@@ -111,7 +151,7 @@ def check(source, target, env):
     shutil.copyfile(path, os.path.join(out, name))
     manifest = {
         "model": model,
-        "chip": "esp32" if esp32 else "esp8266",
+        "chip": chip,
         "version": version,
         "api": api,
         "file": name,
@@ -119,7 +159,8 @@ def check(source, target, env):
         "md5": hashlib.md5(data).hexdigest(),
         "sha256": hashlib.sha256(data).hexdigest(),
     }
-    if esp32:
+    # Boards set up over USB (the ESP32) get the boot loader and partition table too; the SDC2 keeps its own.
+    if chip == "esp32":
         boot = boot_blob(os.path.dirname(path))
         open(os.path.join(out, f"{model}.boot.bin"), "wb").write(boot)
         manifest["boot"] = {"file": f"{model}.boot.bin", "at": BOOT_AT, "size": len(boot), "md5": hashlib.md5(boot).hexdigest()}

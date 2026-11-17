@@ -1,0 +1,8 @@
+# The JUZIPi SDC2's own layout, as its stock firmware has it. Only the build uses this (for the size check): updates
+# never change a screen's partition table. The stock firmware runs from app0 and its update page writes app1.
+# Name,   Type, SubType, Offset,   Size
+nvs,      data, nvs,     0x9000,   0x5000,
+otadata,  data, ota,     0xe000,   0x2000,
+app0,     app,  ota_0,   0x10000,  0xc0000,
+app1,     app,  ota_1,   0xd0000,  0xc0000,
+spiffs,   data, spiffs,  0x190000, 0x270000,

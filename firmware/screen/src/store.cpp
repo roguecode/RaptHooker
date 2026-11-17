@@ -6,7 +6,9 @@
 
 #include "log.h"
 
-#if defined(ESP32)
+#if defined(RH_BOARD_SDC2)
+#include <nvs.h>
+#elif defined(ESP32)
 #include <esp_partition.h>
 #else
 extern "C" uint32_t _FS_end;
@@ -24,7 +26,35 @@ static bool sealed = false;  // wiped for other firmware: nothing more is writte
 
 // The sector's place and how to read, erase and write it: on the ESP8266 a free sector in the flash map, on the ESP32
 // the start of the rhscreen partition. Offsets are within the sector.
-#if defined(ESP32)
+#if defined(RH_BOARD_SDC2)
+// The SDC2 keeps the stock firmware's layout, with no partition to spare: the sector is a blob in NVS instead, beside
+// the stock firmware's own settings, which stay as they were. "Address" 1 just means it's there.
+static nvs_handle_t nvs = 0;
+static const char* BLOB = "sector";
+static uint32_t findSector() {
+  if (nvs_open("rhscreen", NVS_READWRITE, &nvs) != ESP_OK) {
+    logf("store: no NVS");
+    return 0;
+  }
+  return 1;
+}
+static bool readAt(size_t at, void* buf, size_t len) {
+  size_t size = 0;
+  if (nvs_get_blob(nvs, BLOB, nullptr, &size) != ESP_OK || at + len > size) return false;
+  uint8_t* all = (uint8_t*)malloc(size);
+  if (!all) return false;
+  bool ok = nvs_get_blob(nvs, BLOB, all, &size) == ESP_OK;
+  if (ok) memcpy(buf, all + at, len);
+  free(all);
+  return ok;
+}
+static bool eraseSector() {
+  esp_err_t e = nvs_erase_key(nvs, BLOB);
+  return (e == ESP_OK || e == ESP_ERR_NVS_NOT_FOUND) && nvs_commit(nvs) == ESP_OK;
+}
+static bool writeAt(const void* buf, size_t len) { return nvs_set_blob(nvs, BLOB, buf, len) == ESP_OK && nvs_commit(nvs) == ESP_OK; }
+static const char* DEFAULT_PHY = "n";
+#elif defined(ESP32)
 static const esp_partition_t* part = nullptr;
 static uint32_t findSector() {
   part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, (esp_partition_subtype_t)0x40, "rhscreen");

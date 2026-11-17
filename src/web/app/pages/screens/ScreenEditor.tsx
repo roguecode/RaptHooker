@@ -335,11 +335,16 @@ function RestoreStock({ screen, onClose, onGone }: { screen: ScreenDevice; onClo
   const [picked, setPicked] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const keeps = screenModel(screen.model)?.chip === 'esp32c2';
-  const gone = () => {
+  const gone = (kept: boolean) => {
     toast({
       tone: 'success',
       title: t('{name} is going back to its original firmware', { name: screen.name }),
-      body: t('Keep it plugged in while it restarts. It opens its own Wi-Fi again once done.'),
+      // The firmware it kept still has its Wi-Fi, but may give up rejoining after a restart: a power cut sorts it.
+      body: kept
+        ? t(
+            'It rejoins the Wi-Fi it was on before. If it shows its own Wi-Fi set-up instead, unplug it for a few seconds and plug it back in.',
+          )
+        : t('Keep it plugged in while it restarts. It opens its own Wi-Fi again once done.'),
     });
     onClose();
     onGone();
@@ -349,7 +354,7 @@ function RestoreStock({ screen, onClose, onGone }: { screen: ScreenDevice; onClo
     setBusy(true);
     try {
       await screensApi.restore(screen.id, picked);
-      gone();
+      gone(false);
     } catch (err) {
       toast({ tone: 'error', title: t("Couldn't put the original firmware back"), body: errorText(err) });
     } finally {
@@ -360,7 +365,7 @@ function RestoreStock({ screen, onClose, onGone }: { screen: ScreenDevice; onClo
     setBusy(true);
     try {
       await screensApi.restoreKept(screen.id);
-      gone();
+      gone(true);
     } catch (err) {
       toast({ tone: 'error', title: t("Couldn't put the original firmware back"), body: errorText(err) });
     } finally {

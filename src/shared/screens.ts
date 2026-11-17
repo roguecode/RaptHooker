@@ -42,8 +42,8 @@ export const SCREEN_MODELS: readonly ScreenModel[] = [
     confirmed: [],
   },
   {
-    // The same maker's clock on an ESP32-C2: its update page asks for files named SDC2... Set up on one real clock so
-    // far, so its panel can be turned, mirrored and have its colours fixed from RaptHooker.
+    // The same maker's clock on an ESP32-C2: its update page asks for files named SDC2... Its panel can be turned,
+    // mirrored and have its colours fixed from RaptHooker.
     id: 'sdc2-240',
     name: 'Smart weather clock (SDC2)',
     width: 240,
@@ -164,12 +164,12 @@ export const SCREEN_STOCKS: readonly ScreenStock[] = [
     confirmed: [{ url: 'https://www.aliexpress.com/item/1005007542991850.html', site: 'AliExpress' }],
   },
   {
-    // Its stock firmware is the SD Pro's, ported: its hotspot is taken to be named the same.
+    // Its stock firmware is the SD Pro's, ported, with the same hotspot name (as a copy of SDC2 V1.2.0 shows).
     kind: 'sdc2',
     name: 'Smart weather clock (SDC2)',
     model: 'sdc2-240',
     hotspot: 'Smart weather clock',
-    tested: false,
+    tested: true,
     confirmed: [],
   },
 ];

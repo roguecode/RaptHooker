@@ -11,15 +11,14 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   on your Wi-Fi
 - Wider pages for big and ultrawide screens. Pick **Wide** or **Full** page width under **Settings → Hub → This
   browser** or in the top bar menu, and charts grow taller to match ([#38](https://github.com/roguecode/RaptHooker/issues/38))
-- Experimental support for the SDC2 Smart weather clock, so far set up on one real clock: the same clock on an ESP32-C2
-  chip, whose update page asks for files named `SDC2…` (some come from the same listing as the ordinary one). It gets
-  firmware of its own, and is set up from its address once it's on your Wi-Fi, under **A GeekMagic Ultra or SDC2 clock
-  already on your Wi-Fi?**. Until its first update it keeps the firmware it came with: **Put the original firmware
-  back** can go back to it, or save a copy, without a file. RaptHooker's firmware goes back to it by itself if nothing
-  has reached the screen over the network within 10 minutes, or it has started four times without that. Its log is
-  kept through a restart, and after a crash its screen shows where it was, so a crash during set-up can be looked
-  into. The API has `GET` and `POST /api/screens/:id/original` for this, and
-  [docs/rapthooker-screens.md](docs/rapthooker-screens.md#an-sdc2-clock-experimental) has the details
+- Support for the SDC2 Smart weather clock: the same clock on an ESP32-C2 chip, whose update page asks for files
+  named `SDC2?` (some come from the same listing as the ordinary one). It gets firmware of its own, and is set up from
+  its address once it's on your Wi-Fi, under **A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?**. Until its
+  first update it keeps the firmware it came with: **Put the original firmware back** can go back to it, or save a
+  copy, without a file. RaptHooker's firmware goes back to it by itself if nothing has reached the screen over the
+  network within 10 minutes, or it has started four times without that. The API has `GET` and
+  `POST /api/screens/:id/original` for this, and
+  [docs/rapthooker-screens.md](docs/rapthooker-screens.md#an-sdc2-clock) has the details
 
 ### Changed
 
@@ -37,102 +36,6 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   put RaptHooker on a board from a computer, for hubs that can't use USB (in Docker, say)
 - Setting up a Smart weather clock from a browser now says within a minute when the clock didn't take RaptHooker's
   firmware (an SDC2 won't), instead of waiting five minutes for it to restart
-
-## [0.11.1-sdc2.4] - 2026-11-16
-
-The fourth beta for the SDC2 Smart weather clock. The third showed where RaptHooker's firmware crashed on it: the first
-time anything connected to it. This one fixes that, so set-up should get further. It has everything under [Unreleased]
-too.
-
-### Added
-
-- Each build of the SDC2's firmware is now checked for instructions the clock's chip doesn't have, so firmware that would
-  crash like this can't go out again
-
-### Fixed
-
-- RaptHooker's firmware crashed on the SDC2 ("Illegal instruction") as soon as anything connected to it, so it couldn't
-  be set up. It had been built with instructions the clock's chip doesn't have, which would have crashed it reading
-  its settings too
-
-### To try it
-
-1. Update the hub to this beta, under **Settings → Updates → Beta versions**.
-2. Set the clock up from its address again, as before.
-3. Join **RaptHooker-Screen-…** when asked, and let set-up finish. If it crashes again, send a photo of its screen. If
-   it works, send its **Log** (in **Screen details**) anyway, and save a copy of its original firmware: **Put the
-   original firmware back** → **Save a copy**.
-
-## [0.11.1-sdc2.3] - 2026-11-16
-
-The third beta for the SDC2 Smart weather clock. On the second, RaptHooker crashed on the clock whenever something
-joined its Wi-Fi during set-up. This one shows where. It has everything under [Unreleased] too.
-
-### Added
-
-- After a crash, the SDC2's set-up screen shows where it was: **Crash** (what went wrong), **Task**, **At** and
-  **Stack** (addresses in RaptHooker's firmware). Its log has the rest, along with how close each part of the
-  firmware has come to running out of memory for its stack
-
-### To try it
-
-1. Update the hub to this beta, under **Settings → Updates → Beta versions**.
-2. Set the clock up from its address again, as before.
-3. Join **RaptHooker-Screen-…** when asked. When the clock restarts with **Crash**, **Task**, **At** and **Stack** on
-   its screen, take a clear photo of it, close enough to read every letter and number. One crash is enough.
-
-## [0.11.1-sdc2.2] - 2026-11-16
-
-The second beta for the SDC2 Smart weather clock. On the first, the clock took RaptHooker and started it, then went
-back to the firmware it came with when a phone joined its Wi-Fi during set-up. This one is for finding out why. It has
-everything under [Unreleased] too.
-
-### Added
-
-- The SDC2 keeps its log through a restart, and it now says what the clock was asked for during set-up, when phones
-  join and leave its Wi-Fi, and how much memory it has. After a restart during set-up, its screen shows why
-  (**Restart**) and the last thing it logged (**Before**)
-
-### Fixed
-
-- A restart during set-up (a crash, say) no longer sends the SDC2 straight back to the firmware it came with: it starts
-  RaptHooker again, so its log can be read. It still goes back after four starts, or 10 minutes, without being set up
-- The SDC2 answers the set-up sooner: it no longer reads through all of the firmware it came with first
-
-### To try it
-
-1. Update the hub to this beta, under **Settings → Updates → Beta versions**.
-2. Set the clock up from its address again, as before: in **Screens**, **Add a screen**, open **A GeekMagic Ultra or
-   SDC2 clock already on your Wi-Fi?**, type its address and press **Set up** or **Install RaptHooker**.
-3. Join **RaptHooker-Screen-…** when asked.
-4. If the clock restarts (it shows RaptHooker's set-up screen again, with **Restart** and **Before** lines), take a photo
-   of the screen. Then join **RaptHooker-Screen-…** again if you need to, open `http://192.168.4.1/api/log` and send
-   all of it. If set-up gets through, send its **Log** (in **Screen details**) anyway, and save a copy of its original
-   firmware: **Put the original firmware back** → **Save a copy**.
-
-## [0.11.1-sdc2.1] - 2026-11-16
-
-A beta for trying RaptHooker on an SDC2 Smart weather clock: one whose update page asks for files named `SDC2…`. Nobody
-has tried it on a real one yet. It has everything under [Unreleased] too.
-
-### Added
-
-- Experimental support for the SDC2 Smart weather clock, the same clock on an ESP32-C2 chip. It gets RaptHooker
-  firmware of its own, put on from its address on your Wi-Fi
-- If nothing reaches the screen over the network within 10 minutes of RaptHooker going on, or it starts four times
-  without being set up, it goes back to the firmware it came with by itself. Until its first update, **Put the original
-  firmware back** can also take it back, or save a copy of that firmware
-
-### To try it
-
-1. Connect the clock to your Wi-Fi from its own page, as its instructions say, and note the address it shows.
-2. In **Screens**, press **Add a screen**. Open **A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?** (when the
-   hub sets screens up from your browser, it's at the step where you join the screen's Wi-Fi), type its address and
-   press **Set up** or **Install RaptHooker**.
-3. Join **RaptHooker-Screen-…** when asked, and let it finish.
-4. Then, in the screen's settings: **Put the original firmware back** → **Save a copy**, and keep the file. If the
-   picture is upside down, mirrored or the wrong colours, use **Does the screen look right?**. If something's wrong,
-   its **Log** (in **Screen details**) is the most useful thing to send.
 
 ## [0.11.0] - 2026-11-09
 

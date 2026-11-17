@@ -633,6 +633,11 @@ describe('screens page', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Go back to it' }));
     await settle();
     expect(view.calls('POST /api/screens/*/original')).toHaveLength(1);
+    // It rejoins its Wi-Fi rather than opening its own, and may need unplugging to.
+    const toast = toastTexts().find((s) => s.includes('Kitchen is going back to its original firmware'));
+    expect(toast).toContain('It rejoins the Wi-Fi it was on before');
+    expect(toast).toContain('unplug it for a few seconds');
+    expect(toast).not.toContain('opens its own Wi-Fi again');
   });
 
   it("doesn't offer changes to someone who isn't the owner", async () => {
@@ -677,10 +682,14 @@ describe('screens page', () => {
       expect(a.getAttribute('rel')).toContain('noopener');
     }
     expect(within(panel).getByText(/They aren't endorsements/)).toBeTruthy();
-    // The SDC2 is listed as untested, with how to set it up; it isn't one of the confirmed screens.
-    expect(within(panel).getAllByText('Might work')).toHaveLength(2);
-    expect(within(panel).getByText(/files named SDC2… .* are untested\. .* set it up from its address/)).toBeTruthy();
-    expect(within(panel).queryByText('Smart weather clock (SDC2)')).toBeNull();
+    // The SDC2 is a confirmed screen, set up from its address, with no listing to link to yet.
+    expect(within(panel).getByText('Smart weather clock (SDC2)')).toBeTruthy();
+    expect(within(panel).getByText(/Set up from its address/)).toBeTruthy();
+    expect(
+      within(panel).getByText(/files named SDC2…: connect it to your Wi-Fi from its own page, then set it up from its address/),
+    ).toBeTruthy();
+    expect(within(panel).queryByText(/SDC2.*untested/)).toBeNull();
+    expect(within(panel).getAllByText('Might work')).toHaveLength(1);
     expect(within(panel).queryByText(/GeekMagic Ultra.*untested/i)).toBeNull();
     expect(within(panel).getAllByText("Won't work")).toHaveLength(2);
     // The one-line list it replaces is gone.

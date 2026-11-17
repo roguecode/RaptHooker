@@ -14,6 +14,12 @@ const ABOUT: Record<string, { how: string; note: string }> = {
       'The genuine one, on GeekMagic\'s own firmware: a new one opens a Wi-Fi network called "GIFTV". One already on your Wi-Fi can be set up from its address. Other GeekMagic models won\'t work.',
     ),
   },
+  sdc2: {
+    how: tk('Set up from its address'),
+    note: tk(
+      'The same clock on an ESP32-C2, whose update page asks for files named SDC2…: connect it to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.',
+    ),
+  },
   'esp32-2432s028': {
     how: tk('Set up plugged into the hub (USB)'),
     note: tk(
@@ -99,14 +105,6 @@ export function SupportedScreens() {
           <span>
             {t(
               'ESP32-2432S028 boards with two USB sockets (USB-C and micro USB) are untested. They usually have another display chip, which RaptHooker tries: check it with "Does the screen look right?" after setting one up.',
-            )}
-          </span>
-        </li>
-        <li>
-          <span className="chip">{t('Might work')}</span>
-          <span>
-            {t(
-              'Smart weather clocks whose update page asks for files named SDC2… (the same clock on an ESP32-C2) are untested. Connect one to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.',
             )}
           </span>
         </li>

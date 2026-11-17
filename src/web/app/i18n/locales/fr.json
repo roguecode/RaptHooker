@@ -2473,9 +2473,11 @@
   "A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?": "Un GeekMagic Ultra ou une horloge SDC2 déjà sur votre Wi-Fi ?",
   "Its own firmware shows its address on the screen, like 192.168.1.50, or your router lists it. RaptHooker checks which screen it is before changing anything.": "Son propre firmware affiche son adresse à l'écran, par exemple 192.168.1.50, ou votre routeur l'indique. RaptHooker vérifie de quel écran il s'agit avant de modifier quoi que ce soit.",
   "A GeekMagic Ultra or SDC2 clock on your network": "Un GeekMagic Ultra ou une horloge SDC2 sur votre réseau",
-  "Smart weather clocks whose update page asks for files named SDC2… (the same clock on an ESP32-C2) are untested. Connect one to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.": "Les Smart weather clock dont la page de mise à jour demande des fichiers nommés SDC2… (la même horloge avec un ESP32-C2) n'ont pas été testées. Connectez-en une à votre Wi-Fi depuis sa propre page, puis configurez-la depuis son adresse. Jusqu'à sa première mise à jour, elle garde le firmware d'origine et peut y revenir.",
   "Until its first update, this screen keeps the firmware it came with, and can go back to it without a file. Save a copy first if you'd like to keep it.": "Jusqu'à sa première mise à jour, cet écran garde le firmware d'origine et peut y revenir sans fichier. Enregistrez-en d'abord une copie si vous voulez le conserver.",
   "Save a copy": "Enregistrer une copie",
   "Go back to it": "Y revenir",
-  "Couldn't save the original firmware": "Impossible d'enregistrer le firmware d'origine"
+  "Couldn't save the original firmware": "Impossible d'enregistrer le firmware d'origine",
+  "Set up from its address": "Se configure depuis son adresse",
+  "The same clock on an ESP32-C2, whose update page asks for files named SDC2…: connect it to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.": "La même horloge avec un ESP32-C2, dont la page de mise à jour demande des fichiers nommés SDC2… : connectez-la à votre Wi-Fi depuis sa propre page, puis configurez-la depuis son adresse. Jusqu'à sa première mise à jour, elle garde le firmware d'origine et peut y revenir.",
+  "It rejoins the Wi-Fi it was on before. If it shows its own Wi-Fi set-up instead, unplug it for a few seconds and plug it back in.": "Il se reconnecte au Wi-Fi sur lequel il était. S'il affiche plutôt sa propre configuration Wi-Fi, débranchez-le quelques secondes puis rebranchez-le."
 }

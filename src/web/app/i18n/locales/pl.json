@@ -2522,9 +2522,11 @@
   "A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?": "GeekMagic Ultra lub zegar SDC2 jest już w twojej sieci Wi-Fi?",
   "Its own firmware shows its address on the screen, like 192.168.1.50, or your router lists it. RaptHooker checks which screen it is before changing anything.": "Jego własny firmware pokazuje adres na ekranie, np. 192.168.1.50, albo znajdziesz go w routerze. RaptHooker sprawdza, jaki to ekran, zanim cokolwiek zmieni.",
   "A GeekMagic Ultra or SDC2 clock on your network": "GeekMagic Ultra lub zegar SDC2 w twojej sieci",
-  "Smart weather clocks whose update page asks for files named SDC2… (the same clock on an ESP32-C2) are untested. Connect one to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.": "Smart weather clocki, których strona aktualizacji prosi o pliki o nazwie SDC2… (ten sam zegar z ESP32-C2), nie są przetestowane. Połącz taki zegar z Wi-Fi z jego własnej strony, a potem skonfiguruj go po adresie. Do pierwszej aktualizacji zachowuje firmware, z którym przyszedł, i może do niego wrócić.",
   "Until its first update, this screen keeps the firmware it came with, and can go back to it without a file. Save a copy first if you'd like to keep it.": "Do pierwszej aktualizacji ten ekran zachowuje firmware, z którym przyszedł, i może do niego wrócić bez pliku. Najpierw zapisz kopię, jeśli chcesz go zachować.",
   "Save a copy": "Zapisz kopię",
   "Go back to it": "Wróć do niego",
-  "Couldn't save the original firmware": "Nie udało się zapisać oryginalnego firmware"
+  "Couldn't save the original firmware": "Nie udało się zapisać oryginalnego firmware",
+  "Set up from its address": "Konfiguracja po adresie",
+  "The same clock on an ESP32-C2, whose update page asks for files named SDC2…: connect it to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.": "Ten sam zegar z ESP32-C2, którego strona aktualizacji prosi o pliki o nazwie SDC2…: połącz go z Wi-Fi z jego własnej strony, a potem skonfiguruj go po adresie. Do pierwszej aktualizacji zachowuje firmware, z którym przyszedł, i może do niego wrócić.",
+  "It rejoins the Wi-Fi it was on before. If it shows its own Wi-Fi set-up instead, unplug it for a few seconds and plug it back in.": "Połączy się ponownie z siecią Wi-Fi, z którą był połączony wcześniej. Jeśli zamiast tego pokaże własną konfigurację Wi-Fi, odłącz go na kilka sekund i podłącz ponownie."
 }

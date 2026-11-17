@@ -2424,9 +2424,11 @@
   "A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?": "Een GeekMagic Ultra of SDC2-klok die al op je wifi zit?",
   "Its own firmware shows its address on the screen, like 192.168.1.50, or your router lists it. RaptHooker checks which screen it is before changing anything.": "De eigen firmware toont het adres op het scherm, bijvoorbeeld 192.168.1.50, of je router geeft het aan. RaptHooker controleert welk scherm het is voordat er iets wordt gewijzigd.",
   "A GeekMagic Ultra or SDC2 clock on your network": "Een GeekMagic Ultra of SDC2-klok op je netwerk",
-  "Smart weather clocks whose update page asks for files named SDC2… (the same clock on an ESP32-C2) are untested. Connect one to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.": "Smart weather clocks waarvan de updatepagina om bestanden met de naam SDC2… vraagt (dezelfde klok met een ESP32-C2) zijn niet getest. Verbind er een via zijn eigen pagina met je wifi en stel hem daarna in via het adres. Tot de eerste update houdt hij de firmware waarmee hij kwam, en kan hij daarnaar terug.",
   "Until its first update, this screen keeps the firmware it came with, and can go back to it without a file. Save a copy first if you'd like to keep it.": "Tot de eerste update houdt dit scherm de firmware waarmee het kwam, en kan het daarnaar terug zonder bestand. Bewaar eerst een kopie als je die wilt houden.",
   "Save a copy": "Kopie bewaren",
   "Go back to it": "Daarnaar terug",
-  "Couldn't save the original firmware": "Kon de oorspronkelijke firmware niet bewaren"
+  "Couldn't save the original firmware": "Kon de oorspronkelijke firmware niet bewaren",
+  "Set up from its address": "Instellen via het adres",
+  "The same clock on an ESP32-C2, whose update page asks for files named SDC2…: connect it to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.": "Dezelfde klok met een ESP32-C2, waarvan de updatepagina om bestanden met de naam SDC2… vraagt: verbind hem via zijn eigen pagina met je wifi en stel hem daarna in via het adres. Tot de eerste update houdt hij de firmware waarmee hij kwam, en kan hij daarnaar terug.",
+  "It rejoins the Wi-Fi it was on before. If it shows its own Wi-Fi set-up instead, unplug it for a few seconds and plug it back in.": "Het maakt weer verbinding met de wifi waarop het eerder zat. Toont het in plaats daarvan zijn eigen wifi-instelling, haal dan de stekker er een paar seconden uit en steek hem er weer in."
 }

@@ -4,11 +4,11 @@ Firmware for the screens RaptHooker sets up ([docs/rapthooker-screens.md](../../
 shows a picture fetched from the hub, and does everything else (set-up, settings, updates) over a small HTTP API the
 hub talks to. One source, one build per model (`RH_MODEL`, a PlatformIO environment each):
 
-| Model            | Env     | Board                                                                                                                                                  | Installed                                       |
-| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
-| `sdpro-240`      | `sdpro` | "Smart weather clock" or genuine GeekMagic Ultra: ESP8266, 4 MB flash, ST7789 240 × 240                                                                | Over the stock firmware's OTA                   |
-| `sdc2-240`       | `sdc2`  | JUZIPi "SDC2" Smart weather clock: ESP32-C2 (26 MHz crystal), 4 MB flash, ST7789 240 × 240, no USB data. Experimental: set up on one real clock so far | Over the stock firmware's OTA, from its address |
-| `esp32-2432s028` | `cyd`   | ESP32-2432S028 ("Cheap Yellow Display"): ESP32, 4 MB flash, 320 × 240                                                                                  | Over USB, with esptool                          |
+| Model            | Env     | Board                                                                                                                      | Installed                                       |
+| ---------------- | ------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `sdpro-240`      | `sdpro` | "Smart weather clock" or genuine GeekMagic Ultra: ESP8266, 4 MB flash, ST7789 240 × 240                                    | Over the stock firmware's OTA                   |
+| `sdc2-240`       | `sdc2`  | JUZIPi "SDC2" Smart weather clock: ESP32-C2 (26 MHz crystal), 4 MB flash, ST7789 240 × 240, no USB data. Confirmed working | Over the stock firmware's OTA, from its address |
+| `esp32-2432s028` | `cyd`   | ESP32-2432S028 ("Cheap Yellow Display"): ESP32, 4 MB flash, 320 × 240                                                      | Over USB, with esptool                          |
 
 The chips differ in the platform layer ([src/platform.cpp](src/platform.cpp): crash counting, roll-back, HMAC, system
 details) and in `#if defined(ESP8266)` / `ESP32` blocks in place (Wi-Fi, mDNS, web server, updates, the settings
@@ -228,10 +228,10 @@ differs. Confirmed working on a real one; the details below are from its image (
 - Its layout is 4 MB with LittleFS at 0x100000–0x3FA000, the same as `eagle.flash.4m3m.ld`, so RaptHooker's settings
   sector (0x3FA000) is outside its files, and its own firmware can go back on with its settings as they were.
 
-### The SDC2 (experimental)
+### The SDC2
 
-The JUZIPi SDC2 is the Smart weather clock on an ESP32-C2, sold the same way. RaptHooker has been set up on one real
-clock so far (stock firmware SDC2 V1.2.0). What's known:
+The JUZIPi SDC2 is the Smart weather clock on an ESP32-C2, sold the same way. RaptHooker has been confirmed working on
+one (stock firmware SDC2 V1.2.0). What's known:
 
 - From its stock firmware (as read for [yanirta/sdc2-stock-clock](https://github.com/yanirta/sdc2-stock-clock), whose
   README was the source; no code was copied): an ESP32-C2 (rev 1.0–2.99) with a 26 MHz crystal, 4 MB of DIO flash at

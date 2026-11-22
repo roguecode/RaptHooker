@@ -9,6 +9,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 - Support for genuine GeekMagic Ultra screens. Set one up from its GIFTV hotspot, or by its IP address if it's already
   on your Wi-Fi
+- Add a screen by the IP address it shows, under **Find on network**, when the hub can't find it by itself. The API
+  has `POST /api/screens/find` for this
 - Wider pages for big and ultrawide screens. Pick **Wide** or **Full** page width under **Settings → Hub → This
   browser** or in the top bar menu, and charts grow taller to match ([#38](https://github.com/roguecode/RaptHooker/issues/38))
 - Support for the SDC2 Smart weather clock: the same clock on an ESP32-C2 chip, whose update page asks for files
@@ -39,6 +41,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 - Setting up an SDC2 over its own Wi-Fi, when the hub took it for an ordinary clock and it answered "Wrong firmware!",
   now carries on with the SDC2's firmware if the clock says it's an SDC2. If it doesn't, set-up says to set it up from
   its address, instead of saying to unplug it and try again
+- **Find on network** now finds screens on a hub on a Pi or in Docker. It never heard their answer there, so a screen
+  set up before a reinstall or a lost SD card couldn't be added back
 
 ## [0.11.0] - 2026-11-09
 

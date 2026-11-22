@@ -1,6 +1,7 @@
 import type {
   FoundScreen,
   ScreenDevice,
+  ScreenFindResult,
   ScreenInstallResult,
   ScreenLook,
   ScreenManualStart,
@@ -62,6 +63,8 @@ export const screensApi = {
     http.post<ScreenSetupProgress>('/api/screens/usb/setup', input),
   found: () => http.get<FoundScreen[]>('/api/screens/found'),
   discover: () => http.post<FoundScreen[]>('/api/screens/discover'),
+  /** Looks for a RaptHooker screen at an address, for when the hub can't hear it on the network. */
+  find: (address: string) => http.post<ScreenFindResult>('/api/screens/find', { address }),
   adopt: (input: { id: string; code?: string; name?: string; look?: Partial<ScreenLook> }) =>
     http.post<{ screen: ScreenDevice | null; needsCode: boolean }>('/api/screens/adopt', input),
   manual: (input: { name: string; pillId: string | null; look: Partial<ScreenLook> }) =>

@@ -352,7 +352,7 @@ export interface UsbStatus {
   ports: UsbPort[];
 }
 
-/** A RaptHooker screen heard on the network (mDNS) that this hub doesn't have. */
+/** A RaptHooker screen heard on the network (mDNS), or found at an address typed in, that this hub doesn't have. */
 export interface FoundScreen {
   id: string;
   model: string;
@@ -442,17 +442,29 @@ export const screenSetupSchema = z
   });
 export type ScreenSetupInput = z.infer<typeof screenSetupSchema>;
 
+/** An address on the hub's network someone typed in: an IP address or host name, with a port if need be. */
+const networkAddress = z
+  .string()
+  .max(260)
+  .transform((text, ctx) => {
+    const address = screenAddress(text);
+    if (!address) ctx.addIssue({ code: 'custom', message: 'Not an address on the network' });
+    return address ?? text;
+  });
+
 /** Installing RaptHooker on a GeekMagic Ultra or Smart weather clock on the hub's network, for a browser to finish setting it up. */
-export const screenInstallSchema = z.object({
-  address: z
-    .string()
-    .max(260)
-    .transform((text, ctx) => {
-      const address = screenAddress(text);
-      if (!address) ctx.addIssue({ code: 'custom', message: 'Not an address on the network' });
-      return address ?? text;
-    }),
-});
+export const screenInstallSchema = z.object({ address: networkAddress });
+
+/** Looking for a RaptHooker screen at an address, for networks where the hub can't hear screens over mDNS. */
+export const screenFindSchema = z.object({ address: networkAddress });
+
+/** What POST /api/screens/find found at the address. */
+export interface ScreenFindResult {
+  /** A screen this hub doesn't have: it's in the found list now, to add with the code it shows. */
+  found: FoundScreen | null;
+  /** One of this hub's own screens, which the hub now looks for at that address. */
+  known: string | null;
+}
 
 /** What /api/screens/install did: which screen it found there, and the firmware it put on. */
 export interface ScreenInstallResult {

@@ -2530,5 +2530,10 @@
   "The same clock on an ESP32-C2, whose update page asks for files named SDC2…: connect it to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.": "Ten sam zegar z ESP32-C2, którego strona aktualizacji prosi o pliki o nazwie SDC2…: połącz go z Wi-Fi z jego własnej strony, a potem skonfiguruj go po adresie. Do pierwszej aktualizacji zachowuje firmware, z którym przyszedł, i może do niego wrócić.",
   "It rejoins the Wi-Fi it was on before. If it shows its own Wi-Fi set-up instead, unplug it for a few seconds and plug it back in.": "Połączy się ponownie z siecią Wi-Fi, z którą był połączony wcześniej. Jeśli zamiast tego pokaże własną konfigurację Wi-Fi, odłącz go na kilka sekund i podłącz ponownie.",
   "This clock is an SDC2, and it turned down the firmware for an ordinary Smart weather clock, so nothing on it has changed. Set it up from its address instead: connect it to your Wi-Fi from its own page first.": "Ten zegar to SDC2 i odrzucił firmware dla zwykłego Smart weather clock, więc nic się w nim nie zmieniło. Skonfiguruj go zamiast tego po jego adresie: najpierw połącz go z Wi-Fi z jego własnej strony.",
-  "How to set up an SDC2": "Jak skonfigurować SDC2"
+  "How to set up an SDC2": "Jak skonfigurować SDC2",
+  "Not listed? Type the IP address the screen shows.": "Nie ma go na liście? Wpisz adres IP widoczny na ekranie.",
+  "Look there": "Szukaj tam",
+  "Nothing answered at {address}.": "Nic nie odpowiedziało pod adresem {address}.",
+  "That's not a RaptHooker screen.": "To nie jest ekran RaptHooker.",
+  "{name} is already on this hub.": "{name} już należy do tego huba."
 }

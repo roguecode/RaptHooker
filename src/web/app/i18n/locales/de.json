@@ -2432,5 +2432,10 @@
   "The same clock on an ESP32-C2, whose update page asks for files named SDC2…: connect it to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.": "Dieselbe Uhr mit einem ESP32-C2, deren Update-Seite nach Dateien namens SDC2… fragt: Verbinde sie über ihre eigene Seite mit deinem WLAN und richte sie dann über ihre Adresse ein. Bis zu ihrem ersten Update behält sie die Firmware, mit der sie kam, und kann zu ihr zurück.",
   "It rejoins the Wi-Fi it was on before. If it shows its own Wi-Fi set-up instead, unplug it for a few seconds and plug it back in.": "Er verbindet sich wieder mit dem WLAN, in dem er vorher war. Zeigt er stattdessen seine eigene WLAN-Einrichtung, zieh ihn für ein paar Sekunden ab und steck ihn wieder ein.",
   "This clock is an SDC2, and it turned down the firmware for an ordinary Smart weather clock, so nothing on it has changed. Set it up from its address instead: connect it to your Wi-Fi from its own page first.": "Diese Uhr ist eine SDC2 und hat die Firmware für eine gewöhnliche Smart weather clock abgelehnt, an ihr hat sich also nichts geändert. Richte sie stattdessen über ihre Adresse ein: Verbinde sie zuerst über ihre eigene Seite mit deinem WLAN.",
-  "How to set up an SDC2": "So richtest du eine SDC2 ein"
+  "How to set up an SDC2": "So richtest du eine SDC2 ein",
+  "Not listed? Type the IP address the screen shows.": "Nicht dabei? Gib die IP-Adresse ein, die der Bildschirm anzeigt.",
+  "Look there": "Dort suchen",
+  "Nothing answered at {address}.": "Unter {address} hat nichts geantwortet.",
+  "That's not a RaptHooker screen.": "Das ist kein RaptHooker-Bildschirm.",
+  "{name} is already on this hub.": "{name} gehört schon zu diesem Hub."
 }

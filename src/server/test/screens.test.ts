@@ -765,6 +765,41 @@ describe('looking after screens', () => {
     expect(screens.found()).toEqual([]);
   });
 
+  it("takes over a screen at an address typed in, when the hub can't hear it on the network", async () => {
+    const { fake, screens } = await setUp();
+    fake.settings.token = 'someone-elses-key-0123456789';
+    await screens.remove(fake.id, false);
+    // A router that keeps mDNS from the hub.
+    (screens as unknown as { deps: { browse: () => Promise<unknown[]> } }).deps.browse = async () => [];
+    expect(await screens.discover()).toEqual([]);
+
+    const { found, known } = await screens.findAt(fake.address);
+    expect(known).toBeNull();
+    expect(found).toMatchObject({ id: fake.id, ip: fake.address, model: fake.model, claimed: true });
+    // Looking on the network again doesn't lose it.
+    expect(await screens.discover()).toMatchObject([{ id: fake.id }]);
+    expect(await screens.adopt(fake.id, undefined, undefined)).toEqual({ screen: null, needsCode: true });
+    const { screen } = await screens.adopt(fake.id, fake.pairingCode!, 'Garage');
+    expect(screen).toMatchObject({ id: fake.id, name: 'Garage' });
+    expect(fake.settings.token).not.toBe('someone-elses-key-0123456789');
+    expect(await screens.discover()).toEqual([]);
+  });
+
+  it('looks for one of its own screens at an address typed in', async () => {
+    const { fake, screens } = await setUp();
+    expect(await screens.findAt(fake.address)).toEqual({ found: null, known: fake.id });
+    expect(screens.found()).toEqual([]);
+  });
+
+  it("says when nothing answers at an address typed in, or it isn't a RaptHooker screen", async () => {
+    const { fake, screens } = await world();
+    // Still on the firmware it came with.
+    await expect(screens.findAt(fake.address)).rejects.toMatchObject({ message: 'not-a-screen', statusCode: 404 });
+    await fake.stop();
+    await expect(screens.findAt(fake.address)).rejects.toMatchObject({ message: 'nothing-there', statusCode: 502 });
+    expect(screens.found()).toEqual([]);
+  });
+
   it("won't add a board found on the network that can't keep its settings", async () => {
     const { fake, screens } = await setUp();
     await screens.remove(fake.id, false);

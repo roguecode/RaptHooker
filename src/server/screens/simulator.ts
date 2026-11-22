@@ -54,6 +54,8 @@ export interface FakeScreenOptions {
   stockKind?: StockKind;
   /** An SDC2 whose page doesn't say SDC2, so it's taken for an SD Pro. */
   hidesSdc2?: boolean;
+  /** An SDC2 without a /version page. */
+  noVersionPage?: boolean;
   /** What a GeekMagic says it is at /v.json (default the Ultra; a "SmallTV-Pro" is an ESP32). */
   geekmagicModel?: string;
   /** A GeekMagic that has joined a network with its own firmware, so has no hotspot open (it's reached by address). */
@@ -68,8 +70,9 @@ export interface FakeScreenOptions {
   /**
    * What the stock firmware's update page does with RaptHooker's firmware: takes it and says OK; takes it and
    * restarts without answering (as real screens sometimes do); refuses it (FAIL); or refuses it without answering.
+   * 'wrong-firmware' is an SD Pro that refuses its own firmware as an SDC2 does, but would take the SDC2's (none known).
    */
-  stockOta?: 'ok' | 'no-reply' | 'refuse' | 'refuse-quietly';
+  stockOta?: 'ok' | 'no-reply' | 'refuse' | 'refuse-quietly' | 'wrong-firmware';
   /** Firmware from before "proof": it can't prove it has its key. */
   legacy?: boolean;
   /**
@@ -170,6 +173,7 @@ export class FakeScreen extends EventEmitter {
       fetchPictures: opts.fetchPictures ?? true,
       stockOta: opts.stockOta ?? 'ok',
       hidesSdc2: opts.hidesSdc2 ?? false,
+      noVersionPage: opts.noVersionPage ?? false,
     };
   }
 
@@ -528,6 +532,11 @@ export class FakeScreen extends EventEmitter {
       const prefix = sdc2 && !this.opts.hidesSdc2 ? 'SDC2' : 'SDP';
       return this.send(res, 200, `function okName(f) { return f.name.startsWith('${prefix}'); }`, 'application/javascript');
     }
+    // The SDC2 says what it is here; an SD Pro has no such page (it gets the page below).
+    if (path === '/version') {
+      this.events.push('asked /version');
+      if (sdc2 && !this.opts.noVersionPage) return this.send(res, 200, 'SDC2 V1.2.0', 'text/plain');
+    }
     if (path === '/update_ota' && req.method === 'POST') {
       const data = this.filePart(body, req.headers['content-type']);
       const marker = data ? imageMarker(data) : null;
@@ -538,6 +547,10 @@ export class FakeScreen extends EventEmitter {
         this.send(res, 200, 'OK', 'text/plain');
         this.down = true;
         return;
+      }
+      if (!sdc2 && how === 'wrong-firmware') {
+        this.events.push('stock wrong firmware');
+        return this.send(res, 400, 'Wrong firmware!', 'text/plain');
       }
       // The SDC2 turns down a file not named SDC2... or not for its chip, and carries on as it was.
       if (sdc2 && (!this.fileName(body).toUpperCase().startsWith('SDC2') || !data || data[0] !== 0xe9 || data[12] !== 12)) {

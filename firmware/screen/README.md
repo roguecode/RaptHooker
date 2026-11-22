@@ -247,9 +247,10 @@ one (stock firmware SDC2 V1.2.0). What's known:
   a file not named `SDC2…`, or not for the ESP32-C2, gets `400 Wrong firmware!`, and it carries on as it was.
 - So an SDC2 is only ever sent its image once the hub has read `SDC2` on its own page (`/`, or a script it loads such
   as `/javascript.js`): an SD Pro would install the ESP32-C2 image and never start again. The other way round is safe:
-  an SDC2 turns the SD Pro's image down. A browser can't read the stock page from its hotspot, so an SDC2 is set up
-  from its address on the hub's network, and a browser on its hotspot only sends the SD Pro's image (which an SDC2
-  refuses).
+  an SDC2 turns the SD Pro's image down. If the hub took one for an SD Pro on its hotspot and it turns that down, the
+  hub asks `/version` (`SDC2 V1.2.0` on an SDC2; an SD Pro has no such page), and only sends the SDC2 image if it
+  answers that. A browser can't read the stock page from its hotspot, so an SDC2 is set up from its address on the
+  hub's network, and a browser on its hotspot only sends the SD Pro's image (which an SDC2 refuses).
 - Its first RaptHooker firmware goes into `app1`, leaving the stock firmware in `app0`, where `/api/original` reaches it,
   until the first update replaces it. RaptHooker's hotspot is named after the MAC address its `/mac` gives (the
   station's, which RaptHooker's firmware reads from the chip: Arduino 3's `WiFi.macAddress()` gives nothing until Wi-Fi

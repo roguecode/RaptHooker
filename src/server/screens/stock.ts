@@ -31,6 +31,20 @@ const SDC2_TEXT = /\bSDC2/;
 /** What an SDC2 answers (400 "Wrong firmware!") when it's sent firmware that isn't for it. An SD Pro never says it. */
 export class WrongFirmware extends ScreenRequestError {}
 
+/**
+ * What an SDC2 says it is at /version ("SDC2 V1.2.0"), or null. An SD Pro has no such page. Only asked of a clock that
+ * has turned the SD Pro's firmware down.
+ */
+export async function sdc2Version(host: string, localAddress?: string): Promise<string | null> {
+  try {
+    const res = await request(host, '/version', { timeoutMs: 6000, localAddress });
+    const text = res.body.toString('utf8').trim();
+    return res.status === 200 && /^SDC2 V\d+(\.\d+)*$/.test(text) ? text : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Whether the stock page at `host`, or a script from the same place it loads, says SDC2. */
 async function saysSdc2(host: string, page: string, localAddress?: string): Promise<boolean> {
   if (SDC2_TEXT.test(page)) return true;

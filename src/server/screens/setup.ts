@@ -4,6 +4,7 @@ import {
   GEEKMAGIC_ULTRA,
   hotspotKind,
   screenHotspot,
+  screenStock,
   screenTrialError,
   type ScreenSetupError,
   type ScreenSetupInput,
@@ -15,7 +16,7 @@ import {
 import type { Logger } from '../log.js';
 import { ScreenClient, type ScreenInfo } from './client.js';
 import { compareVersions, type FirmwareImage } from './firmware.js';
-import { flashGeekmagic, flashStock, identifyGeekmagic, identifyStock, WrongFirmware } from './stock.js';
+import { flashGeekmagic, flashStock, identifyGeekmagic, identifyStock, sdc2Version, WrongFirmware } from './stock.js';
 import type { HotspotLink, WifiController } from './wifi/types.js';
 
 /** What the set-up needs from the rest of the hub. */
@@ -273,16 +274,26 @@ export class ScreenSetup extends EventEmitter {
       }
       let ours = stock ? (stock.mac ? screenHotspot(stock.mac) : null) : screenHotspot(info!.mac);
       if (stock) {
-        const fw = this.deps.firmware.get(stock.model);
+        let fw = this.deps.firmware.get(stock.model);
         if (!fw) throw new SetupError('not-supported', `No firmware for ${stock.model}`);
         this.step('install');
         let confirmed: boolean;
         try {
           confirmed = await (stock.kind === 'geekmagic' ? flashGeekmagic : flashStock)(host, fw, local);
         } catch (err) {
-          // An SDC2 taken for an SD Pro: trying again would do the same, it has to be set up from its address.
-          if (stock.kind === 'sdpro' && err instanceof WrongFirmware) throw new SetupError('sdc2', err.message);
-          throw new SetupError('install-failed', (err as Error).message);
+          if (!(stock.kind === 'sdpro' && err instanceof WrongFirmware)) throw new SetupError('install-failed', (err as Error).message);
+          // It turned the SD Pro's firmware down as an SDC2 does. It only gets the SDC2's if it also says it's one.
+          const version = await sdc2Version(host, local);
+          const c2 = version ? this.deps.firmware.get(screenStock('sdc2').model) : undefined;
+          if (!c2) throw new SetupError('sdc2', err.message);
+          log.info({ mac: stock.mac, version }, 'an SDC2 taken for an SD Pro');
+          stock = { ...stock, kind: 'sdc2', model: c2.model };
+          fw = c2;
+          try {
+            confirmed = await flashStock(host, fw, local);
+          } catch (again) {
+            throw new SetupError('install-failed', (again as Error).message);
+          }
         }
         log.info({ kind: stock.kind, mac: stock.mac, version: fw.version, confirmed }, 'RaptHooker firmware sent to a stock screen');
         this.step('restart');

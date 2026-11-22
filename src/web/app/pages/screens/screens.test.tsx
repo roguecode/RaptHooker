@@ -237,7 +237,7 @@ describe('screens page', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     const dialog = await screen.findByRole('dialog', { name: 'Add a screen' });
-    expect(within(dialog).getByText('A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?')).toBeTruthy();
+    expect(await within(dialog).findByText('A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?')).toBeTruthy();
   });
 
   it("sets a screen up from the browser when the hub can't switch Wi-Fi", async () => {

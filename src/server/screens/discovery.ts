@@ -6,6 +6,12 @@ import type { Logger } from '../log.js';
 
 const SERVICE = '_rhscreen._tcp.local';
 const VIRTUAL = /^(lo|tailscale|docker|veth|br-|virbr|vmnet|vboxnet|zt|wg|tun|utun|cni|flannel|vEthernet)/i;
+/**
+ * Where the sockets listen. multicast-dns binds to the interface's own address unless told otherwise, and Linux and
+ * macOS never hand a socket bound like that anything sent to the mDNS group, which is how screens answer: the hub
+ * heard nothing. Windows does, and its own mDNS service may hold the port on every address.
+ */
+const BIND = process.platform === 'win32' ? undefined : '0.0.0.0';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -55,7 +61,7 @@ export async function browseScreens(log: Logger, ms = 3000): Promise<FoundScreen
   };
   for (const address of lanAddresses()) {
     try {
-      const m = mdns({ interface: address, reuseAddr: true });
+      const m = mdns({ interface: address, bind: BIND, reuseAddr: true });
       m.on('response', onResponse);
       m.on('error', (err: Error) => log.debug({ err: err.message, address }, 'mDNS'));
       sockets.push(m);

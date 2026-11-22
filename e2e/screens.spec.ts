@@ -1,3 +1,4 @@
+import type { ScreenDevice } from '@rapthooker/shared';
 import { ensurePill, expect, SIMULATED, test } from './helpers';
 
 // The hub runs with pretend Wi-Fi, a pretend "Smart weather clock" and a pretend GeekMagic Ultra on their stock
@@ -89,4 +90,17 @@ test('a board plugged into the hub is set up over USB, then its panel is checked
   await card.getByRole('button', { name: 'Edit', exact: true }).click();
   const editor = page.getByRole('dialog', { name: 'Bar' });
   await expect(editor.getByRole('button', { name: 'Turn it upside down' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+// Some networks keep screens' mDNS answers from the hub, so a screen can be looked for at the address it shows. (Not
+// finding one is in screens.test.ts: the browser logs the hub's error answer as an error.)
+test('a screen is looked for at the address it shows', async ({ page, request }) => {
+  const kitchen = ((await (await request.get('/api/screens')).json()) as ScreenDevice[]).find((s) => s.name === 'Kitchen')!;
+  await page.goto('/#/screens');
+  await page.getByRole('button', { name: 'Find on network' }).click();
+  const found = page.getByRole('region', { name: 'Screens found on your network' });
+  const address = found.getByRole('textbox', { name: 'Not listed? Type the IP address the screen shows.' });
+  await address.fill(kitchen.ip!);
+  await found.getByRole('button', { name: 'Look there' }).click();
+  await expect(page.getByText('Kitchen is already on this hub.')).toBeVisible();
 });

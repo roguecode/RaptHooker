@@ -486,6 +486,11 @@
       "pages/devices/IspindelTab.tsx"
     ]
   },
+  "{name} is already on this hub.": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
+    ]
+  },
   "{name} is going back to its original firmware": {
     "files": [
       "pages/screens/ScreenEditor.tsx"
@@ -2834,6 +2839,7 @@
   },
   "Couldn't look for screens": {
     "files": [
+      "pages/screens/FoundScreens.tsx",
       "pages/screens/ScreensPage.tsx"
     ]
   },
@@ -6134,6 +6140,11 @@
       "pages/settings/UpdateSection.tsx"
     ]
   },
+  "Look there": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
+    ]
+  },
   "Look up your mail provider's SMTP settings: server, port and security.": {
     "files": [
       "pages/alerts/strings.ts"
@@ -6158,6 +6169,7 @@
     "files": [
       "pages/devices/IspindelTab.tsx",
       "pages/screens/AddScreen.tsx",
+      "pages/screens/FoundScreens.tsx",
       "pages/screens/ScreensPage.tsx"
     ]
   },
@@ -6627,7 +6639,7 @@
   },
   "No other RaptHooker screens on your network": {
     "files": [
-      "pages/screens/ScreensPage.tsx"
+      "pages/screens/FoundScreens.tsx"
     ]
   },
   "No picture fetched since the hub started": {
@@ -6794,6 +6806,11 @@
       "pages/pill/DataSources.tsx"
     ]
   },
+  "Not listed? Type the IP address the screen shows.": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
+    ]
+  },
   "Not listening: {error}": {
     "files": [
       "pages/settings/BluetoothSection.tsx"
@@ -6875,6 +6892,11 @@
   "Nothing added yet.": {
     "files": [
       "pages/alerts/ChannelsPanel.tsx"
+    ]
+  },
+  "Nothing answered at {address}.": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
     ]
   },
   "Nothing heard for {minutes} min": {
@@ -9912,6 +9934,11 @@
   "That's more than an offset can fix (50 points). Is the pill floating in plain water?": {
     "files": [
       "pages/pill/CalibrationWizard.tsx"
+    ]
+  },
+  "That's not a RaptHooker screen.": {
+    "files": [
+      "pages/screens/FoundScreens.tsx"
     ]
   },
   "That's outside {min} to {max}.": {

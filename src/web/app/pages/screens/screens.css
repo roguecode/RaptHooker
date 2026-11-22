@@ -317,6 +317,18 @@
   letter-spacing: 0.2em;
 }
 
+.found-address {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.found-address .input {
+  width: 14rem;
+  max-width: 100%;
+}
+
 /* The screen's settings */
 .screen-editor-pair {
   display: grid;

@@ -2430,5 +2430,10 @@
   "Couldn't save the original firmware": "Impossibile salvare il firmware originale",
   "Set up from its address": "Si configura dal suo indirizzo",
   "The same clock on an ESP32-C2, whose update page asks for files named SDC2…: connect it to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.": "Lo stesso orologio con un ESP32-C2, la cui pagina di aggiornamento chiede file chiamati SDC2…: collegalo al tuo Wi-Fi dalla sua pagina, poi configuralo dal suo indirizzo. Fino al primo aggiornamento conserva il firmware con cui è arrivato e può tornarci.",
-  "It rejoins the Wi-Fi it was on before. If it shows its own Wi-Fi set-up instead, unplug it for a few seconds and plug it back in.": "Si ricollega al Wi-Fi su cui era prima. Se invece mostra la propria configurazione Wi-Fi, scollegalo per qualche secondo e ricollegalo."
+  "It rejoins the Wi-Fi it was on before. If it shows its own Wi-Fi set-up instead, unplug it for a few seconds and plug it back in.": "Si ricollega al Wi-Fi su cui era prima. Se invece mostra la propria configurazione Wi-Fi, scollegalo per qualche secondo e ricollegalo.",
+  "Not listed? Type the IP address the screen shows.": "Non c'è? Scrivi l'indirizzo IP che mostra lo schermo.",
+  "Look there": "Cerca lì",
+  "Nothing answered at {address}.": "Nessuna risposta da {address}.",
+  "That's not a RaptHooker screen.": "Non è uno schermo RaptHooker.",
+  "{name} is already on this hub.": "{name} è già di questo hub."
 }

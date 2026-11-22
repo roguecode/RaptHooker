@@ -6,7 +6,7 @@ import { t } from '../../i18n';
 import { Icon } from '../../components/Icon';
 import { PanelFix } from './PanelFix';
 import { ScreenThumb } from './ScreenCard';
-import { SETUP_ERRORS, STEP_LABELS, USB_INSTALL_DOCS, USB_REASONS } from './strings';
+import { SDC2_DOCS, SETUP_ERRORS, STEP_LABELS, USB_INSTALL_DOCS, USB_REASONS } from './strings';
 
 type Mark = 'done' | 'on' | 'failed' | 'skipped' | 'todo';
 
@@ -112,6 +112,13 @@ export function SetupPanel({
               <p className="small">
                 <a href={USB_INSTALL_DOCS} target="_blank" rel="noreferrer">
                   {t('How to install it over USB')}
+                </a>
+              </p>
+            )}
+            {progress.error === 'sdc2' && (
+              <p className="small">
+                <a href={SDC2_DOCS} target="_blank" rel="noreferrer">
+                  {t('How to set up an SDC2')}
                 </a>
               </p>
             )}

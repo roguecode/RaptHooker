@@ -21,6 +21,9 @@ export const SETUP_ERRORS: Record<ScreenSetupError, string> = {
   'hotspot-failed': tk("The hub couldn't join the screen's Wi-Fi. Check the screen is on and near the hub, then scan again."),
   'not-supported': tk("This isn't a screen RaptHooker can set up."),
   'install-failed': tk("The firmware didn't install, so the screen still has its own. Unplug it, plug it back in and try again."),
+  sdc2: tk(
+    'This clock is an SDC2, and it turned down the firmware for an ordinary Smart weather clock, so nothing on it has changed. Set it up from its address instead: connect it to your Wi-Fi from its own page first.',
+  ),
   'no-restart': tk(
     "The screen didn't come back after installing. Give it a minute: if it shows the RaptHooker logo, scan again; if it stays blank, unplug it and plug it back in.",
   ),
@@ -49,6 +52,9 @@ export const SETUP_ERRORS: Record<ScreenSetupError, string> = {
 /** Putting RaptHooker on an ESP32 board over USB, for one that can't keep its settings ('no-store'). */
 export const USB_INSTALL_DOCS =
   'https://github.com/roguecode/RaptHooker/blob/main/docs/rapthooker-screens.md#an-esp32-board-from-a-computer';
+
+/** Setting up an SDC2 from its address. */
+export const SDC2_DOCS = 'https://github.com/roguecode/RaptHooker/blob/main/docs/rapthooker-screens.md#an-sdc2-clock';
 
 /** Why the hub can't set boards up over USB (UsbStatus.reason, or the detail of a 'no-usb' set-up error). */
 export const USB_REASONS: Record<string, string> = {

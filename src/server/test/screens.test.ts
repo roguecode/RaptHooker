@@ -16,7 +16,7 @@ import {
   STOCK_SAFE_SIZE,
 } from '../screens/firmware.js';
 import { ScreenClient } from '../screens/client.js';
-import { flashGeekmagic, flashStock, identifyGeekmagic, identifyStock } from '../screens/stock.js';
+import { flashGeekmagic, flashStock, identifyGeekmagic, identifyStock, sdc2Version, WrongFirmware } from '../screens/stock.js';
 import { ScreenManager, upgradeScreen } from '../screens/manager.js';
 import { FakeScreen, MockWifi, SDC2_ORIGINAL, type FakeScreenOptions } from '../screens/simulator.js';
 import { NoUsb } from '../screens/usb/types.js';
@@ -146,6 +146,8 @@ async function world(
     legacy?: boolean;
     on5GHz?: number;
     stockKind?: FakeScreenOptions['stockKind'];
+    hidesSdc2?: boolean;
+    noVersionPage?: boolean;
     geekmagicModel?: string;
     stockOnNetwork?: boolean;
     noStore?: boolean;
@@ -161,6 +163,8 @@ async function world(
     stockOta: opts.stockOta,
     legacy: opts.legacy,
     stockKind: opts.stockKind,
+    hidesSdc2: opts.hidesSdc2,
+    noVersionPage: opts.noVersionPage,
     geekmagicModel: opts.geekmagicModel,
     stockOnNetwork: opts.stockOnNetwork,
     noStore: opts.noStore,
@@ -231,6 +235,8 @@ describe('setting a screen up', () => {
     expect(p).toMatchObject({ state: 'done', error: null, screenId: fake.id, hubBack: true });
     expect(p.steps.map((s) => s.step)).toEqual(['hotspot', 'identify', 'install', 'restart', 'screen', 'wifi', 'back', 'find', 'done']);
     expect(fake.events).toContain(`stock ota ${fw.version}`);
+    // An ordinary clock that takes its firmware is never asked what it is.
+    expect(fake.events).not.toContain('asked /version');
     expect(fake.events).toContain('setup Brewery on channel 6');
     expect(fake.settings).toMatchObject({ ssid: 'Brewery', pass: 'hops-and-barley', hub: screens.hubId(), name: 'Kitchen' });
     expect(fake.settings.imageUrl).toBe(`http://192.168.50.104:8080/api/screens/${fake.id}/image.jpg`);
@@ -591,6 +597,48 @@ describe('the SDC2 (the Smart weather clock on an ESP32-C2)', () => {
     expect(await sdproDone).toMatchObject({ state: 'done' });
     expect(sdpro.fake.events).toContain(`stock ota ${fw.version}`);
     expect(sdpro.fake.events).not.toContain('bricked');
+  });
+
+  it("gets its own firmware when it's taken for an SD Pro, turns that down, and says it's an SDC2 at /version", async () => {
+    // As one did on its hotspot: its page didn't say SDC2, and it answered the SD Pro's firmware with "Wrong firmware!".
+    await expect(flashStock((await world(sdc2)).fake.address, fw)).rejects.toBeInstanceOf(WrongFirmware);
+    expect(await sdc2Version((await world(sdc2)).fake.address)).toBe('SDC2 V1.2.0');
+
+    const { fake, wifi, screens } = await world({ ...sdc2, hidesSdc2: true });
+    const done = finished(screens);
+    screens.startSetup(input);
+    expect(await done).toMatchObject({ state: 'done', screenId: fake.id, hubBack: true });
+    expect(fake.events.slice(0, 3)).toEqual(['sdc2 wrong firmware', 'asked /version', `sdc2 ota ${c2.version}`]);
+    expect(fake.sketchMd5).toBe(c2.md5);
+    expect(wifi.joins).toEqual(['Smart weather clock', 'RaptHooker-Screen-000001']);
+    expect(screens.get(fake.id)).toMatchObject({ model: 'sdc2-240' });
+  });
+
+  it("says to set it up from its address when it's taken for an SD Pro and doesn't say it's an SDC2", async () => {
+    const { fake, wifi, screens } = await world({ ...sdc2, hidesSdc2: true, noVersionPage: true });
+    const done = finished(screens);
+    screens.startSetup(input);
+    expect(await done).toMatchObject({
+      state: 'failed',
+      error: 'sdc2',
+      detail: 'the screen said 400 Wrong firmware!',
+      hubBack: true,
+    });
+    expect(fake.events).toEqual(['sdc2 wrong firmware', 'asked /version']);
+    expect(fake.stock).toBe(true);
+    expect(wifi.current).toBe('Brewery');
+    expect(screens.list()).toEqual([]);
+  });
+
+  it("never sends an SD Pro the SDC2's firmware, even one that turned its own down", async () => {
+    // No SD Pro is known to: this one would install the SDC2's firmware, and never start again.
+    expect(await sdc2Version((await world()).fake.address)).toBeNull();
+    const { fake, screens } = await world({ stockOta: 'wrong-firmware' });
+    const done = finished(screens);
+    screens.startSetup(input);
+    expect(await done).toMatchObject({ state: 'failed', error: 'sdc2', hubBack: true });
+    expect(fake.events).toEqual(['stock wrong firmware', 'asked /version']);
+    expect(fake.stock).toBe(true);
   });
 
   it('is set up from its address, by the hub or for a browser to finish', async () => {

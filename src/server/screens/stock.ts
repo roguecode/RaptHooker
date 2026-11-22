@@ -11,8 +11,8 @@ import { stockProblems, type FirmwareImage } from './firmware.js';
  *
  * The SDC2 is the same clock on an ESP32-C2, with the same firmware ported to it: its page asks for files named
  * SDC2..., and it needs RaptHooker's ESP32-C2 image. That's only ever sent to one whose own page says SDC2: sent to an
- * SD Pro, it would be installed, and the clock wouldn't start. The other way round is safe (the ESP32-C2 checks an
- * image is for its chip before it starts it).
+ * SD Pro, it would be installed, and the clock wouldn't start. The other way round is safe: an SDC2 turns down a file
+ * not named SDC2... or not for its chip ("Wrong firmware!").
  */
 
 export interface StockScreen {
@@ -27,6 +27,23 @@ const CONFIG_KEYS = ['gifnum', 'theme', 'brightness', 'freespace', 'weatherkey',
 
 /** An SDC2's page, or a script it loads, asks for update files named like this. An SD Pro's never mentions it. */
 const SDC2_TEXT = /\bSDC2/;
+
+/** What an SDC2 answers (400 "Wrong firmware!") when it's sent firmware that isn't for it. An SD Pro never says it. */
+export class WrongFirmware extends ScreenRequestError {}
+
+/**
+ * What an SDC2 says it is at /version ("SDC2 V1.2.0"), or null. An SD Pro has no such page. Only asked of a clock that
+ * has turned the SD Pro's firmware down.
+ */
+export async function sdc2Version(host: string, localAddress?: string): Promise<string | null> {
+  try {
+    const res = await request(host, '/version', { timeoutMs: 6000, localAddress });
+    const text = res.body.toString('utf8').trim();
+    return res.status === 200 && /^SDC2 V\d+(\.\d+)*$/.test(text) ? text : null;
+  } catch {
+    return null;
+  }
+}
 
 /** Whether the stock page at `host`, or a script from the same place it loads, says SDC2. */
 async function saysSdc2(host: string, page: string, localAddress?: string): Promise<boolean> {
@@ -87,8 +104,9 @@ export async function flashStock(host: string, fw: FirmwareImage, localAddress?:
     throw err;
   }
   const text = res.body.toString('utf8').trim();
-  if (res.status !== 200 || text !== 'OK') throw new ScreenRequestError(`the screen said ${res.status} ${text.slice(0, 40)}`, res.status);
-  return true;
+  if (res.status === 200 && text === 'OK') return true;
+  const Refusal = /wrong firmware/i.test(text) ? WrongFirmware : ScreenRequestError;
+  throw new Refusal(`the screen said ${res.status} ${text.slice(0, 40)}`, res.status);
 }
 
 /**

@@ -2480,6 +2480,8 @@
   "Set up from its address": "Configuração pelo endereço",
   "The same clock on an ESP32-C2, whose update page asks for files named SDC2…: connect it to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.": "O mesmo relógio com um ESP32-C2, cuja página de atualização pede arquivos com nome SDC2…: conecte-o ao seu Wi-Fi pela própria página dele e depois configure-o pelo endereço. Até a primeira atualização, ele mantém o firmware com que veio e pode voltar a ele.",
   "It rejoins the Wi-Fi it was on before. If it shows its own Wi-Fi set-up instead, unplug it for a few seconds and plug it back in.": "Ela volta a se conectar ao Wi-Fi em que estava antes. Se em vez disso mostrar a própria configuração de Wi-Fi, desconecte-a da tomada por alguns segundos e ligue de novo.",
+  "This clock is an SDC2, and it turned down the firmware for an ordinary Smart weather clock, so nothing on it has changed. Set it up from its address instead: connect it to your Wi-Fi from its own page first.": "Este relógio é um SDC2 e recusou o firmware de um Smart weather clock comum, então nada mudou nele. Configure-o pelo endereço: primeiro conecte-o ao seu Wi-Fi pela própria página dele.",
+  "How to set up an SDC2": "Como configurar um SDC2",
   "Not listed? Type the IP address the screen shows.": "Não apareceu? Digite o endereço IP que a tela mostra.",
   "Look there": "Procurar ali",
   "Nothing answered at {address}.": "Nada respondeu em {address}.",

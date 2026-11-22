@@ -38,6 +38,9 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   put RaptHooker on a board from a computer, for hubs that can't use USB (in Docker, say)
 - Setting up a Smart weather clock from a browser now says within a minute when the clock didn't take RaptHooker's
   firmware (an SDC2 won't), instead of waiting five minutes for it to restart
+- Setting up an SDC2 over its own Wi-Fi, when the hub took it for an ordinary clock and it answered "Wrong firmware!",
+  now carries on with the SDC2's firmware if the clock says it's an SDC2. If it doesn't, set-up says to set it up from
+  its address, instead of saying to unplug it and try again
 - **Find on network** now finds screens on a hub on a Pi or in Docker. It never heard their answer there, so a screen
   set up before a reinstall or a lost SD card couldn't be added back
 

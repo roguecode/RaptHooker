@@ -4894,6 +4894,11 @@
       "pages/settings/BluetoothSection.tsx"
     ]
   },
+  "How to set up an SDC2": {
+    "files": [
+      "pages/screens/SetupPanel.tsx"
+    ]
+  },
   "How to update": {
     "files": [
       "components/UpdateBanner.tsx",
@@ -10639,6 +10644,11 @@
   "This browser can't keep the screen on from here (it needs a secure https:// address, such as through Tailscale). Turn off screen sleep in the device's settings instead.": {
     "files": [
       "pages/kiosk/Kiosk.tsx"
+    ]
+  },
+  "This clock is an SDC2, and it turned down the firmware for an ordinary Smart weather clock, so nothing on it has changed. Set it up from its address instead: connect it to your Wi-Fi from its own page first.": {
+    "files": [
+      "pages/screens/strings.ts"
     ]
   },
   "This deletes {what}. This can't be undone. (To keep them, archive it instead.)": {

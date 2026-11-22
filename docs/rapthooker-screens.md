@@ -354,7 +354,8 @@ RaptHooker running on a computer, then add it to the Docker hub from **Found on 
 - **The picture is upside down, mirrored or the wrong colours** on an ESP32 board or SDC2 clock: see
   [Does the screen look right?](#does-the-screen-look-right)
 - **A Smart weather clock won't take RaptHooker over its own Wi-Fi** (it's still on its own firmware afterwards). If its
-  update page asks for files named `SDC2…`, it's an [SDC2](#an-sdc2-clock): set it up from its address.
+  update page asks for files named `SDC2…`, or set-up says it's an SDC2, it's an [SDC2](#an-sdc2-clock): set it up from
+  its address.
 
 ## Privacy and security
 

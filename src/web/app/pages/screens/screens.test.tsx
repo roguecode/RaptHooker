@@ -218,6 +218,28 @@ describe('screens page', () => {
     expect(await screen.findByRole('dialog', { name: 'Add a screen' })).toBeTruthy();
   });
 
+  it('says an SDC2 that turned the firmware down is set up from its address', async () => {
+    const failed = progress({
+      state: 'failed',
+      step: 'install',
+      error: 'sdc2',
+      detail: 'the screen said 400 Wrong firmware!',
+      steps: reached('install'),
+    });
+    await renderWithHub(<ScreensPage />, {
+      routes: { ...BASE, 'GET /api/screens/setup': failed, 'GET /api/screens/wifi': WIFI, 'POST /api/screens/wifi/scan': NETS },
+    });
+    expect(screen.getByText(/This clock is an SDC2, and it turned down the firmware/)).toBeTruthy();
+    expect(screen.queryByText(/Unplug it, plug it back in and try again/)).toBeNull();
+    expect(screen.getByText('the screen said 400 Wrong firmware!')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'How to set up an SDC2' }).getAttribute('href')).toMatch(
+      /rapthooker-screens\.md#an-sdc2-clock$/,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add a screen' });
+    expect(within(dialog).getByText('A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?')).toBeTruthy();
+  });
+
   it("sets a screen up from the browser when the hub can't switch Wi-Fi", async () => {
     const firmware = new Uint8Array(64).fill(0xff);
     firmware[0] = 0xe9;

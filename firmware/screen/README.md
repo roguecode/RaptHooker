@@ -243,18 +243,19 @@ one (stock firmware SDC2 V1.2.0). What's known:
   from the SD Pro's (V1.0.6), which it's a port of, taken apart: `POST /update_ota` checks the name only in the page's
   script. The firmware just logs `Error: Filename must start with 'SDP'` and installs the file anyway, after making
   room for the free space less 4 KB, in whole sectors, so 0xBF000 bytes in the SDC2's slot (images are kept to 0xBE000).
-  It answers `OK` or `FAIL` and restarts. Unknown pages redirect (302) to its own.
+  It answers `OK` or `FAIL` and restarts. Unknown pages redirect (302) to its own. The SDC2's own (V1.2.0) does check:
+  a file not named `SDC2…`, or not for the ESP32-C2, gets `400 Wrong firmware!`, and it carries on as it was.
 - So an SDC2 is only ever sent its image once the hub has read `SDC2` on its own page (`/`, or a script it loads such
   as `/javascript.js`): an SD Pro would install the ESP32-C2 image and never start again. The other way round is safe:
-  the ESP32-C2 checks an image is for its chip before it starts it. A browser can't read the stock page from its
-  hotspot, so an SDC2 is set up from its address on the hub's network, and a browser on its hotspot only sends the
-  SD Pro's image (which an SDC2 refuses).
+  an SDC2 turns the SD Pro's image down. A browser can't read the stock page from its hotspot, so an SDC2 is set up
+  from its address on the hub's network, and a browser on its hotspot only sends the SD Pro's image (which an SDC2
+  refuses).
 - Its first RaptHooker firmware goes into `app1`, leaving the stock firmware in `app0`, where `/api/original` reaches it,
   until the first update replaces it. RaptHooker's hotspot is named after the MAC address its `/mac` gives (the
   station's, which RaptHooker's firmware reads from the chip: Arduino 3's `WiFi.macAddress()` gives nothing until Wi-Fi
   has started).
 - A copy of a real one's stock firmware (SDC2 V1.2.0, 650,848 bytes, built with Arduino-ESP32) bears this out: its
-  hotspot is "Smart weather clock", and its update page checks the file name only in the page's script.
+  hotspot is "Smart weather clock", and it turns down update files not named `SDC2…`.
 - `/api/ota` on the SDC2 only takes a DIO image for 4 MB of flash, and the hub never sends it firmware that isn't
   RaptHooker's: nothing in a file says it was built for the SDC2's 26 MHz crystal, and with no USB, the wrong one can't
   be put right. Going back to its own firmware is `/api/original`, while it's still there.

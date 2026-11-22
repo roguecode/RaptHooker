@@ -284,8 +284,8 @@ export function BrowserSetup({ reason, onDone }: { reason: string | null; onDone
 
   /**
    * It restarts, copies the firmware into place and opens RaptHooker's network: this device has to join it. A Smart
-   * weather clock still showing its own page a minute on didn't take it: an SDC2 (an ESP32-C2) won't start the SD Pro's
-   * firmware, and is set up from its address instead.
+   * weather clock still showing its own page a minute on didn't take it: an SDC2 (an ESP32-C2) turns the SD Pro's
+   * firmware down, and is set up from its address instead.
    */
   const restarted = async (fw: ScreenFirmware, stockStays = false) => {
     setPhase('restarting');

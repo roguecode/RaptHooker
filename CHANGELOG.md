@@ -36,6 +36,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   put RaptHooker on a board from a computer, for hubs that can't use USB (in Docker, say)
 - Setting up a Smart weather clock from a browser now says within a minute when the clock didn't take RaptHooker's
   firmware (an SDC2 won't), instead of waiting five minutes for it to restart
+- Setting up an SDC2 over its own Wi-Fi now says to set it up from its address when it answers "Wrong firmware!",
+  instead of saying to unplug it and try again
 
 ## [0.11.0] - 2026-11-09
 

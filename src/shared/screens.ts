@@ -262,6 +262,8 @@ export type ScreenSetupError =
   | 'hotspot-failed'
   | 'not-supported'
   | 'install-failed'
+  /** An SDC2 turned the SD Pro's firmware down: it's set up from its address. */
+  | 'sdc2'
   | 'no-restart'
   | 'on-network'
   | 'screen-unreachable'

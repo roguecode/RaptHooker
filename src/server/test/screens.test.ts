@@ -16,7 +16,7 @@ import {
   STOCK_SAFE_SIZE,
 } from '../screens/firmware.js';
 import { ScreenClient } from '../screens/client.js';
-import { flashGeekmagic, flashStock, identifyGeekmagic, identifyStock } from '../screens/stock.js';
+import { flashGeekmagic, flashStock, identifyGeekmagic, identifyStock, WrongFirmware } from '../screens/stock.js';
 import { ScreenManager, upgradeScreen } from '../screens/manager.js';
 import { FakeScreen, MockWifi, SDC2_ORIGINAL, type FakeScreenOptions } from '../screens/simulator.js';
 import { NoUsb } from '../screens/usb/types.js';
@@ -146,6 +146,7 @@ async function world(
     legacy?: boolean;
     on5GHz?: number;
     stockKind?: FakeScreenOptions['stockKind'];
+    hidesSdc2?: boolean;
     geekmagicModel?: string;
     stockOnNetwork?: boolean;
     noStore?: boolean;
@@ -161,6 +162,7 @@ async function world(
     stockOta: opts.stockOta,
     legacy: opts.legacy,
     stockKind: opts.stockKind,
+    hidesSdc2: opts.hidesSdc2,
     geekmagicModel: opts.geekmagicModel,
     stockOnNetwork: opts.stockOnNetwork,
     noStore: opts.noStore,
@@ -591,6 +593,25 @@ describe('the SDC2 (the Smart weather clock on an ESP32-C2)', () => {
     expect(await sdproDone).toMatchObject({ state: 'done' });
     expect(sdpro.fake.events).toContain(`stock ota ${fw.version}`);
     expect(sdpro.fake.events).not.toContain('bricked');
+  });
+
+  it("says to set it up from its address when it's taken for an SD Pro on its hotspot, and turns that firmware down", async () => {
+    // As one did: its own firmware answered 400 "Wrong firmware!" to the SD Pro's, and stayed as it was.
+    await expect(flashStock((await world(sdc2)).fake.address, fw)).rejects.toBeInstanceOf(WrongFirmware);
+
+    const { fake, wifi, screens } = await world({ ...sdc2, hidesSdc2: true });
+    const done = finished(screens);
+    screens.startSetup(input);
+    expect(await done).toMatchObject({
+      state: 'failed',
+      error: 'sdc2',
+      detail: 'the screen said 400 Wrong firmware!',
+      hubBack: true,
+    });
+    expect(fake.events).toEqual(['sdc2 wrong firmware']);
+    expect(fake.stock).toBe(true);
+    expect(wifi.current).toBe('Brewery');
+    expect(screens.list()).toEqual([]);
   });
 
   it('is set up from its address, by the hub or for a browser to finish', async () => {

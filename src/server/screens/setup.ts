@@ -15,7 +15,7 @@ import {
 import type { Logger } from '../log.js';
 import { ScreenClient, type ScreenInfo } from './client.js';
 import { compareVersions, type FirmwareImage } from './firmware.js';
-import { flashGeekmagic, flashStock, identifyGeekmagic, identifyStock } from './stock.js';
+import { flashGeekmagic, flashStock, identifyGeekmagic, identifyStock, WrongFirmware } from './stock.js';
 import type { HotspotLink, WifiController } from './wifi/types.js';
 
 /** What the set-up needs from the rest of the hub. */
@@ -280,6 +280,8 @@ export class ScreenSetup extends EventEmitter {
         try {
           confirmed = await (stock.kind === 'geekmagic' ? flashGeekmagic : flashStock)(host, fw, local);
         } catch (err) {
+          // An SDC2 taken for an SD Pro: trying again would do the same, it has to be set up from its address.
+          if (stock.kind === 'sdpro' && err instanceof WrongFirmware) throw new SetupError('sdc2', err.message);
           throw new SetupError('install-failed', (err as Error).message);
         }
         log.info({ kind: stock.kind, mac: stock.mac, version: fw.version, confirmed }, 'RaptHooker firmware sent to a stock screen');

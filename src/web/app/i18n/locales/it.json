@@ -2430,5 +2430,7 @@
   "Couldn't save the original firmware": "Impossibile salvare il firmware originale",
   "Set up from its address": "Si configura dal suo indirizzo",
   "The same clock on an ESP32-C2, whose update page asks for files named SDC2…: connect it to your Wi-Fi from its own page, then set it up from its address. Until its first update it keeps the firmware it came with, and can go back to it.": "Lo stesso orologio con un ESP32-C2, la cui pagina di aggiornamento chiede file chiamati SDC2…: collegalo al tuo Wi-Fi dalla sua pagina, poi configuralo dal suo indirizzo. Fino al primo aggiornamento conserva il firmware con cui è arrivato e può tornarci.",
-  "It rejoins the Wi-Fi it was on before. If it shows its own Wi-Fi set-up instead, unplug it for a few seconds and plug it back in.": "Si ricollega al Wi-Fi su cui era prima. Se invece mostra la propria configurazione Wi-Fi, scollegalo per qualche secondo e ricollegalo."
+  "It rejoins the Wi-Fi it was on before. If it shows its own Wi-Fi set-up instead, unplug it for a few seconds and plug it back in.": "Si ricollega al Wi-Fi su cui era prima. Se invece mostra la propria configurazione Wi-Fi, scollegalo per qualche secondo e ricollegalo.",
+  "This clock is an SDC2, and it turned down the firmware for an ordinary Smart weather clock, so nothing on it has changed. Set it up from its address instead: connect it to your Wi-Fi from its own page first.": "Questo orologio è un SDC2 e ha rifiutato il firmware di uno Smart weather clock normale, quindi non è cambiato nulla. Configuralo invece dal suo indirizzo: prima collegalo al tuo Wi-Fi dalla sua pagina.",
+  "How to set up an SDC2": "Come configurare un SDC2"
 }

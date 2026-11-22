@@ -48,10 +48,12 @@ export interface FakeScreenOptions {
   stock?: boolean;
   /**
    * Which stock firmware: the "Smart weather clock"'s SD Pro (default), the same clock's SDC2 on an ESP32-C2 (its page
-   * asks for files named SDC2..., and it only starts an ESP32-C2 image), or a genuine GeekMagic's own ("GIFTV", /v.json
-   * and the Arduino core's /update).
+   * asks for files named SDC2..., and it turns down anything else), or a genuine GeekMagic's own ("GIFTV", /v.json and
+   * the Arduino core's /update).
    */
   stockKind?: StockKind;
+  /** An SDC2 whose page doesn't say SDC2, so it's taken for an SD Pro. */
+  hidesSdc2?: boolean;
   /** What a GeekMagic says it is at /v.json (default the Ultra; a "SmallTV-Pro" is an ESP32). */
   geekmagicModel?: string;
   /** A GeekMagic that has joined a network with its own firmware, so has no hotspot open (it's reached by address). */
@@ -167,6 +169,7 @@ export class FakeScreen extends EventEmitter {
       restartMs: opts.restartMs ?? 300,
       fetchPictures: opts.fetchPictures ?? true,
       stockOta: opts.stockOta ?? 'ok',
+      hidesSdc2: opts.hidesSdc2 ?? false,
     };
   }
 
@@ -289,6 +292,12 @@ export class FakeScreen extends EventEmitter {
     const start = body.indexOf('\r\n\r\n');
     const end = body.lastIndexOf(`\r\n--${boundary}`);
     return start < 0 || end < start ? null : body.subarray(start + 4, end);
+  }
+
+  /** The name of the file in a multipart body, or ''. */
+  private fileName(body: Buffer): string {
+    const head = body.subarray(0, Math.max(0, body.indexOf('\r\n\r\n'))).toString('latin1');
+    return /filename="([^"]*)"/.exec(head)?.[1] ?? '';
   }
 
   private async handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -516,7 +525,7 @@ export class FakeScreen extends EventEmitter {
     }
     // Made up, but where its update page's file name check would be.
     if (path === '/javascript.js') {
-      const prefix = sdc2 ? 'SDC2' : 'SDP';
+      const prefix = sdc2 && !this.opts.hidesSdc2 ? 'SDC2' : 'SDP';
       return this.send(res, 200, `function okName(f) { return f.name.startsWith('${prefix}'); }`, 'application/javascript');
     }
     if (path === '/update_ota' && req.method === 'POST') {
@@ -529,6 +538,11 @@ export class FakeScreen extends EventEmitter {
         this.send(res, 200, 'OK', 'text/plain');
         this.down = true;
         return;
+      }
+      // The SDC2 turns down a file not named SDC2... or not for its chip, and carries on as it was.
+      if (sdc2 && (!this.fileName(body).toUpperCase().startsWith('SDC2') || !data || data[0] !== 0xe9 || data[12] !== 12)) {
+        this.events.push('sdc2 wrong firmware');
+        return this.send(res, 400, 'Wrong firmware!', 'text/plain');
       }
       // The SDC2 makes room for 0xBF000 bytes, and only starts a whole ESP32-C2 image; the SD Pro cuts at 512 KB.
       const fits = sdc2 ? data !== null && data.length <= 0xbf000 && data[12] === 12 : data !== null && data.length <= 0x80000;

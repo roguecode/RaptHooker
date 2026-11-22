@@ -26,6 +26,7 @@ export function ScreensPage() {
   const [setup, setSetup] = useState<ScreenSetupProgress | null>(null);
   const [dismissed, setDismissed] = useState(() => sessionStorage.getItem(DISMISSED_KEY));
   const [found, setFound] = useState<FoundScreen[]>([]);
+  const [searched, setSearched] = useState(false);
   const [looking, setLooking] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [updatingAll, setUpdatingAll] = useState(false);
@@ -65,7 +66,7 @@ export function ScreensPage() {
     try {
       const list = await screensApi.discover();
       setFound(list);
-      if (list.length === 0) toast({ tone: 'info', title: t('No other RaptHooker screens on your network') });
+      setSearched(true);
     } catch (err) {
       toast({ tone: 'error', title: t("Couldn't look for screens"), body: errorText(err) });
     } finally {
@@ -167,7 +168,15 @@ export function ScreensPage() {
         </div>
       )}
 
-      {isOwner && <FoundScreens found={found} looking={looking} onLookAgain={() => void lookAround()} />}
+      {isOwner && (
+        <FoundScreens
+          found={found}
+          searched={searched}
+          looking={looking}
+          onLookAgain={() => void lookAround()}
+          onFound={(f) => setFound((list) => [...list.filter((x) => x.id !== f.id), f])}
+        />
+      )}
 
       {!loaded ? (
         <div className="grid cards" aria-busy="true">

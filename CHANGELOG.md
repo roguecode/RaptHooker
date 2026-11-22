@@ -9,6 +9,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 - Support for genuine GeekMagic Ultra screens. Set one up from its GIFTV hotspot, or by its IP address if it's already
   on your Wi-Fi
+- Add a screen by the IP address it shows, under **Find on network**, when the hub can't find it by itself. The API
+  has `POST /api/screens/find` for this
 - Wider pages for big and ultrawide screens. Pick **Wide** or **Full** page width under **Settings → Hub → This
   browser** or in the top bar menu, and charts grow taller to match ([#38](https://github.com/roguecode/RaptHooker/issues/38))
 - Support for the SDC2 Smart weather clock: the same clock on an ESP32-C2 chip, whose update page asks for files
@@ -36,6 +38,8 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
   put RaptHooker on a board from a computer, for hubs that can't use USB (in Docker, say)
 - Setting up a Smart weather clock from a browser now says within a minute when the clock didn't take RaptHooker's
   firmware (an SDC2 won't), instead of waiting five minutes for it to restart
+- **Find on network** now finds screens on a hub on a Pi or in Docker. It never heard their answer there, so a screen
+  set up before a reinstall or a lost SD card couldn't be added back
 
 ## [0.11.0] - 2026-11-09
 

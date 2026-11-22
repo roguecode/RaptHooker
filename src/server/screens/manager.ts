@@ -9,6 +9,7 @@ import {
   type HubAddress,
   type ScreenDevice,
   type ScreenFirmware,
+  type ScreenFindResult,
   type ScreenInstallResult,
   type ScreenLook,
   type ScreenManualStart,
@@ -175,6 +176,8 @@ export class ScreenManager extends EventEmitter {
   private installing = false;
   private lastSetup: ScreenSetupProgress | null = null;
   private foundList: FoundScreen[] = [];
+  /** Screens found at an address typed in, by id: kept in the found list when mDNS doesn't hear them. */
+  private readonly typedIn = new Map<string, FoundScreen>();
   private timers: NodeJS.Timeout[] = [];
   private lastState = new Map<string, ScreenState>();
   /** Talking to one screen happens one thing at a time, so a slow check can't send settings a patch has replaced. */
@@ -800,14 +803,51 @@ export class ScreenManager extends EventEmitter {
   }
 
   async discover(): Promise<FoundScreen[]> {
-    this.foundList = await this.deps.browse();
+    const heard = await this.deps.browse();
+    // Screens found at a typed-in address stay listed: on networks where they can't be heard, they never will be.
+    this.foundList = [...heard, ...[...this.typedIn.values()].filter((t) => !heard.some((h) => h.id === t.id))];
     // A known screen at a new address: the hub follows it.
-    for (const f of this.foundList) {
+    for (const f of heard) {
       const entry = this.screens.get(f.id);
       if (entry && entry.saved.ip !== f.ip) this.write(f.id, { ...entry.saved, ip: f.ip }, entry.raw);
     }
     this.emit('found', this.found());
     return this.found();
+  }
+
+  /**
+   * The RaptHooker screen at an address someone typed in (the screen shows it), for networks where the hub can't hear
+   * screens over mDNS: a router that keeps it from other devices, or a hub in Docker without host networking. One this
+   * hub doesn't have joins the found list, to add with the code it shows; one it has is looked for there from now on
+   * (only a screen that proves it has the key ever gets it, so a wrong address can't get the key sent anywhere).
+   */
+  async findAt(address: string): Promise<ScreenFindResult> {
+    const info = await new ScreenClient(address).info(5000).catch((err: Error) => {
+      const answered = (err as ScreenRequestError).status != null;
+      throw new ScreenError(answered ? 'not-a-screen' : 'nothing-there', answered ? 404 : 502);
+    });
+    if (info?.firmware !== 'rapthooker-screen' || !/^[0-9a-f]{12}$/.test(String(info.id))) throw new ScreenError('not-a-screen', 404);
+    // An IP address as typed (with its port, in tests); for a name, the address the screen says it has.
+    const ip = /^\d{1,3}(\.\d{1,3}){3}(:\d+)?$/.test(address) ? address : info.wifi?.ip || address;
+    const entry = this.screens.get(info.id);
+    if (entry) {
+      if (entry.saved.ip !== ip) this.write(info.id, { ...entry.saved, ip }, entry.raw);
+      void this.check([info.id]);
+      return { found: null, known: info.id };
+    }
+    const f: FoundScreen = {
+      id: info.id,
+      model: info.model,
+      firmware: info.version,
+      api: info.api ?? 1,
+      ip,
+      hostname: info.hostname,
+      claimed: !!info.claimed,
+    };
+    this.typedIn.set(f.id, f);
+    this.foundList = [...this.foundList.filter((x) => x.id !== f.id), f];
+    this.emit('found', this.found());
+    return { found: f, known: null };
   }
 
   /**
@@ -846,6 +886,7 @@ export class ScreenManager extends EventEmitter {
     }
     this.add(info, token, f.ip, { name: name ?? (info.name || 'Screen'), pillId: null, look });
     this.foundList = this.foundList.filter((x) => x.id !== id);
+    this.typedIn.delete(id);
     this.emit('found', this.found());
     return { screen: this.device(id), needsCode: false };
   }

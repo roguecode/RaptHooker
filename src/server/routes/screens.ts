@@ -1,5 +1,6 @@
 import {
   screenAdoptSchema,
+  screenFindSchema,
   screenInstallSchema,
   screenManualDoneSchema,
   screenManualSchema,
@@ -53,6 +54,7 @@ export function screensRoutes({ app, s, owner, broadcast }: RouteContext): void 
 
   app.get('/api/screens/found', owner, async () => screens.found());
   app.post('/api/screens/discover', owner, async () => screens.discover());
+  app.post('/api/screens/find', owner, async (req) => screens.findAt(screenFindSchema.parse(req.body).address));
   app.post('/api/screens/adopt', owner, async (req) => {
     const { id, code, name, look } = screenAdoptSchema.parse(req.body);
     return screens.adopt(id, code, name, look);

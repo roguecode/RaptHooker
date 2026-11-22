@@ -279,6 +279,10 @@ its data, or move a screen to another hub, it shows under **Found on your networ
 now). Press **Add**: the screen shows a six-digit code, and typing it in proves you're next to it. After five wrong
 codes, or two minutes, ask again; after ten wrong codes the screen takes no more for 15 minutes.
 
+Some networks keep these announcements from the hub (some routers do, and so does Docker without host networking). If
+your screen isn't listed, type the IP address it shows on its screen under **Find on network**, then add it the same
+way.
+
 ## Looking after a screen
 
 **Screen details**, at the bottom of a screen's settings, has its status, model, firmware, IP address, name on the
@@ -338,6 +342,7 @@ RaptHooker running on a computer, then add it to the Docker hub from **Found on 
   screen. **Find on network** follows a screen that has a new address.
 - **It says it belongs to another hub.** Add it from **Found on your network** with the code it shows, or reset it from
   the hub that has it.
+- **Find on network doesn't find it.** Type the IP address the screen shows under **Find on network**.
 - **No boards on the USB tab.** Some USB cables only carry power: try another. The board's USB chip (a CH340 or
   CP2102) may need a driver on Windows or macOS; a Pi has them.
 - **The hub couldn't talk to the board.** Unplug it and plug it back in. If it still won't, hold the board's **BOOT**

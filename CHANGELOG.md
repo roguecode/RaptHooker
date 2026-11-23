@@ -5,44 +5,27 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-23
+
 ### Added
 
-- Support for genuine GeekMagic Ultra screens. Set one up from its GIFTV hotspot, or by its IP address if it's already
-  on your Wi-Fi
-- Add a screen by the IP address it shows, under **Find on network**, when the hub can't find it by itself. The API
-  has `POST /api/screens/find` for this
-- Wider pages for big and ultrawide screens. Pick **Wide** or **Full** page width under **Settings → Hub → This
-  browser** or in the top bar menu, and charts grow taller to match ([#38](https://github.com/roguecode/RaptHooker/issues/38))
-- Support for the SDC2 Smart weather clock: the same clock on an ESP32-C2 chip, whose update page asks for files
-  named `SDC2?` (some come from the same listing as the ordinary one). It gets firmware of its own, and is set up from
-  its address once it's on your Wi-Fi, under **A GeekMagic Ultra or SDC2 clock already on your Wi-Fi?**. Until its
-  first update it keeps the firmware it came with: **Put the original firmware back** can go back to it, or save a
-  copy, without a file. RaptHooker's firmware goes back to it by itself if nothing has reached the screen over the
-  network within 10 minutes, or it has started four times without that. The API has `GET` and
-  `POST /api/screens/:id/original` for this, and
-  [docs/rapthooker-screens.md](docs/rapthooker-screens.md#an-sdc2-clock) has the details
+- Added support for the Genuine GeekMagic Ultra screens
+- Added support for the SDC2 Smart weather clock (the ESP32-C2 one)
+- Add a screen by its IP address when Find on network can't see it
+- Wide and Full page widths for big screens ([#38](https://github.com/roguecode/RaptHooker/issues/38))
+- API: `waitingForGravity` on alerts, `POST /api/screens/find` and `/api/screens/:id/original`
 
 ### Changed
 
-- The confirmed Wi-Fi screen is now listed as "Smart weather clock" rather than "Geekmagic Ultra/Smart weather clock"
-- "Fermentation slows" and "Fermentation speeds up" now say when they're waiting for a brew's gravity to drop 2 points
-  before they can go off: the brew's page and the Alerts page show the gravity they're waiting for instead of
-  "Watching". When one goes off as that wait ends, its notification says so, which explains why it went off at a
-  speed well past its threshold. The API's alert rules and brew alerts have a new `waitingForGravity` field
+- The Wi-Fi clock is now just called "Smart weather clock"
+- Fermentation speed alerts show the gravity they're waiting for before they can go off
 
 ### Fixed
 
-- Setting up an ESP32 screen whose RaptHooker firmware went on some other way than over USB (as an update over
-  ESPHome, say) now stops straight away and says it can't keep its settings, instead of timing out as if it couldn't
-  join the Wi-Fi. [docs/rapthooker-screens.md](docs/rapthooker-screens.md#an-esp32-board-from-a-computer) has how to
-  put RaptHooker on a board from a computer, for hubs that can't use USB (in Docker, say)
-- Setting up a Smart weather clock from a browser now says within a minute when the clock didn't take RaptHooker's
-  firmware (an SDC2 won't), instead of waiting five minutes for it to restart
-- Setting up an SDC2 over its own Wi-Fi, when the hub took it for an ordinary clock and it answered "Wrong firmware!",
-  now carries on with the SDC2's firmware if the clock says it's an SDC2. If it doesn't, set-up says to set it up from
-  its address, instead of saying to unplug it and try again
-- **Find on network** now finds screens on a hub on a Pi or in Docker. It never heard their answer there, so a screen
-  set up before a reinstall or a lost SD card couldn't be added back
+- Find on network now finds screens on a Pi or in Docker
+- An SDC2 taken for an ordinary clock during set-up now gets the right firmware
+- ESP32 boards that can't keep their settings now say so straight away
+- Browser set-up says within a minute when a clock didn't take the firmware
 
 ## [0.11.0] - 2026-11-09
 
